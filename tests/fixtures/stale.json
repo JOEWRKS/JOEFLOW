@@ -1,0 +1,15 @@
+{
+  "schema_version": "0.1",
+  "project": {"slug": "eval", "status": "READY_FOR_REVIEW", "user_approved": true},
+  "objects": {
+    "goals": [],
+    "requirements": [{"id": "REQ-001", "status": "STALE", "acceptance": ["AC-001"], "screens": ["SCR-001"]}],
+    "unknowns": [], "decisions": [], "rules": [], "flows": [],
+    "screens": [{"id": "SCR-001", "status": "CURRENT", "requirements": ["REQ-001"]}],
+    "states": [], "data": [], "integrations": [],
+    "acceptance_criteria": [{"id": "AC-001", "status": "CURRENT", "requirements": ["REQ-001"]}],
+    "tasks": [{"id": "TASK-001", "status": "CURRENT", "implements": ["REQ-001"], "acceptance": ["AC-001"]}]
+  },
+  "coverage": [{"feature_id": "REQ-001", "cells": {"actor": "COVERED"}}],
+  "contradictions": []
+}

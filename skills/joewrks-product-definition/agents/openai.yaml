@@ -1,0 +1,5 @@
+interface:
+  display_name: "JOEWRKS Product Definition"
+  short_description: "Close product and UX decisions before implementation"
+  default_prompt: "Use $joewrks-product-definition to discover evidence, resolve material product decisions, and produce validated implementation-ready artifacts."
+

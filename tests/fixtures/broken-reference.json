@@ -1,0 +1,11 @@
+{
+  "schema_version": "0.1",
+  "project": {"slug": "eval", "status": "OPEN", "user_approved": false},
+  "objects": {
+    "goals": [], "requirements": [], "unknowns": [],
+    "decisions": [{"id": "DEC-001", "status": "ANSWERED", "affects": ["REQ-999"]}],
+    "rules": [], "flows": [], "screens": [], "states": [], "data": [],
+    "integrations": [], "acceptance_criteria": [], "tasks": []
+  },
+  "coverage": [], "contradictions": []
+}
