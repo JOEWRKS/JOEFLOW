@@ -70,6 +70,11 @@ def is_active(item: dict[str, Any]) -> bool:
     return item.get("status") != "SUPERSEDED"
 
 
+def is_meaningful_text(value: Any) -> bool:
+    text = str(value or "").strip()
+    return bool(text) and text.lower() not in MEANINGLESS
+
+
 def load_state(path: str | Path) -> dict[str, Any]:
     with Path(path).open(encoding="utf-8") as handle:
         state = json.load(handle)
@@ -95,8 +100,8 @@ def iter_objects(state: dict[str, Any]):
 
 def validate_structure(state: dict[str, Any]) -> list[dict[str, str]]:
     errors: list[dict[str, str]] = []
-    if state.get("schema_version") != "0.1.2":
-        errors.append(error("schema_error", "schema_version must equal 0.1.2", "schema_version"))
+    if state.get("schema_version") != "0.1.2.1":
+        errors.append(error("schema_error", "schema_version must equal 0.1.2.1", "schema_version"))
     project = state.get("project")
     if not isinstance(project, dict):
         errors.append(error("schema_error", "project must be an object", "project"))
@@ -281,17 +286,33 @@ def validate_escape_hatches(state: dict[str, Any]) -> list[dict[str, str]]:
             return isinstance(review,dict) and IMPACT_AXES <= set(review) and all(isinstance(review[a],str) and review[a].strip().lower() not in MEANINGLESS and len(review[a].strip())>8 for a in IMPACT_AXES)
         if status == "SUPERSEDED":
             target=item.get("superseded_by")
-            if not isinstance(target,str) or target not in {x.get("id") for _,_,x in iter_objects(state)} or target.split("-",1)[0] != str(item.get("id","")).split("-",1)[0]:
+            if not isinstance(target,str) or target == item.get("id") or target not in {x.get("id") for _,_,x in iter_objects(state)} or target.split("-",1)[0] != str(item.get("id","")).split("-",1)[0]:
                 errors.append(error("invalid_supersession","SUPERSEDED requires existing same-type superseded_by",path))
         if group == "unknowns":
             if status == "ANSWERED" and not (str(item.get("resolution","")).strip() and str(item.get("source","")).strip()): errors.append(error("invalid_answered_unknown","ANSWERED unknown requires resolution and source",path))
             if status == "ASSUMED_ACCEPTED" and not all([str(item.get("resolution","")).strip(),str(item.get("recommendation","")).strip(),str(item.get("source","")).strip(),item.get("accepted_by")=="user",str(item.get("accepted_at","")).strip()]): errors.append(error("invalid_assumed_unknown","ASSUMED_ACCEPTED unknown requires explicit user evidence",path))
-            if status == "DEFERRED_NON_BLOCKING" and not (str(item.get("source","")).strip() and str(item.get("deferral_reason","")).strip().lower() not in MEANINGLESS and explanatory_review()): errors.append(error("invalid_deferred_unknown","deferred unknown requires source, meaningful reason, and 8-axis explanatory review",path))
+            if status == "DEFERRED_NON_BLOCKING" and not (str(item.get("source","")).strip() and is_meaningful_text(item.get("deferral_reason")) and explanatory_review()): errors.append(error("invalid_deferred_unknown","deferred unknown requires source, meaningful reason, and 8-axis explanatory review",path))
         if group == "decisions":
             base=all([str(item.get("decision","")).strip(),str(item.get("reason","")).strip(),str(item.get("source","")).strip()])
             if status == "ANSWERED" and not base: errors.append(error("invalid_answered_decision","ANSWERED decision requires decision, reason, source",path))
             if status == "ASSUMED_ACCEPTED" and not (base and str(item.get("recommendation","")).strip() and item.get("accepted_by")=="user" and str(item.get("accepted_at","")).strip()): errors.append(error("invalid_assumed_decision","ASSUMED_ACCEPTED decision requires explicit user evidence",path))
-            if status == "DEFERRED_NON_BLOCKING" and not (str(item.get("source","")).strip() and str(item.get("deferral_reason","")).strip().lower() not in MEANINGLESS and explanatory_review()): errors.append(error("invalid_deferred_decision","deferred decision requires source, meaningful reason, and 8-axis explanatory review",path))
+            if status == "DEFERRED_NON_BLOCKING" and not (str(item.get("source","")).strip() and is_meaningful_text(item.get("deferral_reason")) and explanatory_review()): errors.append(error("invalid_deferred_decision","deferred decision requires source, meaningful reason, and 8-axis explanatory review",path))
+    supersession = {
+        item.get("id"): item.get("superseded_by")
+        for _, _, item in iter_objects(state)
+        if item.get("status") == "SUPERSEDED" and isinstance(item.get("id"), str) and isinstance(item.get("superseded_by"), str)
+    }
+    visited: set[str] = set()
+    for start in supersession:
+        chain: set[str] = set()
+        current = start
+        while current in supersession and current not in visited:
+            if current in chain:
+                errors.append(error("supersession_cycle", f"supersession cycle includes {current}", "objects"))
+                break
+            chain.add(current)
+            current = supersession[current]
+        visited.update(chain)
     for group, position, item in iter_objects(state):
         if group == "screens" and item.get("interactive") is False and not str(item.get("non_interactive_reason","")).strip(): errors.append(error("missing_non_interactive_reason","interactive:false requires rationale",f"objects.screens[{position}]"))
     return errors
@@ -337,12 +358,15 @@ def closure_metrics(state: dict[str, Any]) -> dict[str, int]:
 
     coverage_gaps = 0
     covered_requirement_ids: set[str] = set()
+    active_material_ids = {str(item.get("id")) for item in material_requirements}
     for row in coverage:
         if not isinstance(row, dict):
-            coverage_gaps += len(COVERAGE_DIMENSIONS)
+            continue
+        feature_id = str(row.get("feature_id"))
+        if feature_id not in active_material_ids:
             continue
         cells = row.get("cells", {})
-        covered_requirement_ids.add(str(row.get("feature_id")))
+        covered_requirement_ids.add(feature_id)
         if not isinstance(cells, dict):
             coverage_gaps += len(COVERAGE_DIMENSIONS)
             continue

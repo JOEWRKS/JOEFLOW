@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1.2",
+  "schema_version": "0.1.2.1",
   "project": {
     "slug": "sample",
     "status": "OPEN",
@@ -7,7 +7,7 @@
     "user_approved": false,
     "approval": {
       "approved_revision": 1,
-      "approved_digest": "3016554f3ad28feee7da3758660c9340d4c250f19e6b339476702000b1f5cbed",
+      "approved_digest": "d4bee551d69aa8bb7657b4a872fa584c26f5c72eea9d33b205a59c29c4c00400",
       "approved_at": "2026-08-20T00:00:00Z"
     }
   },

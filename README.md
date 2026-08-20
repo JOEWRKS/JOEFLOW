@@ -2,7 +2,7 @@
 
 Runtime-independent Agent Skill for closing product and UX decisions before implementation.
 
-Current contract: **v0.1.2 Semantic Closure Integrity**.
+Current contract: **v0.1.2.1 Final Deterministic Edge Patch**.
 
 ## What it provides
 

@@ -34,7 +34,7 @@ def closed_state():
         "persistence", "undo", "destructive_confirmation",
     )
     state = {
-        "schema_version": "0.1.2",
+        "schema_version": "0.1.2.1",
         "project": {"slug": "sample", "status": "CLOSED", "definition_revision": 1, "user_approved": True, "approval": {"approved_revision": 1, "approved_digest": None, "approved_at": "2026-08-20T00:00:00Z"}},
         "objects": {
             "goals": [{"id": "GOAL-001", "status": "CURRENT"}],
@@ -160,7 +160,7 @@ class ValidatorCLITest(unittest.TestCase):
 
     def test_closure_rejects_empty_product_definition(self):
         state = {
-            "schema_version": "0.1.2",
+            "schema_version": "0.1.2.1",
             "project": {"slug": "empty", "status": "CLOSED", "definition_revision": 1, "user_approved": True, "approval": {"approved_revision": 1, "approved_digest": "invalid", "approved_at": "2026-08-20T00:00:00Z"}},
             "objects": {
                 "goals": [], "users": [], "requirements": [], "unknowns": [],

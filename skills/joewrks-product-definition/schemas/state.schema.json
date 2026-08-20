@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/JOEWRKS/joewrks-product-definition/state.schema.json",
-  "title": "JOEWRKS Product Definition State v0.1.2",
+  "title": "JOEWRKS Product Definition State v0.1.2.1",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "project", "objects", "coverage", "ux_coverage", "contradictions"],
   "properties": {
-    "schema_version": {"const": "0.1.2"},
+    "schema_version": {"const": "0.1.2.1"},
     "project": {
       "type": "object",
       "required": ["slug", "status", "definition_revision", "user_approved", "approval"],
