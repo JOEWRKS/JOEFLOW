@@ -1,0 +1,91 @@
+{
+  "schema_version": "0.1.2.1",
+  "project": {
+    "slug": "eval-01-treatment",
+    "status": "OPEN",
+    "definition_revision": 1,
+    "user_approved": false,
+    "approval": {
+      "approved_revision": null,
+      "approved_digest": null,
+      "approved_at": null
+    }
+  },
+  "objects": {
+    "goals": [
+      {
+        "id": "GOAL-001",
+        "status": "CURRENT",
+        "statement": "동네 미용실 예약 경험을 제공하는 앱의 제품 정의를 닫는다.",
+        "source": "user prompt, 2026-08-20"
+      }
+    ],
+    "users": [],
+    "requirements": [],
+    "unknowns": [
+      {
+        "id": "UNK-001",
+        "status": "OPEN",
+        "class": "KNOWN_UNKNOWN",
+        "question": "앱의 서비스 범위는 단일 미용실용인가, 여러 미용실을 찾고 예약하는 동네 중개형인가?",
+        "material": true,
+        "source": "저장소에 대상 앱 요구사항 없음; user prompt에는 '동네 미용실 예약 앱'만 명시됨, 2026-08-20",
+        "affects": [],
+        "created_at": "2026-08-20T20:44:09+09:00",
+        "recommendation": "여러 동네 미용실을 비교하고 예약하는 중개형 MVP"
+      },
+      {
+        "id": "UNK-002",
+        "status": "OPEN",
+        "class": "KNOWN_UNKNOWN",
+        "question": "예약은 즉시 확정인가, 미용실 승인 후 확정인가?",
+        "material": true,
+        "source": "user prompt에 예약 확정 정책 없음, 2026-08-20",
+        "affects": [],
+        "created_at": "2026-08-20T20:44:09+09:00"
+      },
+      {
+        "id": "UNK-003",
+        "status": "OPEN",
+        "class": "KNOWN_UNKNOWN",
+        "question": "결제는 앱 내 선결제, 예약금, 현장 결제 중 무엇인가?",
+        "material": true,
+        "source": "user prompt에 결제 정책 없음, 2026-08-20",
+        "affects": [],
+        "created_at": "2026-08-20T20:44:09+09:00"
+      },
+      {
+        "id": "UNK-004",
+        "status": "OPEN",
+        "class": "KNOWN_UNKNOWN",
+        "question": "고객과 미용실 운영자 중 어느 역할까지 이번 MVP에 포함하는가?",
+        "material": true,
+        "source": "user prompt에 사용자 역할과 운영 도구 범위 없음, 2026-08-20",
+        "affects": [],
+        "created_at": "2026-08-20T20:44:09+09:00"
+      },
+      {
+        "id": "UNK-005",
+        "status": "OPEN",
+        "class": "KNOWN_UNKNOWN",
+        "question": "취소·변경 가능 시점과 노쇼 정책은 무엇인가?",
+        "material": true,
+        "source": "user prompt에 취소/변경/노쇼 정책 없음, 2026-08-20",
+        "affects": [],
+        "created_at": "2026-08-20T20:44:09+09:00"
+      }
+    ],
+    "decisions": [],
+    "rules": [],
+    "flows": [],
+    "screens": [],
+    "states": [],
+    "data": [],
+    "integrations": [],
+    "acceptance_criteria": [],
+    "tasks": []
+  },
+  "coverage": [],
+  "ux_coverage": [],
+  "contradictions": []
+}

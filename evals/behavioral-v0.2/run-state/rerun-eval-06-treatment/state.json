@@ -1,0 +1,1086 @@
+{
+  "schema_version": "0.1.2.1",
+  "project": {
+    "slug": "rerun-eval-06-treatment",
+    "title": "Neighborhood salon booking",
+    "status": "READY_FOR_REVIEW",
+    "definition_revision": 12,
+    "user_approved": false,
+    "approval": {"approved_revision": null, "approved_digest": null, "approved_at": null},
+    "source": "evals/behavioral-v0.2/fixtures/figma-handoff/closed-definition.md",
+    "figma_visualization": "NOT VERIFIED",
+    "handoff_target": "Figma Make",
+    "handoff_executed": false
+  },
+  "objects": {
+    "goals": [
+      {"id":"GOAL-001","status":"CURRENT","text":"Customers reserve one salon service with a specific stylist and receive confirmation.","source":"closed-definition.md"}
+    ],
+    "users": [
+      {"id":"USR-001","status":"CURRENT","role":"customer","identity":"verified mobile number","source":"closed-definition.md"},
+      {"id":"USR-002","status":"CURRENT","role":"shop admin","source":"closed-definition.md"},
+      {"id":"USR-003","status":"CURRENT","role":"stylist","scope":"availability only","source":"closed-definition.md"}
+    ],
+    "requirements": [
+      {"id":"REQ-001","status":"CURRENT","material":true,"text":"Provide customer web booking and shop-admin schedule management for one service and one stylist per booking, including verified contact, deposit payment, atomic confirmation, management, cancellation/refund, reminders, and prescribed recovery states.","actors":["USR-001","USR-002","USR-003"],"screens":["SCR-001","SCR-002","SCR-003","SCR-004","SCR-005","SCR-006","SCR-007","SCR-008"],"rules":["RULE-001","RULE-002","RULE-003","RULE-004","RULE-005","RULE-006","RULE-007"],"acceptance":["AC-001","AC-002","AC-003","AC-004","AC-005"],"source":"closed-definition.md"}
+    ],
+    "unknowns": [],
+    "decisions": [
+      {"id":"DEC-001","status":"ANSWERED","material":true,"decision":"Use the approved revision 12 definition as the sole product authority for this handoff.","reason":"The evidence labels the definition approved and states no unresolved product decisions remain.","source":"evals/behavioral-v0.2/fixtures/figma-handoff/closed-definition.md"}
+    ],
+    "rules": [
+      {"id":"RULE-001","status":"CURRENT","text":"One service and one stylist per booking; shop timezone governs displayed slots; timestamps persist in UTC.","depends_on":["DEC-001"]},
+      {"id":"RULE-002","status":"CURRENT","text":"Use a 30-minute slot grid; duration blocks consecutive slots; bookings cannot overlap; server reservation is atomic.","depends_on":["DEC-001"]},
+      {"id":"RULE-003","status":"CURRENT","text":"Require a 20% deposit and show deposit/refund policy before payment.","depends_on":["DEC-001"]},
+      {"id":"RULE-004","status":"CURRENT","text":"Cancellation is free until 24 hours before start; afterward the deposit is non-refundable; one reschedule is allowed before the deadline.","depends_on":["DEC-001"]},
+      {"id":"RULE-005","status":"CURRENT","text":"Admin cancellation issues a full refund; admin changes record actor, time, and reason.","depends_on":["DEC-001"]},
+      {"id":"RULE-006","status":"CURRENT","text":"Send reminders 24 hours and 2 hours before the booking.","depends_on":["DEC-001"]},
+      {"id":"RULE-007","status":"CURRENT","text":"Payment success without booking creation triggers automatic refund and a visible refund-pending recovery state; retries never duplicate payment or booking.","depends_on":["DEC-001"]}
+    ],
+    "flows": [
+      {"id":"FLOW-001","status":"CURRENT","name":"Customer booking","steps":["choose service","choose stylist","choose available slot","verify mobile contact","review policy","pay deposit","atomic booking confirmation"],"screens":["SCR-001","SCR-002","SCR-003","SCR-004","SCR-005","SCR-006"],"requirements":["REQ-001"]},
+      {"id":"FLOW-002","status":"CURRENT","name":"Customer booking management","steps":["verify ownership","view booking","reschedule or cancel when allowed","observe resulting status/refund"],"screens":["SCR-006"],"requirements":["REQ-001"]},
+      {"id":"FLOW-003","status":"CURRENT","name":"Admin schedule management","steps":["open calendar","select booking","change or cancel with reason","record audit and refund when applicable"],"screens":["SCR-007","SCR-008"],"requirements":["REQ-001"]}
+    ],
+    "screens": [
+      {"id":"SCR-001","status":"CURRENT","route":"/book/service","name":"Service selection","interactive":true,"major_actions":["select_service"],"requirements":["REQ-001"],"flows":["FLOW-001"]},
+      {"id":"SCR-002","status":"CURRENT","route":"/book/stylist","name":"Stylist selection","interactive":true,"major_actions":["select_stylist"],"requirements":["REQ-001"],"flows":["FLOW-001"]},
+      {"id":"SCR-003","status":"CURRENT","route":"/book/time","name":"Time selection","interactive":true,"major_actions":["select_slot"],"requirements":["REQ-001"],"flows":["FLOW-001"]},
+      {"id":"SCR-004","status":"CURRENT","route":"/book/review","name":"Contact verification and policy review","interactive":true,"major_actions":["verify_and_continue"],"requirements":["REQ-001"],"flows":["FLOW-001"]},
+      {"id":"SCR-005","status":"CURRENT","route":"/book/payment","name":"Deposit payment","interactive":true,"major_actions":["pay_deposit"],"requirements":["REQ-001"],"flows":["FLOW-001"]},
+      {"id":"SCR-006","status":"CURRENT","route":"/booking/:id","name":"Confirmation and booking management","interactive":true,"major_actions":["manage_booking"],"requirements":["REQ-001"],"flows":["FLOW-001","FLOW-002"]},
+      {"id":"SCR-007","status":"CURRENT","route":"/admin/calendar","name":"Admin calendar","interactive":true,"major_actions":["open_booking"],"requirements":["REQ-001"],"flows":["FLOW-003"]},
+      {"id":"SCR-008","status":"CURRENT","route":"/admin/booking/:id","name":"Admin booking detail","interactive":true,"major_actions":["change_booking"],"requirements":["REQ-001"],"flows":["FLOW-003"]}
+    ],
+    "states": [
+      {"id":"STATE-001","status":"CURRENT","name":"loading"},{"id":"STATE-002","status":"CURRENT","name":"empty availability"},{"id":"STATE-003","status":"CURRENT","name":"slot conflict"},{"id":"STATE-004","status":"CURRENT","name":"payment processing"},{"id":"STATE-005","status":"CURRENT","name":"payment failed"},{"id":"STATE-006","status":"CURRENT","name":"refund pending"},{"id":"STATE-007","status":"CURRENT","name":"confirmed"},{"id":"STATE-008","status":"CURRENT","name":"cancellation forbidden"},{"id":"STATE-009","status":"CURRENT","name":"cancelled"},{"id":"STATE-010","status":"CURRENT","name":"offline"},{"id":"STATE-011","status":"CURRENT","name":"timeout"},{"id":"STATE-012","status":"CURRENT","name":"permission denied"}
+    ],
+    "data": [
+      {"id":"DATA-001","status":"CURRENT","name":"Booking","fields":["service snapshot","stylist","price snapshot","duration snapshot","start/end UTC","shop timezone","deposit/refund status","reschedule count","customer verified mobile","booking status"]},
+      {"id":"DATA-002","status":"CURRENT","name":"Admin change audit","fields":["actor","time","reason","change"]}
+    ],
+    "integrations": [],
+    "acceptance_criteria": [
+      {"id":"AC-001","status":"CURRENT","text":"For conflicting concurrent slot requests, exactly one booking succeeds.","requirements":["REQ-001"]},
+      {"id":"AC-002","status":"CURRENT","text":"Deposit and refund policy is visible before payment submission.","requirements":["REQ-001"]},
+      {"id":"AC-003","status":"CURRENT","text":"Confirmation shows shop-local date/time, service, stylist, price, and policy.","requirements":["REQ-001"]},
+      {"id":"AC-004","status":"CURRENT","text":"Every specified failure state provides a visible recovery path and retry cannot duplicate payment or booking.","requirements":["REQ-001"]},
+      {"id":"AC-005","status":"CURRENT","text":"At 320px and above, flows remain usable; calendar is keyboard operable with visible focus, semantic labels, non-color-only status, and WCAG AA contrast.","requirements":["REQ-001"]}
+    ],
+    "tasks": [
+      {"id":"TASK-001","status":"CURRENT","text":"Build the eight stable-ID low-fi responsive frames and their required variants in Figma Make from FIGMA_MAKE_HANDOFF.md.","implements":["REQ-001","RULE-001","RULE-002","RULE-003","RULE-004","RULE-005","RULE-006","RULE-007","DEC-001"],"acceptance":["AC-001","AC-002","AC-003","AC-004","AC-005"]}
+    ]
+  },
+  "coverage": [{"feature_id":"REQ-001","cells":{"actor":{"status":"COVERED"},"goal":{"status":"COVERED"},"entry_point":{"status":"COVERED"},"precondition":{"status":"COVERED"},"happy_path":{"status":"COVERED"},"alternative_path":{"status":"COVERED"},"error":{"status":"COVERED"},"recovery":{"status":"COVERED"},"permission":{"status":"COVERED"},"state":{"status":"COVERED"},"data":{"status":"COVERED"},"side_effect":{"status":"COVERED"},"notification":{"status":"COVERED"},"validation":{"status":"COVERED"},"boundary":{"status":"COVERED"},"persistence":{"status":"COVERED"},"security":{"status":"COVERED"},"privacy":{"status":"COVERED"},"analytics":{"status":"N/A","rationale":"No analytics requirement appears in the approved evidence."},"acceptance":{"status":"COVERED"}}}],
+  "ux_coverage": [
+    {
+      "screen_id": "SCR-001",
+      "states": {
+        "default": {
+          "status": "COVERED"
+        },
+        "loading": {
+          "status": "COVERED"
+        },
+        "empty": {
+          "status": "COVERED"
+        },
+        "partial": {
+          "status": "COVERED"
+        },
+        "success": {
+          "status": "COVERED"
+        },
+        "error": {
+          "status": "COVERED"
+        },
+        "disabled": {
+          "status": "COVERED"
+        },
+        "permission_denied": {
+          "status": "COVERED"
+        },
+        "unauthenticated": {
+          "status": "COVERED"
+        },
+        "offline": {
+          "status": "COVERED"
+        },
+        "timeout": {
+          "status": "COVERED"
+        },
+        "retrying": {
+          "status": "COVERED"
+        },
+        "submitting": {
+          "status": "COVERED"
+        },
+        "completed": {
+          "status": "COVERED"
+        },
+        "cancelled": {
+          "status": "COVERED"
+        },
+        "expired": {
+          "status": "COVERED"
+        }
+      },
+      "actions": [
+        {
+          "key": "select_service",
+          "cells": {
+            "entry": {
+              "status": "COVERED"
+            },
+            "precondition": {
+              "status": "COVERED"
+            },
+            "input": {
+              "status": "COVERED"
+            },
+            "validation": {
+              "status": "COVERED"
+            },
+            "submit": {
+              "status": "COVERED"
+            },
+            "success": {
+              "status": "COVERED"
+            },
+            "failure": {
+              "status": "COVERED"
+            },
+            "retry": {
+              "status": "COVERED"
+            },
+            "cancel": {
+              "status": "COVERED"
+            },
+            "back": {
+              "status": "COVERED"
+            },
+            "refresh": {
+              "status": "COVERED"
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED"
+            },
+            "timeout": {
+              "status": "COVERED"
+            },
+            "offline": {
+              "status": "COVERED"
+            },
+            "permission": {
+              "status": "COVERED"
+            },
+            "session_expiration": {
+              "status": "COVERED"
+            },
+            "data_mutation": {
+              "status": "COVERED"
+            },
+            "side_effect": {
+              "status": "COVERED"
+            },
+            "notification": {
+              "status": "COVERED"
+            },
+            "persistence": {
+              "status": "COVERED"
+            },
+            "undo": {
+              "status": "COVERED"
+            },
+            "destructive_confirmation": {
+              "status": "COVERED"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "screen_id": "SCR-002",
+      "states": {
+        "default": {
+          "status": "COVERED"
+        },
+        "loading": {
+          "status": "COVERED"
+        },
+        "empty": {
+          "status": "COVERED"
+        },
+        "partial": {
+          "status": "COVERED"
+        },
+        "success": {
+          "status": "COVERED"
+        },
+        "error": {
+          "status": "COVERED"
+        },
+        "disabled": {
+          "status": "COVERED"
+        },
+        "permission_denied": {
+          "status": "COVERED"
+        },
+        "unauthenticated": {
+          "status": "COVERED"
+        },
+        "offline": {
+          "status": "COVERED"
+        },
+        "timeout": {
+          "status": "COVERED"
+        },
+        "retrying": {
+          "status": "COVERED"
+        },
+        "submitting": {
+          "status": "COVERED"
+        },
+        "completed": {
+          "status": "COVERED"
+        },
+        "cancelled": {
+          "status": "COVERED"
+        },
+        "expired": {
+          "status": "COVERED"
+        }
+      },
+      "actions": [
+        {
+          "key": "select_stylist",
+          "cells": {
+            "entry": {
+              "status": "COVERED"
+            },
+            "precondition": {
+              "status": "COVERED"
+            },
+            "input": {
+              "status": "COVERED"
+            },
+            "validation": {
+              "status": "COVERED"
+            },
+            "submit": {
+              "status": "COVERED"
+            },
+            "success": {
+              "status": "COVERED"
+            },
+            "failure": {
+              "status": "COVERED"
+            },
+            "retry": {
+              "status": "COVERED"
+            },
+            "cancel": {
+              "status": "COVERED"
+            },
+            "back": {
+              "status": "COVERED"
+            },
+            "refresh": {
+              "status": "COVERED"
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED"
+            },
+            "timeout": {
+              "status": "COVERED"
+            },
+            "offline": {
+              "status": "COVERED"
+            },
+            "permission": {
+              "status": "COVERED"
+            },
+            "session_expiration": {
+              "status": "COVERED"
+            },
+            "data_mutation": {
+              "status": "COVERED"
+            },
+            "side_effect": {
+              "status": "COVERED"
+            },
+            "notification": {
+              "status": "COVERED"
+            },
+            "persistence": {
+              "status": "COVERED"
+            },
+            "undo": {
+              "status": "COVERED"
+            },
+            "destructive_confirmation": {
+              "status": "COVERED"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "screen_id": "SCR-003",
+      "states": {
+        "default": {
+          "status": "COVERED"
+        },
+        "loading": {
+          "status": "COVERED"
+        },
+        "empty": {
+          "status": "COVERED"
+        },
+        "partial": {
+          "status": "COVERED"
+        },
+        "success": {
+          "status": "COVERED"
+        },
+        "error": {
+          "status": "COVERED"
+        },
+        "disabled": {
+          "status": "COVERED"
+        },
+        "permission_denied": {
+          "status": "COVERED"
+        },
+        "unauthenticated": {
+          "status": "COVERED"
+        },
+        "offline": {
+          "status": "COVERED"
+        },
+        "timeout": {
+          "status": "COVERED"
+        },
+        "retrying": {
+          "status": "COVERED"
+        },
+        "submitting": {
+          "status": "COVERED"
+        },
+        "completed": {
+          "status": "COVERED"
+        },
+        "cancelled": {
+          "status": "COVERED"
+        },
+        "expired": {
+          "status": "COVERED"
+        }
+      },
+      "actions": [
+        {
+          "key": "select_slot",
+          "cells": {
+            "entry": {
+              "status": "COVERED"
+            },
+            "precondition": {
+              "status": "COVERED"
+            },
+            "input": {
+              "status": "COVERED"
+            },
+            "validation": {
+              "status": "COVERED"
+            },
+            "submit": {
+              "status": "COVERED"
+            },
+            "success": {
+              "status": "COVERED"
+            },
+            "failure": {
+              "status": "COVERED"
+            },
+            "retry": {
+              "status": "COVERED"
+            },
+            "cancel": {
+              "status": "COVERED"
+            },
+            "back": {
+              "status": "COVERED"
+            },
+            "refresh": {
+              "status": "COVERED"
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED"
+            },
+            "timeout": {
+              "status": "COVERED"
+            },
+            "offline": {
+              "status": "COVERED"
+            },
+            "permission": {
+              "status": "COVERED"
+            },
+            "session_expiration": {
+              "status": "COVERED"
+            },
+            "data_mutation": {
+              "status": "COVERED"
+            },
+            "side_effect": {
+              "status": "COVERED"
+            },
+            "notification": {
+              "status": "COVERED"
+            },
+            "persistence": {
+              "status": "COVERED"
+            },
+            "undo": {
+              "status": "COVERED"
+            },
+            "destructive_confirmation": {
+              "status": "COVERED"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "screen_id": "SCR-004",
+      "states": {
+        "default": {
+          "status": "COVERED"
+        },
+        "loading": {
+          "status": "COVERED"
+        },
+        "empty": {
+          "status": "COVERED"
+        },
+        "partial": {
+          "status": "COVERED"
+        },
+        "success": {
+          "status": "COVERED"
+        },
+        "error": {
+          "status": "COVERED"
+        },
+        "disabled": {
+          "status": "COVERED"
+        },
+        "permission_denied": {
+          "status": "COVERED"
+        },
+        "unauthenticated": {
+          "status": "COVERED"
+        },
+        "offline": {
+          "status": "COVERED"
+        },
+        "timeout": {
+          "status": "COVERED"
+        },
+        "retrying": {
+          "status": "COVERED"
+        },
+        "submitting": {
+          "status": "COVERED"
+        },
+        "completed": {
+          "status": "COVERED"
+        },
+        "cancelled": {
+          "status": "COVERED"
+        },
+        "expired": {
+          "status": "COVERED"
+        }
+      },
+      "actions": [
+        {
+          "key": "verify_and_continue",
+          "cells": {
+            "entry": {
+              "status": "COVERED"
+            },
+            "precondition": {
+              "status": "COVERED"
+            },
+            "input": {
+              "status": "COVERED"
+            },
+            "validation": {
+              "status": "COVERED"
+            },
+            "submit": {
+              "status": "COVERED"
+            },
+            "success": {
+              "status": "COVERED"
+            },
+            "failure": {
+              "status": "COVERED"
+            },
+            "retry": {
+              "status": "COVERED"
+            },
+            "cancel": {
+              "status": "COVERED"
+            },
+            "back": {
+              "status": "COVERED"
+            },
+            "refresh": {
+              "status": "COVERED"
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED"
+            },
+            "timeout": {
+              "status": "COVERED"
+            },
+            "offline": {
+              "status": "COVERED"
+            },
+            "permission": {
+              "status": "COVERED"
+            },
+            "session_expiration": {
+              "status": "COVERED"
+            },
+            "data_mutation": {
+              "status": "COVERED"
+            },
+            "side_effect": {
+              "status": "COVERED"
+            },
+            "notification": {
+              "status": "COVERED"
+            },
+            "persistence": {
+              "status": "COVERED"
+            },
+            "undo": {
+              "status": "COVERED"
+            },
+            "destructive_confirmation": {
+              "status": "COVERED"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "screen_id": "SCR-005",
+      "states": {
+        "default": {
+          "status": "COVERED"
+        },
+        "loading": {
+          "status": "COVERED"
+        },
+        "empty": {
+          "status": "COVERED"
+        },
+        "partial": {
+          "status": "COVERED"
+        },
+        "success": {
+          "status": "COVERED"
+        },
+        "error": {
+          "status": "COVERED"
+        },
+        "disabled": {
+          "status": "COVERED"
+        },
+        "permission_denied": {
+          "status": "COVERED"
+        },
+        "unauthenticated": {
+          "status": "COVERED"
+        },
+        "offline": {
+          "status": "COVERED"
+        },
+        "timeout": {
+          "status": "COVERED"
+        },
+        "retrying": {
+          "status": "COVERED"
+        },
+        "submitting": {
+          "status": "COVERED"
+        },
+        "completed": {
+          "status": "COVERED"
+        },
+        "cancelled": {
+          "status": "COVERED"
+        },
+        "expired": {
+          "status": "COVERED"
+        }
+      },
+      "actions": [
+        {
+          "key": "pay_deposit",
+          "cells": {
+            "entry": {
+              "status": "COVERED"
+            },
+            "precondition": {
+              "status": "COVERED"
+            },
+            "input": {
+              "status": "COVERED"
+            },
+            "validation": {
+              "status": "COVERED"
+            },
+            "submit": {
+              "status": "COVERED"
+            },
+            "success": {
+              "status": "COVERED"
+            },
+            "failure": {
+              "status": "COVERED"
+            },
+            "retry": {
+              "status": "COVERED"
+            },
+            "cancel": {
+              "status": "COVERED"
+            },
+            "back": {
+              "status": "COVERED"
+            },
+            "refresh": {
+              "status": "COVERED"
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED"
+            },
+            "timeout": {
+              "status": "COVERED"
+            },
+            "offline": {
+              "status": "COVERED"
+            },
+            "permission": {
+              "status": "COVERED"
+            },
+            "session_expiration": {
+              "status": "COVERED"
+            },
+            "data_mutation": {
+              "status": "COVERED"
+            },
+            "side_effect": {
+              "status": "COVERED"
+            },
+            "notification": {
+              "status": "COVERED"
+            },
+            "persistence": {
+              "status": "COVERED"
+            },
+            "undo": {
+              "status": "COVERED"
+            },
+            "destructive_confirmation": {
+              "status": "COVERED"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "screen_id": "SCR-006",
+      "states": {
+        "default": {
+          "status": "COVERED"
+        },
+        "loading": {
+          "status": "COVERED"
+        },
+        "empty": {
+          "status": "COVERED"
+        },
+        "partial": {
+          "status": "COVERED"
+        },
+        "success": {
+          "status": "COVERED"
+        },
+        "error": {
+          "status": "COVERED"
+        },
+        "disabled": {
+          "status": "COVERED"
+        },
+        "permission_denied": {
+          "status": "COVERED"
+        },
+        "unauthenticated": {
+          "status": "COVERED"
+        },
+        "offline": {
+          "status": "COVERED"
+        },
+        "timeout": {
+          "status": "COVERED"
+        },
+        "retrying": {
+          "status": "COVERED"
+        },
+        "submitting": {
+          "status": "COVERED"
+        },
+        "completed": {
+          "status": "COVERED"
+        },
+        "cancelled": {
+          "status": "COVERED"
+        },
+        "expired": {
+          "status": "COVERED"
+        }
+      },
+      "actions": [
+        {
+          "key": "manage_booking",
+          "cells": {
+            "entry": {
+              "status": "COVERED"
+            },
+            "precondition": {
+              "status": "COVERED"
+            },
+            "input": {
+              "status": "COVERED"
+            },
+            "validation": {
+              "status": "COVERED"
+            },
+            "submit": {
+              "status": "COVERED"
+            },
+            "success": {
+              "status": "COVERED"
+            },
+            "failure": {
+              "status": "COVERED"
+            },
+            "retry": {
+              "status": "COVERED"
+            },
+            "cancel": {
+              "status": "COVERED"
+            },
+            "back": {
+              "status": "COVERED"
+            },
+            "refresh": {
+              "status": "COVERED"
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED"
+            },
+            "timeout": {
+              "status": "COVERED"
+            },
+            "offline": {
+              "status": "COVERED"
+            },
+            "permission": {
+              "status": "COVERED"
+            },
+            "session_expiration": {
+              "status": "COVERED"
+            },
+            "data_mutation": {
+              "status": "COVERED"
+            },
+            "side_effect": {
+              "status": "COVERED"
+            },
+            "notification": {
+              "status": "COVERED"
+            },
+            "persistence": {
+              "status": "COVERED"
+            },
+            "undo": {
+              "status": "COVERED"
+            },
+            "destructive_confirmation": {
+              "status": "COVERED"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "screen_id": "SCR-007",
+      "states": {
+        "default": {
+          "status": "COVERED"
+        },
+        "loading": {
+          "status": "COVERED"
+        },
+        "empty": {
+          "status": "COVERED"
+        },
+        "partial": {
+          "status": "COVERED"
+        },
+        "success": {
+          "status": "COVERED"
+        },
+        "error": {
+          "status": "COVERED"
+        },
+        "disabled": {
+          "status": "COVERED"
+        },
+        "permission_denied": {
+          "status": "COVERED"
+        },
+        "unauthenticated": {
+          "status": "COVERED"
+        },
+        "offline": {
+          "status": "COVERED"
+        },
+        "timeout": {
+          "status": "COVERED"
+        },
+        "retrying": {
+          "status": "COVERED"
+        },
+        "submitting": {
+          "status": "COVERED"
+        },
+        "completed": {
+          "status": "COVERED"
+        },
+        "cancelled": {
+          "status": "COVERED"
+        },
+        "expired": {
+          "status": "COVERED"
+        }
+      },
+      "actions": [
+        {
+          "key": "open_booking",
+          "cells": {
+            "entry": {
+              "status": "COVERED"
+            },
+            "precondition": {
+              "status": "COVERED"
+            },
+            "input": {
+              "status": "COVERED"
+            },
+            "validation": {
+              "status": "COVERED"
+            },
+            "submit": {
+              "status": "COVERED"
+            },
+            "success": {
+              "status": "COVERED"
+            },
+            "failure": {
+              "status": "COVERED"
+            },
+            "retry": {
+              "status": "COVERED"
+            },
+            "cancel": {
+              "status": "COVERED"
+            },
+            "back": {
+              "status": "COVERED"
+            },
+            "refresh": {
+              "status": "COVERED"
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED"
+            },
+            "timeout": {
+              "status": "COVERED"
+            },
+            "offline": {
+              "status": "COVERED"
+            },
+            "permission": {
+              "status": "COVERED"
+            },
+            "session_expiration": {
+              "status": "COVERED"
+            },
+            "data_mutation": {
+              "status": "COVERED"
+            },
+            "side_effect": {
+              "status": "COVERED"
+            },
+            "notification": {
+              "status": "COVERED"
+            },
+            "persistence": {
+              "status": "COVERED"
+            },
+            "undo": {
+              "status": "COVERED"
+            },
+            "destructive_confirmation": {
+              "status": "COVERED"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "screen_id": "SCR-008",
+      "states": {
+        "default": {
+          "status": "COVERED"
+        },
+        "loading": {
+          "status": "COVERED"
+        },
+        "empty": {
+          "status": "COVERED"
+        },
+        "partial": {
+          "status": "COVERED"
+        },
+        "success": {
+          "status": "COVERED"
+        },
+        "error": {
+          "status": "COVERED"
+        },
+        "disabled": {
+          "status": "COVERED"
+        },
+        "permission_denied": {
+          "status": "COVERED"
+        },
+        "unauthenticated": {
+          "status": "COVERED"
+        },
+        "offline": {
+          "status": "COVERED"
+        },
+        "timeout": {
+          "status": "COVERED"
+        },
+        "retrying": {
+          "status": "COVERED"
+        },
+        "submitting": {
+          "status": "COVERED"
+        },
+        "completed": {
+          "status": "COVERED"
+        },
+        "cancelled": {
+          "status": "COVERED"
+        },
+        "expired": {
+          "status": "COVERED"
+        }
+      },
+      "actions": [
+        {
+          "key": "change_booking",
+          "cells": {
+            "entry": {
+              "status": "COVERED"
+            },
+            "precondition": {
+              "status": "COVERED"
+            },
+            "input": {
+              "status": "COVERED"
+            },
+            "validation": {
+              "status": "COVERED"
+            },
+            "submit": {
+              "status": "COVERED"
+            },
+            "success": {
+              "status": "COVERED"
+            },
+            "failure": {
+              "status": "COVERED"
+            },
+            "retry": {
+              "status": "COVERED"
+            },
+            "cancel": {
+              "status": "COVERED"
+            },
+            "back": {
+              "status": "COVERED"
+            },
+            "refresh": {
+              "status": "COVERED"
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED"
+            },
+            "timeout": {
+              "status": "COVERED"
+            },
+            "offline": {
+              "status": "COVERED"
+            },
+            "permission": {
+              "status": "COVERED"
+            },
+            "session_expiration": {
+              "status": "COVERED"
+            },
+            "data_mutation": {
+              "status": "COVERED"
+            },
+            "side_effect": {
+              "status": "COVERED"
+            },
+            "notification": {
+              "status": "COVERED"
+            },
+            "persistence": {
+              "status": "COVERED"
+            },
+            "undo": {
+              "status": "COVERED"
+            },
+            "destructive_confirmation": {
+              "status": "COVERED"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "contradictions": []
+}

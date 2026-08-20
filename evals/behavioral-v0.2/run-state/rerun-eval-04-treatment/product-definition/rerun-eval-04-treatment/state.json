@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.1.2.1",
+  "project": {
+    "slug": "rerun-eval-04-treatment",
+    "status": "READY_FOR_REVIEW",
+    "definition_revision": 8,
+    "user_approved": false,
+    "approval": {
+      "approved_revision": null,
+      "approved_digest": null,
+      "approved_at": null
+    },
+    "evidence_scope": ["evals/behavioral-v0.2/fixtures/decision-change/initial-definition.md", "user change request in this task"],
+    "revision_history": [
+      {"revision": 7, "status": "CLOSED", "approved_digest": "748abd932288d3f93f5082c4b03913720a77bb9b39b0f9c1a63a6addda619eed", "source": "evals/behavioral-v0.2/fixtures/decision-change/initial-definition.md"},
+      {"revision": 8, "event": "MATERIAL_DECISION_CHANGE", "approval_cleared": true, "stale_before_recompile": ["REQ-006", "RULE-003", "FLOW-005", "SCR-004", "AC-009", "TASK-011"], "recompiled_current": ["REQ-006", "RULE-003", "FLOW-005", "SCR-004", "AC-009", "TASK-011"], "rediscovery": "No new material unknown found within the supplied evidence scope."}
+    ]
+  },
+  "objects": {
+    "goals": [
+      {"id": "GOAL-001", "status": "CURRENT", "statement": "Provide shared-document access through a valid share link.", "source": "evals/behavioral-v0.2/fixtures/decision-change/initial-definition.md"}
+    ],
+    "users": [
+      {"id": "USR-001", "status": "CURRENT", "name": "Guest with a valid share link", "source": "evals/behavioral-v0.2/fixtures/decision-change/initial-definition.md"}
+    ],
+    "requirements": [
+      {"id": "REQ-006", "status": "CURRENT", "material": true, "statement": "A guest with a valid share link can read document content but cannot edit it.", "depends_on": ["DEC-005"], "rules": ["RULE-003"], "screens": ["SCR-004"], "flows": ["FLOW-005"], "acceptance": ["AC-009"], "source": "user change request in this task"}
+    ],
+    "unknowns": [],
+    "decisions": [
+      {"id": "DEC-004", "status": "SUPERSEDED", "material": true, "decision": "Guests may edit shared documents.", "reason": "Recorded approved policy at revision 7.", "source": "evals/behavioral-v0.2/fixtures/decision-change/initial-definition.md", "affects": ["REQ-006", "RULE-003"], "superseded_by": "DEC-005"},
+      {"id": "DEC-005", "status": "ANSWERED", "material": true, "decision": "Guests have read-only access to shared documents.", "reason": "The user explicitly changed the earlier guest-edit policy.", "source": "User: 아까 게스트도 편집 가능하게 하자고 했는데, 생각 바뀌었어. 게스트는 읽기만 가능하게 바꿔.", "supersedes": "DEC-004", "affects": ["REQ-006", "RULE-003"]}
+    ],
+    "rules": [
+      {"id": "RULE-003", "status": "CURRENT", "statement": "Guest share-link sessions grant read permission and deny edit permission.", "depends_on": ["DEC-005"], "source": "user change request in this task"}
+    ],
+    "flows": [
+      {"id": "FLOW-005", "status": "CURRENT", "statement": "Guest opens a valid share link and reads the document; no edit or save path is available.", "depends_on": ["REQ-006"], "screens": ["SCR-004"], "source": "user change request in this task"}
+    ],
+    "screens": [
+      {"id": "SCR-004", "status": "CURRENT", "statement": "Shared document screen shows document content to guests without editing controls.", "depends_on": ["REQ-006"], "requirements": ["REQ-006"], "interactive": false, "non_interactive_reason": "The guest surface is read-only and the supplied evidence defines no guest major action on this screen.", "source": "user change request in this task"}
+    ],
+    "states": [],
+    "data": [],
+    "integrations": [],
+    "acceptance_criteria": [
+      {"id": "AC-009", "status": "CURRENT", "criterion": "Given a guest opens a valid share link, document content is readable, editing controls are absent, and no guest edit mutation can be submitted or persisted.", "depends_on": ["REQ-006"], "requirements": ["REQ-006"], "source": "user change request in this task"}
+    ],
+    "tasks": [
+      {"id": "TASK-011", "status": "CURRENT", "task": "Remove guest editor controls and reject guest edit mutations while preserving valid-link read access.", "depends_on": ["REQ-006"], "implements": ["REQ-006", "RULE-003", "DEC-005"], "acceptance": ["AC-009"], "source": "user change request in this task"}
+    ]
+  },
+  "coverage": [
+    {"feature_id": "REQ-006", "cells": {
+      "actor": {"status": "COVERED"}, "goal": {"status": "COVERED"}, "entry_point": {"status": "COVERED"}, "precondition": {"status": "COVERED"}, "happy_path": {"status": "COVERED"},
+      "alternative_path": {"status": "N/A", "rationale": "No alternative path is provided by the fixture."}, "error": {"status": "N/A", "rationale": "No error behavior is provided by the fixture."}, "recovery": {"status": "N/A", "rationale": "No recovery behavior is provided by the fixture."},
+      "permission": {"status": "COVERED"}, "state": {"status": "COVERED"}, "data": {"status": "COVERED"}, "side_effect": {"status": "COVERED"},
+      "notification": {"status": "N/A", "rationale": "No notification behavior is provided by the fixture."}, "validation": {"status": "COVERED"}, "boundary": {"status": "COVERED"}, "persistence": {"status": "COVERED"},
+      "security": {"status": "COVERED"}, "privacy": {"status": "COVERED"}, "analytics": {"status": "N/A", "rationale": "No analytics behavior is provided by the fixture."}, "acceptance": {"status": "COVERED"}
+    }}
+  ],
+  "ux_coverage": [],
+  "contradictions": []
+}

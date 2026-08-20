@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.1.2.1",
+  "project": {
+    "slug": "eval-06-treatment",
+    "title": "Neighborhood salon booking",
+    "status": "CLOSED",
+    "definition_revision": 12,
+    "user_approved": true,
+    "source": "evals/behavioral-v0.2/fixtures/figma-handoff/closed-definition.md",
+    "approval": {
+      "approved_revision": 12,
+      "approved_digest": "4a867da216ae49c827f1ca688a4b85fad63c1168a98eb2eeec810a70df657d8f",
+      "approved_at": "2026-08-20T20:58:16+09:00"
+    },
+    "visualization": "NOT VERIFIED"
+  },
+  "objects": {
+    "goals": [
+      {"id": "GOAL-001", "status": "CURRENT", "text": "Customers reserve one salon service with a specific stylist and receive confirmation.", "source": "closed-definition.md"}
+    ],
+    "users": [
+      {"id": "USR-001", "status": "CURRENT", "name": "Customer", "source": "closed-definition.md"},
+      {"id": "USR-002", "status": "CURRENT", "name": "Shop admin", "source": "closed-definition.md"},
+      {"id": "USR-003", "status": "CURRENT", "name": "Stylist", "scope": "Availability only", "source": "closed-definition.md"}
+    ],
+    "requirements": [
+      {"id": "REQ-001", "status": "CURRENT", "material": true, "text": "Provide the approved customer booking and shop-admin schedule-management experience across the eight locked routes, rules, failure states, responsive constraints, and accessibility constraints.", "actors": ["USR-001", "USR-002", "USR-003"], "screens": ["SCR-001"], "rules": ["RULE-001"], "acceptance": ["AC-001", "AC-002", "AC-003", "AC-004"], "source": "closed-definition.md"}
+    ],
+    "unknowns": [],
+    "decisions": [
+      {"id": "DEC-001", "status": "ANSWERED", "material": true, "decision": "One service and one stylist per booking; shop-timezone 30-minute slots; duration blocks consecutive slots; no overlap.", "reason": "Locked decision in approved definition revision 12.", "source": "closed-definition.md"},
+      {"id": "DEC-002", "status": "ANSWERED", "material": true, "decision": "A 20% deposit is required; cancellation is free until 24 hours before start, then the deposit is non-refundable; one reschedule is allowed before the deadline; admin cancellation gives a full refund.", "reason": "Locked decision in approved definition revision 12.", "source": "closed-definition.md"},
+      {"id": "DEC-003", "status": "ANSWERED", "material": true, "decision": "Send reminders at 24 hours and 2 hours.", "reason": "Locked decision in approved definition revision 12.", "source": "closed-definition.md"}
+    ],
+    "rules": [
+      {"id": "RULE-001", "status": "CURRENT", "text": "Store timestamps in UTC and display in shop timezone; snapshot price and duration; atomically reserve optimistic slots; audit admin changes; verified customers can see only their own booking; retries never duplicate payment or booking.", "depends_on": ["DEC-001", "DEC-002", "DEC-003"], "source": "closed-definition.md"}
+    ],
+    "flows": [
+      {"id": "FLOW-001", "status": "CURRENT", "name": "Customer booking", "steps": ["Choose service", "Choose stylist", "Choose available slot", "Verify mobile contact", "Review policy", "Pay deposit", "Confirm booking atomically"], "screens": ["SCR-001"], "source": "closed-definition.md"},
+      {"id": "FLOW-002", "status": "CURRENT", "name": "Payment-success booking-failure recovery", "steps": ["Detect payment success without booking", "Start automatic refund", "Show refund-pending recovery state"], "screens": ["SCR-001"], "source": "closed-definition.md"}
+    ],
+    "screens": [
+      {"id": "SCR-001", "status": "CURRENT", "name": "Salon booking responsive web surface", "interactive": true, "requirements": ["REQ-001"], "flows": ["FLOW-001", "FLOW-002"], "major_actions": ["book_service", "manage_booking", "admin_manage_schedule", "recover_failure"], "routes": ["/book/service", "/book/stylist", "/book/time", "/book/review", "/book/payment", "/booking/:id", "/admin/calendar", "/admin/booking/:id"], "source": "closed-definition.md"}
+    ],
+    "states": [
+      {"id": "STATE-001", "status": "CURRENT", "name": "Booking lifecycle and recovery states", "values": ["loading", "empty availability", "slot conflict", "payment processing", "payment failed", "refund pending", "confirmed", "cancellation forbidden", "cancelled", "offline", "timeout", "permission denied"], "source": "closed-definition.md"}
+    ],
+    "data": [
+      {"id": "DATA-001", "status": "CURRENT", "name": "Booking snapshot and audit data", "fields": ["service", "stylist", "price snapshot", "duration snapshot", "UTC timestamps", "shop timezone", "verified mobile", "admin actor/time/reason"], "source": "closed-definition.md"}
+    ],
+    "integrations": [],
+    "acceptance_criteria": [
+      {"id": "AC-001", "status": "CURRENT", "requirements": ["REQ-001"], "text": "For concurrent conflicting slot requests, exactly one booking wins."},
+      {"id": "AC-002", "status": "CURRENT", "requirements": ["REQ-001"], "text": "Deposit and refund policy is visible before payment."},
+      {"id": "AC-003", "status": "CURRENT", "requirements": ["REQ-001"], "text": "Confirmation shows local date/time, service, stylist, price, and policy."},
+      {"id": "AC-004", "status": "CURRENT", "requirements": ["REQ-001"], "text": "Every represented failure has a visible recovery and retry cannot duplicate payment or booking."}
+    ],
+    "tasks": [
+      {"id": "TASK-001", "status": "CURRENT", "text": "Generate and review the Figma Make prototype against the locked handoff.", "implements": ["REQ-001", "RULE-001", "DEC-001", "DEC-002", "DEC-003"], "acceptance": ["AC-001", "AC-002", "AC-003", "AC-004"]}
+    ]
+  },
+  "coverage": [
+    {"feature_id": "REQ-001", "cells": {
+      "actor": {"status": "COVERED"}, "goal": {"status": "COVERED"}, "entry_point": {"status": "COVERED"}, "precondition": {"status": "COVERED"}, "happy_path": {"status": "COVERED"}, "alternative_path": {"status": "COVERED"}, "error": {"status": "COVERED"}, "recovery": {"status": "COVERED"}, "permission": {"status": "COVERED"}, "state": {"status": "COVERED"}, "data": {"status": "COVERED"}, "side_effect": {"status": "COVERED"}, "notification": {"status": "COVERED"}, "validation": {"status": "COVERED"}, "boundary": {"status": "COVERED"}, "persistence": {"status": "COVERED"}, "security": {"status": "COVERED"}, "privacy": {"status": "COVERED"}, "analytics": {"status": "N/A", "rationale": "The approved definition contains no analytics requirement."}, "acceptance": {"status": "COVERED"}
+    }}
+  ],
+  "ux_coverage": [
+    {"screen_id": "SCR-001", "states": {
+      "default": {"status": "COVERED"}, "loading": {"status": "COVERED"}, "empty": {"status": "COVERED"}, "partial": {"status": "COVERED"}, "success": {"status": "COVERED"}, "error": {"status": "COVERED"}, "disabled": {"status": "COVERED"}, "permission_denied": {"status": "COVERED"}, "unauthenticated": {"status": "COVERED"}, "offline": {"status": "COVERED"}, "timeout": {"status": "COVERED"}, "retrying": {"status": "COVERED"}, "submitting": {"status": "COVERED"}, "completed": {"status": "COVERED"}, "cancelled": {"status": "COVERED"}, "expired": {"status": "COVERED"}
+    }, "actions": [
+      {"key": "book_service", "cells": {"entry":{"status":"COVERED"},"precondition":{"status":"COVERED"},"input":{"status":"COVERED"},"validation":{"status":"COVERED"},"submit":{"status":"COVERED"},"success":{"status":"COVERED"},"failure":{"status":"COVERED"},"retry":{"status":"COVERED"},"cancel":{"status":"COVERED"},"back":{"status":"COVERED"},"refresh":{"status":"COVERED"},"duplicate_concurrent_action":{"status":"COVERED"},"timeout":{"status":"COVERED"},"offline":{"status":"COVERED"},"permission":{"status":"COVERED"},"session_expiration":{"status":"COVERED"},"data_mutation":{"status":"COVERED"},"side_effect":{"status":"COVERED"},"notification":{"status":"COVERED"},"persistence":{"status":"COVERED"},"undo":{"status":"COVERED"},"destructive_confirmation":{"status":"COVERED"}}},
+      {"key": "manage_booking", "cells": {"entry":{"status":"COVERED"},"precondition":{"status":"COVERED"},"input":{"status":"COVERED"},"validation":{"status":"COVERED"},"submit":{"status":"COVERED"},"success":{"status":"COVERED"},"failure":{"status":"COVERED"},"retry":{"status":"COVERED"},"cancel":{"status":"COVERED"},"back":{"status":"COVERED"},"refresh":{"status":"COVERED"},"duplicate_concurrent_action":{"status":"COVERED"},"timeout":{"status":"COVERED"},"offline":{"status":"COVERED"},"permission":{"status":"COVERED"},"session_expiration":{"status":"COVERED"},"data_mutation":{"status":"COVERED"},"side_effect":{"status":"COVERED"},"notification":{"status":"COVERED"},"persistence":{"status":"COVERED"},"undo":{"status":"COVERED"},"destructive_confirmation":{"status":"COVERED"}}},
+      {"key": "admin_manage_schedule", "cells": {"entry":{"status":"COVERED"},"precondition":{"status":"COVERED"},"input":{"status":"COVERED"},"validation":{"status":"COVERED"},"submit":{"status":"COVERED"},"success":{"status":"COVERED"},"failure":{"status":"COVERED"},"retry":{"status":"COVERED"},"cancel":{"status":"COVERED"},"back":{"status":"COVERED"},"refresh":{"status":"COVERED"},"duplicate_concurrent_action":{"status":"COVERED"},"timeout":{"status":"COVERED"},"offline":{"status":"COVERED"},"permission":{"status":"COVERED"},"session_expiration":{"status":"COVERED"},"data_mutation":{"status":"COVERED"},"side_effect":{"status":"COVERED"},"notification":{"status":"COVERED"},"persistence":{"status":"COVERED"},"undo":{"status":"COVERED"},"destructive_confirmation":{"status":"COVERED"}}},
+      {"key": "recover_failure", "cells": {"entry":{"status":"COVERED"},"precondition":{"status":"COVERED"},"input":{"status":"COVERED"},"validation":{"status":"COVERED"},"submit":{"status":"COVERED"},"success":{"status":"COVERED"},"failure":{"status":"COVERED"},"retry":{"status":"COVERED"},"cancel":{"status":"COVERED"},"back":{"status":"COVERED"},"refresh":{"status":"COVERED"},"duplicate_concurrent_action":{"status":"COVERED"},"timeout":{"status":"COVERED"},"offline":{"status":"COVERED"},"permission":{"status":"COVERED"},"session_expiration":{"status":"COVERED"},"data_mutation":{"status":"COVERED"},"side_effect":{"status":"COVERED"},"notification":{"status":"COVERED"},"persistence":{"status":"COVERED"},"undo":{"status":"COVERED"},"destructive_confirmation":{"status":"COVERED"}}}
+    ]}
+  ],
+  "contradictions": []
+}

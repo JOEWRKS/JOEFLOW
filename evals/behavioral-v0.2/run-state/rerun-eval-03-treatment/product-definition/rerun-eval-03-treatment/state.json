@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.1.2.1",
+  "project": {
+    "slug": "rerun-eval-03-treatment",
+    "status": "OPEN",
+    "definition_revision": 1,
+    "user_approved": false,
+    "approval": {
+      "approved_revision": null,
+      "approved_digest": null,
+      "approved_at": null
+    }
+  },
+  "objects": {
+    "goals": [
+      {
+        "id": "GOAL-001",
+        "status": "CURRENT",
+        "text": "사용자가 파일을 업로드할 수 있는 화면을 기획한다.",
+        "source": "사용자 요청: 파일 업로드 화면 기획해줘."
+      }
+    ],
+    "users": [],
+    "requirements": [],
+    "unknowns": [
+      {"id":"UNK-001","status":"OPEN","class":"KNOWN_UNKNOWN","question":"어떤 서비스 맥락과 업무 목적으로 파일을 업로드하는가?","material":true,"source":"사용자 요청에 서비스 맥락과 업로드 목적이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-002","status":"OPEN","class":"KNOWN_UNKNOWN","question":"주 사용자는 누구이며 로그인 상태가 필요한가?","material":true,"source":"사용자 요청에 사용자·인증 정보가 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-003","status":"OPEN","class":"KNOWN_UNKNOWN","question":"허용할 파일 형식은 무엇인가?","material":true,"source":"사용자 요청에 형식 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-004","status":"OPEN","class":"KNOWN_UNKNOWN","question":"파일당 및 전체 업로드 용량 제한은 얼마인가?","material":true,"source":"사용자 요청에 용량 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-005","status":"OPEN","class":"KNOWN_UNKNOWN","question":"단일 파일과 다중 파일 중 무엇을 지원하는가?","material":true,"source":"사용자 요청에 파일 개수 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-006","status":"OPEN","class":"KNOWN_UNKNOWN","question":"파일 선택, 드래그 앤 드롭, 모바일 촬영 중 어떤 입력 방식을 지원하는가?","material":true,"source":"사용자 요청에 입력 방식이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-007","status":"OPEN","class":"KNOWN_UNKNOWN","question":"업로드 전 미리보기·파일명 수정·메타데이터 입력이 필요한가?","material":true,"source":"사용자 요청에 업로드 전 편집 범위가 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-008","status":"OPEN","class":"KNOWN_UNKNOWN","question":"업로드는 파일 선택 즉시 시작되는가, 확인 버튼으로 일괄 시작하는가?","material":true,"source":"사용자 요청에 제출 방식이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-009","status":"OPEN","class":"KNOWN_UNKNOWN","question":"중복 파일을 어떻게 판정하고 처리하는가?","material":true,"source":"사용자 요청에 중복 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-010","status":"OPEN","class":"KNOWN_UNKNOWN","question":"업로드 중 취소·재시도·이어올리기를 지원하는가?","material":true,"source":"사용자 요청에 전송 제어 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-011","status":"OPEN","class":"KNOWN_UNKNOWN","question":"여러 파일 중 일부 실패 시 성공분 유지와 전체 롤백 중 어떤 정책인가?","material":true,"source":"사용자 요청에 부분 실패 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-012","status":"OPEN","class":"KNOWN_UNKNOWN","question":"오프라인·타임아웃·서버 장애 시 입력과 진행 상태를 어디까지 보존하는가?","material":true,"source":"사용자 요청에 복구 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-013","status":"OPEN","class":"KNOWN_UNKNOWN","question":"업로드 완료 후 사용자가 도달할 다음 단계는 무엇인가?","material":true,"source":"사용자 요청에 완료 후 흐름이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-014","status":"OPEN","class":"KNOWN_UNKNOWN","question":"업로드된 파일을 누가 열람·삭제·교체할 수 있는가?","material":true,"source":"사용자 요청에 권한 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-015","status":"OPEN","class":"KNOWN_UNKNOWN","question":"파일의 보관 기간과 사용자가 철회·삭제하는 규칙은 무엇인가?","material":true,"source":"사용자 요청에 데이터 수명주기 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-016","status":"OPEN","class":"KNOWN_UNKNOWN","question":"개인정보·민감정보 파일을 허용하며 별도 동의나 고지가 필요한가?","material":true,"source":"사용자 요청에 개인정보 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-017","status":"OPEN","class":"KNOWN_UNKNOWN","question":"악성코드 검사·암호화·실행 파일 차단 등 보안 요구는 무엇인가?","material":true,"source":"사용자 요청에 보안 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-018","status":"OPEN","class":"KNOWN_UNKNOWN","question":"업로드 비용·사용량 제한·쿼터가 있는가?","material":true,"source":"사용자 요청에 비용·쿼터 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-019","status":"OPEN","class":"KNOWN_UNKNOWN","question":"저장소·백엔드 API·외부 서비스 연동 제약은 무엇인가?","material":true,"source":"사용자 요청에 기술·연동 제약이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-020","status":"OPEN","class":"KNOWN_UNKNOWN","question":"지원 기기·브라우저·접근성 기준은 무엇인가?","material":true,"source":"사용자 요청에 환경·접근성 제약이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-021","status":"OPEN","class":"KNOWN_UNKNOWN","question":"진행률·완료·실패를 화면 외 알림으로도 전달하는가?","material":true,"source":"사용자 요청에 알림 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-022","status":"OPEN","class":"KNOWN_UNKNOWN","question":"업로드 이벤트에 필요한 분석 지표와 감사 로그는 무엇인가?","material":true,"source":"사용자 요청에 분석·감사 요구가 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-023","status":"OPEN","class":"KNOWN_UNKNOWN","question":"화면이 따라야 할 기존 디자인 시스템·브랜드·문구 톤이 있는가?","material":false,"source":"사용자 요청에 시각·콘텐츠 기준이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"},
+      {"id":"UNK-024","status":"OPEN","class":"KNOWN_UNKNOWN","question":"업로드 가능한 파일의 만료 상태와 만료 후 사용자 경험은 무엇인가?","material":true,"source":"사용자 요청에 만료 정책이 없음","affects":["GOAL-001"],"created_at":"2026-08-20T00:00:00+09:00"}
+    ],
+    "decisions": [],
+    "rules": [],
+    "flows": [],
+    "screens": [],
+    "states": [],
+    "data": [],
+    "integrations": [],
+    "acceptance_criteria": [],
+    "tasks": []
+  },
+  "coverage": [],
+  "ux_coverage": [],
+  "contradictions": []
+}

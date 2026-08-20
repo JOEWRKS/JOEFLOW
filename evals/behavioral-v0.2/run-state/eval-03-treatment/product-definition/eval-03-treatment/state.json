@@ -1,0 +1,100 @@
+{
+  "schema_version": "0.1.2.1",
+  "project": {
+    "slug": "eval-03-treatment",
+    "status": "OPEN",
+    "definition_revision": 1,
+    "user_approved": false,
+    "approval": {
+      "approved_revision": null,
+      "approved_digest": null,
+      "approved_at": null
+    }
+  },
+  "objects": {
+    "goals": [
+      {
+        "id": "GOAL-001",
+        "status": "CURRENT",
+        "goal": "사용자가 파일을 업로드할 수 있는 화면을 기획한다.",
+        "source": "사용자 요청: 파일 업로드 화면 기획해줘."
+      }
+    ],
+    "users": [],
+    "requirements": [],
+    "unknowns": [
+      {
+        "id": "UNK-001",
+        "class": "KNOWN_UNKNOWN",
+        "question": "이 화면의 주된 업로드 업무 유형은 무엇인가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "저장소에서 제품 맥락, 기존 업로드 화면, API 계약을 찾지 못함",
+        "affects": ["GOAL-001"],
+        "created_at": "2026-08-20T11:47:28Z"
+      },
+      {
+        "id": "UNK-002",
+        "class": "KNOWN_UNKNOWN",
+        "question": "주 사용자와 진입 경로, 로그인 및 업로드 권한은 무엇인가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "사용자 요청에 actor, entry point, permission 정보 없음",
+        "affects": ["GOAL-001"],
+        "created_at": "2026-08-20T11:47:28Z"
+      },
+      {
+        "id": "UNK-003",
+        "class": "KNOWN_UNKNOWN",
+        "question": "허용 파일 형식, 개수, 개별·전체 용량과 중복 파일 정책은 무엇인가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "저장소에서 업로드 제한 또는 API 계약을 찾지 못함",
+        "affects": ["GOAL-001"],
+        "created_at": "2026-08-20T11:47:28Z"
+      },
+      {
+        "id": "UNK-004",
+        "class": "KNOWN_UNKNOWN",
+        "question": "업로드 직후 파일은 어디에 연결되고 어떤 메타데이터 입력이나 후속 처리가 필요한가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "사용자 요청에 destination, metadata, post-upload behavior 정보 없음",
+        "affects": ["GOAL-001"],
+        "created_at": "2026-08-20T11:47:28Z"
+      },
+      {
+        "id": "UNK-005",
+        "class": "UNKNOWN_UNKNOWN",
+        "question": "민감정보, 보존·삭제, 악성 파일 검사와 다운로드 접근 정책은 무엇인가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "제품 커버리지의 security, privacy, persistence 축 검토",
+        "affects": ["GOAL-001"],
+        "created_at": "2026-08-20T11:47:28Z"
+      },
+      {
+        "id": "UNK-006",
+        "class": "UNKNOWN_UNKNOWN",
+        "question": "실패, 오프라인, 시간 초과, 부분 성공, 취소와 재시도 시 보존 및 복구 규칙은 무엇인가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "실패·복구 분류와 UX 상태 커버리지 검토",
+        "affects": ["GOAL-001"],
+        "created_at": "2026-08-20T11:47:28Z"
+      }
+    ],
+    "decisions": [],
+    "rules": [],
+    "flows": [],
+    "screens": [],
+    "states": [],
+    "data": [],
+    "integrations": [],
+    "acceptance_criteria": [],
+    "tasks": []
+  },
+  "coverage": [],
+  "ux_coverage": [],
+  "contradictions": []
+}

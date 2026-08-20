@@ -1,0 +1,277 @@
+{
+  "schema_version": "0.1.2.1",
+  "project": {
+    "slug": "rerun-eval-02-treatment",
+    "status": "BLOCKED",
+    "definition_revision": 1,
+    "user_approved": false,
+    "approval": {
+      "approved_revision": null,
+      "approved_digest": null,
+      "approved_at": null
+    }
+  },
+  "objects": {
+    "goals": [
+      {
+        "id": "GOAL-001",
+        "status": "CURRENT",
+        "statement": "인증된 사용자가 SaaS 워크스페이스에 팀원을 안전하게 초대할 수 있게 한다.",
+        "source": "user prompt, 2026-08-20"
+      }
+    ],
+    "users": [
+      {
+        "id": "USR-001",
+        "status": "CURRENT",
+        "name": "authenticated workspace member",
+        "roles": ["OWNER", "ADMIN", "MEMBER"],
+        "source": "fixtures/team-invitation/README.md"
+      },
+      {
+        "id": "USR-002",
+        "status": "CURRENT",
+        "name": "invite recipient",
+        "source": "user prompt; recipient eligibility is unresolved"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "REQ-001",
+        "status": "CURRENT",
+        "material": true,
+        "statement": "허용된 워크스페이스 구성원이 이메일 기반 팀원 초대를 생성하고 수신자가 이를 수락할 수 있어야 한다.",
+        "actors": ["USR-001", "USR-002"],
+        "acceptance": ["AC-001"],
+        "screens": [],
+        "source": "user prompt; detailed behavior remains blocked by UNK-001 through UNK-017"
+      }
+    ],
+    "unknowns": [
+      {
+        "id": "UNK-001",
+        "class": "KNOWN_UNKNOWN",
+        "question": "Which workspace roles may invite teammates?",
+        "material": true,
+        "status": "OPEN",
+        "source": "fixtures/team-invitation/README.md lists OWNER, ADMIN, MEMBER but no invitation permission policy",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-002",
+        "class": "KNOWN_UNKNOWN",
+        "question": "May invitations target any email address or only an existing verified user?",
+        "material": true,
+        "status": "OPEN",
+        "source": "repository.md exposes findUserByVerifiedEmail but no recipient policy",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-003",
+        "class": "KNOWN_UNKNOWN",
+        "question": "Do pending invitations consume the 25-member plan limit?",
+        "material": true,
+        "status": "OPEN",
+        "source": "README.md explicitly states this is undocumented",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-004",
+        "class": "KNOWN_UNKNOWN",
+        "question": "What role does an invite grant, and may the inviter choose it?",
+        "material": true,
+        "status": "OPEN",
+        "source": "README.md lists roles but no assignment policy",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-005",
+        "class": "KNOWN_UNKNOWN",
+        "question": "How long is an invitation valid?",
+        "material": true,
+        "status": "OPEN",
+        "source": "repository.md states there is no token contract",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-006",
+        "class": "KNOWN_UNKNOWN",
+        "question": "Are invitation tokens single-use, and how are they stored and validated?",
+        "material": true,
+        "status": "OPEN",
+        "source": "repository.md states there is no invitation table or token contract",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-007",
+        "class": "KNOWN_UNKNOWN",
+        "question": "What happens for duplicate invitations or an already accepted member?",
+        "material": true,
+        "status": "OPEN",
+        "source": "repository.md only defines uniqueness for accepted membership",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-008",
+        "class": "KNOWN_UNKNOWN",
+        "question": "May a pending invitation be revoked, and by whom?",
+        "material": true,
+        "status": "OPEN",
+        "source": "no invitation behavior is defined in fixture evidence",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-009",
+        "class": "KNOWN_UNKNOWN",
+        "question": "May an invitation be resent, and what throttling applies?",
+        "material": true,
+        "status": "OPEN",
+        "source": "email-service.md defines queueing but no resend or abuse policy",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-010",
+        "class": "KNOWN_UNKNOWN",
+        "question": "Must the recipient sign in or create an account with the invited email before acceptance?",
+        "material": true,
+        "status": "OPEN",
+        "source": "README.md defines session auth only for current requests; recipient acceptance is undefined",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-011",
+        "class": "KNOWN_UNKNOWN",
+        "question": "What happens if the workspace is deleted before invite acceptance?",
+        "material": true,
+        "status": "OPEN",
+        "source": "repository.md exposes active/deleted workspace status but no invitation rule",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-012",
+        "class": "KNOWN_UNKNOWN",
+        "question": "Is the member limit rechecked atomically when an invite is accepted?",
+        "material": true,
+        "status": "OPEN",
+        "source": "README.md gives a limit and repository.md gives a count function but no concurrency policy",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-013",
+        "class": "KNOWN_UNKNOWN",
+        "question": "How should delivered, bounced, and complained email webhooks change invitation state or UI?",
+        "material": true,
+        "status": "OPEN",
+        "source": "email-service.md explicitly says product behavior for webhooks is undefined",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-014",
+        "class": "KNOWN_UNKNOWN",
+        "question": "What should the inviter see when email queueing succeeds but delivery later fails?",
+        "material": true,
+        "status": "OPEN",
+        "source": "email-service.md says queue acceptance does not guarantee delivery",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-015",
+        "class": "KNOWN_UNKNOWN",
+        "question": "Which invitation events require audit records and who may view them?",
+        "material": true,
+        "status": "OPEN",
+        "source": "fixture evidence contains no audit policy",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-016",
+        "class": "UNKNOWN_KNOWN",
+        "question": "Where in the product should invitation management live, and what surfaces are required?",
+        "material": true,
+        "status": "OPEN",
+        "source": "fixture evidence contains no UI or route definition",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      },
+      {
+        "id": "UNK-017",
+        "class": "KNOWN_UNKNOWN",
+        "question": "What email-address exposure and retention policy applies to pending, expired, revoked, and failed invitations?",
+        "material": true,
+        "status": "OPEN",
+        "source": "fixture evidence contains no privacy or retention policy",
+        "affects": ["REQ-001", "AC-001"],
+        "created_at": "2026-08-20T21:08:24.9508113+09:00"
+      }
+    ],
+    "decisions": [],
+    "rules": [],
+    "flows": [],
+    "screens": [],
+    "states": [],
+    "data": [],
+    "integrations": [
+      {
+        "id": "INT-001",
+        "status": "CURRENT",
+        "name": "Transactional email service",
+        "behavior": "Queue acceptance returns a provider message ID; delivered, bounced, and complained webhooks may follow.",
+        "source": "fixtures/team-invitation/src/email-service.md"
+      }
+    ],
+    "acceptance_criteria": [
+      {
+        "id": "AC-001",
+        "status": "CURRENT",
+        "requirements": ["REQ-001"],
+        "criterion": "초대 권한, 수신자 자격, 역할, 정원, 토큰, 중복/취소/만료, 수락, 메일 실패 정책이 결정된 후 해당 규칙을 관찰 가능하게 검증한다.",
+        "source": "compiled placeholder pending material decisions"
+      }
+    ],
+    "tasks": []
+  },
+  "coverage": [
+    {
+      "feature_id": "REQ-001",
+      "cells": {
+        "actor": {"status": "OPEN"},
+        "goal": {"status": "COVERED"},
+        "entry_point": {"status": "OPEN"},
+        "precondition": {"status": "OPEN"},
+        "happy_path": {"status": "OPEN"},
+        "alternative_path": {"status": "OPEN"},
+        "error": {"status": "OPEN"},
+        "recovery": {"status": "OPEN"},
+        "permission": {"status": "OPEN"},
+        "state": {"status": "OPEN"},
+        "data": {"status": "OPEN"},
+        "side_effect": {"status": "OPEN"},
+        "notification": {"status": "OPEN"},
+        "validation": {"status": "OPEN"},
+        "boundary": {"status": "OPEN"},
+        "persistence": {"status": "OPEN"},
+        "security": {"status": "OPEN"},
+        "privacy": {"status": "OPEN"},
+        "analytics": {"status": "OPEN"},
+        "acceptance": {"status": "OPEN"}
+      }
+    }
+  ],
+  "ux_coverage": [],
+  "contradictions": []
+}

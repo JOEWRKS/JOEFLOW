@@ -1,0 +1,59 @@
+{
+  "schema_version": "0.1.2.1",
+  "project": {
+    "slug": "eval-04-treatment",
+    "status": "READY_FOR_REVIEW",
+    "definition_revision": 8,
+    "user_approved": false,
+    "approval": {
+      "approved_revision": null,
+      "approved_digest": null,
+      "approved_at": null
+    }
+  },
+  "objects": {
+    "goals": [
+      {"id": "GOAL-001", "status": "CURRENT", "goal": "Allow guests to use a shared document through a valid share link.", "source": "initial-definition.md"}
+    ],
+    "users": [
+      {"id": "USR-001", "status": "CURRENT", "actor": "Guest with a valid share link", "source": "initial-definition.md"}
+    ],
+    "requirements": [
+      {"id": "REQ-006", "status": "CURRENT", "material": true, "behavior": "A guest with a valid share link can read document content but cannot edit it.", "actor": "USR-001", "depends_on": ["DEC-005"], "rules": ["RULE-003"], "flows": ["FLOW-005"], "screens": ["SCR-004"], "acceptance": ["AC-009"], "source": "User prompt: 게스트는 읽기만 가능하게 바꿔."}
+    ],
+    "unknowns": [],
+    "decisions": [
+      {"id": "DEC-004", "status": "SUPERSEDED", "material": true, "decision": "Guests may edit shared documents.", "reason": "Approved revision-7 baseline; replaced by the user's explicit change.", "source": "initial-definition.md", "affects": ["REQ-006", "RULE-003"], "superseded_by": "DEC-005"},
+      {"id": "DEC-005", "status": "ANSWERED", "material": true, "decision": "Guests are read-only and cannot edit shared documents.", "reason": "The user explicitly reversed the earlier guest-edit decision.", "source": "User prompt: 아까 게스트도 편집 가능하게 하자고 했는데, 생각 바뀌었어. 게스트는 읽기만 가능하게 바꿔.", "supersedes": "DEC-004", "affects": ["REQ-006", "RULE-003"]}
+    ],
+    "rules": [
+      {"id": "RULE-003", "status": "CURRENT", "rule": "Guest share-link sessions grant read permission only; edit mutations are denied.", "depends_on": ["DEC-005"], "source": "User prompt: 게스트는 읽기만 가능하게 바꿔."}
+    ],
+    "flows": [
+      {"id": "FLOW-005", "status": "CURRENT", "flow": "Guest opens a valid share link and reads document content; no edit or save path is available.", "depends_on": ["REQ-006"], "screens": ["SCR-004"], "source": "User prompt: 게스트는 읽기만 가능하게 바꿔."}
+    ],
+    "screens": [
+      {"id": "SCR-004", "status": "CURRENT", "screen": "Shared document", "behavior": "Document content is displayed read-only to guests and editing controls are absent or disabled.", "interactive": true, "major_actions": [], "no_major_actions_reason": "The scoped guest experience is read-only; viewing document content does not mutate data or submit an action.", "requirements": ["REQ-006"], "depends_on": ["REQ-006"], "source": "User prompt: 게스트는 읽기만 가능하게 바꿔."}
+    ],
+    "states": [],
+    "data": [],
+    "integrations": [],
+    "acceptance_criteria": [
+      {"id": "AC-009", "status": "CURRENT", "criterion": "Given a guest with a valid share link, when the shared document opens, content is readable, editing controls are unavailable, and any attempted guest edit mutation is denied without changing content or history.", "requirements": ["REQ-006"], "depends_on": ["REQ-006"], "source": "User prompt: 게스트는 읽기만 가능하게 바꿔."}
+    ],
+    "tasks": [
+      {"id": "TASK-011", "status": "CURRENT", "task": "Enforce guest read-only authorization, remove or disable guest editor controls, and reject guest edit mutations.", "implements": ["REQ-006", "RULE-003", "DEC-005"], "acceptance": ["AC-009"], "depends_on": ["REQ-006"], "source": "User prompt: 게스트는 읽기만 가능하게 바꿔."}
+    ]
+  },
+  "coverage": [
+    {"feature_id": "REQ-006", "cells": {
+      "actor": {"status": "COVERED"}, "goal": {"status": "COVERED"}, "entry_point": {"status": "COVERED"}, "precondition": {"status": "COVERED"}, "happy_path": {"status": "COVERED"}, "alternative_path": {"status": "COVERED"}, "error": {"status": "COVERED"}, "recovery": {"status": "COVERED"}, "permission": {"status": "COVERED"}, "state": {"status": "COVERED"}, "data": {"status": "COVERED"}, "side_effect": {"status": "N/A", "rationale": "Reading a document has no mutation side effect; denied edits leave content and history unchanged."}, "notification": {"status": "N/A", "rationale": "No notification is required for read-only viewing or a denied edit attempt."}, "validation": {"status": "COVERED"}, "boundary": {"status": "COVERED"}, "persistence": {"status": "N/A", "rationale": "The guest path does not persist changes because edits are denied."}, "security": {"status": "COVERED"}, "privacy": {"status": "COVERED"}, "analytics": {"status": "N/A", "rationale": "No analytics behavior is introduced by the explicit permission change."}, "acceptance": {"status": "COVERED"}
+    }}
+  ],
+  "ux_coverage": [
+    {"screen_id": "SCR-004", "states": {
+      "default": {"status": "COVERED"}, "loading": {"status": "COVERED"}, "empty": {"status": "COVERED"}, "partial": {"status": "COVERED"}, "success": {"status": "COVERED"}, "error": {"status": "COVERED"}, "disabled": {"status": "COVERED"}, "permission_denied": {"status": "COVERED"}, "unauthenticated": {"status": "COVERED"}, "offline": {"status": "COVERED"}, "timeout": {"status": "COVERED"}, "retrying": {"status": "COVERED"}, "submitting": {"status": "COVERED"}, "completed": {"status": "COVERED"}, "cancelled": {"status": "COVERED"}, "expired": {"status": "COVERED"}
+    }, "actions": []}
+  ],
+  "contradictions": []
+}

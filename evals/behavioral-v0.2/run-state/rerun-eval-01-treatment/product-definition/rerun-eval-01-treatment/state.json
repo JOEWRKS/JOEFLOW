@@ -1,0 +1,190 @@
+{
+  "schema_version": "0.1.2.1",
+  "project": {
+    "slug": "rerun-eval-01-treatment",
+    "status": "OPEN",
+    "definition_revision": 1,
+    "user_approved": false,
+    "approval": {
+      "approved_revision": null,
+      "approved_digest": null,
+      "approved_at": null
+    }
+  },
+  "objects": {
+    "goals": [
+      {
+        "id": "GOAL-001",
+        "status": "CURRENT",
+        "statement": "동네 미용실 예약 앱의 구현 가능한 제품 정의를 확정한다.",
+        "source": "사용자 프롬프트: 동네 미용실 예약 앱 만들어줘."
+      }
+    ],
+    "users": [],
+    "requirements": [],
+    "unknowns": [
+      {
+        "id": "UNK-001",
+        "class": "KNOWN_UNKNOWN",
+        "question": "이번에 만들 제품의 운영 범위는 고객용 예약만인가, 미용실 관리까지 포함하는가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "사용자 프롬프트에 운영 주체와 제품 면이 명시되지 않음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-002",
+        "class": "KNOWN_UNKNOWN",
+        "question": "예약은 즉시 확정인가, 미용실 승인 후 확정인가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "예약 확정 정책 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-003",
+        "class": "KNOWN_UNKNOWN",
+        "question": "단일 미용실 전용인가, 여러 동네 미용실을 탐색·선택하는 서비스인가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "서비스 대상 사업자 수가 명시되지 않음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-004",
+        "class": "KNOWN_UNKNOWN",
+        "question": "고객 로그인은 필수인가, 비회원 예약을 허용하는가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "인증 정책 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-005",
+        "class": "KNOWN_UNKNOWN",
+        "question": "시술 메뉴별 가격과 소요시간은 누가 어떻게 관리하는가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "서비스 카탈로그 정책 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-006",
+        "class": "KNOWN_UNKNOWN",
+        "question": "고객이 디자이너를 지정할 수 있는가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "담당자 선택 정책 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-007",
+        "class": "KNOWN_UNKNOWN",
+        "question": "예약 가능 시간은 앱 내부에서 관리하는가, 기존 캘린더·예약 시스템과 연동하는가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "가용시간 데이터 원천 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-008",
+        "class": "KNOWN_UNKNOWN",
+        "question": "예약에 필요한 고객 정보와 보관·삭제 정책은 무엇인가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "개인정보 수집·수명주기 정책 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-009",
+        "class": "KNOWN_UNKNOWN",
+        "question": "예약 변경·취소 가능 시점과 조건은 무엇인가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "변경·취소 정책 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-010",
+        "class": "KNOWN_UNKNOWN",
+        "question": "예약 확인과 리마인더를 어떤 채널로 언제 발송하는가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "알림 정책 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-011",
+        "class": "KNOWN_UNKNOWN",
+        "question": "앱 내 결제·예약금이 필요한가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "결제 범위 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-012",
+        "class": "KNOWN_UNKNOWN",
+        "question": "노쇼와 지각을 어떻게 처리하는가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "노쇼·지각 정책 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-013",
+        "class": "KNOWN_UNKNOWN",
+        "question": "미용실 운영자가 예약을 생성·수정·취소하거나 휴무·블록 시간을 설정할 수 있는가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "운영 권한과 기능 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-014",
+        "class": "KNOWN_UNKNOWN",
+        "question": "동네 미용실 탐색에 위치 권한, 거리, 지도, 검색 중 무엇이 필요한가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "지역 탐색 방식 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      },
+      {
+        "id": "UNK-015",
+        "class": "KNOWN_UNKNOWN",
+        "question": "우선 구현할 플랫폼은 모바일 웹, 네이티브 앱, 또는 반응형 웹 중 무엇인가?",
+        "material": true,
+        "status": "OPEN",
+        "source": "플랫폼 제약 근거 없음",
+        "affects": [],
+        "created_at": "2026-08-20T21:08:11.3078104+09:00"
+      }
+    ],
+    "decisions": [],
+    "rules": [],
+    "flows": [],
+    "screens": [],
+    "states": [],
+    "data": [],
+    "integrations": [],
+    "acceptance_criteria": [],
+    "tasks": []
+  },
+  "coverage": [],
+  "ux_coverage": [],
+  "contradictions": []
+}

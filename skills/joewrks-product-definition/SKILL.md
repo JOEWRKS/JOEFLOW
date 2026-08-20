@@ -20,7 +20,7 @@ Close the product definition before implementation. Persist authority in `produc
 
 1. Determine or create the project slug and artifact directory. If resuming, read `state.json` first, then reconcile Markdown projections.
 2. Discover repository, documentation, tests, APIs, schemas, designs, prior decisions, current behavior, and relevant official constraints.
-3. Register facts, contradictions, and unknowns using [unknown-taxonomy.md](references/unknown-taxonomy.md) and [requirement-taxonomy.md](references/requirement-taxonomy.md).
+3. Register facts, contradictions, and unknowns using [unknown-taxonomy.md](references/unknown-taxonomy.md) and [requirement-taxonomy.md](references/requirement-taxonomy.md). Before the first question, sweep the applicable coverage areas and create one unknown record per independently answerable material decision; never hide several policies inside one umbrella unknown. This is state breadth, not permission to question-bomb the user.
 4. Rank open material decisions and ask the highest-fan-out question. Record each answer and source immediately; then propagate and compile affected artifacts.
 5. Compile product requirements, flows, screens, states, rules, acceptance criteria, and implementation mappings using the templates. For UX work, read [product-coverage-matrix.md](references/product-coverage-matrix.md), [ux-state-taxonomy.md](references/ux-state-taxonomy.md), and [failure-recovery-taxonomy.md](references/failure-recovery-taxonomy.md).
 6. Repeat discovery after every answer until no new material unknown appears.

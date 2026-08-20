@@ -1,0 +1,111 @@
+{
+  "schema_version": "0.1.2.1",
+  "project": {
+    "slug": "eval-02-treatment",
+    "status": "OPEN",
+    "definition_revision": 1,
+    "user_approved": false,
+    "approval": {
+      "approved_revision": null,
+      "approved_digest": null,
+      "approved_at": null
+    },
+    "evidence_observed_at": "2026-08-20",
+    "facts": [
+      {
+        "statement": "The service uses session authentication and request.user_id identifies the authenticated user.",
+        "source": "evals/behavioral-v0.2/fixtures/team-invitation/README.md"
+      },
+      {
+        "statement": "Workspace roles are OWNER, ADMIN, and MEMBER.",
+        "source": "evals/behavioral-v0.2/fixtures/team-invitation/README.md"
+      },
+      {
+        "statement": "The plan limit is 25 accepted members; pending-invitation treatment is unspecified.",
+        "source": "evals/behavioral-v0.2/fixtures/team-invitation/README.md"
+      },
+      {
+        "statement": "No invitation table or token contract exists.",
+        "source": "evals/behavioral-v0.2/fixtures/team-invitation/src/repository.md"
+      },
+      {
+        "statement": "Transactional email queue acceptance does not guarantee delivery; delivered, bounced, and complained webhooks exist but product behavior is unspecified.",
+        "source": "evals/behavioral-v0.2/fixtures/team-invitation/src/email-service.md"
+      }
+    ]
+  },
+  "objects": {
+    "goals": [],
+    "users": [],
+    "requirements": [],
+    "unknowns": [
+      {
+        "id": "UNK-001",
+        "status": "OPEN",
+        "class": "KNOWN_UNKNOWN",
+        "question": "Which workspace roles may invite team members?",
+        "material": true,
+        "source": "Evidence defines OWNER, ADMIN, and MEMBER roles but no invitation permission policy.",
+        "affects": [],
+        "impact_axes": ["security", "permissions", "flows", "acceptance"],
+        "created_at": "2026-08-20"
+      },
+      {
+        "id": "UNK-002",
+        "status": "OPEN",
+        "class": "KNOWN_UNKNOWN",
+        "question": "Do pending invitations consume the 25-member plan limit?",
+        "material": true,
+        "source": "README.md explicitly leaves pending-invitation treatment unspecified.",
+        "affects": [],
+        "impact_axes": ["rules", "states", "acceptance"],
+        "created_at": "2026-08-20"
+      },
+      {
+        "id": "UNK-003",
+        "status": "OPEN",
+        "class": "KNOWN_UNKNOWN",
+        "question": "Can invitations be sent to any email address or only an existing verified user?",
+        "material": true,
+        "source": "Repository can find a user by verified normalized email, but invitation target policy is absent.",
+        "affects": [],
+        "impact_axes": ["scope", "flows", "data", "privacy", "acceptance"],
+        "created_at": "2026-08-20"
+      },
+      {
+        "id": "UNK-004",
+        "status": "OPEN",
+        "class": "KNOWN_UNKNOWN",
+        "question": "Which role is assigned on invite and may the inviter choose it?",
+        "material": true,
+        "source": "Role taxonomy exists, but assignment behavior is unspecified.",
+        "affects": [],
+        "impact_axes": ["permissions", "flows", "security", "acceptance"],
+        "created_at": "2026-08-20"
+      },
+      {
+        "id": "UNK-005",
+        "status": "OPEN",
+        "class": "KNOWN_UNKNOWN",
+        "question": "What are invitation expiry, resend, revoke, duplicate, and email-delivery-failure behaviors?",
+        "material": true,
+        "source": "No invitation/token contract exists and webhook behavior is undefined.",
+        "affects": [],
+        "impact_axes": ["flows", "states", "data", "security", "acceptance"],
+        "created_at": "2026-08-20"
+      }
+    ],
+    "decisions": [],
+    "rules": [],
+    "flows": [],
+    "screens": [],
+    "states": [],
+    "data": [],
+    "integrations": [],
+    "acceptance_criteria": [],
+    "tasks": []
+  },
+  "coverage": [],
+  "ux_coverage": [],
+  "contradictions": []
+}
