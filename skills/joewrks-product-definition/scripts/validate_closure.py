@@ -4,7 +4,7 @@
 import json
 import sys
 
-from state_validation import closure_metrics, load_state, validate_state
+from state_validation import closure_metrics, definition_digest, load_state, validate_state
 
 
 def main(argv):
@@ -19,7 +19,7 @@ def main(argv):
     errors = validate_state(state)
     metrics = closure_metrics(state)
     closed = not errors and all(value == 0 for value in metrics.values())
-    print(json.dumps({"validator": "closure", "closed": closed, "errors": errors, "metrics": metrics}, indent=2, sort_keys=True))
+    print(json.dumps({"validator": "closure", "closed": closed, "definition_digest": definition_digest(state), "errors": errors, "metrics": metrics}, indent=2, sort_keys=True))
     return 0 if closed else 1
 
 

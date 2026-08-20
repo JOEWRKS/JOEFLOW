@@ -2,9 +2,9 @@
   "schema_version": "0.1.1",
   "project": {
     "slug": "sample",
-    "status": "OPEN",
+    "status": "CLOSED",
     "definition_revision": 1,
-    "user_approved": false,
+    "user_approved": true,
     "approval": {
       "approved_revision": 1,
       "approved_digest": "1b50bff015195a0b39becb2c6697ea122ee00d6db8aebb18aa04d945e0dbad39",
@@ -148,7 +148,7 @@
           "status": "COVERED"
         },
         "privacy": {
-          "status": "COVERED"
+          "status": "N/A"
         },
         "analytics": {
           "status": "COVERED"

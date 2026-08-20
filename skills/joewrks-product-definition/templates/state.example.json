@@ -1,0 +1,6 @@
+{
+  "schema_version": "0.1.1",
+  "project": {"slug": "example", "status": "OPEN", "definition_revision": 1, "user_approved": false, "approval": {"approved_revision": null, "approved_digest": null, "approved_at": null}},
+  "objects": {"goals": [], "users": [], "requirements": [], "unknowns": [], "decisions": [], "rules": [], "flows": [], "screens": [], "states": [], "data": [], "integrations": [], "acceptance_criteria": [], "tasks": []},
+  "coverage": [], "ux_coverage": [], "contradictions": []
+}

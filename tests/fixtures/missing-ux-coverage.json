@@ -2,9 +2,9 @@
   "schema_version": "0.1.1",
   "project": {
     "slug": "sample",
-    "status": "OPEN",
+    "status": "CLOSED",
     "definition_revision": 1,
-    "user_approved": false,
+    "user_approved": true,
     "approval": {
       "approved_revision": 1,
       "approved_digest": "1b50bff015195a0b39becb2c6697ea122ee00d6db8aebb18aa04d945e0dbad39",
@@ -159,133 +159,6 @@
       }
     }
   ],
-  "ux_coverage": [
-    {
-      "screen_id": "SCR-001",
-      "states": {
-        "default": {
-          "status": "COVERED"
-        },
-        "loading": {
-          "status": "COVERED"
-        },
-        "empty": {
-          "status": "COVERED"
-        },
-        "partial": {
-          "status": "COVERED"
-        },
-        "success": {
-          "status": "COVERED"
-        },
-        "error": {
-          "status": "COVERED"
-        },
-        "disabled": {
-          "status": "COVERED"
-        },
-        "permission_denied": {
-          "status": "COVERED"
-        },
-        "unauthenticated": {
-          "status": "COVERED"
-        },
-        "offline": {
-          "status": "COVERED"
-        },
-        "timeout": {
-          "status": "COVERED"
-        },
-        "retrying": {
-          "status": "COVERED"
-        },
-        "submitting": {
-          "status": "COVERED"
-        },
-        "completed": {
-          "status": "COVERED"
-        },
-        "cancelled": {
-          "status": "COVERED"
-        },
-        "expired": {
-          "status": "COVERED"
-        }
-      },
-      "actions": [
-        {
-          "key": "submit",
-          "cells": {
-            "entry": {
-              "status": "COVERED"
-            },
-            "precondition": {
-              "status": "COVERED"
-            },
-            "input": {
-              "status": "COVERED"
-            },
-            "validation": {
-              "status": "COVERED"
-            },
-            "submit": {
-              "status": "COVERED"
-            },
-            "success": {
-              "status": "COVERED"
-            },
-            "failure": {
-              "status": "COVERED"
-            },
-            "retry": {
-              "status": "COVERED"
-            },
-            "cancel": {
-              "status": "COVERED"
-            },
-            "back": {
-              "status": "COVERED"
-            },
-            "refresh": {
-              "status": "COVERED"
-            },
-            "duplicate_concurrent_action": {
-              "status": "COVERED"
-            },
-            "timeout": {
-              "status": "COVERED"
-            },
-            "offline": {
-              "status": "COVERED"
-            },
-            "permission": {
-              "status": "COVERED"
-            },
-            "session_expiration": {
-              "status": "COVERED"
-            },
-            "data_mutation": {
-              "status": "COVERED"
-            },
-            "side_effect": {
-              "status": "COVERED"
-            },
-            "notification": {
-              "status": "COVERED"
-            },
-            "persistence": {
-              "status": "COVERED"
-            },
-            "undo": {
-              "status": "COVERED"
-            },
-            "destructive_confirmation": {
-              "status": "COVERED"
-            }
-          }
-        }
-      ]
-    }
-  ],
+  "ux_coverage": [],
   "contradictions": []
 }

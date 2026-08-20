@@ -1,18 +1,291 @@
 {
-  "schema_version": "0.1",
-  "project": {"slug": "eval", "status": "CLOSED", "user_approved": true},
-  "objects": {
-    "goals": [{"id": "GOAL-001", "status": "CURRENT"}],
-    "requirements": [{"id": "REQ-001", "status": "CURRENT", "acceptance": ["AC-001"], "screens": ["SCR-001"]}],
-    "unknowns": [],
-    "decisions": [{"id": "DEC-001", "status": "ANSWERED", "affects": ["REQ-001"]}],
-    "rules": [],
-    "flows": [{"id": "FLOW-001", "status": "CURRENT", "screens": ["SCR-001"]}],
-    "screens": [{"id": "SCR-001", "status": "CURRENT", "requirements": ["REQ-001"]}],
-    "states": [], "data": [], "integrations": [],
-    "acceptance_criteria": [{"id": "AC-001", "status": "CURRENT", "requirements": ["REQ-001"]}],
-    "tasks": [{"id": "TASK-001", "status": "CURRENT", "implements": ["REQ-001"], "acceptance": ["AC-001"]}]
+  "schema_version": "0.1.1",
+  "project": {
+    "slug": "sample",
+    "status": "CLOSED",
+    "definition_revision": 1,
+    "user_approved": true,
+    "approval": {
+      "approved_revision": 1,
+      "approved_digest": "1b50bff015195a0b39becb2c6697ea122ee00d6db8aebb18aa04d945e0dbad39",
+      "approved_at": "2026-08-20T00:00:00Z"
+    }
   },
-  "coverage": [{"feature_id": "REQ-001", "cells": {"actor": "COVERED", "goal": "COVERED", "acceptance": "COVERED"}}],
+  "objects": {
+    "goals": [
+      {
+        "id": "GOAL-001",
+        "status": "CURRENT"
+      }
+    ],
+    "users": [
+      {
+        "id": "USR-001",
+        "status": "CURRENT"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "REQ-001",
+        "status": "CURRENT",
+        "acceptance": [
+          "AC-001"
+        ],
+        "screens": [
+          "SCR-001"
+        ]
+      }
+    ],
+    "unknowns": [],
+    "decisions": [
+      {
+        "id": "DEC-001",
+        "status": "ANSWERED",
+        "decision": "Use the defined flow",
+        "source": "user",
+        "affects": [
+          "REQ-001"
+        ]
+      }
+    ],
+    "rules": [],
+    "flows": [
+      {
+        "id": "FLOW-001",
+        "status": "CURRENT",
+        "screens": [
+          "SCR-001"
+        ]
+      }
+    ],
+    "screens": [
+      {
+        "id": "SCR-001",
+        "status": "CURRENT",
+        "requirements": [
+          "REQ-001"
+        ]
+      }
+    ],
+    "states": [],
+    "data": [],
+    "integrations": [],
+    "acceptance_criteria": [
+      {
+        "id": "AC-001",
+        "status": "CURRENT",
+        "requirements": [
+          "REQ-001"
+        ]
+      }
+    ],
+    "tasks": [
+      {
+        "id": "TASK-001",
+        "status": "CURRENT",
+        "implements": [
+          "REQ-001"
+        ],
+        "acceptance": [
+          "AC-001"
+        ]
+      }
+    ]
+  },
+  "coverage": [
+    {
+      "feature_id": "REQ-001",
+      "cells": {
+        "actor": {
+          "status": "COVERED"
+        },
+        "goal": {
+          "status": "COVERED"
+        },
+        "entry_point": {
+          "status": "COVERED"
+        },
+        "precondition": {
+          "status": "COVERED"
+        },
+        "happy_path": {
+          "status": "COVERED"
+        },
+        "alternative_path": {
+          "status": "COVERED"
+        },
+        "error": {
+          "status": "COVERED"
+        },
+        "recovery": {
+          "status": "COVERED"
+        },
+        "permission": {
+          "status": "COVERED"
+        },
+        "state": {
+          "status": "COVERED"
+        },
+        "data": {
+          "status": "COVERED"
+        },
+        "side_effect": {
+          "status": "COVERED"
+        },
+        "notification": {
+          "status": "COVERED"
+        },
+        "validation": {
+          "status": "COVERED"
+        },
+        "boundary": {
+          "status": "COVERED"
+        },
+        "persistence": {
+          "status": "COVERED"
+        },
+        "security": {
+          "status": "COVERED"
+        },
+        "privacy": {
+          "status": "COVERED"
+        },
+        "analytics": {
+          "status": "COVERED"
+        },
+        "acceptance": {
+          "status": "COVERED"
+        }
+      }
+    }
+  ],
+  "ux_coverage": [
+    {
+      "screen_id": "SCR-001",
+      "states": {
+        "default": {
+          "status": "COVERED"
+        },
+        "loading": {
+          "status": "COVERED"
+        },
+        "empty": {
+          "status": "COVERED"
+        },
+        "partial": {
+          "status": "COVERED"
+        },
+        "success": {
+          "status": "COVERED"
+        },
+        "error": {
+          "status": "COVERED"
+        },
+        "disabled": {
+          "status": "COVERED"
+        },
+        "permission_denied": {
+          "status": "COVERED"
+        },
+        "unauthenticated": {
+          "status": "COVERED"
+        },
+        "offline": {
+          "status": "COVERED"
+        },
+        "timeout": {
+          "status": "COVERED"
+        },
+        "retrying": {
+          "status": "COVERED"
+        },
+        "submitting": {
+          "status": "COVERED"
+        },
+        "completed": {
+          "status": "COVERED"
+        },
+        "cancelled": {
+          "status": "COVERED"
+        },
+        "expired": {
+          "status": "COVERED"
+        }
+      },
+      "actions": [
+        {
+          "key": "submit",
+          "cells": {
+            "entry": {
+              "status": "COVERED"
+            },
+            "precondition": {
+              "status": "COVERED"
+            },
+            "input": {
+              "status": "COVERED"
+            },
+            "validation": {
+              "status": "COVERED"
+            },
+            "submit": {
+              "status": "COVERED"
+            },
+            "success": {
+              "status": "COVERED"
+            },
+            "failure": {
+              "status": "COVERED"
+            },
+            "retry": {
+              "status": "COVERED"
+            },
+            "cancel": {
+              "status": "COVERED"
+            },
+            "back": {
+              "status": "COVERED"
+            },
+            "refresh": {
+              "status": "COVERED"
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED"
+            },
+            "timeout": {
+              "status": "COVERED"
+            },
+            "offline": {
+              "status": "COVERED"
+            },
+            "permission": {
+              "status": "COVERED"
+            },
+            "session_expiration": {
+              "status": "COVERED"
+            },
+            "data_mutation": {
+              "status": "COVERED"
+            },
+            "side_effect": {
+              "status": "COVERED"
+            },
+            "notification": {
+              "status": "COVERED"
+            },
+            "persistence": {
+              "status": "COVERED"
+            },
+            "undo": {
+              "status": "COVERED"
+            },
+            "destructive_confirmation": {
+              "status": "COVERED"
+            }
+          }
+        }
+      ]
+    }
+  ],
   "contradictions": []
 }
