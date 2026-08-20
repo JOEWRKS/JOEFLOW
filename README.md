@@ -2,7 +2,7 @@
 
 Runtime-independent Agent Skill for closing product and UX decisions before implementation.
 
-Current contract: **v0.1.1 Closure Hardening**.
+Current contract: **v0.1.2 Semantic Closure Integrity**.
 
 ## What it provides
 

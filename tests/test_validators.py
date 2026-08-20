@@ -34,17 +34,17 @@ def closed_state():
         "persistence", "undo", "destructive_confirmation",
     )
     state = {
-        "schema_version": "0.1.1",
+        "schema_version": "0.1.2",
         "project": {"slug": "sample", "status": "CLOSED", "definition_revision": 1, "user_approved": True, "approval": {"approved_revision": 1, "approved_digest": None, "approved_at": "2026-08-20T00:00:00Z"}},
         "objects": {
             "goals": [{"id": "GOAL-001", "status": "CURRENT"}],
             "users": [{"id": "USR-001", "status": "CURRENT"}],
             "requirements": [{"id": "REQ-001", "status": "CURRENT", "acceptance": ["AC-001"], "screens": ["SCR-001"]}],
             "unknowns": [],
-            "decisions": [{"id": "DEC-001", "status": "ANSWERED", "decision": "Use the defined flow", "source": "user", "affects": ["REQ-001"]}],
+            "decisions": [{"id": "DEC-001", "status": "ANSWERED", "decision": "Use the defined flow", "reason": "It satisfies the approved requirement.", "source": "user", "affects": ["REQ-001"]}],
             "rules": [],
             "flows": [{"id": "FLOW-001", "status": "CURRENT", "screens": ["SCR-001"]}],
-            "screens": [{"id": "SCR-001", "status": "CURRENT", "requirements": ["REQ-001"]}],
+            "screens": [{"id": "SCR-001", "status": "CURRENT", "requirements": ["REQ-001"], "major_actions": ["submit"]}],
             "states": [],
             "data": [],
             "integrations": [],
@@ -160,7 +160,7 @@ class ValidatorCLITest(unittest.TestCase):
 
     def test_closure_rejects_empty_product_definition(self):
         state = {
-            "schema_version": "0.1.1",
+            "schema_version": "0.1.2",
             "project": {"slug": "empty", "status": "CLOSED", "definition_revision": 1, "user_approved": True, "approval": {"approved_revision": 1, "approved_digest": "invalid", "approved_at": "2026-08-20T00:00:00Z"}},
             "objects": {
                 "goals": [], "users": [], "requirements": [], "unknowns": [],

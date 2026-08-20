@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1.1",
+  "schema_version": "0.1.2",
   "project": {
     "slug": "sample",
     "status": "CLOSED",
@@ -7,7 +7,7 @@
     "user_approved": true,
     "approval": {
       "approved_revision": 1,
-      "approved_digest": "1b50bff015195a0b39becb2c6697ea122ee00d6db8aebb18aa04d945e0dbad39",
+      "approved_digest": "3016554f3ad28feee7da3758660c9340d4c250f19e6b339476702000b1f5cbed",
       "approved_at": "2026-08-20T00:00:00Z"
     }
   },
@@ -42,6 +42,7 @@
         "id": "DEC-001",
         "status": "ANSWERED",
         "decision": "Use the defined flow",
+        "reason": "It satisfies the approved requirement.",
         "source": "user",
         "affects": [
           "REQ-999"
@@ -64,6 +65,9 @@
         "status": "CURRENT",
         "requirements": [
           "REQ-001"
+        ],
+        "major_actions": [
+          "submit"
         ]
       }
     ],
