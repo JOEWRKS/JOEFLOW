@@ -12,6 +12,7 @@ export function PaymentPanel({ claim, state, dispatch }: Props) {
   const [reference, setReference] = useState('');
   const [failureReason, setFailureReason] = useState('');
   const [holdReason, setHoldReason] = useState('');
+  const [externalExecutionPossible, setExternalExecutionPossible] = useState(false);
   const [verificationOpen, setVerificationOpen] = useState(false);
   const [verification, setVerification] = useState({ result: 'Unclear', channel: '', maskedAccount: '', checkedFrom: '', checkedTo: '', externalReferenceOrResult: '', conclusion: '' });
 
@@ -40,7 +41,7 @@ export function PaymentPanel({ claim, state, dispatch }: Props) {
       {claim.status === 'Scheduled' && <>
         <div className="form-grid">
           <label>Actual payment date<input value={actualDate} onChange={(event) => setActualDate(event.target.value)} /></label>
-          <label>Payment method<select value={method} onChange={(event) => setMethod(event.target.value)}><option>Bank transfer</option><option>Corporate card</option><option>Other</option></select></label>
+          <label>Payment method<select value={method} onChange={(event) => setMethod(event.target.value)}><option>Bank transfer</option><option>Corporate card settlement</option><option>Cash</option><option>Other</option></select></label>
           {method === 'Other' && <label>Other method description<input value={methodDescription} onChange={(event) => setMethodDescription(event.target.value)} /></label>}
           <label>External reference<input value={reference} onChange={(event) => setReference(event.target.value)} /></label>
         </div>
@@ -50,7 +51,8 @@ export function PaymentPanel({ claim, state, dispatch }: Props) {
             <label>Payment failure reason<input value={failureReason} onChange={(event) => setFailureReason(event.target.value)} /></label>
             <button className="button danger-quiet" type="button" onClick={() => run('FAIL_PAYMENT', { reason: failureReason })}>Record payment failed</button>
             <label>Payment hold reason<input value={holdReason} onChange={(event) => setHoldReason(event.target.value)} /></label>
-            <button className="button secondary" type="button" onClick={() => run('HOLD_PAYMENT', { reason: holdReason })}>Place payment on hold</button>
+            <label><input type="checkbox" checked={externalExecutionPossible} onChange={(event) => setExternalExecutionPossible(event.target.checked)} /> External execution may have occurred</label>
+            <button className="button secondary" type="button" onClick={() => run('HOLD_PAYMENT', { reason: holdReason, externalExecutionPossible })}>Place payment on hold</button>
           </div>
         </details>
       </>}
@@ -74,7 +76,7 @@ export function PaymentPanel({ claim, state, dispatch }: Props) {
         {claim.payment.verification?.result === 'Unclear' && <p className="boundary-note">Execution remains uncertain. Do not retry or create a second payment.</p>}
       </>}
 
-      {claim.status === 'Payment hold' && <div className="critical-callout"><strong>Payment hold</strong><span>{claim.payment.holdReason} · Admin must reopen through the current manager and a new revision.</span></div>}
+      {claim.status === 'Payment hold' && <><div className="critical-callout"><strong>Payment hold</strong><span>{claim.payment.holdReason} · Admin must reopen through the current manager and a new revision.</span></div>{claim.payment.holdExternalExecutionPossible && !claim.payment.verification && <><button className="button secondary" type="button" onClick={() => setVerificationOpen(true)}>Verify held payment execution</button>{verificationOpen && <div className="verification-form form-grid"><label>Verification result<select value={verification.result} onChange={(event) => vf('result', event.target.value)}><option>Unclear</option><option>Not paid</option><option>Paid</option></select></label><label>Payment channel<input value={verification.channel} onChange={(event) => vf('channel', event.target.value)} /></label><label>Masked account<input value={verification.maskedAccount} onChange={(event) => vf('maskedAccount', event.target.value)} /></label><label>Lookup from<input value={verification.checkedFrom} onChange={(event) => vf('checkedFrom', event.target.value)} /></label><label>Lookup to<input value={verification.checkedTo} onChange={(event) => vf('checkedTo', event.target.value)} /></label><label>Reference or lookup result<input value={verification.externalReferenceOrResult} onChange={(event) => vf('externalReferenceOrResult', event.target.value)} /></label><label className="span-2">Verification conclusion<textarea value={verification.conclusion} onChange={(event) => vf('conclusion', event.target.value)} /></label><button className="button primary span-2" type="button" onClick={() => run('VERIFY_HELD_PAYMENT', verification)}>Record held-payment verification</button></div>}</>}</>}
       {claim.status === 'Payment completed' && <div className="success-callout"><strong>Original payment is immutable</strong><span>{claim.payment.actualDate} · {claim.payment.method} · ref {claim.payment.externalReference}</span></div>}
     </section>
   );

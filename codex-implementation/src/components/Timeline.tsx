@@ -19,8 +19,9 @@ export function Timeline({ state, role, actorId, raw = false }: Props) {
       {events.length === 0 ? <p className="helper-text">No authorized events in this simulated fixture yet.</p> : <ol className="audit-list">
         {[...events].reverse().map((event) => <li key={event.id}>
           <strong>{event.action.replaceAll('_', ' ')}</strong>
-          <span>{event.at} · {event.targetId}</span>
-          <small>{raw ? `${event.id} · actor ${event.actorId} · changed ${event.changedFields.join(', ')}` : `Revision event · ${event.changedFields.join(', ')}`}</small>
+          <span>{event.at} · {event.targetId}{event.revision ? ` · revision ${event.revision}` : ''}</span>
+          <small>{raw ? `${event.id} · actor ${event.actorId} · target version ${event.targetVersion ?? 'n/a'} · changed ${event.changedFields.join(', ')}` : `${state.users[event.actorId]?.name ?? 'System'} · ${state.users[event.actorId]?.roles.join(' + ') ?? 'SYSTEM'}${event.reason ? ` · ${event.reason}` : ''}`}</small>
+          {raw && <details><summary>Before / after provenance</summary><pre>{JSON.stringify({ before: event.before, after: event.after }, null, 2)}</pre></details>}
         </li>)}
       </ol>}
     </section>

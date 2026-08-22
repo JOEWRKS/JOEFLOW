@@ -27,6 +27,17 @@ function Harness() {
 }
 
 describe('EmployeeSurface', () => {
+  it('searches and filters only the current authorized claim list', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.type(screen.getByRole('searchbox', { name: 'Search claims' }), 'clm-draft');
+    expect(screen.getByRole('button', { name: 'clm-draft · Draft' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'clm-submitted · Submitted' })).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Status filter' }), 'Submitted');
+    expect(screen.getByText('No claims match the current filters.')).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'Sort claims' })).toBeVisible();
+  });
+
   it('edits a draft with labeled required fields and blocks a future expense date', async () => {
     const user = userEvent.setup();
     render(<Harness />);
@@ -49,6 +60,17 @@ describe('EmployeeSurface', () => {
     expect(screen.getAllByText('Linked', { selector: '[data-status]' })).not.toHaveLength(0);
     expect(screen.getByLabelText('audit count')).toHaveTextContent('1');
     expect(screen.getByText(/Failed bytes are discarded/i)).toBeVisible();
+  });
+
+  it('keeps a timed-out selected file unlinked and exposes bounded scan retry', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Deterministic scan result' }), 'Timeout');
+    const receipt = new File(['pending bytes'], 'pending.pdf', { type: 'application/pdf' });
+    await user.upload(screen.getByLabelText('Choose receipt file'), receipt);
+    expect(screen.getByText('pending.pdf')).toBeVisible();
+    expect(screen.getAllByText('Scanning', { selector: '[data-status]' })).not.toHaveLength(0);
+    expect(screen.getByRole('button', { name: /Retry scan file-/ })).toBeVisible();
   });
 
   it('truthfully marks edits unsaved and saves on blur without losing the browser value', async () => {

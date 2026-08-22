@@ -1,6 +1,8 @@
 import type { Claim, DomainState, Role } from './types';
 
 export function claimsForRole(state: DomainState, actorId: string, role: Role): Claim[] {
+  const actor = state.users[actorId];
+  if (!actor?.active || !actor.roles.includes(role)) return [];
   const claims = Object.values(state.claims);
   if (role === 'EMPLOYEE') return claims.filter((claim) => claim.employeeId === actorId);
   if (role === 'MANAGER') {

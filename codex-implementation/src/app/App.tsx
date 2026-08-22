@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FeedbackRegion } from '../components/FeedbackRegion';
 import { RoleSwitcher } from '../components/RoleSwitcher';
-import { StateLab } from '../components/StateLab';
+import { RoleStateSurface, StateLab, type UXState } from '../components/StateLab';
 import { StatusBadge } from '../components/StatusBadge';
 import type { Role } from '../domain/types';
 import { useDomain } from './useDomain';
@@ -19,9 +19,11 @@ const ROLE_META: Record<Role, { title: string; subtitle: string; actorId: string
 
 export function App() {
   const [role, setRole] = useState<Role>('EMPLOYEE');
+  const [previewState, setPreviewState] = useState<UXState>('Default');
   const { state, dispatch, reset, feedback } = useDomain();
-  const current = role === 'EMPLOYEE' ? state.claims['clm-submitted'] : Object.values(state.claims)[0];
+  const current = role === 'EMPLOYEE' ? state.claims['clm-submitted'] : role === 'MANAGER' ? state.claims['clm-submitted'] : role === 'FINANCE' ? state.claims['clm-approved'] : state.claims['clm-completed'];
   const meta = ROLE_META[role];
+  const authorized = Boolean(state.users[meta.actorId]?.active && state.users[meta.actorId].roles.includes(role));
 
   return (
     <div className="app-shell">
@@ -50,7 +52,7 @@ export function App() {
         </header>
         <FeedbackRegion feedback={feedback} />
 
-        <section className="summary-grid" aria-label="Workspace summary">
+        {authorized && <section className="summary-grid" aria-label="Workspace summary">
           <article className="metric-card">
             <span>Current sample</span>
             <strong>{current.id}</strong>
@@ -66,9 +68,10 @@ export function App() {
             <strong>rev {state.canonicalRevision}</strong>
             <small title={state.canonicalDigest}>{state.canonicalDigest.slice(0, 12)}…</small>
           </article>
-        </section>
+        </section>}
 
-        {role === 'EMPLOYEE' ? <EmployeeSurface state={state} dispatch={dispatch} /> : role === 'MANAGER' ? <ManagerSurface state={state} dispatch={dispatch} /> : role === 'FINANCE' ? <FinanceSurface state={state} dispatch={dispatch} /> : role === 'ADMIN' ? <AdminSurface state={state} dispatch={dispatch} /> : <section className="workspace-placeholder card" aria-labelledby="workspace-preview-title">
+        <StateLab role={role} selected={previewState} onChange={setPreviewState} />
+        {previewState !== 'Default' ? <RoleStateSurface role={role} state={previewState} onReturn={() => setPreviewState('Default')} /> : !authorized ? <section className="empty-panel critical-callout"><h2>Access unavailable</h2><p>The latest account or role authorization is inactive. Governed records and attachments are hidden immediately.</p></section> : role === 'EMPLOYEE' ? <EmployeeSurface state={state} dispatch={dispatch} /> : role === 'MANAGER' ? <ManagerSurface state={state} dispatch={dispatch} /> : role === 'FINANCE' ? <FinanceSurface state={state} dispatch={dispatch} /> : role === 'ADMIN' ? <AdminSurface state={state} dispatch={dispatch} /> : <section className="workspace-placeholder card" aria-labelledby="workspace-preview-title">
           <div>
             <p className="eyebrow">Audited surface</p>
             <h2 id="workspace-preview-title">{meta.title} workspace</h2>
@@ -76,7 +79,6 @@ export function App() {
           </div>
           <StatusBadge status={current.status} />
         </section>}
-        <StateLab />
       </main>
     </div>
   );

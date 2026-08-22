@@ -1,5 +1,5 @@
 interface Props {
-  feedback: { kind: 'success' | 'error' | 'info'; message: string } | null;
+  feedback: { kind: 'success' | 'error' | 'info'; message: string; changedFields?: string[]; preservedInput?: Record<string, unknown> } | null;
 }
 
 export function FeedbackRegion({ feedback }: Props) {
@@ -7,7 +7,7 @@ export function FeedbackRegion({ feedback }: Props) {
   return (
     <div className={`feedback ${feedback.kind}`} role={feedback.kind === 'error' ? 'alert' : 'status'} aria-live="polite">
       <span aria-hidden="true">{feedback.kind === 'success' ? '✓' : feedback.kind === 'error' ? '!' : 'i'}</span>
-      {feedback.message}
+      <div><strong>{feedback.message}</strong>{feedback.changedFields?.length ? <small>Changed on server: {feedback.changedFields.join(', ')}. Your browser input is preserved for comparison.</small> : null}</div>
     </div>
   );
 }

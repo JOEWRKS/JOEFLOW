@@ -6,8 +6,9 @@ interface Props { claim: Claim; state: DomainState; dispatch: (command: DomainCo
 
 export function AttachmentPanel({ claim, state, dispatch }: Props) {
   const revision = claim.revisions.at(-1)!;
-  const ids = [...revision.receiptIds, ...(revision.exchangeEvidenceIds ?? [])];
+  const ids = [...new Set([...revision.receiptIds, ...(revision.exchangeEvidenceIds ?? []), ...Object.values(state.files).filter((file) => file.claimId === claim.id && file.scanStatus === 'Scanning').map((file) => file.id)])];
   const [uploadState, setUploadState] = useState<'Idle' | 'Scanning' | 'Failed and discarded'>('Idle');
+  const [scanOutcome, setScanOutcome] = useState('Clean');
   const upload = async (event: ChangeEvent<HTMLInputElement>, source: 'camera' | 'file', purpose: 'RECEIPT' | 'FX_EVIDENCE') => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -19,14 +20,24 @@ export function AttachmentPanel({ claim, state, dispatch }: Props) {
       const result = dispatch({
         type: 'LINK_ATTACHMENT', actorId: 'usr-employee', targetId: claim.id, expectedVersion: claim.version,
         idempotencyKey: `ui-upload-${source}-${purpose}-${claim.id}-${claim.version}-${sha256}`,
-        input: { name: file.name, mime: file.type, sizeBytes: file.size, sha256, source, purpose },
+        input: { name: file.name, mime: file.type, sizeBytes: file.size, sha256, source, purpose, scanOutcome },
       });
-      setUploadState(result.outcome.status === 'committed' ? 'Idle' : 'Failed and discarded');
+      setUploadState(result.outcome.status === 'committed' && result.outcome.message.includes('timed out') ? 'Scanning' : result.outcome.status === 'committed' && result.outcome.message.includes('discarded') ? 'Failed and discarded' : result.outcome.status === 'committed' ? 'Idle' : 'Failed and discarded');
     } catch {
       setUploadState('Failed and discarded');
     } finally {
       event.target.value = '';
     }
+  };
+  const retryScan = (fileId: string) => {
+    const file = state.files[fileId];
+    const result = dispatch({
+      type: 'RETRY_ATTACHMENT_SCAN', actorId: 'usr-employee', targetId: claim.id, expectedVersion: claim.version,
+      idempotencyKey: `ui-scan-retry-${claim.id}-${fileId}-${file.scanAttempts ?? 0}-${scanOutcome}`,
+      input: { fileId, scanOutcome },
+    });
+    const next = result.state.files[fileId];
+    setUploadState(next?.scanStatus === 'Scanning' ? 'Scanning' : next?.scanStatus === 'Linked' ? 'Idle' : 'Failed and discarded');
   };
 
   return (
@@ -37,16 +48,18 @@ export function AttachmentPanel({ claim, state, dispatch }: Props) {
           <article className="attachment-row" key={file.id}>
             <div><strong>{file.name}</strong><small>{file.purpose.replace('_', ' ')} · {(file.sizeBytes / 1000).toFixed(0)} KB · {file.source}</small></div>
             <StatusBadge status={file.scanStatus} />
+            {file.scanStatus === 'Scanning' && <button className="button secondary" type="button" onClick={() => retryScan(file.id)}>Retry scan {file.id}</button>}
           </article>
         ))}
       </div>
       {claim.status === 'Draft' && <div className="button-row">
+        <label>Deterministic scan result<select value={scanOutcome} onChange={(event) => setScanOutcome(event.target.value)}><option>Clean</option><option>Timeout</option><option>Malware</option></select></label>
         <label className="button secondary">Capture receipt<input className="visually-hidden" type="file" capture="environment" accept="image/jpeg,image/png,application/pdf" onChange={(event) => void upload(event, 'camera', 'RECEIPT')} /></label>
         <label className="button secondary">Choose receipt file<input className="visually-hidden" type="file" accept="image/jpeg,image/png,application/pdf" onChange={(event) => void upload(event, 'file', 'RECEIPT')} /></label>
         {revision.currency !== 'KRW' && <label className="button secondary">Add FX evidence<input className="visually-hidden" type="file" accept="image/jpeg,image/png,application/pdf" onChange={(event) => void upload(event, 'file', 'FX_EVIDENCE')} /></label>}
       </div>}
       {uploadState !== 'Idle' && <StatusBadge status={uploadState} />}
-      <p className="helper-text">JPG, PNG, or PDF up to 10 MB each. Receipt limit 10; FX evidence limit 5. Scan retries are simulated at 30s and 2m; Failed bytes are discarded and must be selected again.</p>
+      <p className="helper-text">JPG, PNG, or PDF up to 10 MB each. Receipt limit 10; FX evidence limit 5. This local deterministic fixture records the 30-second and two-minute retry generations; failed bytes are discarded and must be selected again.</p>
     </section>
   );
 }

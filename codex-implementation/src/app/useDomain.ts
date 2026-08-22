@@ -6,6 +6,8 @@ import type { CommandResult, DomainCommand, DomainState } from '../domain/types'
 interface Feedback {
   kind: 'success' | 'error' | 'info';
   message: string;
+  changedFields?: string[];
+  preservedInput?: Record<string, unknown>;
 }
 
 export function useDomain() {
@@ -21,6 +23,8 @@ export function useDomain() {
     setFeedback({
       kind: result.outcome.status === 'committed' ? 'success' : 'error',
       message: result.outcome.message,
+      changedFields: result.outcome.code === 'STALE_VERSION' ? result.changedFields : undefined,
+      preservedInput: result.outcome.code === 'STALE_VERSION' ? result.outcome.preservedInput : undefined,
     });
     return result;
   }, [state]);

@@ -1,16 +1,17 @@
 import { commandFingerprint } from './commands';
+import { claimsForRole } from './selectors';
 import type { Adjustment, AuditEvent, Claim, CommandOutcome, CommandResult, DeliveryEvent, DomainCommand, DomainState, Role } from './types';
 
 const REVIEW_COMMANDS = new Set(['APPROVE_CLAIM', 'REQUEST_CHANGES', 'FINAL_REJECT_CLAIM', 'REVOKE_APPROVAL']);
 const FINANCE_COMMANDS = new Set([
   'SCHEDULE_PAYMENT', 'COMPLETE_PAYMENT', 'FAIL_PAYMENT', 'HOLD_PAYMENT', 'VERIFY_FAILED_PAYMENT',
-  'RESCHEDULE_PAYMENT', 'CREATE_ADJUSTMENT', 'COMPLETE_ADJUSTMENT', 'FAIL_ADJUSTMENT', 'RESOLVE_ADJUSTMENT',
+  'VERIFY_HELD_PAYMENT', 'RESCHEDULE_PAYMENT', 'CREATE_ADJUSTMENT', 'COMPLETE_ADJUSTMENT', 'FAIL_ADJUSTMENT', 'RESOLVE_ADJUSTMENT',
 ]);
-const EMPLOYEE_COMMANDS = new Set(['UPDATE_DRAFT', 'LINK_ATTACHMENT', 'SUBMIT_CLAIM', 'WITHDRAW_CLAIM', 'DELETE_DRAFT', 'REVISE_CLAIM']);
+const EMPLOYEE_COMMANDS = new Set(['UPDATE_DRAFT', 'LINK_ATTACHMENT', 'RETRY_ATTACHMENT_SCAN', 'SUBMIT_CLAIM', 'WITHDRAW_CLAIM', 'DELETE_DRAFT', 'REVISE_CLAIM']);
 const ADMIN_COMMANDS = new Set([
-  'ISSUE_INVITATION', 'REISSUE_INVITATION', 'REVOKE_INVITATION', 'UPDATE_ACCOUNT', 'ASSIGN_MANAGER',
-  'UPDATE_CATEGORY', 'SET_LEGAL_HOLD', 'RELEASE_LEGAL_HOLD', 'REASSIGN_MANAGER', 'REASSIGN_FINANCE',
-  'RETRY_DELIVERY', 'EXPORT_CSV',
+  'ISSUE_INVITATION', 'REISSUE_INVITATION', 'REVOKE_INVITATION', 'EXPIRE_INVITATIONS', 'UPDATE_ACCOUNT', 'ASSIGN_MANAGER',
+  'CREATE_CATEGORY', 'UPDATE_CATEGORY', 'SET_LEGAL_HOLD', 'RELEASE_LEGAL_HOLD', 'REASSIGN_MANAGER', 'REASSIGN_FINANCE', 'REOPEN_HOLD',
+  'RETRY_DELIVERY', 'EXPORT_CSV', 'DOWNLOAD_EXPORT', 'RUN_DAILY_OPERATIONS', 'RUN_DELIVERY_RETRIES',
 ]);
 
 function hasRole(state: DomainState, actorId: string, role: Role): boolean {
@@ -34,12 +35,14 @@ function nextId(state: DomainState, prefix: string): string {
   return id;
 }
 
-function queueDelivery(state: DomainState, targetId: string, recipientId: string, template: string): string[] {
+function queueDelivery(state: DomainState, targetId: string, recipientId: string, template: string, uniqueBase?: string): string[] {
   const ids: string[] = [];
   for (const channel of ['APP', 'EMAIL'] as const) {
+    const uniqueKey = uniqueBase ? `${uniqueBase}:${channel}` : undefined;
+    if (uniqueKey && state.deliveries.some((item) => item.uniqueKey === uniqueKey)) continue;
     const event: DeliveryEvent = {
       id: nextId(state, 'delivery'), targetId, channel, recipientId, template,
-      status: 'Queued', attempts: 0, manualRetryUsed: false, version: 1,
+      status: 'Queued', attempts: 0, manualRetryUsed: false, version: 1, uniqueKey,
     };
     state.deliveries.push(event);
     ids.push(event.id);
@@ -141,7 +144,7 @@ function financeTransition(state: DomainState, command: DomainCommand, claim: Cl
       const approvalDate = claim.approvedAt?.slice(0, 10) ?? '';
       if (!actualDate || actualDate > today || actualDate < approvalDate) return rejected(state, command, 'INVALID_ACTUAL_DATE', 'Actual payment date must be between approval and today.', claim.version);
       const method = text(command.input, 'method');
-      if (!['Bank transfer', 'Corporate card', 'Other'].includes(method)) return rejected(state, command, 'PAYMENT_METHOD_REQUIRED', 'A supported payment method is required.', claim.version);
+      if (!['Bank transfer', 'Corporate card settlement', 'Cash', 'Other'].includes(method)) return rejected(state, command, 'PAYMENT_METHOD_REQUIRED', 'A supported payment method is required.', claim.version);
       if (method === 'Other' && !text(command.input, 'methodDescription')) return rejected(state, command, 'METHOD_DESCRIPTION_REQUIRED', 'Other payment method requires a description.', claim.version);
       const externalReference = text(command.input, 'externalReference');
       if (!externalReference) return rejected(state, command, 'REFERENCE_REQUIRED', 'External payment reference is required.', claim.version);
@@ -170,8 +173,10 @@ function financeTransition(state: DomainState, command: DomainCommand, claim: Cl
       if (!reason) return rejected(state, command, 'REASON_REQUIRED', 'Payment hold reason is required.', claim.version);
       claim.payment.ownerId ||= command.actorId;
       claim.payment.holdReason = reason;
+      claim.payment.holdExternalExecutionPossible = command.input.externalExecutionPossible === true;
+      claim.payment.verification = undefined;
       claim.status = 'Payment hold';
-      return commit(state, command, ['payment.ownerId', 'payment.holdReason', 'status'], 'Payment placed on hold.', [claim.employeeId], reason);
+      return commit(state, command, ['payment.ownerId', 'payment.holdReason', 'payment.holdExternalExecutionPossible', 'status'], 'Payment placed on hold.', [claim.employeeId], reason);
     }
     case 'VERIFY_FAILED_PAYMENT': {
       if (claim.status !== 'Payment failed') return rejected(state, command, 'INVALID_STATUS', 'Verification is available only for failed payments.', claim.version);
@@ -190,6 +195,23 @@ function financeTransition(state: DomainState, command: DomainCommand, claim: Cl
       };
       return commit(state, command, ['payment.verification'], 'Payment execution verification recorded.');
     }
+    case 'VERIFY_HELD_PAYMENT': {
+      if (claim.status !== 'Payment hold') return rejected(state, command, 'INVALID_STATUS', 'Verification is available only for held payments.', claim.version);
+      if (ownerDenied) return ownerDenied;
+      const result = text(command.input, 'result');
+      const required = ['channel', 'maskedAccount', 'checkedFrom', 'checkedTo', 'externalReferenceOrResult', 'conclusion'];
+      if (!['Not paid', 'Paid', 'Unclear'].includes(result) || required.some((key) => !text(command.input, key))) {
+        return rejected(state, command, 'STRUCTURED_VERIFICATION_REQUIRED', 'All duplicate-payment verification fields are required.', claim.version);
+      }
+      claim.payment.verification = {
+        result: result as 'Not paid' | 'Paid' | 'Unclear',
+        channel: text(command.input, 'channel'), maskedAccount: text(command.input, 'maskedAccount'),
+        checkedFrom: text(command.input, 'checkedFrom'), checkedTo: text(command.input, 'checkedTo'),
+        externalReferenceOrResult: text(command.input, 'externalReferenceOrResult'), conclusion: text(command.input, 'conclusion'),
+        checkedBy: command.actorId, checkedAt: state.now,
+      };
+      return commit(state, command, ['payment.verification'], 'Held-payment execution verification recorded.');
+    }
     case 'RESCHEDULE_PAYMENT': {
       if (claim.status !== 'Payment failed') return rejected(state, command, 'INVALID_STATUS', 'Only failed payments can be rescheduled.', claim.version);
       if (ownerDenied) return ownerDenied;
@@ -204,7 +226,8 @@ function financeTransition(state: DomainState, command: DomainCommand, claim: Cl
     case 'CREATE_ADJUSTMENT': {
       if (claim.status !== 'Payment completed') return rejected(state, command, 'INVALID_STATUS', 'Adjustments require a completed payment.', claim.version);
       if (ownerDenied) return ownerDenied;
-      const active = claim.adjustmentIds.map((id) => state.adjustments[id]).some((item) => item && ['In progress', 'Needs verification'].includes(item.status));
+      const active = claim.adjustmentIds.map((id) => state.adjustments[id]).some((item) => item
+        && (['In progress', 'Needs verification'].includes(item.status) || (item.status === 'Failed' && !item.verification)));
       if (active) return rejected(state, command, 'ACTIVE_ADJUSTMENT_EXISTS', 'Only one adjustment may be active at a time.', claim.version);
       const kind = text(command.input, 'kind');
       const amountKrw = Number(command.input.amountKrw);
@@ -292,6 +315,9 @@ function daysBetween(start: string, end: string): number {
 
 function validateSubmission(state: DomainState, command: DomainCommand, claim: Claim): CommandResult | undefined {
   const current = claim.revisions.at(-1)!;
+  if (Object.values(state.files).some((file) => file.claimId === claim.id && file.scanStatus === 'Scanning')) {
+    return rejected(state, command, 'SCAN_PENDING', 'Submission is blocked while attachment scanning remains unresolved.', claim.version);
+  }
   const currentManagerId = state.users[claim.employeeId]?.managerId;
   if (!currentManagerId || !state.users[currentManagerId]?.active || !state.users[currentManagerId]?.roles.includes('MANAGER') || currentManagerId === claim.employeeId) {
     return rejected(state, command, 'MANAGER_REQUIRED', 'An active direct manager other than the employee is required.', claim.version);
@@ -336,11 +362,12 @@ function adminVersion(state: DomainState, command: DomainCommand): number {
     ?? state.categories[command.targetId]?.version
     ?? state.deliveries.find((item) => item.id === command.targetId)?.version
     ?? state.claims[command.targetId]?.version
+    ?? state.exports.find((item) => item.id === command.targetId)?.version
     ?? 0;
 }
 
 function adminTransition(state: DomainState, command: DomainCommand): CommandResult {
-  if (!hasRole(state, command.actorId, 'ADMIN') && !(command.type === 'EXPORT_CSV' && hasRole(state, command.actorId, 'FINANCE'))) {
+  if (!hasRole(state, command.actorId, 'ADMIN') && !(['EXPORT_CSV', 'DOWNLOAD_EXPORT'].includes(command.type) && hasRole(state, command.actorId, 'FINANCE'))) {
     return rejected(state, command, 'FORBIDDEN', 'Admin role is required.', adminVersion(state, command));
   }
   const currentVersion = adminVersion(state, command);
@@ -377,6 +404,14 @@ function adminTransition(state: DomainState, command: DomainCommand): CommandRes
       invitation.version += 1;
       return commit(state, command, ['invitation.status'], 'Invitation revoked.', [], reason);
     }
+    case 'EXPIRE_INVITATIONS': {
+      const expired = Object.values(state.invitations).filter((item) => item.status === 'Pending' && Date.parse(item.expiresAt) <= Date.parse(state.now));
+      for (const invitation of expired) {
+        invitation.status = 'Expired';
+        invitation.version += 1;
+      }
+      return commit(state, command, ['invitations.status'], `${expired.length} expired invitation(s) invalidated.`);
+    }
     case 'UPDATE_ACCOUNT': {
       const user = state.users[command.targetId];
       if (!user) return rejected(state, command, 'NOT_FOUND', 'User not found.', currentVersion);
@@ -403,6 +438,17 @@ function adminTransition(state: DomainState, command: DomainCommand): CommandRes
       employee.managerId = managerId;
       employee.version += 1;
       return commit(state, command, ['user.managerId'], 'Direct manager updated for future submissions.', [employee.id, managerId], reason);
+    }
+    case 'CREATE_CATEGORY': {
+      const name = text(command.input, 'name');
+      if (!name || !reason) return rejected(state, command, 'CATEGORY_DETAILS_REQUIRED', 'Category name and reason are required.', currentVersion);
+      if (Object.values(state.categories).some((item) => item.name.toLowerCase() === name.toLowerCase())) {
+        return rejected(state, command, 'CATEGORY_NAME_EXISTS', 'Category names must be unique.', currentVersion);
+      }
+      const nextNumber = Math.max(0, ...Object.keys(state.categories).map((id) => Number(id.match(/(\d+)$/)?.[1] ?? 0))) + 1;
+      const id = `CAT-${String(nextNumber).padStart(3, '0')}`;
+      state.categories[id] = { id, name, active: true, version: 1 };
+      return commit(state, { ...command, targetId: id }, ['category'], 'Active category created.', [], reason);
     }
     case 'UPDATE_CATEGORY': {
       const category = state.categories[command.targetId];
@@ -450,6 +496,19 @@ function adminTransition(state: DomainState, command: DomainCommand): CommandRes
       claim.payment.ownerId = financeId;
       return commit(state, command, ['payment.ownerId'], 'Finance owner reassigned.', [financeId], reason);
     }
+    case 'REOPEN_HOLD': {
+      const claim = state.claims[command.targetId];
+      if (!claim || claim.status !== 'Payment hold') return rejected(state, command, 'INVALID_STATUS', 'Only a held payment can be reopened for correction.', currentVersion);
+      if (!reason) return rejected(state, command, 'REASON_REQUIRED', 'Reopening a held payment requires a reason.', currentVersion);
+      if (claim.payment.holdExternalExecutionPossible && claim.payment.verification?.result !== 'Not paid') {
+        return rejected(state, command, 'NOT_PAID_VERIFICATION_REQUIRED', 'A Not paid conclusion is required when external execution may have occurred.', currentVersion);
+      }
+      claim.status = 'Changes requested';
+      claim.approvedRevision = undefined;
+      claim.approvedAt = undefined;
+      claim.payment = {};
+      return commit(state, command, ['status', 'approvedRevision', 'approvedAt', 'payment'], 'Held claim reopened for correction and reapproval.', [claim.employeeId], reason);
+    }
     case 'RETRY_DELIVERY': {
       const delivery = state.deliveries.find((item) => item.id === command.targetId);
       if (!delivery || delivery.status !== 'Permanent failure') return rejected(state, command, 'DELIVERY_NOT_RETRYABLE', 'Only a permanent failure can be retried manually.', currentVersion);
@@ -463,11 +522,87 @@ function adminTransition(state: DomainState, command: DomainCommand): CommandRes
       return commit(state, command, ['delivery.status', 'delivery.attempts', 'delivery.manualRetryUsed', 'warning.resolved'], 'Manual delivery retry queued.');
     }
     case 'EXPORT_CSV': {
-      const rows = Object.values(state.claims);
+      const authorized = hasRole(state, command.actorId, 'ADMIN') ? Object.values(state.claims) : claimsForRole(state, command.actorId, 'FINANCE');
+      const requestedIds = Array.isArray(command.input.claimIds) ? command.input.claimIds.map(String) : authorized.map((claim) => claim.id);
+      const authorizedIds = new Set(authorized.map((claim) => claim.id));
+      const rows = requestedIds.filter((id) => authorizedIds.has(id)).map((id) => state.claims[id]);
       if (rows.length > 10_000) return rejected(state, command, 'EXPORT_ROW_LIMIT', 'Current-filter export exceeds 10,000 rows.', currentVersion);
       const id = nextId(state, 'export');
-      state.exports.push({ id, actorId: command.actorId, createdAt: state.now, rowCount: rows.length, columns: ['claimId', 'status', 'expenseDate', 'merchant', 'currency', 'krwAmount', 'category', 'assignee'] });
+      const columns = ['claimId', 'status', 'expenseDate', 'merchant', 'currency', 'krwAmount', 'category', 'assignee'];
+      const csv = [columns.join(','), ...rows.map((claim) => {
+        const revision = claim.revisions.at(-1)!;
+        const assignee = state.users[claim.payment.ownerId ?? claim.managerId]?.name ?? '';
+        return [claim.id, claim.status, revision.expenseDate, revision.merchant, revision.currency, revision.krwAmount,
+          state.categories[revision.categoryId]?.name ?? revision.categoryNameSnapshot, assignee]
+          .map((value) => `"${String(value).replaceAll('"', '""')}"`).join(',');
+      })].join('\r\n');
+      state.exports.push({ id, actorId: command.actorId, createdAt: state.now, rowCount: rows.length, columns, filterSnapshot: text(command.input, 'filterSnapshot') || 'Current authorized scope', csv, version: 1 });
       return commit(state, { ...command, targetId: id }, ['exports'], `Export generated with ${rows.length} authorized rows.`);
+    }
+    case 'DOWNLOAD_EXPORT': {
+      const item = state.exports.find((exportItem) => exportItem.id === command.targetId);
+      if (!item || (item.actorId !== command.actorId && !hasRole(state, command.actorId, 'ADMIN'))) return rejected(state, command, 'EXPORT_NOT_FOUND', 'No authorized export is available.', currentVersion);
+      item.downloadedAt = state.now;
+      item.version += 1;
+      return commit(state, command, ['export.downloadedAt'], 'CSV download authorized and audited.');
+    }
+    case 'RUN_DAILY_OPERATIONS': {
+      const today = state.now.slice(0, 10);
+      const deliveryEventIds: string[] = [];
+      const extraAuditIds: string[] = [];
+      for (const claim of Object.values(state.claims)) {
+        if (claim.status === 'Scheduled' && claim.payment.scheduledDate && claim.payment.scheduledDate < today) {
+          claim.payment.overdue = true;
+          if (claim.payment.ownerId) deliveryEventIds.push(...queueDelivery(state, claim.id, claim.payment.ownerId, 'PAYMENT_OVERDUE', `PAYMENT_OVERDUE:${claim.id}:${today}`));
+        }
+        if (claim.status === 'Submitted') {
+          const submitted = claim.revisions.at(-1)?.submittedAt?.slice(0, 10);
+          const elapsed = submitted ? daysBetween(submitted, today) : 0;
+          if (elapsed >= 3) deliveryEventIds.push(...queueDelivery(state, claim.id, claim.managerId, 'MANAGER_REVIEW_REMINDER', `MANAGER_REVIEW_REMINDER:${claim.id}:${claim.managerId}:${today}`));
+          if (elapsed >= 7 && !state.warnings.some((item) => item.targetId === `review-${claim.id}` && !item.resolved)) {
+            state.warnings.push({ id: nextId(state, 'warning'), targetId: `review-${claim.id}`, message: `${claim.id} has awaited Manager review for ${elapsed} calendar days.`, resolved: false });
+          }
+        }
+        if (claim.status === 'Draft') {
+          const age = daysBetween(claim.updatedAt.slice(0, 10), today);
+          if (age >= 83 && age < 90) deliveryEventIds.push(...queueDelivery(state, claim.id, claim.employeeId, 'DRAFT_EXPIRY_WARNING', `DRAFT_EXPIRY_WARNING:${claim.id}`));
+        }
+      }
+      const expired = Object.values(state.claims).filter((claim) => claim.status === 'Draft' && daysBetween(claim.updatedAt.slice(0, 10), today) >= 90);
+      for (const claim of expired) {
+        const audit: AuditEvent = {
+          id: nextId(state, 'audit'), actorId: command.actorId, targetId: claim.id, action: command.type, at: state.now,
+          changedFields: ['expiredDraft.deleted', 'files.deleted'], targetVersion: claim.version, revision: claim.currentRevision,
+          before: structuredClone(claim) as unknown as Record<string, unknown>, reason: '90-day draft retention expiry',
+        };
+        state.auditEvents.push(audit); extraAuditIds.push(audit.id);
+        for (const file of Object.values(state.files)) if (file.claimId === claim.id) delete state.files[file.id];
+        delete state.claims[claim.id];
+      }
+      const result = commit(state, command, ['payment.overdue', 'review.reminders', 'draft.retention'], 'Daily KST operations completed.');
+      result.deliveryEventIds.push(...deliveryEventIds);
+      result.auditEventIds.push(...extraAuditIds);
+      return result;
+    }
+    case 'RUN_DELIVERY_RETRIES': {
+      const failedIds = Array.isArray(command.input.failedDeliveryIds) ? command.input.failedDeliveryIds.map(String) : [];
+      const changed: string[] = [];
+      for (const delivery of state.deliveries.filter((item) => failedIds.includes(item.id) && item.status === 'Queued')) {
+        delivery.attempts += 1;
+        delivery.version += 1;
+        changed.push(delivery.id);
+        if (delivery.attempts >= 3) {
+          delivery.status = 'Permanent failure';
+          delivery.nextRetryAt = undefined;
+          if (!state.warnings.some((warning) => warning.targetId === delivery.id && !warning.resolved)) {
+            state.warnings.push({ id: nextId(state, 'warning'), targetId: delivery.id, message: `${delivery.template} delivery permanently failed after three automatic retries.`, resolved: false });
+          }
+        } else {
+          const minutes = delivery.attempts === 1 ? 10 : 60;
+          delivery.nextRetryAt = new Date(Date.parse(state.now) + minutes * 60_000).toISOString();
+        }
+      }
+      return commit(state, command, ['delivery.attempts', 'delivery.status', 'warnings'], `Processed ${changed.length} failed delivery result(s).`);
     }
     default:
       return rejected(state, command, 'UNSUPPORTED_COMMAND', 'This Admin command is not implemented.', currentVersion);
@@ -520,14 +655,45 @@ function executeTransition(state: DomainState, command: DomainCommand, claim: Cl
       const current = claim.revisions.at(-1)!;
       if (purpose === 'RECEIPT' && current.receiptIds.length >= 10) return rejected(state, command, 'ATTACHMENT_LIMIT', 'A revision supports at most 10 receipt files.', claim.version);
       if (purpose === 'FX_EVIDENCE' && (current.exchangeEvidenceIds?.length ?? 0) >= 5) return rejected(state, command, 'ATTACHMENT_LIMIT', 'A revision supports at most 5 FX evidence files.', claim.version);
+      const scanOutcome = text(command.input, 'scanOutcome') || 'Clean';
+      if (scanOutcome === 'Malware') return commit(state, command, ['scan.failedBytesDiscarded'], 'Attachment was blocked by the scan and its bytes were discarded. Re-upload a safe file.');
       const id = nextId(state, 'file');
+      const scanning = scanOutcome === 'Timeout';
       state.files[id] = {
         id, claimId: claim.id, name, mime: mime as 'image/jpeg' | 'image/png' | 'application/pdf', sizeBytes,
         sha256, purpose: purpose as 'RECEIPT' | 'FX_EVIDENCE', source: source as 'camera' | 'file', scanStatus: 'Linked',
+        ...(scanning ? { scanStatus: 'Scanning' as const, scanAttempts: 0, nextScanRetryAt: new Date(Date.parse(state.now) + 30_000).toISOString() } : {}),
       };
-      if (purpose === 'RECEIPT') current.receiptIds.push(id);
-      else current.exchangeEvidenceIds = [...(current.exchangeEvidenceIds ?? []), id];
-      return commit(state, command, ['files', purpose === 'RECEIPT' ? 'revision.receiptIds' : 'revision.exchangeEvidenceIds'], 'Upload scanned clean and linked.');
+      if (!scanning) {
+        if (purpose === 'RECEIPT') current.receiptIds.push(id);
+        else current.exchangeEvidenceIds = [...(current.exchangeEvidenceIds ?? []), id];
+      }
+      return commit(state, command, ['files', ...(scanning ? ['file.scanStatus'] : [purpose === 'RECEIPT' ? 'revision.receiptIds' : 'revision.exchangeEvidenceIds'])], scanning ? 'Scan timed out. The file remains unlinked while bounded retries are pending.' : 'Upload scanned clean and linked.');
+    }
+    case 'RETRY_ATTACHMENT_SCAN': {
+      if (claim.status !== 'Draft') return rejected(state, command, 'INVALID_STATUS', 'Attachment scan recovery is available only for a Draft.', claim.version);
+      const fileId = text(command.input, 'fileId');
+      const file = state.files[fileId];
+      if (!file || file.claimId !== claim.id || file.scanStatus !== 'Scanning') return rejected(state, command, 'SCAN_NOT_RETRYABLE', 'No retryable scan exists for this draft.', claim.version);
+      const outcome = text(command.input, 'scanOutcome');
+      if (outcome === 'Clean') {
+        file.scanStatus = 'Linked'; file.nextScanRetryAt = undefined;
+        const current = claim.revisions.at(-1)!;
+        if (file.purpose === 'RECEIPT') current.receiptIds.push(file.id);
+        else current.exchangeEvidenceIds = [...(current.exchangeEvidenceIds ?? []), file.id];
+        return commit(state, command, ['file.scanStatus', file.purpose === 'RECEIPT' ? 'revision.receiptIds' : 'revision.exchangeEvidenceIds'], 'Retry scanned clean and linked the file.');
+      }
+      if (outcome === 'Malware') {
+        delete state.files[file.id];
+        return commit(state, command, ['file.failedBytesDiscarded'], 'Attachment retry was blocked and its bytes were discarded.');
+      }
+      file.scanAttempts = (file.scanAttempts ?? 0) + 1;
+      if (file.scanAttempts >= 2) {
+        delete state.files[file.id];
+        return commit(state, command, ['file.failedBytesDiscarded'], 'Scan remained indeterminate after two retries; bytes were discarded and re-upload is required.');
+      }
+      file.nextScanRetryAt = new Date(Date.parse(state.now) + 2 * 60_000).toISOString();
+      return commit(state, command, ['file.scanAttempts', 'file.nextScanRetryAt'], 'First scan retry timed out; final retry is scheduled after two minutes.');
     }
     case 'APPROVE_CLAIM':
       if (claim.status !== 'Submitted') return rejected(state, command, 'INVALID_STATUS', 'Only Submitted claims can be approved.', claim.version);
@@ -626,9 +792,51 @@ function createDraftTransition(state: DomainState, command: DomainCommand): Comm
   return commit(state, { ...command, targetId: id }, ['claim'], 'New draft created.');
 }
 
-function changedFieldsForStale(command: DomainCommand): string[] {
-  const keys = Object.keys(command.input).filter((key) => key !== 'revision');
-  return ['version', ...keys.map((key) => `input.${key}`)];
+function acceptInvitationTransition(state: DomainState, command: DomainCommand): CommandResult {
+  const invitation = state.invitations[command.targetId];
+  if (!invitation) return rejected(state, command, 'NOT_FOUND', 'Invitation not found.', command.expectedVersion);
+  if (invitation.version !== command.expectedVersion) return rejected(state, command, 'STALE_VERSION', 'The invitation changed before acceptance.', invitation.version);
+  if (invitation.status !== 'Pending') return rejected(state, command, 'INVALID_INVITATION_STATUS', 'Only a Pending invitation can be accepted.', invitation.version);
+  if (Date.parse(invitation.expiresAt) <= Date.parse(state.now)) return rejected(state, command, 'INVITATION_EXPIRED', 'This invitation has expired.', invitation.version);
+  const email = text(command.input, 'email').toLowerCase();
+  const name = text(command.input, 'name');
+  if (email !== invitation.email.toLowerCase()) return rejected(state, command, 'INVITED_EMAIL_REQUIRED', 'Sign in with the exact invited email.', invitation.version);
+  if (!name) return rejected(state, command, 'NAME_REQUIRED', 'A display name is required to activate the account.', invitation.version);
+  if (Object.values(state.users).some((item) => item.email?.toLowerCase() === email)) return rejected(state, command, 'ACCOUNT_EXISTS', 'An account already exists for the invited email.', invitation.version);
+  const id = nextId(state, 'user');
+  state.users[id] = { id, name, email, roles: [...invitation.roles], managerId: invitation.managerId, active: true, authVersion: 1, version: 1 };
+  invitation.status = 'Accepted';
+  invitation.version += 1;
+  return commit(state, command, ['invitation.status', 'user'], 'Invitation accepted and account activated.');
+}
+
+function targetSnapshot(state: DomainState, targetId: string): Record<string, unknown> | undefined {
+  const value = state.claims[targetId] ?? state.users[targetId] ?? state.categories[targetId] ?? state.invitations[targetId]
+    ?? state.files[targetId] ?? state.adjustments[targetId] ?? state.deliveries.find((item) => item.id === targetId)
+    ?? state.exports.find((item) => item.id === targetId);
+  return value ? structuredClone(value) as unknown as Record<string, unknown> : undefined;
+}
+
+function changedFieldsForStale(state: DomainState, command: DomainCommand): string[] {
+  const actual = state.auditEvents
+    .filter((event) => event.targetId === command.targetId && (event.targetVersion ?? 0) > command.expectedVersion)
+    .flatMap((event) => event.changedFields);
+  return ['version', ...new Set(actual)];
+}
+
+function enrichCommittedAudit(original: DomainState, result: CommandResult): CommandResult {
+  if (result.outcome.status !== 'committed') return result;
+  const state = structuredClone(result.state);
+  for (const auditId of result.auditEventIds) {
+    const audit = state.auditEvents.find((event) => event.id === auditId);
+    if (!audit) continue;
+    const claim = state.claims[audit.targetId];
+    audit.targetVersion = result.outcome.targetVersion;
+    audit.revision = claim?.currentRevision;
+    audit.before = targetSnapshot(original, audit.targetId);
+    audit.after = targetSnapshot(state, audit.targetId);
+  }
+  return { ...result, state };
 }
 
 function rememberResult(result: CommandResult, command: DomainCommand, fingerprint: string): CommandResult {
@@ -661,13 +869,22 @@ export function executeCommand(original: DomainState, command: DomainCommand): C
   }
 
   const state = structuredClone(original);
-  if (command.type === 'CREATE_DRAFT') return rememberResult(createDraftTransition(state, command), command, fingerprint);
-  if (ADMIN_COMMANDS.has(command.type)) return rememberResult(adminTransition(state, command), command, fingerprint);
+  if (command.type === 'CREATE_DRAFT') return rememberResult(enrichCommittedAudit(original, createDraftTransition(state, command)), command, fingerprint);
+  if (command.type === 'ACCEPT_INVITATION') {
+    const result = acceptInvitationTransition(state, command);
+    if (result.outcome.code === 'STALE_VERSION') result.changedFields = changedFieldsForStale(original, command);
+    return rememberResult(enrichCommittedAudit(original, result), command, fingerprint);
+  }
+  if (ADMIN_COMMANDS.has(command.type)) {
+    const result = adminTransition(state, command);
+    if (result.outcome.code === 'STALE_VERSION') result.changedFields = changedFieldsForStale(original, command);
+    return rememberResult(enrichCommittedAudit(original, result), command, fingerprint);
+  }
   const claim = state.claims[command.targetId];
   if (!claim) return rememberResult(rejected(original, command, 'NOT_FOUND', 'Claim not found.', command.expectedVersion), command, fingerprint);
   if (claim.version !== command.expectedVersion) {
     const result = rejected(original, command, 'STALE_VERSION', 'The claim changed. Review the latest state and retry.', claim.version);
-    result.changedFields = changedFieldsForStale(command);
+    result.changedFields = changedFieldsForStale(original, command);
     return rememberResult(result, command, fingerprint);
   }
 
@@ -677,5 +894,5 @@ export function executeCommand(original: DomainState, command: DomainCommand): C
   if (wrongRevision) return rememberResult(wrongRevision, command, fingerprint);
 
   const result = executeTransition(state, command, claim);
-  return rememberResult(result, command, fingerprint);
+  return rememberResult(enrichCommittedAudit(original, result), command, fingerprint);
 }

@@ -8,7 +8,7 @@ interface Props { claim: Claim; state: DomainState; dispatch: (command: DomainCo
 export function AdjustmentPanel({ claim, state, dispatch }: Props) {
   const totals = adjustmentTotals(state, claim.id);
   const adjustments = claim.adjustmentIds.map((id) => state.adjustments[id]).filter(Boolean);
-  const active = adjustments.find((item) => ['In progress', 'Needs verification'].includes(item.status));
+  const active = adjustments.find((item) => ['In progress', 'Needs verification'].includes(item.status) || (item.status === 'Failed' && !item.verification));
   const [creating, setCreating] = useState(false);
   const [kind, setKind] = useState('Recovery');
   const [amount, setAmount] = useState('0');

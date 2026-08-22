@@ -18,6 +18,7 @@ export type AdjustmentStatus = 'In progress' | 'Failed' | 'Needs verification' |
 export interface User {
   id: string;
   name: string;
+  email?: string;
   roles: Role[];
   managerId?: string;
   active: boolean;
@@ -55,17 +56,21 @@ export interface FileRecord {
   purpose: 'RECEIPT' | 'FX_EVIDENCE' | 'PAYMENT_EVIDENCE';
   source: 'camera' | 'file';
   scanStatus: 'Scanning' | 'Linked' | 'Failed and discarded';
+  scanAttempts?: number;
+  nextScanRetryAt?: string;
 }
 
 export interface PaymentRecord {
   ownerId?: string;
   scheduledDate?: string;
   actualDate?: string;
-  method?: 'Bank transfer' | 'Corporate card' | 'Other';
+  method?: 'Bank transfer' | 'Corporate card settlement' | 'Cash' | 'Other';
   methodDescription?: string;
   externalReference?: string;
   failureReason?: string;
   holdReason?: string;
+  holdExternalExecutionPossible?: boolean;
+  overdue?: boolean;
   verification?: {
     result: 'Not paid' | 'Paid' | 'Unclear';
     channel: string;
@@ -143,6 +148,10 @@ export interface AuditEvent {
   at: string;
   changedFields: string[];
   reason?: string;
+  targetVersion?: number;
+  revision?: number;
+  before?: Record<string, unknown>;
+  after?: Record<string, unknown>;
 }
 
 export interface DeliveryEvent {
@@ -155,6 +164,8 @@ export interface DeliveryEvent {
   attempts: number;
   manualRetryUsed: boolean;
   version: number;
+  uniqueKey?: string;
+  nextRetryAt?: string;
 }
 
 export interface OperationalWarning {
@@ -169,6 +180,7 @@ export type DomainCommandType =
   | 'SUBMIT_CLAIM'
   | 'UPDATE_DRAFT'
   | 'LINK_ATTACHMENT'
+  | 'RETRY_ATTACHMENT_SCAN'
   | 'WITHDRAW_CLAIM'
   | 'DELETE_DRAFT'
   | 'REVISE_CLAIM'
@@ -187,18 +199,25 @@ export type DomainCommandType =
   | 'COMPLETE_ADJUSTMENT'
   | 'FAIL_ADJUSTMENT'
   | 'RESOLVE_ADJUSTMENT'
+  | 'VERIFY_HELD_PAYMENT'
   | 'ISSUE_INVITATION'
   | 'REISSUE_INVITATION'
   | 'REVOKE_INVITATION'
+  | 'ACCEPT_INVITATION'
+  | 'EXPIRE_INVITATIONS'
   | 'UPDATE_ACCOUNT'
   | 'ASSIGN_MANAGER'
+  | 'CREATE_CATEGORY'
   | 'UPDATE_CATEGORY'
   | 'SET_LEGAL_HOLD'
   | 'RELEASE_LEGAL_HOLD'
   | 'REASSIGN_MANAGER'
   | 'REASSIGN_FINANCE'
   | 'RETRY_DELIVERY'
-  | 'EXPORT_CSV';
+  | 'EXPORT_CSV'
+  | 'DOWNLOAD_EXPORT'
+  | 'RUN_DAILY_OPERATIONS'
+  | 'RUN_DELIVERY_RETRIES';
 
 export interface DomainCommand {
   type: DomainCommandType;
@@ -247,7 +266,7 @@ export interface DomainState {
   auditEvents: AuditEvent[];
   deliveries: DeliveryEvent[];
   warnings: OperationalWarning[];
-  exports: Array<{ id: string; actorId: string; createdAt: string; rowCount: number; columns: string[] }>;
+  exports: Array<{ id: string; actorId: string; createdAt: string; rowCount: number; columns: string[]; filterSnapshot: string; csv: string; downloadedAt?: string; version: number }>;
   idempotency: Record<string, IdempotencyRecord>;
   nextSequence: number;
 }

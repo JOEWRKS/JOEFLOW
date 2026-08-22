@@ -80,4 +80,13 @@ describe('FinanceSurface', () => {
     await user.click(screen.getByRole('button', { name: 'Complete adjustment' }));
     expect(screen.getByText('150,000 KRW')).toBeVisible();
   });
+
+  it('generates and separately authorizes a current Finance-queue CSV download', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole('button', { name: 'Generate current-filter CSV' }));
+    expect(screen.getByText(/Export generated · 4 rows/)).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Download authorized CSV' }));
+    expect(screen.getByText('CSV download authorized and audited.')).toBeVisible();
+  });
 });

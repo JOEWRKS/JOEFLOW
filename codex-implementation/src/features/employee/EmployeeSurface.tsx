@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { CommandDialog } from '../../components/CommandDialog';
 import { StatusBadge } from '../../components/StatusBadge';
+import { Timeline } from '../../components/Timeline';
+import { useClaimExplorer } from '../../components/ClaimExplorer';
 import { claimsForRole } from '../../domain/selectors';
 import type { CommandResult, DomainCommand, DomainState } from '../../domain/types';
 import { AttachmentPanel } from './AttachmentPanel';
@@ -10,21 +12,14 @@ import { RevisionTimeline } from './RevisionTimeline';
 interface Props { state: DomainState; dispatch: (command: DomainCommand) => CommandResult }
 
 export function EmployeeSurface({ state, dispatch }: Props) {
-  const claims = claimsForRole(state, 'usr-employee', 'EMPLOYEE');
+  const scopedClaims = claimsForRole(state, 'usr-employee', 'EMPLOYEE');
+  const explorer = useClaimExplorer(state, scopedClaims);
+  const claims = explorer.claims;
   const [selectedId, setSelectedId] = useState('clm-draft');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const deleteTrigger = useRef<HTMLButtonElement>(null);
-  const claim = state.claims[selectedId] ?? claims[0];
+  const claim = claims.find((item) => item.id === selectedId) ?? claims[0];
 
-  useEffect(() => {
-    if (!state.claims[selectedId] && claims[0]) setSelectedId(claims[0].id);
-  }, [claims, selectedId, state.claims]);
-  if (!claim) return <section className="empty-panel"><h2>No claims</h2><p>Create a draft to begin.</p></section>;
-
-  const command = (type: DomainCommand['type'], input: Record<string, unknown> = {}) => dispatch({
-    type, actorId: 'usr-employee', targetId: claim.id, expectedVersion: claim.version,
-    idempotencyKey: `ui-${type}-${claim.id}-${claim.version}`, input,
-  });
   const createDraft = () => {
     const result = dispatch({
       type: 'CREATE_DRAFT', actorId: 'usr-employee', targetId: 'claim-register', expectedVersion: 0,
@@ -35,7 +30,19 @@ export function EmployeeSurface({ state, dispatch }: Props) {
     if (createdId) setSelectedId(createdId);
   };
 
-  return (
+  useEffect(() => {
+    if (!claims.some((item) => item.id === selectedId) && claims[0]) setSelectedId(claims[0].id);
+  }, [claims, selectedId]);
+  if (!state.users['usr-employee']?.active || !state.users['usr-employee'].roles.includes('EMPLOYEE')) return <section className="empty-panel critical-callout"><h2>Access unavailable</h2><p>The current Employee account or role is inactive. No governed claim or attachment data is displayed.</p></section>;
+  if (!scopedClaims.length) return <section className="empty-panel"><h2>No claims</h2><p>Create a draft to begin.</p><button className="button primary" type="button" onClick={createDraft}>Create new claim</button></section>;
+  if (!claim) return <>{explorer.controls}<section className="empty-panel"><h2>No matching claims</h2><p>No claims match the current filters.</p></section></>;
+
+  const command = (type: DomainCommand['type'], input: Record<string, unknown> = {}) => dispatch({
+    type, actorId: 'usr-employee', targetId: claim.id, expectedVersion: claim.version,
+    idempotencyKey: `ui-${type}-${claim.id}-${claim.version}`, input,
+  });
+
+  return (<>{explorer.controls}
     <div className="surface-layout">
       <aside className="record-list" aria-label="My claims">
         <div className="list-heading"><span>My claims</span><strong>{claims.length}</strong></div>
@@ -54,6 +61,7 @@ export function EmployeeSurface({ state, dispatch }: Props) {
         <ClaimEditor claim={claim} state={state} dispatch={dispatch} />
         <AttachmentPanel claim={claim} state={state} dispatch={dispatch} />
         <RevisionTimeline claim={claim} />
+        <Timeline state={state} role="EMPLOYEE" actorId="usr-employee" />
         <div className="sticky-actions">
           {claim.status === 'Draft' && <>
             <button className="button primary" type="button" onClick={() => command('SUBMIT_CLAIM')}>{claim.currentRevision > 1 ? `Submit revision ${claim.currentRevision}` : 'Submit claim'}</button>
@@ -68,5 +76,5 @@ export function EmployeeSurface({ state, dispatch }: Props) {
         <p>This removes only this unsubmitted draft and its task-owned simulated evidence. This cannot be undone.</p>
       </CommandDialog>
     </div>
-  );
+  </>);
 }

@@ -45,6 +45,38 @@ describe('AdminSurface', () => {
     expect(screen.getByLabelText('audit count')).toHaveTextContent('1');
   });
 
+  it('exposes multi-role, direct-manager, and stable category creation controls', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole('tab', { name: 'Accounts & roles' }));
+    await user.type(screen.getByRole('textbox', { name: 'Account change reason' }), 'Finance coverage');
+    await user.click(screen.getByRole('checkbox', { name: 'FINANCE role' }));
+    await user.click(screen.getByRole('button', { name: 'Save account roles' }));
+    expect(screen.getByText(/EMPLOYEE \+ FINANCE/)).toBeVisible();
+    await user.clear(screen.getByRole('textbox', { name: 'Account change reason' }));
+    await user.type(screen.getByRole('textbox', { name: 'Account change reason' }), 'Reporting line changed');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Direct manager' }), 'usr-manager-other');
+    await user.click(screen.getByRole('button', { name: 'Assign direct manager' }));
+    expect(screen.getByText(/manager usr-manager-other/)).toBeVisible();
+
+    await user.click(screen.getByRole('tab', { name: 'Categories' }));
+    await user.type(screen.getByRole('textbox', { name: 'New category name' }), 'Parking');
+    await user.type(screen.getByRole('textbox', { name: 'New category reason' }), 'Reimbursable travel cost');
+    await user.click(screen.getByRole('button', { name: 'Create category' }));
+    expect(screen.getByRole('option', { name: /CAT-010 · Parking/ })).toBeInTheDocument();
+  });
+
+  it('activates an invitation only through the invited email fixture', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.type(screen.getByRole('textbox', { name: 'Invite email' }), 'new.employee@example.com');
+    await user.click(screen.getByRole('button', { name: 'Issue invitation' }));
+    await user.type(screen.getByRole('textbox', { name: 'Activation email' }), 'new.employee@example.com');
+    await user.type(screen.getByRole('textbox', { name: 'Activation display name' }), 'New Employee');
+    await user.click(screen.getByRole('button', { name: 'Activate invited account' }));
+    expect(screen.getByText('Accepted', { selector: '[data-status]' })).toBeVisible();
+  });
+
   it('sets and releases a legal hold atomically with required reasons', async () => {
     const user = userEvent.setup();
     render(<Harness />);
