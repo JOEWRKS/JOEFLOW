@@ -1,5 +1,13 @@
 # Replication B Codex Implementation Report
 
+## Final evaluation update
+
+The initial source documented below entered blind audit at `4881528083e97a5bbe6a9bc8b8941b343c1a503c`. Three authorized correction passes were used. The final implementation is frozen at source commit `eecebc28701006dd2c7be4045a22542e34719705`, tree `6294fc9072521fdb762808b87203a7e8bac4f7f5`.
+
+Final independent audit: **FAIL — CODEX_DRIFT_UNRESOLVED** with BLOCKING `2`, MAJOR `5`, MINOR `2`, Critical Failure `Yes`. Fresh final verification passed `85/85` unit/component tests, `11/11` local-Chromium E2E, build (41 modules), state validation, and Closure validation with the exact approved digest. Those green checks do not cover the two remaining corruption paths: rejected Executed-adjustment resolution leaking mutation and non-finite monetary values reaching Submitted.
+
+See `CODEX_IMPLEMENTATION_REVIEW.md` and `codex-correction-pass-3-audit.md` for the authoritative final result. No fourth correction, Product Definition re-entry, merge, or production claim was made.
+
 ## Frozen target
 
 - Branch: `eval/v0.4-replication-b-codex`
@@ -49,7 +57,7 @@ The approved implementation design is React 19 + TypeScript + Vite with a pure c
 
 The first E2E invocation stopped before app execution because the Playwright browser was absent. Chromium `1234` was installed only under the ignored task-owned `.playwright-browsers/` root and the full run then passed. No personal installation or external product system was changed.
 
-Build outputs are ignored and reproducible. Current readback hashes are:
+Build outputs are ignored and reproducible. Initial blind-audit snapshot readback hashes were:
 
 - `dist/index.html`: `18fe49d0dc7c80c763ea9a37d9d311258507fb06718bae3498a90243f09f0da8`
 - `dist/assets/index-BtHcBWam.js`: `702d42822516a9100b94a1612b74b90fc80ed72fc0b6ce9e9d2c2d8a199c0220`
