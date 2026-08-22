@@ -82,10 +82,10 @@
 - `CommandDialog` returns validated structured input and restores focus to its trigger.
 - `StateLab` selects deterministic presentations for all 16 canonical UX states without mutating business truth.
 
-- [ ] Write failing integration tests for role switching, current-state text, live feedback, dialog labels, focus restoration, and status-not-color-only.
-- [ ] Implement the neutral operational shell and shared components.
-- [ ] Implement deterministic loading/empty/partial/error/permission/offline/timeout/retrying/submitting/completed/cancelled/expired presentations.
-- [ ] Run component tests and an accessibility-name query for every interactive control.
+- [x] Write failing integration tests for role switching, current-state text, live feedback, dialog labels, focus restoration, and status-not-color-only.
+- [x] Implement the neutral operational shell and shared components.
+- [x] Implement deterministic loading/empty/partial/error/permission/offline/timeout/retrying/submitting/completed/cancelled/expired presentations.
+- [x] Run component tests and an accessibility-name query for every interactive control.
 
 ### Task 4: Implement Employee workflows
 
@@ -100,10 +100,10 @@
 - Consumes Employee selectors and `dispatch`.
 - Produces actual create/edit/autosave/upload/submit/withdraw/delete/revise/resubmit mutations and read-only revision history.
 
-- [ ] Write failing UI tests for required fields, future/late date, active category, foreign conversion ±1 KRW, duplicate reason, manager guard, and clean receipt guard.
-- [ ] Implement the editor, upload/scan simulation, autosave states/retry disclosure, and input preservation.
-- [ ] Write failing click-through tests for submit, withdraw, delete draft confirmation, Changes-requested revision, and resubmit.
-- [ ] Connect every visible action to the domain engine and verify resulting state/audit/delivery output.
+- [x] Write failing UI tests for required fields, future/late date, active category, foreign conversion ±1 KRW, duplicate reason, manager guard, and clean receipt guard.
+- [x] Implement the editor, upload/scan simulation, autosave states/retry disclosure, and input preservation.
+- [x] Write failing click-through tests for submit, withdraw, delete draft confirmation, Changes-requested revision, and resubmit.
+- [x] Connect every visible action to the domain engine and verify resulting state/audit/delivery output.
 
 ### Task 5: Implement Manager workflows
 
@@ -115,9 +115,9 @@
 **Interfaces:**
 - Produces approve, request-changes, final-reject, and pre-Scheduled revoke commands against the exact displayed revision/version.
 
-- [ ] Write failing tests for scope, revision pinning, required comments/reason, stale conflict, self-approval denial, and post-Scheduled revoke denial.
-- [ ] Implement queue/detail/history, late/duplicate/FX visibility, decision dialog, and approval reversal.
-- [ ] Assert each visible result reflects the committed domain state and no stale/denied action writes audit or deliveries.
+- [x] Write failing tests for scope, revision pinning, required comments/reason, stale conflict, self-approval denial, and post-Scheduled revoke denial.
+- [x] Implement queue/detail/history, late/duplicate/FX visibility, decision dialog, and approval reversal.
+- [x] Assert each visible result reflects the committed domain state and no stale/denied action writes audit or deliveries.
 
 ### Task 6: Implement Finance workflows
 
@@ -130,10 +130,10 @@
 **Interfaces:**
 - Produces atomic schedule/claim, complete, fail, hold, retry-verification, adjustment creation/completion/failure-resolution, and scoped export commands.
 
-- [ ] Write failing tests for atomic owner claim, scheduled/actual date bounds, unique reference, Other description, failure reason, and hold reason.
-- [ ] Implement payment queue/detail and transition forms.
-- [ ] Write failing tests for structured Not-paid verification, one In-progress adjustment, net formula, Executed/Not executed/Unclear resolution, and new-adjustment blocking.
-- [ ] Implement adjustment history/summary and visible uncertainty recovery.
+- [x] Write failing tests for atomic owner claim, scheduled/actual date bounds, unique reference, Other description, failure reason, and hold reason.
+- [x] Implement payment queue/detail and transition forms.
+- [x] Write failing tests for structured Not-paid verification, one In-progress adjustment, net formula, Executed/Not executed/Unclear resolution, and new-adjustment blocking.
+- [x] Implement adjustment history/summary and visible uncertainty recovery.
 
 ### Task 7: Implement Admin, audit, delivery, and governed access workflows
 
@@ -147,10 +147,10 @@
 - Produces invitation issue/reissue/revoke, account/role state, direct manager, category, legal hold, reassignment, warning retry, raw audit, and Admin/Finance export commands.
 - `Timeline` accepts a role-safe projection; raw audit is a distinct Admin-only input.
 
-- [ ] Write failing tests for invitation expiry/reissue/revoke race, session invalidation, required Admin reasons, category snapshots/zero-active guard, and legal-hold atomicity.
-- [ ] Implement the dedicated Admin modules and versioned command forms.
-- [ ] Write failing tests for reassignment side-effect separation, one manual delivery retry, timeline hidden fields, export role/row/reauthorization limits, and raw-token absence.
-- [ ] Implement governed timeline, raw audit, operational warnings, and CSV simulation.
+- [x] Write failing tests for invitation expiry/reissue/revoke race, session invalidation, required Admin reasons, category snapshots/zero-active guard, and legal-hold atomicity.
+- [x] Implement the dedicated Admin modules and versioned command forms.
+- [x] Write failing tests for reassignment side-effect separation, one manual delivery retry, timeline hidden fields, export role/row/reauthorization limits, and raw-token absence.
+- [x] Implement governed timeline, raw audit, operational warnings, and CSV simulation.
 
 ### Task 8: Verify responsive behavior, accessibility, and runtime transitions
 
@@ -162,10 +162,10 @@
 **Interfaces:**
 - Browser tests use only public UI controls and assert visible plus persisted simulated domain outcomes.
 
-- [ ] Write failing Playwright tests for one material end-to-end workflow per role and for stale/denied negative paths.
-- [ ] Implement any missing UI adapter needed to make public interaction reach the correct domain command.
-- [ ] Add 1440, 375, and 320 viewport checks for page-level overflow, reachable actions, labeled controls, error association, focus, and text status.
-- [ ] Add reduced-motion media checks and run the complete unit/integration/E2E/build suite.
+- [x] Write failing Playwright tests for one material end-to-end workflow per role and for stale/denied negative paths.
+- [x] Implement any missing UI adapter needed to make public interaction reach the correct domain command.
+- [x] Add 1440, 375, and 320 viewport checks for page-level overflow, reachable actions, labeled controls, error association, focus, and text status.
+- [x] Add reduced-motion media checks and run the complete unit/integration/E2E/build suite.
 
 ### Task 9: Produce implementation evidence and freeze the audit target
 

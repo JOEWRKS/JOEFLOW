@@ -112,6 +112,31 @@ describe('domain command boundary', () => {
 });
 
 describe('claim lifecycle', () => {
+  it.each([
+    ['missing merchant', (state: ReturnType<typeof createSeedState>) => { state.claims['clm-draft'].revisions[0].merchant = ''; }, 'REQUIRED_FIELDS'],
+    ['future date', (state: ReturnType<typeof createSeedState>) => { state.claims['clm-draft'].revisions[0].expenseDate = '2026-08-23'; }, 'FUTURE_EXPENSE_DATE'],
+    ['late without reason', (state: ReturnType<typeof createSeedState>) => { state.claims['clm-draft'].revisions[0].expenseDate = '2026-01-01'; state.claims['clm-draft'].revisions[0].lateReason = ''; }, 'LATE_REASON_REQUIRED'],
+    ['inactive category', (state: ReturnType<typeof createSeedState>) => { state.categories['CAT-002'].active = false; }, 'ACTIVE_CATEGORY_REQUIRED'],
+    ['unclean receipt', (state: ReturnType<typeof createSeedState>) => { state.files['file-clean-receipt'].scanStatus = 'Scanning'; }, 'CLEAN_RECEIPT_REQUIRED'],
+    ['invalid FX rounding', (state: ReturnType<typeof createSeedState>) => {
+      const item = state.claims['clm-draft'].revisions[0];
+      item.currency = 'USD'; item.originalAmount = 100; item.exchangeRate = 1300; item.krwAmount = 130002; item.exchangeEvidenceIds = ['file-clean-receipt'];
+    }, 'FX_CONVERSION_INVALID'],
+    ['duplicate without reason', (state: ReturnType<typeof createSeedState>) => { state.claims['clm-draft'].revisions[0].duplicateReason = ''; }, 'DUPLICATE_REASON_REQUIRED'],
+    ['missing manager', (state: ReturnType<typeof createSeedState>) => { state.claims['clm-draft'].managerId = ''; }, 'MANAGER_REQUIRED'],
+  ])('blocks %s without audit or delivery effects', (_name, mutate, code) => {
+    const state = createSeedState();
+    mutate(state);
+    const result = executeCommand(state, {
+      type: 'SUBMIT_CLAIM', actorId: 'usr-employee', targetId: 'clm-draft', expectedVersion: 1,
+      idempotencyKey: `invalid-${code}`, input: {},
+    });
+    expect(result.outcome).toMatchObject({ status: 'rejected', code });
+    expect(result.auditEventIds).toEqual([]);
+    expect(result.deliveryEventIds).toEqual([]);
+    expect(result.state.claims['clm-draft'].status).toBe('Draft');
+  });
+
   it('submits, requests changes, creates a new revision, approves, and revokes before scheduling', () => {
     let state = createSeedState();
     let result = executeCommand(state, {
@@ -274,5 +299,76 @@ describe('payment and adjustment lifecycle', () => {
       idempotencyKey: 'unclear-blocks-new', input: { kind: 'Recovery', amountKrw: 1000, reason: 'Correction' },
     });
     expect(blocked.outcome).toMatchObject({ status: 'rejected', code: 'ACTIVE_ADJUSTMENT_EXISTS' });
+  });
+});
+
+describe('Admin governance', () => {
+  it('reissues invitations by invalidating the old link and rejects a stale revoke race', () => {
+    const issued = executeCommand(createSeedState(), {
+      type: 'ISSUE_INVITATION', actorId: 'usr-admin', targetId: 'invitation-register', expectedVersion: 0,
+      idempotencyKey: 'admin-issue', input: { email: 'person@example.com', roles: ['EMPLOYEE'], managerId: 'usr-manager' },
+    });
+    const oldId = Object.keys(issued.state.invitations)[0];
+    const reissued = executeCommand(issued.state, {
+      type: 'REISSUE_INVITATION', actorId: 'usr-admin', targetId: oldId, expectedVersion: 1,
+      idempotencyKey: 'admin-reissue', input: {},
+    });
+    expect(reissued.state.invitations[oldId]).toMatchObject({ status: 'Expired', version: 2 });
+    expect(Object.values(reissued.state.invitations).filter((item) => item.status === 'Pending')).toHaveLength(1);
+    const staleRevoke = executeCommand(reissued.state, {
+      type: 'REVOKE_INVITATION', actorId: 'usr-admin', targetId: oldId, expectedVersion: 1,
+      idempotencyKey: 'admin-stale-revoke', input: { reason: 'No longer joining' },
+    });
+    expect(staleRevoke.outcome).toMatchObject({ status: 'rejected', code: 'STALE_VERSION' });
+    expect(staleRevoke.auditEventIds).toEqual([]);
+  });
+
+  it('invalidates sessions on account deactivation and immediately denies later work', () => {
+    const updated = executeCommand(createSeedState(), {
+      type: 'UPDATE_ACCOUNT', actorId: 'usr-admin', targetId: 'usr-employee', expectedVersion: 1,
+      idempotencyKey: 'admin-deactivate', input: { active: false, roles: ['EMPLOYEE'], reason: 'Employment ended' },
+    });
+    expect(updated.state.users['usr-employee']).toMatchObject({ active: false, authVersion: 2, version: 2 });
+    const denied = executeCommand(updated.state, {
+      type: 'SUBMIT_CLAIM', actorId: 'usr-employee', targetId: 'clm-draft', expectedVersion: 1,
+      idempotencyKey: 'inactive-submit', input: {},
+    });
+    expect(denied.outcome).toMatchObject({ status: 'rejected', code: 'FORBIDDEN' });
+  });
+
+  it('blocks deactivating the last active category and preserves historical category snapshots', () => {
+    const state = createSeedState();
+    for (const category of Object.values(state.categories)) category.active = category.id === 'CAT-002';
+    const denied = executeCommand(state, {
+      type: 'UPDATE_CATEGORY', actorId: 'usr-admin', targetId: 'CAT-002', expectedVersion: 1,
+      idempotencyKey: 'last-category', input: { active: false, name: 'Lodging', reason: 'Consolidation' },
+    });
+    expect(denied.outcome).toMatchObject({ status: 'rejected', code: 'LAST_ACTIVE_CATEGORY' });
+    const renamed = executeCommand(createSeedState(), {
+      type: 'UPDATE_CATEGORY', actorId: 'usr-admin', targetId: 'CAT-002', expectedVersion: 1,
+      idempotencyKey: 'rename-category', input: { active: true, name: 'Accommodation', reason: 'Terminology update' },
+    });
+    expect(renamed.state.categories['CAT-002'].name).toBe('Accommodation');
+    expect(renamed.state.claims['clm-submitted'].revisions[0].categoryNameSnapshot).toBe('출장 숙박비');
+  });
+
+  it('applies and releases legal hold atomically and permits one manual delivery retry', () => {
+    const held = executeCommand(createSeedState(), {
+      type: 'SET_LEGAL_HOLD', actorId: 'usr-admin', targetId: 'clm-completed', expectedVersion: 4,
+      idempotencyKey: 'hold-set', input: { reason: 'Tax inquiry' },
+    });
+    expect(held.state.claims['clm-completed'].legalHold?.reason).toBe('Tax inquiry');
+    const released = executeCommand(held.state, {
+      type: 'RELEASE_LEGAL_HOLD', actorId: 'usr-admin', targetId: 'clm-completed', expectedVersion: 5,
+      idempotencyKey: 'hold-release', input: { reason: 'Inquiry closed' },
+    });
+    expect(released.state.claims['clm-completed'].legalHold).toBeUndefined();
+
+    const retried = executeCommand(released.state, {
+      type: 'RETRY_DELIVERY', actorId: 'usr-admin', targetId: 'delivery-reassign-failed', expectedVersion: 1,
+      idempotencyKey: 'delivery-manual', input: {},
+    });
+    expect(retried.state.deliveries.find((item) => item.id === 'delivery-reassign-failed')).toMatchObject({ status: 'Queued', attempts: 5, manualRetryUsed: true });
+    expect(retried.state.claims['clm-submitted'].status).toBe('Submitted');
   });
 });

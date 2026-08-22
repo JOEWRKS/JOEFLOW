@@ -7,10 +7,13 @@ function revision(number: number, overrides: Partial<ClaimRevision> = {}): Claim
     number,
     merchant: 'Seoul Business Hotel',
     categoryId: 'CAT-002',
+    categoryNameSnapshot: '출장 숙박비',
     expenseDate: '2026-08-18',
     currency: 'KRW',
     originalAmount: 168000,
     krwAmount: 168000,
+    businessPurpose: 'Customer workshop lodging',
+    duplicateReason: 'Separate approved trip night',
     receiptIds: ['file-clean-receipt'],
     ...overrides,
   };
@@ -40,12 +43,12 @@ export function createSeedState(): DomainState {
     canonicalDigest: '18db3c33caa36d8925960523116ed4646a3756b8047cdb9098256cf67097b48f',
     now: NOW,
     users: {
-      'usr-employee': { id: 'usr-employee', name: 'Minji Kim', roles: ['EMPLOYEE'], managerId: 'usr-manager', active: true, authVersion: 1 },
-      'usr-manager': { id: 'usr-manager', name: 'Joon Park', roles: ['MANAGER'], managerId: 'usr-director', active: true, authVersion: 1 },
-      'usr-manager-other': { id: 'usr-manager-other', name: 'Sora Lee', roles: ['MANAGER'], active: true, authVersion: 1 },
-      'usr-finance': { id: 'usr-finance', name: 'Finance Kim', roles: ['FINANCE'], active: true, authVersion: 1 },
-      'usr-finance-other': { id: 'usr-finance-other', name: 'Finance Choi', roles: ['FINANCE'], active: true, authVersion: 1 },
-      'usr-admin': { id: 'usr-admin', name: 'Admin Han', roles: ['ADMIN'], active: true, authVersion: 1 },
+      'usr-employee': { id: 'usr-employee', name: 'Minji Kim', roles: ['EMPLOYEE'], managerId: 'usr-manager', active: true, authVersion: 1, version: 1 },
+      'usr-manager': { id: 'usr-manager', name: 'Joon Park', roles: ['MANAGER'], managerId: 'usr-director', active: true, authVersion: 1, version: 1 },
+      'usr-manager-other': { id: 'usr-manager-other', name: 'Sora Lee', roles: ['MANAGER'], active: true, authVersion: 1, version: 1 },
+      'usr-finance': { id: 'usr-finance', name: 'Finance Kim', roles: ['FINANCE'], active: true, authVersion: 1, version: 1 },
+      'usr-finance-other': { id: 'usr-finance-other', name: 'Finance Choi', roles: ['FINANCE'], active: true, authVersion: 1, version: 1 },
+      'usr-admin': { id: 'usr-admin', name: 'Admin Han', roles: ['ADMIN'], active: true, authVersion: 1, version: 1 },
     },
     claims: {
       'clm-draft': claim('clm-draft', { status: 'Draft', revisions: [revision(1, { submittedAt: undefined })] }),
@@ -80,6 +83,12 @@ export function createSeedState(): DomainState {
         payment: { ownerId: 'usr-finance', scheduledDate: '2026-08-21', actualDate: '2026-08-21', method: 'Bank transfer', externalReference: 'PAY-1042' },
       }),
     },
+    files: {
+      'file-clean-receipt': {
+        id: 'file-clean-receipt', claimId: 'clm-draft', name: 'hotel-receipt.pdf', mime: 'application/pdf',
+        sizeBytes: 245000, purpose: 'RECEIPT', source: 'file', scanStatus: 'Linked',
+      },
+    },
     adjustments: {},
     categories: {
       'CAT-001': { id: 'CAT-001', name: '교통비', active: true, version: 1 },
@@ -94,8 +103,12 @@ export function createSeedState(): DomainState {
     },
     invitations: {},
     auditEvents: [],
-    deliveries: [],
-    warnings: [],
+    deliveries: [{
+      id: 'delivery-reassign-failed', targetId: 'clm-submitted', channel: 'EMAIL', recipientId: 'usr-manager-other',
+      template: 'REASSIGN_MANAGER', status: 'Permanent failure', attempts: 4, manualRetryUsed: false, version: 1,
+    }],
+    warnings: [{ id: 'warning-reassign', targetId: 'delivery-reassign-failed', message: 'Manager reassignment remains committed; notification delivery permanently failed.', resolved: false }],
+    exports: [],
     idempotency: {},
     nextSequence: 1,
   };

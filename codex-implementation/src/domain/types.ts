@@ -22,6 +22,7 @@ export interface User {
   managerId?: string;
   active: boolean;
   authVersion: number;
+  version: number;
 }
 
 export interface ClaimRevision {
@@ -29,14 +30,29 @@ export interface ClaimRevision {
   submittedAt?: string;
   merchant: string;
   categoryId: string;
+  categoryNameSnapshot: string;
   expenseDate: string;
   currency: string;
   originalAmount: number;
   krwAmount: number;
+  businessPurpose: string;
   exchangeRate?: number;
+  exchangeEvidenceIds?: string[];
   duplicateReason?: string;
+  lateReason?: string;
   comment?: string;
   receiptIds: string[];
+}
+
+export interface FileRecord {
+  id: string;
+  claimId: string;
+  name: string;
+  mime: 'image/jpeg' | 'image/png' | 'application/pdf';
+  sizeBytes: number;
+  purpose: 'RECEIPT' | 'FX_EVIDENCE' | 'PAYMENT_EVIDENCE';
+  source: 'camera' | 'file';
+  scanStatus: 'Scanning' | 'Linked' | 'Failed and discarded';
 }
 
 export interface PaymentRecord {
@@ -94,6 +110,7 @@ export interface Claim {
   approvedAt?: string;
   finalRejectedAt?: string;
   withdrawnAt?: string;
+  legalHold?: { reason: string; setBy: string; setAt: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -134,6 +151,7 @@ export interface DeliveryEvent {
   status: 'Queued' | 'Permanent failure' | 'Delivered';
   attempts: number;
   manualRetryUsed: boolean;
+  version: number;
 }
 
 export interface OperationalWarning {
@@ -145,6 +163,8 @@ export interface OperationalWarning {
 
 export type DomainCommandType =
   | 'SUBMIT_CLAIM'
+  | 'UPDATE_DRAFT'
+  | 'LINK_ATTACHMENT'
   | 'WITHDRAW_CLAIM'
   | 'DELETE_DRAFT'
   | 'REVISE_CLAIM'
@@ -162,7 +182,19 @@ export type DomainCommandType =
   | 'CREATE_ADJUSTMENT'
   | 'COMPLETE_ADJUSTMENT'
   | 'FAIL_ADJUSTMENT'
-  | 'RESOLVE_ADJUSTMENT';
+  | 'RESOLVE_ADJUSTMENT'
+  | 'ISSUE_INVITATION'
+  | 'REISSUE_INVITATION'
+  | 'REVOKE_INVITATION'
+  | 'UPDATE_ACCOUNT'
+  | 'ASSIGN_MANAGER'
+  | 'UPDATE_CATEGORY'
+  | 'SET_LEGAL_HOLD'
+  | 'RELEASE_LEGAL_HOLD'
+  | 'REASSIGN_MANAGER'
+  | 'REASSIGN_FINANCE'
+  | 'RETRY_DELIVERY'
+  | 'EXPORT_CSV';
 
 export interface DomainCommand {
   type: DomainCommandType;
@@ -204,12 +236,14 @@ export interface DomainState {
   now: string;
   users: Record<string, User>;
   claims: Record<string, Claim>;
+  files: Record<string, FileRecord>;
   adjustments: Record<string, Adjustment>;
   categories: Record<string, Category>;
   invitations: Record<string, Invitation>;
   auditEvents: AuditEvent[];
   deliveries: DeliveryEvent[];
   warnings: OperationalWarning[];
+  exports: Array<{ id: string; actorId: string; createdAt: string; rowCount: number; columns: string[] }>;
   idempotency: Record<string, IdempotencyRecord>;
   nextSequence: number;
 }
