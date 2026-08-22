@@ -35,11 +35,11 @@
 **Interfaces:**
 - Produces scripts `dev`, `build`, `test`, `test:e2e` and a browser entry at `/`.
 
-- [ ] Create the Vite/React/TypeScript package with pinned lockfile and no Tailwind dependency.
-- [ ] Add Vitest jsdom setup and Playwright Chromium configuration using a task-owned preview command.
-- [ ] Add a failing smoke test that expects the four canonical role choices.
-- [ ] Run `npm test -- --run` and confirm the smoke test fails because `App` is absent.
-- [ ] Add the minimal application entry and re-run the smoke test to pass.
+- [x] Create the Vite/React/TypeScript package with pinned lockfile and no Tailwind dependency.
+- [x] Add Vitest jsdom setup and Playwright Chromium configuration using a task-owned preview command.
+- [x] Add a failing smoke test that expects the four canonical role choices.
+- [x] Run `npm test -- --run` and confirm the smoke test fails because `App` is absent.
+- [x] Add the minimal application entry and re-run the smoke test to pass.
 
 ### Task 2: Implement the pure domain contract
 
