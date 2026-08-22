@@ -20,6 +20,15 @@ function Harness() {
 }
 
 describe('ManagerSurface', () => {
+  it('shows only current review authority and hides drafts, self-review, and Finance history', () => {
+    render(<Harness />);
+    expect(screen.getByRole('button', { name: 'clm-submitted · Submitted' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'clm-approved · Payment pending' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'clm-draft · Draft' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'clm-self-review · Submitted' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'clm-completed · Payment completed' })).not.toBeInTheDocument();
+  });
+
   it('pins approval to the displayed revision/version and commits employee delivery', async () => {
     const user = userEvent.setup();
     render(<Harness />);
@@ -44,27 +53,15 @@ describe('ManagerSurface', () => {
     expect(screen.getByText('Changes requested.')).toBeVisible();
   });
 
-  it('surfaces the self-approval denial without audit or delivery writes', async () => {
-    const user = userEvent.setup();
-    render(<Harness />);
-    await user.click(screen.getByRole('button', { name: 'clm-self-review · Submitted' }));
-    await user.click(screen.getByRole('button', { name: 'Approve revision 1' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('cannot review their own claim');
-    expect(screen.getByLabelText('audit count')).toHaveTextContent('0');
-    expect(screen.getByLabelText('delivery count')).toHaveTextContent('1');
-  });
-
   it('revokes approval with a required reason only before Scheduled', async () => {
     const user = userEvent.setup();
     render(<Harness />);
     await user.click(screen.getByRole('button', { name: 'clm-approved · Payment pending' }));
     await user.click(screen.getByRole('button', { name: 'Revoke approval' }));
     await user.type(screen.getByRole('textbox', { name: 'Revocation reason' }), 'Receipt was invalidated by the merchant.');
-    await user.click(screen.getByRole('button', { name: 'Revoke and request revision' }));
+    await user.click(screen.getByRole('button', { name: 'Revoke approval and reopen review' }));
     expect(screen.getByText(/Approval revoked/i)).toBeVisible();
-
-    await user.click(screen.getByRole('button', { name: 'clm-scheduled · Scheduled' }));
-    expect(screen.queryByRole('button', { name: 'Revoke approval' })).not.toBeInTheDocument();
-    expect(screen.getByText(/Revocation closed when Finance scheduled payment/i)).toBeVisible();
+    expect(screen.getAllByText('Submitted', { selector: '[data-status]' })).not.toHaveLength(0);
+    expect(screen.getByText('Exact review target: revision 1 · version 2')).toBeVisible();
   });
 });

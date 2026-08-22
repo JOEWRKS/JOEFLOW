@@ -9,7 +9,7 @@ type DialogAction = 'REQUEST_CHANGES' | 'FINAL_REJECT_CLAIM' | 'REVOKE_APPROVAL'
 const DIALOG_META: Record<DialogAction, { title: string; field: string; confirm: string; destructive?: boolean }> = {
   REQUEST_CHANGES: { title: 'Request changes', field: 'Manager comment', confirm: 'Send changes request' },
   FINAL_REJECT_CLAIM: { title: 'Finally reject this claim?', field: 'Final rejection reason', confirm: 'Finally reject claim', destructive: true },
-  REVOKE_APPROVAL: { title: 'Revoke this approval?', field: 'Revocation reason', confirm: 'Revoke and request revision', destructive: true },
+  REVOKE_APPROVAL: { title: 'Revoke this approval?', field: 'Revocation reason', confirm: 'Revoke approval and reopen review', destructive: true },
 };
 
 export function ReviewPanel({ claim, state, dispatch }: Props) {

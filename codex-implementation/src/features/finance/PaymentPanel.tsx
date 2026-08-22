@@ -17,7 +17,7 @@ export function PaymentPanel({ claim, state, dispatch }: Props) {
 
   const run = (type: DomainCommand['type'], input: Record<string, unknown>) => dispatch({
     type, actorId: 'usr-finance', targetId: claim.id, expectedVersion: claim.version,
-    idempotencyKey: `ui-${type}-${claim.id}-${claim.version}`, input,
+    idempotencyKey: `ui-${type}-${claim.id}-${claim.version}-${JSON.stringify(input)}`, input,
   });
   const vf = (key: keyof typeof verification, value: string) => setVerification((current) => ({ ...current, [key]: value }));
 

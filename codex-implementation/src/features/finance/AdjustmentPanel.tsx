@@ -17,9 +17,10 @@ export function AdjustmentPanel({ claim, state, dispatch }: Props) {
   const [failureReason, setFailureReason] = useState('');
   const [resolution, setResolution] = useState('Unclear');
   const [resolutionNote, setResolutionNote] = useState('');
+  const [actualAmount, setActualAmount] = useState('');
   const run = (type: DomainCommand['type'], input: Record<string, unknown>) => dispatch({
     type, actorId: 'usr-finance', targetId: claim.id, expectedVersion: claim.version,
-    idempotencyKey: `ui-${type}-${claim.id}-${claim.version}`, input,
+    idempotencyKey: `ui-${type}-${claim.id}-${claim.version}-${JSON.stringify(input)}`, input,
   });
 
   return (
@@ -50,8 +51,8 @@ export function AdjustmentPanel({ claim, state, dispatch }: Props) {
           {['Failed', 'Needs verification'].includes(item.status) && <div className="form-grid compact">
             <label>Execution result<select value={resolution} onChange={(event) => setResolution(event.target.value)}><option>Unclear</option><option>Not executed</option><option>Executed</option></select></label>
             <label>Resolution note<input value={resolutionNote} onChange={(event) => setResolutionNote(event.target.value)} /></label>
-            {resolution === 'Executed' && <label>Executed external reference<input value={reference} onChange={(event) => setReference(event.target.value)} /></label>}
-            <button className="button primary" type="button" onClick={() => run('RESOLVE_ADJUSTMENT', { adjustmentId: item.id, result: resolution, note: resolutionNote, actualDate: state.now.slice(0, 10), externalReference: reference })}>Resolve adjustment uncertainty</button>
+            {resolution === 'Executed' && <><label>Executed actual amount KRW<input inputMode="numeric" value={actualAmount} onChange={(event) => setActualAmount(event.target.value)} /></label><label>Executed actual date<input value={state.now.slice(0, 10)} readOnly /></label><label>Executed external reference<input value={reference} onChange={(event) => setReference(event.target.value)} /></label></>}
+            <button className="button primary" type="button" onClick={() => run('RESOLVE_ADJUSTMENT', { adjustmentId: item.id, result: resolution, note: resolutionNote, actualAmountKrw: Number(actualAmount), actualDate: state.now.slice(0, 10), externalReference: reference })}>Resolve adjustment uncertainty</button>
           </div>}
           {item.verification && <small>Append-only verification: {item.verification.result} · {item.verification.checkedBy} · {item.verification.note}</small>}
         </article>)}

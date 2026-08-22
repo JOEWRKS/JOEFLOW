@@ -25,11 +25,21 @@ export function EmployeeSurface({ state, dispatch }: Props) {
     type, actorId: 'usr-employee', targetId: claim.id, expectedVersion: claim.version,
     idempotencyKey: `ui-${type}-${claim.id}-${claim.version}`, input,
   });
+  const createDraft = () => {
+    const result = dispatch({
+      type: 'CREATE_DRAFT', actorId: 'usr-employee', targetId: 'claim-register', expectedVersion: 0,
+      idempotencyKey: `ui-CREATE_DRAFT-${state.nextSequence}`, input: {},
+    });
+    const auditId = result.auditEventIds[0];
+    const createdId = result.state.auditEvents.find((event) => event.id === auditId)?.targetId;
+    if (createdId) setSelectedId(createdId);
+  };
 
   return (
     <div className="surface-layout">
       <aside className="record-list" aria-label="My claims">
         <div className="list-heading"><span>My claims</span><strong>{claims.length}</strong></div>
+        <button className="button primary list-create" type="button" onClick={createDraft}>Create new claim</button>
         {claims.map((item) => (
           <button key={item.id} type="button" aria-label={`${item.id} · ${item.status}`} className={item.id === claim.id ? 'record-button selected' : 'record-button'} onClick={() => setSelectedId(item.id)}>
             <span>{item.id}</span><small>{item.revisions.at(-1)?.merchant}</small><StatusBadge status={item.status} />
@@ -38,7 +48,7 @@ export function EmployeeSurface({ state, dispatch }: Props) {
       </aside>
       <article className="detail-panel card">
         <header className="detail-header">
-          <div><p className="eyebrow">{claim.id}</p><h2>{claim.revisions.at(-1)!.merchant}</h2><span>Revision {claim.currentRevision} · version {claim.version}</span></div>
+          <div><p className="eyebrow">{claim.id}</p><h2>{claim.revisions.at(-1)!.merchant || 'Untitled claim'}</h2><span>Revision {claim.currentRevision} · version {claim.version}</span></div>
           <StatusBadge status={claim.status} />
         </header>
         <ClaimEditor claim={claim} state={state} dispatch={dispatch} />
@@ -46,11 +56,11 @@ export function EmployeeSurface({ state, dispatch }: Props) {
         <RevisionTimeline claim={claim} />
         <div className="sticky-actions">
           {claim.status === 'Draft' && <>
-            <button className="button primary" type="button" onClick={() => command('SUBMIT_CLAIM')}>Submit claim</button>
-            <button ref={deleteTrigger} className="button danger-quiet" type="button" onClick={() => setDeleteOpen(true)}>Delete draft</button>
+            <button className="button primary" type="button" onClick={() => command('SUBMIT_CLAIM')}>{claim.currentRevision > 1 ? `Submit revision ${claim.currentRevision}` : 'Submit claim'}</button>
+            {claim.currentRevision === 1 && <button ref={deleteTrigger} className="button danger-quiet" type="button" onClick={() => setDeleteOpen(true)}>Delete draft</button>}
           </>}
           {claim.status === 'Submitted' && <button className="button danger-quiet" type="button" onClick={() => command('WITHDRAW_CLAIM')}>Withdraw claim</button>}
-          {claim.status === 'Changes requested' && <button className="button primary" type="button" onClick={() => command('REVISE_CLAIM')}>Create and submit revision {claim.currentRevision + 1}</button>}
+          {claim.status === 'Changes requested' && <><button className="button primary" type="button" onClick={() => command('REVISE_CLAIM')}>Create revision {claim.currentRevision + 1}</button><button className="button danger-quiet" type="button" onClick={() => command('WITHDRAW_CLAIM')}>Withdraw claim</button></>}
         </div>
       </article>
       <CommandDialog open={deleteOpen} title="Delete this draft?" confirmLabel="Delete draft permanently" triggerRef={deleteTrigger}

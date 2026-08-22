@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Claim, CommandResult, DomainCommand, DomainState } from '../../domain/types';
 
 interface Props {
@@ -9,6 +9,9 @@ interface Props {
 
 export function ClaimEditor({ claim, state, dispatch }: Props) {
   const revision = claim.revisions.at(-1)!;
+  const dirtyRef = useRef(false);
+  const [saveStatus, setSaveStatus] = useState<'Saved' | 'Unsaved changes' | 'Saving' | 'Save failed'>('Saved');
+  const [savedGeneration, setSavedGeneration] = useState(claim.version);
   const [form, setForm] = useState(() => ({
     merchant: revision.merchant,
     expenseDate: revision.expenseDate,
@@ -29,14 +32,45 @@ export function ClaimEditor({ claim, state, dispatch }: Props) {
       exchangeRate: String(revision.exchangeRate ?? ''), businessPurpose: revision.businessPurpose,
       duplicateReason: revision.duplicateReason ?? '', lateReason: revision.lateReason ?? '',
     });
-  }, [claim.id, claim.version, revision]);
+    dirtyRef.current = false;
+    setSaveStatus('Saved');
+    setSavedGeneration(claim.version);
+  }, [claim.id, claim.currentRevision]);
 
-  const field = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
-  const save = () => dispatch({
-    type: 'UPDATE_DRAFT', actorId: 'usr-employee', targetId: claim.id, expectedVersion: claim.version,
-    idempotencyKey: `ui-save-${claim.id}-${claim.version}`,
-    input: { ...form, originalAmount: Number(form.originalAmount), krwAmount: Number(form.krwAmount), exchangeRate: form.exchangeRate ? Number(form.exchangeRate) : undefined },
-  });
+  const field = (key: keyof typeof form, value: string) => {
+    dirtyRef.current = true;
+    setSaveStatus('Unsaved changes');
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+  const save = () => {
+    if (!dirtyRef.current) return;
+    setSaveStatus('Saving');
+    const result = dispatch({
+      type: 'UPDATE_DRAFT', actorId: 'usr-employee', targetId: claim.id, expectedVersion: claim.version,
+      idempotencyKey: `ui-save-${claim.id}-${claim.version}`,
+      input: { ...form, originalAmount: Number(form.originalAmount), krwAmount: Number(form.krwAmount), exchangeRate: form.exchangeRate ? Number(form.exchangeRate) : undefined },
+    });
+    if (result.outcome.status === 'committed') {
+      dirtyRef.current = false;
+      setSaveStatus('Saved');
+      setSavedGeneration(result.outcome.targetVersion);
+    } else {
+      setSaveStatus('Save failed');
+    }
+  };
+
+  useEffect(() => {
+    if (!dirtyRef.current || claim.status !== 'Draft') return;
+    const timer = window.setTimeout(save, 2000);
+    return () => window.clearTimeout(timer);
+  }, [form, claim.status, claim.version]);
+
+  useEffect(() => {
+    if (!dirtyRef.current) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [saveStatus]);
 
   if (claim.status !== 'Draft') {
     return (
@@ -51,9 +85,9 @@ export function ClaimEditor({ claim, state, dispatch }: Props) {
     <section aria-labelledby="claim-editor-title">
       <div className="section-heading">
         <div><p className="eyebrow">Draft editor</p><h3 id="claim-editor-title">Expense details</h3></div>
-        <span className="autosave-state"><span aria-hidden="true">✓</span> Saved · generation {claim.version}</span>
+        <span className="autosave-state"><span aria-hidden="true">{saveStatus === 'Saved' ? '✓' : saveStatus === 'Save failed' ? '!' : '•'}</span> {saveStatus}{saveStatus === 'Saved' ? ` · generation ${savedGeneration}` : ''}</span>
       </div>
-      <div className="form-grid">
+      <div className="form-grid" onBlur={save}>
         <label>Merchant<input required value={form.merchant} onChange={(event) => field('merchant', event.target.value)} /></label>
         <label>Expense date<input required inputMode="numeric" value={form.expenseDate} onChange={(event) => field('expenseDate', event.target.value)} aria-describedby="expense-date-help" /></label>
         <small id="expense-date-help">Asia/Seoul date. Future dates are blocked; over 90 days needs a reason.</small>

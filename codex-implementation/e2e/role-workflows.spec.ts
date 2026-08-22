@@ -21,12 +21,13 @@ test('Manager approves the exact displayed revision', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'clm-submitted · Payment pending' })).toBeVisible();
 });
 
-test('Manager self-approval denial is visible and leaves the item Submitted', async ({ page }) => {
+test('Manager queue excludes self-review and out-of-scope lifecycle states', async ({ page }) => {
   await page.getByRole('button', { name: 'Manager workspace' }).click();
-  await page.getByRole('button', { name: 'clm-self-review · Submitted' }).click();
-  await page.getByRole('button', { name: 'Approve revision 1' }).click();
-  await expect(page.getByRole('alert')).toContainText('cannot review their own claim');
-  await expect(page.getByRole('button', { name: 'clm-self-review · Submitted' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'clm-submitted · Submitted' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'clm-approved · Payment pending' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'clm-self-review · Submitted' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'clm-draft · Draft' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'clm-completed · Payment completed' })).toHaveCount(0);
 });
 
 test('Finance atomically claims and schedules shared payment work', async ({ page }) => {

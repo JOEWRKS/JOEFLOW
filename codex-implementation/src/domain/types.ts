@@ -28,6 +28,7 @@ export interface User {
 export interface ClaimRevision {
   number: number;
   submittedAt?: string;
+  managerIdSnapshot?: string;
   merchant: string;
   categoryId: string;
   categoryNameSnapshot: string;
@@ -50,6 +51,7 @@ export interface FileRecord {
   name: string;
   mime: 'image/jpeg' | 'image/png' | 'application/pdf';
   sizeBytes: number;
+  sha256: string;
   purpose: 'RECEIPT' | 'FX_EVIDENCE' | 'PAYMENT_EVIDENCE';
   source: 'camera' | 'file';
   scanStatus: 'Scanning' | 'Linked' | 'Failed and discarded';
@@ -82,6 +84,7 @@ export interface Adjustment {
   claimId: string;
   kind: 'Recovery' | 'Additional payment';
   amountKrw: number;
+  actualAmountKrw?: number;
   status: AdjustmentStatus;
   reason: string;
   externalReference?: string;
@@ -162,6 +165,7 @@ export interface OperationalWarning {
 }
 
 export type DomainCommandType =
+  | 'CREATE_DRAFT'
   | 'SUBMIT_CLAIM'
   | 'UPDATE_DRAFT'
   | 'LINK_ATTACHMENT'

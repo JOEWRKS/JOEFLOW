@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { executeCommand } from './engine';
 import { createSeedState } from './seed';
-import { adjustmentTotals } from './selectors';
+import { adjustmentTotals, claimsForRole } from './selectors';
 
 describe('domain command boundary', () => {
   it('denies an unrelated manager without mutating business or audit state', () => {
@@ -51,6 +51,37 @@ describe('domain command boundary', () => {
     expect(result.outcome.preservedInput).toEqual({ revision: 1, comment: 'Please clarify the merchant.' });
     expect(result.state.claims['clm-submitted']).toEqual(before.claims['clm-submitted']);
     expect(result.state.auditEvents).toEqual(before.auditEvents);
+    expect(result.changedFields).toContain('version');
+  });
+
+  it('replays an original rejected result even after the rejection condition changes', () => {
+    const before = createSeedState();
+    before.claims['clm-draft'].revisions[0].expenseDate = '2026-08-23';
+    const command = {
+      type: 'SUBMIT_CLAIM' as const,
+      actorId: 'usr-employee',
+      targetId: 'clm-draft',
+      expectedVersion: 1,
+      idempotencyKey: 'rejected-submit-once',
+      input: {},
+    };
+    const first = executeCommand(before, command);
+    first.state.claims['clm-draft'].revisions[0].expenseDate = '2026-08-18';
+    const replay = executeCommand(first.state, command);
+
+    expect(first.outcome).toMatchObject({ status: 'rejected', code: 'FUTURE_EXPENSE_DATE' });
+    expect(replay.outcome).toEqual(first.outcome);
+    expect(replay.state.claims['clm-draft'].status).toBe('Draft');
+    expect(replay.auditEventIds).toEqual([]);
+  });
+
+  it('limits manager and Finance selectors to current processing authority', () => {
+    const state = createSeedState();
+    expect(claimsForRole(state, 'usr-manager', 'MANAGER').map((claim) => claim.id).sort()).toEqual([
+      'clm-approved',
+      'clm-submitted',
+    ]);
+    expect(claimsForRole(state, 'usr-finance-other', 'FINANCE').map((claim) => claim.id)).toEqual(['clm-approved']);
   });
 
   it('replays the exact original result for the same idempotency key and fingerprint', () => {
@@ -117,13 +148,13 @@ describe('claim lifecycle', () => {
     ['future date', (state: ReturnType<typeof createSeedState>) => { state.claims['clm-draft'].revisions[0].expenseDate = '2026-08-23'; }, 'FUTURE_EXPENSE_DATE'],
     ['late without reason', (state: ReturnType<typeof createSeedState>) => { state.claims['clm-draft'].revisions[0].expenseDate = '2026-01-01'; state.claims['clm-draft'].revisions[0].lateReason = ''; }, 'LATE_REASON_REQUIRED'],
     ['inactive category', (state: ReturnType<typeof createSeedState>) => { state.categories['CAT-002'].active = false; }, 'ACTIVE_CATEGORY_REQUIRED'],
-    ['unclean receipt', (state: ReturnType<typeof createSeedState>) => { state.files['file-clean-receipt'].scanStatus = 'Scanning'; }, 'CLEAN_RECEIPT_REQUIRED'],
+    ['unclean receipt', (state: ReturnType<typeof createSeedState>) => { state.files['file-clm-draft-receipt'].scanStatus = 'Scanning'; }, 'CLEAN_RECEIPT_REQUIRED'],
     ['invalid FX rounding', (state: ReturnType<typeof createSeedState>) => {
       const item = state.claims['clm-draft'].revisions[0];
-      item.currency = 'USD'; item.originalAmount = 100; item.exchangeRate = 1300; item.krwAmount = 130002; item.exchangeEvidenceIds = ['file-clean-receipt'];
+      item.currency = 'USD'; item.originalAmount = 100; item.exchangeRate = 1300; item.krwAmount = 130002; item.exchangeEvidenceIds = ['file-clm-draft-receipt'];
     }, 'FX_CONVERSION_INVALID'],
     ['duplicate without reason', (state: ReturnType<typeof createSeedState>) => { state.claims['clm-draft'].revisions[0].duplicateReason = ''; }, 'DUPLICATE_REASON_REQUIRED'],
-    ['missing manager', (state: ReturnType<typeof createSeedState>) => { state.claims['clm-draft'].managerId = ''; }, 'MANAGER_REQUIRED'],
+    ['missing manager', (state: ReturnType<typeof createSeedState>) => { state.users['usr-employee'].managerId = undefined; }, 'MANAGER_REQUIRED'],
   ])('blocks %s without audit or delivery effects', (_name, mutate, code) => {
     const state = createSeedState();
     mutate(state);
@@ -137,7 +168,7 @@ describe('claim lifecycle', () => {
     expect(result.state.claims['clm-draft'].status).toBe('Draft');
   });
 
-  it('submits, requests changes, creates a new revision, approves, and revokes before scheduling', () => {
+  it('submits, requests changes, edits and resubmits a new revision, then revokes approval to the same Submitted revision', () => {
     let state = createSeedState();
     let result = executeCommand(state, {
       type: 'SUBMIT_CLAIM', actorId: 'usr-employee', targetId: 'clm-draft', expectedVersion: 1,
@@ -158,22 +189,69 @@ describe('claim lifecycle', () => {
       type: 'REVISE_CLAIM', actorId: 'usr-employee', targetId: 'clm-draft', expectedVersion: 3,
       idempotencyKey: 'lifecycle-revise', input: {},
     });
-    expect(result.state.claims['clm-draft']).toMatchObject({ status: 'Submitted', currentRevision: 2 });
+    expect(result.state.claims['clm-draft']).toMatchObject({ status: 'Draft', currentRevision: 2 });
+    expect(result.state.claims['clm-draft'].revisions[1].submittedAt).toBeUndefined();
 
     state = result.state;
     result = executeCommand(state, {
-      type: 'APPROVE_CLAIM', actorId: 'usr-manager', targetId: 'clm-draft', expectedVersion: 4,
+      type: 'UPDATE_DRAFT', actorId: 'usr-employee', targetId: 'clm-draft', expectedVersion: 4,
+      idempotencyKey: 'lifecycle-edit-revision', input: { merchant: 'Corrected merchant' },
+    });
+    state = result.state;
+    result = executeCommand(state, {
+      type: 'SUBMIT_CLAIM', actorId: 'usr-employee', targetId: 'clm-draft', expectedVersion: 5,
+      idempotencyKey: 'lifecycle-resubmit', input: {},
+    });
+    expect(result.state.claims['clm-draft']).toMatchObject({ status: 'Submitted', currentRevision: 2 });
+    expect(result.state.claims['clm-draft'].revisions[1].merchant).toBe('Corrected merchant');
+
+    state = result.state;
+    result = executeCommand(state, {
+      type: 'APPROVE_CLAIM', actorId: 'usr-manager', targetId: 'clm-draft', expectedVersion: 6,
       idempotencyKey: 'lifecycle-approve', input: { revision: 2 },
     });
     expect(result.state.claims['clm-draft']).toMatchObject({ status: 'Payment pending', approvedRevision: 2 });
 
     state = result.state;
     result = executeCommand(state, {
-      type: 'REVOKE_APPROVAL', actorId: 'usr-manager', targetId: 'clm-draft', expectedVersion: 5,
+      type: 'REVOKE_APPROVAL', actorId: 'usr-manager', targetId: 'clm-draft', expectedVersion: 7,
       idempotencyKey: 'lifecycle-revoke', input: { revision: 2, comment: 'The receipt was invalidated.' },
     });
-    expect(result.state.claims['clm-draft'].status).toBe('Changes requested');
+    expect(result.state.claims['clm-draft'].status).toBe('Submitted');
+    expect(result.state.claims['clm-draft'].currentRevision).toBe(2);
     expect(result.state.claims['clm-draft'].approvedRevision).toBeUndefined();
+  });
+
+  it('creates a fresh employee draft and snapshots the current direct manager on submission', () => {
+    let state = createSeedState();
+    const created = executeCommand(state, {
+      type: 'CREATE_DRAFT', actorId: 'usr-employee', targetId: 'claim-register', expectedVersion: 0,
+      idempotencyKey: 'create-fresh-draft', input: {},
+    });
+    expect(created.outcome.status).toBe('committed');
+    const createdClaim = Object.values(created.state.claims).find((claim) => claim.createdAt === created.state.now && claim.revisions[0].merchant === '');
+    expect(createdClaim).toMatchObject({ status: 'Draft', employeeId: 'usr-employee', currentRevision: 1 });
+
+    state = createSeedState();
+    state.users['usr-employee'].managerId = 'usr-manager-other';
+    const submitted = executeCommand(state, {
+      type: 'SUBMIT_CLAIM', actorId: 'usr-employee', targetId: 'clm-draft', expectedVersion: 1,
+      idempotencyKey: 'submit-current-manager', input: {},
+    });
+    expect(submitted.state.claims['clm-draft'].managerId).toBe('usr-manager-other');
+    expect(submitted.state.claims['clm-draft'].revisions[0].managerIdSnapshot).toBe('usr-manager-other');
+    expect(submitted.state.deliveries.filter((item) => item.recipientId === 'usr-manager-other' && item.template === 'SUBMIT_CLAIM')).toHaveLength(2);
+  });
+
+  it('blocks an exact receipt hash already retained by another claim without leaking its identity', () => {
+    const state = createSeedState();
+    state.files['file-clm-draft-receipt'].sha256 = state.files['file-clm-submitted-receipt'].sha256;
+    const result = executeCommand(state, {
+      type: 'SUBMIT_CLAIM', actorId: 'usr-employee', targetId: 'clm-draft', expectedVersion: 1,
+      idempotencyKey: 'duplicate-receipt-hash', input: {},
+    });
+    expect(result.outcome).toMatchObject({ status: 'rejected', code: 'DUPLICATE_RECEIPT' });
+    expect(result.outcome.message).not.toContain('clm-submitted');
   });
 
   it('keeps final rejection and withdrawal terminal', () => {
@@ -300,6 +378,39 @@ describe('payment and adjustment lifecycle', () => {
     });
     expect(blocked.outcome).toMatchObject({ status: 'rejected', code: 'ACTIVE_ADJUSTMENT_EXISTS' });
   });
+
+  it('requires the current Finance owner for all adjustment mutations and permits hold only from Scheduled', () => {
+    const wrongOwner = executeCommand(createSeedState(), {
+      type: 'CREATE_ADJUSTMENT', actorId: 'usr-finance-other', targetId: 'clm-completed', expectedVersion: 4,
+      idempotencyKey: 'wrong-adjustment-owner', input: { kind: 'Recovery', amountKrw: 1000, reason: 'Correction' },
+    });
+    expect(wrongOwner.outcome).toMatchObject({ status: 'rejected', code: 'PAYMENT_OWNER_REQUIRED' });
+
+    const invalidHold = executeCommand(createSeedState(), {
+      type: 'HOLD_PAYMENT', actorId: 'usr-finance', targetId: 'clm-approved', expectedVersion: 1,
+      idempotencyKey: 'pending-hold-denied', input: { reason: 'Investigate' },
+    });
+    expect(invalidHold.outcome).toMatchObject({ status: 'rejected', code: 'INVALID_STATUS' });
+  });
+
+  it('uses the verified actual adjustment amount and bounded date for Executed resolution', () => {
+    const created = executeCommand(createSeedState(), {
+      type: 'CREATE_ADJUSTMENT', actorId: 'usr-finance', targetId: 'clm-completed', expectedVersion: 4,
+      idempotencyKey: 'executed-create', input: { kind: 'Recovery', amountKrw: 18000, reason: 'Expected recovery' },
+    });
+    const adjustmentId = created.state.claims['clm-completed'].adjustmentIds[0];
+    const failed = executeCommand(created.state, {
+      type: 'FAIL_ADJUSTMENT', actorId: 'usr-finance', targetId: 'clm-completed', expectedVersion: 5,
+      idempotencyKey: 'executed-fail', input: { adjustmentId, reason: 'Provider timeout' },
+    });
+    const resolved = executeCommand(failed.state, {
+      type: 'RESOLVE_ADJUSTMENT', actorId: 'usr-finance', targetId: 'clm-completed', expectedVersion: 6,
+      idempotencyKey: 'executed-resolve',
+      input: { adjustmentId, result: 'Executed', note: 'Bank confirmed', actualAmountKrw: 17000, actualDate: '2026-08-22', externalReference: 'ADJ-EXEC-1' },
+    });
+    expect(resolved.state.adjustments[adjustmentId]).toMatchObject({ status: 'Completed', actualAmountKrw: 17000 });
+    expect(adjustmentTotals(resolved.state, 'clm-completed')).toMatchObject({ recoveredKrw: 17000, netKrw: 151000 });
+  });
 });
 
 describe('Admin governance', () => {
@@ -336,14 +447,20 @@ describe('Admin governance', () => {
     expect(denied.outcome).toMatchObject({ status: 'rejected', code: 'FORBIDDEN' });
   });
 
-  it('blocks deactivating the last active category and preserves historical category snapshots', () => {
+  it('allows zero active categories while submission blocks and preserves historical category snapshots', () => {
     const state = createSeedState();
     for (const category of Object.values(state.categories)) category.active = category.id === 'CAT-002';
-    const denied = executeCommand(state, {
+    const deactivated = executeCommand(state, {
       type: 'UPDATE_CATEGORY', actorId: 'usr-admin', targetId: 'CAT-002', expectedVersion: 1,
       idempotencyKey: 'last-category', input: { active: false, name: 'Lodging', reason: 'Consolidation' },
     });
-    expect(denied.outcome).toMatchObject({ status: 'rejected', code: 'LAST_ACTIVE_CATEGORY' });
+    expect(deactivated.outcome.status).toBe('committed');
+    expect(Object.values(deactivated.state.categories).filter((item) => item.active)).toHaveLength(0);
+    const blockedSubmit = executeCommand(deactivated.state, {
+      type: 'SUBMIT_CLAIM', actorId: 'usr-employee', targetId: 'clm-draft', expectedVersion: 1,
+      idempotencyKey: 'zero-category-submit', input: {},
+    });
+    expect(blockedSubmit.outcome).toMatchObject({ status: 'rejected', code: 'ACTIVE_CATEGORY_REQUIRED' });
     const renamed = executeCommand(createSeedState(), {
       type: 'UPDATE_CATEGORY', actorId: 'usr-admin', targetId: 'CAT-002', expectedVersion: 1,
       idempotencyKey: 'rename-category', input: { active: true, name: 'Accommodation', reason: 'Terminology update' },

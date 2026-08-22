@@ -26,7 +26,7 @@ export function AdminSurface({ state, dispatch }: Props) {
 
   const run = (type: DomainCommand['type'], targetId: string, expectedVersion: number, input: Record<string, unknown>) => dispatch({
     type, actorId: 'usr-admin', targetId, expectedVersion,
-    idempotencyKey: `ui-${type}-${targetId}-${expectedVersion}`, input,
+    idempotencyKey: `ui-${type}-${targetId}-${expectedVersion}-${JSON.stringify(input)}`, input,
   });
   const selectedUser = state.users[userId];
   const selectedCategory = state.categories[categoryId];

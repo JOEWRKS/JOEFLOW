@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { StatusBadge } from '../../components/StatusBadge';
+import { claimsForRole } from '../../domain/selectors';
 import type { CommandResult, DomainCommand, DomainState } from '../../domain/types';
 import { AdjustmentPanel } from './AdjustmentPanel';
 import { PaymentPanel } from './PaymentPanel';
@@ -7,7 +8,7 @@ import { PaymentPanel } from './PaymentPanel';
 interface Props { state: DomainState; dispatch: (command: DomainCommand) => CommandResult }
 
 export function FinanceSurface({ state, dispatch }: Props) {
-  const claims = Object.values(state.claims).filter((claim) => ['Payment pending', 'Scheduled', 'Payment failed', 'Payment hold', 'Payment completed'].includes(claim.status));
+  const claims = claimsForRole(state, 'usr-finance', 'FINANCE');
   const [selectedId, setSelectedId] = useState('clm-approved');
   const claim = state.claims[selectedId] ?? claims[0];
   if (!claim) return <section className="empty-panel"><h2>No Finance work</h2><p>The authorized payment queue is empty.</p></section>;
