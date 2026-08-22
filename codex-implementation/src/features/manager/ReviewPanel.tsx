@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { CommandDialog } from '../../components/CommandDialog';
+import { EvidenceAccessPanel } from '../../components/EvidenceAccessPanel';
 import { StatusBadge } from '../../components/StatusBadge';
 import type { Claim, CommandResult, DomainCommand, DomainState } from '../../domain/types';
 
@@ -55,6 +56,7 @@ export function ReviewPanel({ claim, state, dispatch }: Props) {
         <div className="section-heading"><div><p className="eyebrow">Immutable context</p><h3>Revision history</h3></div><span>{claim.revisions.length} revisions</span></div>
         <div className="revision-strip">{claim.revisions.map((item) => <span key={item.number} className={item.number === claim.currentRevision ? 'current' : ''}>rev {item.number}{item.submittedAt ? ' · submitted' : ' · draft'}</span>)}</div>
       </section>
+      <EvidenceAccessPanel claim={claim} state={state} actorId="usr-manager" dispatch={dispatch} />
       <div className="sticky-actions">
         {claim.status === 'Submitted' && <>
           <button className="button primary" type="button" onClick={() => run('APPROVE_CLAIM')}>Approve revision {claim.currentRevision}</button>

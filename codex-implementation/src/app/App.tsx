@@ -44,7 +44,7 @@ export function App() {
       <main id="workspace-main" className="workspace">
         <header className="workspace-header">
           <div>
-            <p className="eyebrow">{role} · {meta.actorId}</p>
+            <p className="eyebrow">{role} workspace</p>
             <h1>{meta.title}</h1>
             <p>{meta.subtitle}</p>
           </div>

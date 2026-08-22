@@ -8,6 +8,7 @@ interface Feedback {
   message: string;
   changedFields?: string[];
   preservedInput?: Record<string, unknown>;
+  latestValues?: Record<string, unknown>;
 }
 
 export function useDomain() {
@@ -25,6 +26,7 @@ export function useDomain() {
       message: result.outcome.message,
       changedFields: result.outcome.code === 'STALE_VERSION' ? result.changedFields : undefined,
       preservedInput: result.outcome.code === 'STALE_VERSION' ? result.outcome.preservedInput : undefined,
+      latestValues: result.outcome.code === 'STALE_VERSION' ? result.outcome.latestValues : undefined,
     });
     return result;
   }, [state]);

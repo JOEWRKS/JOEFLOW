@@ -38,7 +38,7 @@ describe('ManagerSurface', () => {
     expect(screen.getByText('Claim approved for payment.')).toBeVisible();
     expect(screen.getAllByText('Payment pending', { selector: '[data-status]' })).not.toHaveLength(0);
     expect(screen.getByLabelText('audit count')).toHaveTextContent('1');
-    expect(screen.getByLabelText('delivery count')).toHaveTextContent('3');
+    expect(screen.getByLabelText('delivery count')).toHaveTextContent('5');
   });
 
   it('requires a manager comment for Changes requested and commits it through a dialog', async () => {

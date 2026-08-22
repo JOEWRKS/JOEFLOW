@@ -19,8 +19,9 @@ export function ExportPanel({ state, role, actorId, dispatch, claimIds, filterSn
   };
   return (
     <section aria-labelledby="export-title">
-      <div className="section-heading"><div><p className="eyebrow">Reauthorized at generation</p><h3 id="export-title">Governed CSV export</h3></div><span>10,000 row cap</span></div>
+      <div className="section-heading"><div><p className="eyebrow">Reauthorized at generation and download</p><h3 id="export-title">Governed CSV export</h3></div><span>10,000 row cap</span></div>
       <p className="helper-text">Current-filter rows only. Attachments, access tokens, internal IDs, file diagnostics, delivery-provider detail, and administrator-only notes are excluded.</p>
+      <p className="mobile-desktop-guidance">CSV remains available on mobile; desktop recommended for reviewing bulk rows before download.</p>
       <button className="button secondary" type="button" onClick={generate}>Generate current-filter CSV</button>
       {latest && <div className="export-result"><strong>Export generated · {latest.rowCount} rows</strong><span>{latest.columns.join(', ')}</span><small>{latest.filterSnapshot} · local simulated CSV {latest.id}; no external system received data.</small><button className="button secondary" type="button" onClick={download}>Download authorized CSV</button></div>}
     </section>

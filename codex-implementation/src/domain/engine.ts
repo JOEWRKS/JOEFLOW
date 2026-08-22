@@ -1,5 +1,5 @@
 import { commandFingerprint } from './commands';
-import { claimsForRole } from './selectors';
+import { canAccessClaim, claimsForRole } from './selectors';
 import type { Adjustment, AuditEvent, Claim, CommandOutcome, CommandResult, DeliveryEvent, DomainCommand, DomainState, Role } from './types';
 
 const REVIEW_COMMANDS = new Set(['APPROVE_CLAIM', 'REQUEST_CHANGES', 'FINAL_REJECT_CLAIM', 'REVOKE_APPROVAL']);
@@ -50,6 +50,19 @@ function queueDelivery(state: DomainState, targetId: string, recipientId: string
   return ids;
 }
 
+function auditDenied(state: DomainState, command: DomainCommand, code: string, message: string, targetVersion: number, changedFields: string[] = []): CommandResult {
+  const audit: AuditEvent = {
+    id: nextId(state, 'audit'), actorId: command.actorId, targetId: command.targetId, action: command.type,
+    at: state.now, changedFields, reason: message, targetVersion, result: 'DENIED',
+  };
+  const snapshot = targetSnapshot(state, command.targetId);
+  audit.before = snapshot;
+  audit.after = snapshot ? structuredClone(snapshot) : undefined;
+  state.auditEvents.push(audit);
+  const outcome: CommandOutcome = { status: 'rejected', code, message, targetVersion, preservedInput: structuredClone(command.input) };
+  return { state, outcome, auditEventIds: [audit.id], deliveryEventIds: [], changedFields };
+}
+
 function commit(
   state: DomainState,
   command: DomainCommand,
@@ -65,10 +78,14 @@ function commit(
   }
   const audit: AuditEvent = {
     id: nextId(state, 'audit'), actorId: command.actorId, targetId: command.targetId,
-    action: command.type, at: state.now, changedFields, reason,
+    action: command.type, at: state.now, changedFields, reason, result: 'COMMITTED',
   };
   state.auditEvents.push(audit);
-  const deliveryEventIds = recipients.flatMap((recipientId) => queueDelivery(state, command.targetId, recipientId, command.type));
+  const logicalVersion = claim?.version ?? command.expectedVersion + 1;
+  const deliveryEventIds = recipients.flatMap((recipientId) => queueDelivery(
+    state, command.targetId, recipientId, command.type,
+    `${command.type}:${command.targetId}:${recipientId}:v${logicalVersion}`,
+  ));
   const outcome: CommandOutcome = {
     status: 'committed', code: 'COMMITTED', message,
     targetVersion: claim?.version ?? command.expectedVersion + 1,
@@ -302,7 +319,7 @@ function financeTransition(state: DomainState, command: DomainCommand, claim: Cl
         claim.adjustmentIds.push(replacementId);
       }
       adjustment.version += 1;
-      return commit(state, command, ['adjustment.verification', 'adjustment.status', 'adjustmentIds'], 'Adjustment verification resolved.');
+      return commit(state, command, ['adjustment.verification', 'adjustment.status', 'adjustmentIds'], 'Adjustment verification resolved.', [claim.employeeId]);
     }
     default:
       return rejected(state, command, 'UNSUPPORTED_COMMAND', 'This Finance command is not implemented yet.', claim.version);
@@ -342,10 +359,14 @@ function validateSubmission(state: DomainState, command: DomainCommand, claim: C
   if (exactDuplicate) return rejected(state, command, 'DUPLICATE_RECEIPT', 'This receipt has already been retained for another company claim.', claim.version);
   if (current.currency !== 'KRW') {
     const exchangeRate = current.exchangeRate ?? 0;
+    if (Math.abs(exchangeRate * 1_000_000 - Math.round(exchangeRate * 1_000_000)) > 0.0001) {
+      return rejected(state, command, 'FX_PRECISION_INVALID', 'Exchange rate supports at most six decimal places.', claim.version);
+    }
     const calculated = Math.round(current.originalAmount * exchangeRate);
     if (exchangeRate <= 0 || Math.abs(calculated - current.krwAmount) > 1) return rejected(state, command, 'FX_CONVERSION_INVALID', 'KRW conversion must equal amount × rate within ±1 KRW.', claim.version);
     const evidence = (current.exchangeEvidenceIds ?? []).map((id) => state.files[id]);
     if (!evidence.length || evidence.some((file) => !file || file.scanStatus !== 'Linked')) return rejected(state, command, 'FX_EVIDENCE_REQUIRED', 'Foreign-currency claims require clean linked FX evidence.', claim.version);
+    if (evidence.some((file) => !file.evidenceType)) return rejected(state, command, 'FX_EVIDENCE_TYPE_REQUIRED', 'Choose card statement, bank exchange record, or official-rate capture/PDF for each FX evidence file.', claim.version);
   }
   const duplicate = Object.values(state.claims).some((item) => item.id !== claim.id && item.employeeId === claim.employeeId && item.status !== 'Draft'
     && item.revisions.at(-1)?.merchant === current.merchant
@@ -394,7 +415,13 @@ function adminTransition(state: DomainState, command: DomainCommand): CommandRes
       const id = nextId(state, 'invitation');
       const expiresDate = new Date(Date.parse(state.now) + 7 * 86_400_000).toISOString().slice(0, 10);
       state.invitations[id] = { ...structuredClone(prior), id, status: 'Pending', expiresAt: `${expiresDate}T09:00:00+09:00`, version: 1 };
-      return commit(state, { ...command, targetId: id }, ['prior.status', 'invitation'], 'Invitation reissued; prior links invalidated.', [prior.email]);
+      const result = commit(state, { ...command, targetId: id }, ['prior.status', 'invitation'], 'Invitation reissued; prior links invalidated.', [prior.email]);
+      const priorAudit: AuditEvent = {
+        id: nextId(state, 'audit'), actorId: command.actorId, targetId: prior.id, action: command.type, at: state.now,
+        changedFields: ['invitation.status'], targetVersion: prior.version, reason: 'Prior invitation link invalidated by reissue', result: 'COMMITTED',
+      };
+      state.auditEvents.push(priorAudit); result.auditEventIds.push(priorAudit.id);
+      return result;
     }
     case 'REVOKE_INVITATION': {
       const invitation = state.invitations[command.targetId];
@@ -410,7 +437,15 @@ function adminTransition(state: DomainState, command: DomainCommand): CommandRes
         invitation.status = 'Expired';
         invitation.version += 1;
       }
-      return commit(state, command, ['invitations.status'], `${expired.length} expired invitation(s) invalidated.`);
+      const result = commit(state, command, ['invitations.status'], `${expired.length} expired invitation(s) invalidated.`);
+      for (const invitation of expired) {
+        const invitationAudit: AuditEvent = {
+          id: nextId(state, 'audit'), actorId: command.actorId, targetId: invitation.id, action: command.type, at: state.now,
+          changedFields: ['invitation.status'], targetVersion: invitation.version, reason: 'Seven-day invitation expiry reached', result: 'COMMITTED',
+        };
+        state.auditEvents.push(invitationAudit); result.auditEventIds.push(invitationAudit.id);
+      }
+      return result;
     }
     case 'UPDATE_ACCOUNT': {
       const user = state.users[command.targetId];
@@ -481,6 +516,7 @@ function adminTransition(state: DomainState, command: DomainCommand): CommandRes
       const managerId = text(command.input, 'managerId');
       const manager = state.users[managerId];
       if (!claim || !manager?.active || !manager.roles.includes('MANAGER') || claim.employeeId === managerId) return rejected(state, command, 'INVALID_MANAGER', 'Select a valid different Manager.', currentVersion);
+      if (claim.status !== 'Submitted') return rejected(state, command, 'REASSIGNMENT_STATUS_DENIED', 'Only an unfinished Submitted revision can transfer pending Manager review authority.', currentVersion);
       if (state.users[claim.managerId]?.active) return rejected(state, command, 'CURRENT_MANAGER_ACTIVE', 'Reassignment is reserved for a manager who can no longer process the revision.', currentVersion);
       if (!reason) return rejected(state, command, 'REASON_REQUIRED', 'Reassignment reason is required.', currentVersion);
       const oldManager = claim.managerId;
@@ -536,20 +572,41 @@ function adminTransition(state: DomainState, command: DomainCommand): CommandRes
           state.categories[revision.categoryId]?.name ?? revision.categoryNameSnapshot, assignee]
           .map((value) => `"${String(value).replaceAll('"', '""')}"`).join(',');
       })].join('\r\n');
-      state.exports.push({ id, actorId: command.actorId, createdAt: state.now, rowCount: rows.length, columns, filterSnapshot: text(command.input, 'filterSnapshot') || 'Current authorized scope', csv, version: 1 });
-      return commit(state, { ...command, targetId: id }, ['exports'], `Export generated with ${rows.length} authorized rows.`);
+      const filterSnapshot = text(command.input, 'filterSnapshot') || 'Current authorized scope';
+      state.exports.push({ id, actorId: command.actorId, createdAt: state.now, rowCount: rows.length, claimIds: rows.map((claim) => claim.id), columns, filterSnapshot, csv, version: 1 });
+      const generated = commit(state, { ...command, targetId: id }, ['exports'], `Export generated with ${rows.length} authorized rows.`);
+      const generatedAudit = generated.state.auditEvents.find((event) => event.id === generated.auditEventIds[0]);
+      if (generatedAudit) { generatedAudit.scopeSnapshot = filterSnapshot; generatedAudit.rowCount = rows.length; generatedAudit.result = 'SUCCESS'; }
+      return generated;
     }
     case 'DOWNLOAD_EXPORT': {
       const item = state.exports.find((exportItem) => exportItem.id === command.targetId);
-      if (!item || (item.actorId !== command.actorId && !hasRole(state, command.actorId, 'ADMIN'))) return rejected(state, command, 'EXPORT_NOT_FOUND', 'No authorized export is available.', currentVersion);
+      if (!item || (item.actorId !== command.actorId && !hasRole(state, command.actorId, 'ADMIN'))) {
+        return auditDenied(state, command, 'EXPORT_NOT_FOUND', 'No authorized export is available.', currentVersion);
+      }
+      if (!hasRole(state, command.actorId, 'ADMIN')) {
+        const authorizedIds = new Set(claimsForRole(state, command.actorId, 'FINANCE').map((claim) => claim.id));
+        if (item.claimIds.some((id) => !authorizedIds.has(id))) {
+          const denied = auditDenied(state, command, 'EXPORT_SCOPE_REVOKED', 'Current Finance scope no longer authorizes every row in this export.', item.version);
+          const deniedAudit = denied.state.auditEvents.find((event) => event.id === denied.auditEventIds[0]);
+          if (deniedAudit) { deniedAudit.scopeSnapshot = item.filterSnapshot; deniedAudit.rowCount = item.rowCount; }
+          return denied;
+        }
+      }
       item.downloadedAt = state.now;
       item.version += 1;
-      return commit(state, command, ['export.downloadedAt'], 'CSV download authorized and audited.');
+      const downloaded = commit(state, command, ['export.downloadedAt'], 'CSV download authorized and audited.');
+      const downloadAudit = downloaded.state.auditEvents.find((event) => event.id === downloaded.auditEventIds[0]);
+      if (downloadAudit) { downloadAudit.scopeSnapshot = item.filterSnapshot; downloadAudit.rowCount = item.rowCount; downloadAudit.result = 'SUCCESS'; }
+      return downloaded;
     }
     case 'RUN_DAILY_OPERATIONS': {
-      const today = state.now.slice(0, 10);
+      const scheduledAt = text(command.input, 'scheduledAt') || state.now;
+      const today = scheduledAt.slice(0, 10);
+      if (scheduledAt.slice(11, 13) !== '02') return rejected(state, command, 'RETENTION_JOB_NOT_DUE', 'Daily retention operations run only during the 02:00 KST hour.', currentVersion);
       const deliveryEventIds: string[] = [];
       const extraAuditIds: string[] = [];
+      const deletionFailureIds = new Set(Array.isArray(command.input.deletionFailureIds) ? command.input.deletionFailureIds.map(String) : []);
       for (const claim of Object.values(state.claims)) {
         if (claim.status === 'Scheduled' && claim.payment.scheduledDate && claim.payment.scheduledDate < today) {
           claim.payment.overdue = true;
@@ -562,22 +619,59 @@ function adminTransition(state: DomainState, command: DomainCommand): CommandRes
           if (elapsed >= 7 && !state.warnings.some((item) => item.targetId === `review-${claim.id}` && !item.resolved)) {
             state.warnings.push({ id: nextId(state, 'warning'), targetId: `review-${claim.id}`, message: `${claim.id} has awaited Manager review for ${elapsed} calendar days.`, resolved: false });
           }
+        } else {
+          for (const warning of state.warnings.filter((item) => item.targetId === `review-${claim.id}`)) warning.resolved = true;
         }
         if (claim.status === 'Draft') {
           const age = daysBetween(claim.updatedAt.slice(0, 10), today);
           if (age >= 83 && age < 90) deliveryEventIds.push(...queueDelivery(state, claim.id, claim.employeeId, 'DRAFT_EXPIRY_WARNING', `DRAFT_EXPIRY_WARNING:${claim.id}`));
         }
       }
-      const expired = Object.values(state.claims).filter((claim) => claim.status === 'Draft' && daysBetween(claim.updatedAt.slice(0, 10), today) >= 90);
-      for (const claim of expired) {
+      const draftCandidates = Object.values(state.claims).filter((claim) => claim.status === 'Draft' && daysBetween(claim.updatedAt.slice(0, 10), today) >= 90);
+      const retainedCandidates = Object.values(state.claims).filter((claim) => {
+        const terminalDate = claim.status === 'Payment completed' ? claim.payment.actualDate : claim.status === 'Final rejected' ? claim.finalRejectedAt?.slice(0, 10) : undefined;
+        if (!terminalDate) return false;
+        const fiscalYear = Number(terminalDate.slice(0, 4));
+        return today > `${fiscalYear + 7}-12-31`;
+      });
+      for (const claim of [...draftCandidates, ...retainedCandidates]) {
+        const draftExpiry = claim.status === 'Draft';
+        if (claim.legalHold) {
+          const audit: AuditEvent = {
+            id: nextId(state, 'audit'), actorId: command.actorId, targetId: claim.id, action: command.type, at: state.now,
+            changedFields: [], targetVersion: claim.version, revision: claim.currentRevision,
+            before: structuredClone(claim) as unknown as Record<string, unknown>, reason: 'Retention skipped because legal hold remains active', result: 'SKIPPED_LEGAL_HOLD',
+          };
+          state.auditEvents.push(audit); extraAuditIds.push(audit.id);
+          continue;
+        }
+        if (deletionFailureIds.has(claim.id)) {
+          const audit: AuditEvent = {
+            id: nextId(state, 'audit'), actorId: command.actorId, targetId: claim.id, action: command.type, at: state.now,
+            changedFields: [], targetVersion: claim.version, revision: claim.currentRevision,
+            before: structuredClone(claim) as unknown as Record<string, unknown>, reason: 'Deterministic deletion failure; record remains for the next daily retry', result: 'ERROR',
+          };
+          state.auditEvents.push(audit); extraAuditIds.push(audit.id);
+          if (!state.warnings.some((warning) => warning.targetId === `retention-${claim.id}` && !warning.resolved)) {
+            state.warnings.push({ id: nextId(state, 'warning'), targetId: `retention-${claim.id}`, message: `${claim.id} retention deletion failed and will retry on the next daily run.`, resolved: false });
+          }
+          continue;
+        }
         const audit: AuditEvent = {
           id: nextId(state, 'audit'), actorId: command.actorId, targetId: claim.id, action: command.type, at: state.now,
-          changedFields: ['expiredDraft.deleted', 'files.deleted'], targetVersion: claim.version, revision: claim.currentRevision,
-          before: structuredClone(claim) as unknown as Record<string, unknown>, reason: '90-day draft retention expiry',
+          changedFields: [draftExpiry ? 'expiredDraft.deleted' : 'retainedClaim.deleted', 'files.deleted', 'adjustments.deleted'], targetVersion: claim.version, revision: claim.currentRevision,
+          before: structuredClone(claim) as unknown as Record<string, unknown>, reason: draftExpiry ? '90-day draft retention expiry' : 'Seven-year fiscal retention expiry', result: 'SUCCESS',
         };
         state.auditEvents.push(audit); extraAuditIds.push(audit.id);
+        const relatedFileIds = Object.values(state.files).filter((file) => file.claimId === claim.id).map((file) => file.id);
+        const relatedTargets = new Set([claim.id, ...relatedFileIds, ...claim.adjustmentIds]);
+        if (!draftExpiry) state.auditEvents = state.auditEvents.filter((event) => event.id === audit.id || !relatedTargets.has(event.targetId));
+        state.fileGrants = state.fileGrants.filter((grant) => !relatedFileIds.includes(grant.fileId));
         for (const file of Object.values(state.files)) if (file.claimId === claim.id) delete state.files[file.id];
+        for (const adjustmentId of claim.adjustmentIds) delete state.adjustments[adjustmentId];
         delete state.claims[claim.id];
+        const warning = state.warnings.find((item) => item.targetId === `retention-${claim.id}` && !item.resolved);
+        if (warning) warning.resolved = true;
       }
       const result = commit(state, command, ['payment.overdue', 'review.reminders', 'draft.retention'], 'Daily KST operations completed.');
       result.deliveryEventIds.push(...deliveryEventIds);
@@ -587,18 +681,19 @@ function adminTransition(state: DomainState, command: DomainCommand): CommandRes
     case 'RUN_DELIVERY_RETRIES': {
       const failedIds = Array.isArray(command.input.failedDeliveryIds) ? command.input.failedDeliveryIds.map(String) : [];
       const changed: string[] = [];
-      for (const delivery of state.deliveries.filter((item) => failedIds.includes(item.id) && item.status === 'Queued')) {
+      for (const delivery of state.deliveries.filter((item) => failedIds.includes(item.id) && item.status === 'Queued'
+        && (!item.nextRetryAt || Date.parse(state.now) >= Date.parse(item.nextRetryAt)))) {
         delivery.attempts += 1;
         delivery.version += 1;
         changed.push(delivery.id);
-        if (delivery.attempts >= 3) {
+        if (delivery.attempts >= 4) {
           delivery.status = 'Permanent failure';
           delivery.nextRetryAt = undefined;
           if (!state.warnings.some((warning) => warning.targetId === delivery.id && !warning.resolved)) {
             state.warnings.push({ id: nextId(state, 'warning'), targetId: delivery.id, message: `${delivery.template} delivery permanently failed after three automatic retries.`, resolved: false });
           }
         } else {
-          const minutes = delivery.attempts === 1 ? 10 : 60;
+          const minutes = delivery.attempts === 1 ? 1 : delivery.attempts === 2 ? 10 : 60;
           delivery.nextRetryAt = new Date(Date.parse(state.now) + minutes * 60_000).toISOString();
         }
       }
@@ -641,11 +736,15 @@ function executeTransition(state: DomainState, command: DomainCommand, claim: Cl
       const name = text(command.input, 'name');
       const source = text(command.input, 'source');
       const purpose = text(command.input, 'purpose');
+      const evidenceType = text(command.input, 'evidenceType');
       const sha256 = text(command.input, 'sha256');
       const sizeBytes = Number(command.input.sizeBytes);
       if (!name || !['image/jpeg', 'image/png', 'application/pdf'].includes(mime) || !['camera', 'file'].includes(source)
         || !['RECEIPT', 'FX_EVIDENCE'].includes(purpose) || !sha256 || !Number.isFinite(sizeBytes) || sizeBytes <= 0 || sizeBytes > 10 * 1024 * 1024) {
         return rejected(state, command, 'INVALID_ATTACHMENT', 'Use a JPG, PNG, or PDF up to 10 MB from camera or file picker.', claim.version);
+      }
+      if (purpose === 'FX_EVIDENCE' && !['CARD_STATEMENT', 'BANK_EXCHANGE_RECORD', 'OFFICIAL_RATE_CAPTURE', 'OFFICIAL_RATE_PDF'].includes(evidenceType)) {
+        return rejected(state, command, 'FX_EVIDENCE_TYPE_REQUIRED', 'Choose the FX evidence type before upload.', claim.version);
       }
       const lowerName = name.toLowerCase();
       const extensionMatches = (mime === 'image/jpeg' && (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')))
@@ -662,6 +761,7 @@ function executeTransition(state: DomainState, command: DomainCommand, claim: Cl
       state.files[id] = {
         id, claimId: claim.id, name, mime: mime as 'image/jpeg' | 'image/png' | 'application/pdf', sizeBytes,
         sha256, purpose: purpose as 'RECEIPT' | 'FX_EVIDENCE', source: source as 'camera' | 'file', scanStatus: 'Linked',
+        ...(purpose === 'FX_EVIDENCE' ? { evidenceType: evidenceType as 'CARD_STATEMENT' | 'BANK_EXCHANGE_RECORD' | 'OFFICIAL_RATE_CAPTURE' | 'OFFICIAL_RATE_PDF' } : {}),
         ...(scanning ? { scanStatus: 'Scanning' as const, scanAttempts: 0, nextScanRetryAt: new Date(Date.parse(state.now) + 30_000).toISOString() } : {}),
       };
       if (!scanning) {
@@ -675,6 +775,10 @@ function executeTransition(state: DomainState, command: DomainCommand, claim: Cl
       const fileId = text(command.input, 'fileId');
       const file = state.files[fileId];
       if (!file || file.claimId !== claim.id || file.scanStatus !== 'Scanning') return rejected(state, command, 'SCAN_NOT_RETRYABLE', 'No retryable scan exists for this draft.', claim.version);
+      const workerAt = text(command.input, 'scheduledAt') || state.now;
+      if (file.nextScanRetryAt && Date.parse(workerAt) < Date.parse(file.nextScanRetryAt)) {
+        return rejected(state, command, 'SCAN_RETRY_NOT_DUE', `The automatic scan retry is scheduled for ${file.nextScanRetryAt}.`, claim.version);
+      }
       const outcome = text(command.input, 'scanOutcome');
       if (outcome === 'Clean') {
         file.scanStatus = 'Linked'; file.nextScanRetryAt = undefined;
@@ -692,7 +796,7 @@ function executeTransition(state: DomainState, command: DomainCommand, claim: Cl
         delete state.files[file.id];
         return commit(state, command, ['file.failedBytesDiscarded'], 'Scan remained indeterminate after two retries; bytes were discarded and re-upload is required.');
       }
-      file.nextScanRetryAt = new Date(Date.parse(state.now) + 2 * 60_000).toISOString();
+      file.nextScanRetryAt = new Date(Date.parse(workerAt) + 2 * 60_000).toISOString();
       return commit(state, command, ['file.scanAttempts', 'file.nextScanRetryAt'], 'First scan retry timed out; final retry is scheduled after two minutes.');
     }
     case 'APPROVE_CLAIM':
@@ -700,7 +804,7 @@ function executeTransition(state: DomainState, command: DomainCommand, claim: Cl
       claim.status = 'Payment pending';
       claim.approvedRevision = claim.currentRevision;
       claim.approvedAt = state.now;
-      return commit(state, command, ['status', 'approvedRevision', 'approvedAt'], 'Claim approved for payment.', [claim.employeeId]);
+      return commit(state, command, ['status', 'approvedRevision', 'approvedAt'], 'Claim approved for payment.', [claim.employeeId, 'shared-finance-queue']);
     case 'REQUEST_CHANGES':
       if (claim.status !== 'Submitted') return rejected(state, command, 'INVALID_STATUS', 'Only Submitted claims can be returned.', claim.version);
       if (!comment) return rejected(state, command, 'COMMENT_REQUIRED', 'A changes-request comment is required.', claim.version);
@@ -810,10 +914,56 @@ function acceptInvitationTransition(state: DomainState, command: DomainCommand):
   return commit(state, command, ['invitation.status', 'user'], 'Invitation accepted and account activated.');
 }
 
+function hasCurrentFileAuthority(state: DomainState, actorId: string, fileId: string): boolean {
+  const file = state.files[fileId];
+  const claim = file ? state.claims[file.claimId] : undefined;
+  const actor = state.users[actorId];
+  if (!file || file.scanStatus !== 'Linked' || !claim || !actor?.active) return false;
+  return actor.roles.some((role) => canAccessClaim(state, actorId, role, claim));
+}
+
+function fileAccessTransition(state: DomainState, command: DomainCommand): CommandResult {
+  if (command.type === 'ISSUE_FILE_ACCESS') {
+    const file = state.files[command.targetId];
+    if (!file) return auditDenied(state, command, 'FILE_NOT_FOUND', 'The requested file is unavailable.', 0);
+    if (!hasCurrentFileAuthority(state, command.actorId, file.id)) {
+      return auditDenied(state, command, 'FILE_AUTHORITY_REVOKED', 'Latest role or relationship authority does not permit this file.', 0);
+    }
+    const id = nextId(state, 'grant');
+    state.fileGrants.push({
+      id, actorId: command.actorId, fileId: file.id, issuedAt: state.now,
+      expiresAt: new Date(Date.parse(state.now) + 5 * 60_000).toISOString(), version: 1,
+    });
+    const result = commit(state, command, ['fileGrant.issued'], 'Five-minute file access issued for this user and file.');
+    const audit = result.state.auditEvents.find((event) => event.id === result.auditEventIds[0]);
+    if (audit) { audit.result = 'SUCCESS'; audit.after = { fileId: file.id, expiresAt: state.fileGrants.at(-1)!.expiresAt }; }
+    return result;
+  }
+  const grant = state.fileGrants.find((item) => item.id === command.targetId);
+  if (!grant || grant.actorId !== command.actorId) return auditDenied(state, command, 'FILE_GRANT_NOT_FOUND', 'No access grant exists for this user.', grant?.version ?? 0);
+  if (grant.version !== command.expectedVersion) return auditDenied(state, command, 'STALE_VERSION', 'The file grant changed before this request.', grant.version);
+  if (Date.parse(state.now) >= Date.parse(grant.expiresAt)) return auditDenied(state, command, 'FILE_GRANT_EXPIRED', 'The five-minute file access has expired.', grant.version);
+  if (!hasCurrentFileAuthority(state, command.actorId, grant.fileId)) {
+    return auditDenied(state, command, 'FILE_AUTHORITY_REVOKED', 'Latest role or relationship authority no longer permits this file.', grant.version);
+  }
+  grant.lastAccessedAt = state.now;
+  grant.version += 1;
+  const result = commit(state, command, ['fileGrant.lastAccessedAt'], 'File range/retry request authorized and audited.');
+  const audit = result.state.auditEvents.find((event) => event.id === result.auditEventIds[0]);
+  if (audit) { audit.result = 'SUCCESS'; audit.after = { fileId: grant.fileId, expiresAt: grant.expiresAt, accessedAt: state.now }; }
+  return result;
+}
+
 function targetSnapshot(state: DomainState, targetId: string): Record<string, unknown> | undefined {
-  const value = state.claims[targetId] ?? state.users[targetId] ?? state.categories[targetId] ?? state.invitations[targetId]
+  const claim = state.claims[targetId];
+  if (claim) return {
+    ...structuredClone(claim) as unknown as Record<string, unknown>,
+    relatedFiles: Object.values(state.files).filter((file) => file.claimId === claim.id).map((file) => structuredClone(file)),
+    relatedAdjustments: claim.adjustmentIds.map((id) => structuredClone(state.adjustments[id])).filter(Boolean),
+  };
+  const value = state.users[targetId] ?? state.categories[targetId] ?? state.invitations[targetId]
     ?? state.files[targetId] ?? state.adjustments[targetId] ?? state.deliveries.find((item) => item.id === targetId)
-    ?? state.exports.find((item) => item.id === targetId);
+    ?? state.exports.find((item) => item.id === targetId) ?? state.fileGrants.find((item) => item.id === targetId);
   return value ? structuredClone(value) as unknown as Record<string, unknown> : undefined;
 }
 
@@ -822,6 +972,20 @@ function changedFieldsForStale(state: DomainState, command: DomainCommand): stri
     .filter((event) => event.targetId === command.targetId && (event.targetVersion ?? 0) > command.expectedVersion)
     .flatMap((event) => event.changedFields);
   return ['version', ...new Set(actual)];
+}
+
+function latestValuesForStale(state: DomainState, command: DomainCommand, fields: string[]): Record<string, unknown> {
+  const claim = state.claims[command.targetId];
+  const record = targetSnapshot(state, command.targetId);
+  const values: Record<string, unknown> = {};
+  for (const field of fields.filter((item) => item !== 'version')) {
+    const parts = field.split('.');
+    let value: unknown;
+    if (claim && parts[0] === 'revision') value = parts.slice(1).reduce<unknown>((current, key) => current && typeof current === 'object' ? (current as Record<string, unknown>)[key] : undefined, claim.revisions.at(-1));
+    else value = parts.reduce<unknown>((current, key) => current && typeof current === 'object' ? (current as Record<string, unknown>)[key] : undefined, record);
+    values[field] = value;
+  }
+  return values;
 }
 
 function enrichCommittedAudit(original: DomainState, result: CommandResult): CommandResult {
@@ -872,12 +1036,21 @@ export function executeCommand(original: DomainState, command: DomainCommand): C
   if (command.type === 'CREATE_DRAFT') return rememberResult(enrichCommittedAudit(original, createDraftTransition(state, command)), command, fingerprint);
   if (command.type === 'ACCEPT_INVITATION') {
     const result = acceptInvitationTransition(state, command);
-    if (result.outcome.code === 'STALE_VERSION') result.changedFields = changedFieldsForStale(original, command);
+    if (result.outcome.code === 'STALE_VERSION') {
+      result.changedFields = changedFieldsForStale(original, command);
+      result.outcome.latestValues = latestValuesForStale(original, command, result.changedFields);
+    }
     return rememberResult(enrichCommittedAudit(original, result), command, fingerprint);
+  }
+  if (command.type === 'ISSUE_FILE_ACCESS' || command.type === 'DOWNLOAD_FILE') {
+    return rememberResult(enrichCommittedAudit(original, fileAccessTransition(state, command)), command, fingerprint);
   }
   if (ADMIN_COMMANDS.has(command.type)) {
     const result = adminTransition(state, command);
-    if (result.outcome.code === 'STALE_VERSION') result.changedFields = changedFieldsForStale(original, command);
+    if (result.outcome.code === 'STALE_VERSION') {
+      result.changedFields = changedFieldsForStale(original, command);
+      result.outcome.latestValues = latestValuesForStale(original, command, result.changedFields);
+    }
     return rememberResult(enrichCommittedAudit(original, result), command, fingerprint);
   }
   const claim = state.claims[command.targetId];
@@ -885,6 +1058,7 @@ export function executeCommand(original: DomainState, command: DomainCommand): C
   if (claim.version !== command.expectedVersion) {
     const result = rejected(original, command, 'STALE_VERSION', 'The claim changed. Review the latest state and retry.', claim.version);
     result.changedFields = changedFieldsForStale(original, command);
+    result.outcome.latestValues = latestValuesForStale(original, command, result.changedFields);
     return rememberResult(result, command, fingerprint);
   }
 

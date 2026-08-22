@@ -106,6 +106,7 @@ export function createSeedState(): DomainState {
     },
     claims,
     files,
+    fileGrants: [],
     adjustments: {},
     categories: {
       'CAT-001': { id: 'CAT-001', name: 'Transportation', active: true, version: 1 },

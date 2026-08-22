@@ -28,7 +28,10 @@ export function loadState(storage: ReadStorage = browserStorage() ?? memoryStora
   if (!stored) return createSeedState();
   try {
     const state = JSON.parse(stored) as DomainState;
-    return state.canonicalRevision === 55 ? state : createSeedState();
+    if (state.canonicalRevision !== 55) return createSeedState();
+    state.fileGrants ??= [];
+    state.exports = (state.exports ?? []).map((item) => ({ ...item, claimIds: item.claimIds ?? [] }));
+    return state;
   } catch {
     return createSeedState();
   }

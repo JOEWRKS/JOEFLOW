@@ -54,10 +54,21 @@ export interface FileRecord {
   sizeBytes: number;
   sha256: string;
   purpose: 'RECEIPT' | 'FX_EVIDENCE' | 'PAYMENT_EVIDENCE';
+  evidenceType?: 'CARD_STATEMENT' | 'BANK_EXCHANGE_RECORD' | 'OFFICIAL_RATE_CAPTURE' | 'OFFICIAL_RATE_PDF';
   source: 'camera' | 'file';
   scanStatus: 'Scanning' | 'Linked' | 'Failed and discarded';
   scanAttempts?: number;
   nextScanRetryAt?: string;
+}
+
+export interface FileGrant {
+  id: string;
+  actorId: string;
+  fileId: string;
+  issuedAt: string;
+  expiresAt: string;
+  version: number;
+  lastAccessedAt?: string;
 }
 
 export interface PaymentRecord {
@@ -152,6 +163,9 @@ export interface AuditEvent {
   revision?: number;
   before?: Record<string, unknown>;
   after?: Record<string, unknown>;
+  result?: 'COMMITTED' | 'DENIED' | 'SUCCESS' | 'ERROR' | 'SKIPPED_LEGAL_HOLD';
+  scopeSnapshot?: string;
+  rowCount?: number;
 }
 
 export interface DeliveryEvent {
@@ -216,6 +230,8 @@ export type DomainCommandType =
   | 'RETRY_DELIVERY'
   | 'EXPORT_CSV'
   | 'DOWNLOAD_EXPORT'
+  | 'ISSUE_FILE_ACCESS'
+  | 'DOWNLOAD_FILE'
   | 'RUN_DAILY_OPERATIONS'
   | 'RUN_DELIVERY_RETRIES';
 
@@ -234,6 +250,7 @@ export interface CommandOutcome {
   message: string;
   targetVersion: number;
   preservedInput?: Record<string, unknown>;
+  latestValues?: Record<string, unknown>;
 }
 
 export interface CommandResult {
@@ -260,13 +277,14 @@ export interface DomainState {
   users: Record<string, User>;
   claims: Record<string, Claim>;
   files: Record<string, FileRecord>;
+  fileGrants: FileGrant[];
   adjustments: Record<string, Adjustment>;
   categories: Record<string, Category>;
   invitations: Record<string, Invitation>;
   auditEvents: AuditEvent[];
   deliveries: DeliveryEvent[];
   warnings: OperationalWarning[];
-  exports: Array<{ id: string; actorId: string; createdAt: string; rowCount: number; columns: string[]; filterSnapshot: string; csv: string; downloadedAt?: string; version: number }>;
+  exports: Array<{ id: string; actorId: string; createdAt: string; rowCount: number; claimIds: string[]; columns: string[]; filterSnapshot: string; csv: string; downloadedAt?: string; version: number }>;
   idempotency: Record<string, IdempotencyRecord>;
   nextSequence: number;
 }

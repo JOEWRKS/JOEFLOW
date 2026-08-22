@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StatusBadge } from '../../components/StatusBadge';
 import { ExportPanel } from '../../components/ExportPanel';
+import { EvidenceAccessPanel } from '../../components/EvidenceAccessPanel';
 import { Timeline } from '../../components/Timeline';
 import { useClaimExplorer } from '../../components/ClaimExplorer';
 import { claimsForRole } from '../../domain/selectors';
@@ -30,6 +31,7 @@ export function FinanceSurface({ state, dispatch }: Props) {
       <article className="detail-panel card">
         <header className="detail-header"><div><p className="eyebrow">{claim.id}</p><h2>{claim.revisions.at(-1)!.merchant}</h2><span>version {claim.version} · approved revision {claim.approvedRevision}</span></div><StatusBadge status={claim.status} /></header>
         <PaymentPanel claim={claim} state={state} dispatch={dispatch} />
+        <EvidenceAccessPanel claim={claim} state={state} actorId="usr-finance" dispatch={dispatch} />
         {claim.status === 'Payment completed' && <AdjustmentPanel claim={claim} state={state} dispatch={dispatch} />}
       </article>
     </div>

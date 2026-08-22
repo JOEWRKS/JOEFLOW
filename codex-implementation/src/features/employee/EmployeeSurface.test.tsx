@@ -70,7 +70,8 @@ describe('EmployeeSurface', () => {
     await user.upload(screen.getByLabelText('Choose receipt file'), receipt);
     expect(screen.getByText('pending.pdf')).toBeVisible();
     expect(screen.getAllByText('Scanning', { selector: '[data-status]' })).not.toHaveLength(0);
-    expect(screen.getByRole('button', { name: /Retry scan file-/ })).toBeVisible();
+    expect(screen.getByText(/Automatic retry due/)).toBeVisible();
+    expect(screen.queryByRole('button', { name: /Retry scan/ })).not.toBeInTheDocument();
   });
 
   it('truthfully marks edits unsaved and saves on blur without losing the browser value', async () => {
