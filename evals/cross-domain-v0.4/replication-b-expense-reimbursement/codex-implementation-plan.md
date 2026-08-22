@@ -177,7 +177,7 @@
 - Modify: `evals/cross-domain-v0.4/replication-b-expense-reimbursement/aggregate-results.md`
 
 - [x] Record exact source, dependencies, commands, tests, runtime paths, boundaries, and baseline hashes.
-- [ ] Dispatch a fresh evaluator that may read only B authority/Figma/handoff/source/tests/runtime and must derive findings independently.
+- [x] Dispatch a fresh evaluator that may read only B authority/Figma/handoff/source/tests/runtime and must derive findings independently.
 - [ ] If BLOCKING/MAJOR exists, perform at most three targeted correction passes with source readback, tests, and fresh scoped re-audit after each.
 - [ ] Run visual-check and final state/Closure/baseline-integrity verification.
 - [ ] Commit the exact verdict state, push only `eval/v0.4-replication-b-codex`, and verify remote readback without merge or cross-domain comparison.
