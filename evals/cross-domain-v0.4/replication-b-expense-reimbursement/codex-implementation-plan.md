@@ -57,12 +57,12 @@
 - `DomainCommand` always includes `{ actorId, targetId, expectedVersion, idempotencyKey, type, input }`.
 - `CommandResult` is `{ state, outcome, auditEventIds, deliveryEventIds, changedFields }`.
 
-- [ ] Write failing tests for role/relationship denial, self-approval denial, stale no-op, exact idempotency replay, latest-revision guard, and append-only audit.
-- [ ] Implement shared authorization, version, fingerprint, idempotency, audit, and separate simulated delivery primitives.
-- [ ] Write failing lifecycle tests for submit/change/resubmit/final reject/withdraw/approve/revoke and payment pending/scheduled/completed/failed/hold.
-- [ ] Implement only the transitions and guards pinned in the handoff.
-- [ ] Write failing tests for failed-payment verification, one-active adjustment, completed-only net totals, and Needs verification blocking.
-- [ ] Implement the Finance verification and adjustment commands, then run all domain tests.
+- [x] Write failing tests for role/relationship denial, self-approval denial, stale no-op, exact idempotency replay, latest-revision guard, and append-only audit.
+- [x] Implement shared authorization, version, fingerprint, idempotency, audit, and separate simulated delivery primitives.
+- [x] Write failing lifecycle tests for submit/change/resubmit/final reject/withdraw/approve/revoke and payment pending/scheduled/completed/failed/hold.
+- [x] Implement only the transitions and guards pinned in the handoff.
+- [x] Write failing tests for failed-payment verification, one-active adjustment, completed-only net totals, and Needs verification blocking.
+- [x] Implement the Finance verification and adjustment commands, then run all domain tests.
 
 ### Task 3: Build the shared application shell and state presentation
 
