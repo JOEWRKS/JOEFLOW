@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from .contracts import ContractError, semantic_value
 from .invariants import evaluate_input_invariants
 from .protocol import encode_typed_numbers
 from .provenance import ProvenanceError, resolve_pointer
@@ -18,22 +19,18 @@ COMPONENTS = (
     "delivery_effects",
 )
 
-DEFAULT_EXPECTATIONS = {
-    "REJECTED": {component: "UNCHANGED" for component in COMPONENTS},
-    "STALE": {component: "UNCHANGED" for component in COMPONENTS},
-    "IDEMPOTENT_REPLAY": {component: "UNCHANGED" for component in COMPONENTS},
-    "SUCCESS": {
-        "authoritative_state": "CHANGED",
-        "revision": "ANY",
-        "history": "ANY",
-        "business_side_effects": "ANY",
-        "delivery_effects": "ANY",
-    },
-}
+SUPPORTED_RESULTS = {"REJECTED", "STALE", "IDEMPOTENT_REPLAY", "SUCCESS"}
 
 
 class VerificationError(ValueError):
     """Evidence or expectation cannot be evaluated."""
+
+
+def _compiled_value(action: dict[str, Any], field_name: str) -> Any:
+    try:
+        return semantic_value(action[field_name])
+    except (KeyError, ContractError) as error:
+        raise VerificationError(f"compiled action field is invalid: {field_name}") from error
 
 
 def _equal(left: Any, right: Any) -> bool:
@@ -71,10 +68,16 @@ def _expected_result(
 ) -> tuple[str, list[dict[str, Any]]]:
     command = record.get("command", {})
     command_input = command.get("input", {}) if isinstance(command, dict) else {}
-    invariant_failures = evaluate_input_invariants(action.get("input_invariants", []), command_input)
+    invariants = _compiled_value(action, "input_invariants")
+    if not isinstance(invariants, list):
+        raise VerificationError("compiled input_invariants value must be an array")
+    invariant_failures = evaluate_input_invariants(invariants, command_input)
     if invariant_failures:
         return "REJECTED", invariant_failures
-    return declared or action.get("default_result", "SUCCESS"), []
+    default_result = _compiled_value(action, "default_result")
+    if not isinstance(default_result, str):
+        raise VerificationError("compiled default_result value must be a string")
+    return declared or default_result, []
 
 
 def _evaluate_assertion(record: dict[str, Any], assertion: dict[str, Any]) -> dict[str, Any]:
@@ -122,20 +125,28 @@ def verify_execution(
     expected_result: str | None = None,
 ) -> dict[str, Any]:
     expected, invariant_failures = _expected_result(action, record, expected_result)
-    if expected not in DEFAULT_EXPECTATIONS:
+    if expected not in SUPPORTED_RESULTS:
         raise VerificationError(f"unsupported expected result: {expected}")
     actual = classify_result(record.get("result", {}))
     before = record.get("before")
     after = record.get("after")
     if not isinstance(before, dict) or not isinstance(after, dict):
         raise VerificationError("before and after snapshots are required")
-    configured = action.get("result_expectations", {}).get(expected, {})
-    expectations = {**DEFAULT_EXPECTATIONS[expected], **configured}
+    configured_results = _compiled_value(action, "result_expectations")
+    if not isinstance(configured_results, dict):
+        raise VerificationError("compiled result_expectations value must be an object")
+    if expected not in configured_results:
+        raise VerificationError(f"result expectation is not declared: {expected}")
+    configured = configured_results[expected]
+    if not isinstance(configured, dict):
+        raise VerificationError(f"result expectation must be an object: {expected}")
     component_results: dict[str, dict[str, Any]] = {}
     for component in COMPONENTS:
         if component not in before or component not in after:
             raise VerificationError(f"snapshot component missing: {component}")
-        expectation = expectations[component]
+        if component not in configured:
+            raise VerificationError(f"result expectation missing component: {component}")
+        expectation = configured[component]
         if expectation not in {"UNCHANGED", "CHANGED", "ANY"}:
             raise VerificationError(f"invalid {component} expectation: {expectation}")
         changed = not _equal(before[component], after[component])

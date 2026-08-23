@@ -2,7 +2,7 @@
 
 ## Final verdict
 
-**v0.4.1 HARNESS PASS.**
+**v0.4.1.1 HARNESS PASS.**
 
 This means the downstream conformance layer detected the frozen material failures and passed its positive semantic controls. It does not convert either failed frozen implementation into PASS.
 
@@ -12,7 +12,7 @@ This means the downstream conformance layer detected the frozen material failure
 |---:|---|---|
 | 1 | canonical Product Definition/Closure files unchanged | PASS; protected blobs are verified separately against `16fc6ed…` |
 | 2 | separate downstream contract compiles from approved authority | PASS |
-| 3 | no invented product semantics | PASS; every compiled clause is stable-ID/pointer/hash pinned |
+| 3 | semantic derivation integrity distinguished and enforced | PASS; MACHINE_DERIVED values are recomputed with `exact`/`extract`; REVIEW_REQUIRED values remain explicitly unverified interpretations |
 | 4 | frozen A material failure detected | PASS |
 | 5 | frozen B B030 and B031 detected | PASS |
 | 6 | authority-loss sequence detected/tested | PASS |
@@ -22,6 +22,16 @@ This means the downstream conformance layer detected the frozen material failure
 | 10 | superseded transition sentinel tested | PASS; expected NONCONFORMANT on active observation |
 | 11 | human-readable handoff references executable contract | PASS |
 | 12 | existing 43 baseline tests pass | PASS; baseline preflight 43/43 |
+
+## Authority result separation
+
+| Bundle | Structurally valid | Provenance valid | Machine-derived obligations verified | MACHINE_DERIVED | REVIEW_REQUIRED | Machine coverage | Review outstanding |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Replication A slice | yes | yes | yes, zero machine fields | 0 | 4 | 0% | yes |
+| Replication B slice | yes | yes | yes, zero machine fields | 0 | 64 | 0% | yes |
+| rev44 full contract | yes | yes | yes | 1 | 37 | 2.631578947% | yes |
+
+Structural/provenance validity is not full machine-verifiability. No REVIEW_REQUIRED field is counted as machine-authoritative or automatically verified. A/B slices are not production handoff artifacts.
 
 ## Critical-failure check
 
@@ -34,13 +44,13 @@ This means the downstream conformance layer detected the frozen material failure
 
 ## Verification readback
 
-- full unittest with pinned runtime environment: **71/71 PASS**;
+- full unittest with pinned runtime environment: **85/85 PASS**;
 - original baseline only: **43/43 PASS**;
 - revision 44 state validator: **PASS**, `valid=true`;
 - revision 44 Closure validator: **PASS**, exact digest and all metrics `0`;
 - downstream Python compilation: **PASS**;
 - Skill quick validation: **PASS**;
-- downstream/evaluation JSON and JSONL parse: **10 files PASS**.
+- downstream/evaluation JSON and JSONL: **11/11 parse PASS**.
 
 ## Boundary
 

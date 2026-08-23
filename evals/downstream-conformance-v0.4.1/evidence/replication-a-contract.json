@@ -2,15 +2,57 @@
   "actions": [
     {
       "action_id": "confirm_booking",
-      "default_result": "SUCCESS",
-      "input_invariants": [],
+      "default_result": {
+        "derivation": {
+          "explanation": "The harness result-class enum is a reviewed interpretation of the cited frozen product clauses.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "value": "SUCCESS"
+      },
+      "input_invariants": {
+        "derivation": {
+          "explanation": "The input constraint list requires interpretation of the cited canonical clauses.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "value": []
+      },
       "result_expectations": {
-        "SUCCESS": {
-          "authoritative_state": "CHANGED",
-          "business_side_effects": "UNCHANGED",
-          "delivery_effects": "ANY",
-          "history": "ANY",
-          "revision": "CHANGED"
+        "derivation": {
+          "explanation": "The result class and five-component change table are reviewed evaluator expectations, not exact canonical values.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "value": {
+          "SUCCESS": {
+            "authoritative_state": "CHANGED",
+            "business_side_effects": "UNCHANGED",
+            "delivery_effects": "ANY",
+            "history": "ANY",
+            "revision": "CHANGED"
+          }
         }
       },
       "sources": [
@@ -57,18 +99,41 @@
           "value_sha256": "da6a028e1a8ee26ebd2616f338a4af072a6d3ab72f592f02d7eb3431a69099ca"
         }
       ],
-      "test_obligations": [
-        "ui-to-domain-trace",
-        "atomic-booking-creation"
-      ]
+      "test_obligations": {
+        "derivation": {
+          "explanation": "Known-defect regression scope is a reviewed mapping from the cited clauses to executable evaluator coverage.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "value": [
+          "ui-to-domain-trace",
+          "atomic-booking-creation"
+        ]
+      }
     }
   ],
+  "authority_assessment": {
+    "machine_derived_field_count": 0,
+    "machine_derived_obligations_verified": true,
+    "machine_verifiable_coverage": 0.0,
+    "provenance_valid": true,
+    "review_required_field_count": 4,
+    "review_required_obligations_present": true,
+    "structurally_valid": true
+  },
   "compiler": {
     "id": "joewrks-product-definition/downstream",
-    "version": "0.4.1"
+    "version": "0.4.1.1"
   },
-  "contract_hash": "1fb26382fd44d321d0cd3c632af98d73658f5aced1b37141695a203830a9bf16",
-  "contract_schema_version": "joewrks.action-conformance/1.0",
+  "contract_hash": "3dc4aa1ff025e0b1c36d5470f226d46e8280d496e183fdd05da3790e1026639a",
+  "contract_schema_version": "joewrks.downstream.regression-slice/1.0",
   "lifecycles": [],
   "source_authority": {
     "approved_digest": "8ebb472aa66a5b680961e102db950214cea2d0be3b644164f23712030b9d8a7c",

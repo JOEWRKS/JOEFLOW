@@ -2,32 +2,46 @@
 
 ## Decision
 
-**PASS for v0.4.1 executable downstream use.** The schemas and Python checks preserve the authority boundary and can express the required action, lifecycle, result, no-op, trace, and sequence semantics without adding fields to canonical `state.json`.
+**PASS for v0.4.1.1 authority enforcement.** Full production structure, evaluator-slice separation, canonical provenance, and machine derivation integrity are enforced independently. This does not claim that REVIEW_REQUIRED values have been semantically proven by automation.
 
-## Action contract
+## Contract separation
 
-`action-contract.schema.json` requires all material slots: stable action ID and sources; actor/auth/relationship; exact object and revision binding; preconditions and state boundaries; input invariants; command; required/forbidden mutation; result/component effects; version/history/business/delivery outcomes; idempotency/rejection/recovery; visible outcomes; superseded rules; test obligations; and end-to-end trace.
+- `joewrks.action-conformance/1.0` requires every full action and lifecycle field and is the only production implementation/Figma-Make handoff contract.
+- `joewrks.downstream.regression-slice/1.0` requires explicit evaluator semantics but may omit full handoff fields. A/B use this version and the handoff gate rejects both.
 
-Material semantic fields use `{value, source_refs, mapping?}`. `source_refs` index provenance records containing a current stable object ID, exact JSON Pointer, SHA-256 of the pointed canonical JSON value, source status, and active flag. Compilation fails pointer/hash/status drift. Product-specific mappings cannot become authority because expected behavior remains bound to those clauses and approved revision/digest.
+A partial definition stamped as the full version fails structural compilation. Unknown action properties also fail, so an evaluator-only marker cannot turn a partial action into a full one.
 
-The frozen A/B bundles are deliberately scoped regression slices. The revision 44 bundle is the full-shaped expressiveness example for downstream handoff.
+## Structural enforcement
 
-## Lifecycle contract
+The stdlib validator implements only the repository-used keyword subset: local `$ref`, `type`, `required`, `properties`, `additionalProperties`, `items`, `minItems`, `minimum`, `const`, `enum`, `pattern`, and `oneOf`, plus annotations. Unsupported validation keywords fail. This is not a complete JSON Schema Draft 2020-12 implementation.
 
-`lifecycle-contract.schema.json` covers current states, allowed/forbidden transitions, boundaries, reversibility/window, same/new-object outcome, reason/confirmation/evidence, authority, history preservation, and superseded sentinels. Active sources must be CURRENT. A sentinel must be inactive and its source must be SUPERSEDED.
+The compiler validates the full bundle against `action-contract.schema.json` and each full lifecycle against `lifecycle-contract.schema.json`. Tests remove each required action field in turn and require compilation failure.
 
-## Execution record
+## Semantic derivation
 
-`execution-record.schema.json` fixes protocol `joewrks.downstream.execution/1.0` and requires all identity, command, snapshot, result, and delta fields. The typed-number definition permits only `NaN`, `+Infinity`, and `-Infinity` in a one-key `$number` object. Python validation also rejects raw non-finite standard JSON numbers.
+Every material semantic field is `{value, source_refs, derivation}`. Source refs must be non-empty, in range, active, and CURRENT. `MACHINE_DERIVED` supports only:
 
-## No-op and allowed changes
+- `exact`: one cited canonical value;
+- `extract`: one cited canonical value followed by a relative JSON Pointer.
 
-The verifier never reduces no-op to whole-object equality. It retains separate verdicts for domain, version, history, business effects, and delivery. Allowed changes are result-specific contract entries. For example, `FILE_AUTHORITY_REVOKED` may append a DENIED audit because that action contract explicitly expects history change while every other component remains unchanged.
+The compiler recomputes the value and rejects an emitted-value mismatch while canonical bytes/hash remain unchanged. `REVIEW_REQUIRED` needs a non-empty explanation and contributes only to the review-required count.
 
-## Adapter boundary
+Result classes, input invariants, five component expectations, assertions, default results, test obligations, and all lifecycle semantics use the same envelope. Sequence overrides absent from compiled result expectations fail verification.
 
-Adapters can decode protocol values, apply visible scenario setup, invoke actual frozen code, select actual readback, and encode evidence. They cannot supply `conformant`; the adapter runtime rejects such output. Result classification and expected semantics remain in Python.
+## Authority assessment
 
-## Review limitations
+| Bundle | Version | Structurally valid | Provenance valid | Machine-derived verified | MACHINE_DERIVED | REVIEW_REQUIRED | Machine coverage | Production handoff |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| Replication A | regression slice | yes | yes | yes, zero machine fields | 0 | 4 | 0% | no |
+| Replication B | regression slice | yes | yes | yes, zero machine fields | 0 | 64 | 0% | no |
+| client-feedback rev44 | full contract | yes | yes | yes | 1 | 37 | 2.631578947% | yes |
 
-The schemas are dependency-free machine-readable JSON Schema documents, while enforcement used by this release is the Python standard-library compiler/verifier. v0.4.1 does not claim database mechanics, vendor integration, responsive behavior, or complete contracts for every action in both dogfood products.
+The rev44 full contract is valid while its 37 REVIEW_REQUIRED obligations remain present. Its automated derivation claim covers only the single exact lifecycle state-list field.
+
+## Runtime boundary
+
+The JSONL protocol remains `joewrks.downstream.execution/1.0`. Adapters invoke/read back frozen source and cannot supply `conformant`. The Python verifier consumes compiler-approved semantic values but does not determine derivation authority.
+
+## Scope boundary
+
+v0.4.1.1 does not claim database mechanics, vendor integration, responsive behavior, or complete production contracts for the A/B dogfood implementations.

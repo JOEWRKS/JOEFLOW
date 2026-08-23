@@ -1,8 +1,42 @@
 {
+  "authority_assessments": {
+    "client_feedback_rev44": {
+      "machine_derived_field_count": 1,
+      "machine_derived_obligations_verified": true,
+      "machine_verifiable_coverage": 0.02631578947368421,
+      "provenance_valid": true,
+      "review_required_field_count": 37,
+      "review_required_obligations_present": true,
+      "structurally_valid": true
+    },
+    "replication_a": {
+      "machine_derived_field_count": 0,
+      "machine_derived_obligations_verified": true,
+      "machine_verifiable_coverage": 0.0,
+      "provenance_valid": true,
+      "review_required_field_count": 4,
+      "review_required_obligations_present": true,
+      "structurally_valid": true
+    },
+    "replication_b": {
+      "machine_derived_field_count": 0,
+      "machine_derived_obligations_verified": true,
+      "machine_verifiable_coverage": 0.0,
+      "provenance_valid": true,
+      "review_required_field_count": 64,
+      "review_required_obligations_present": true,
+      "structurally_valid": true
+    }
+  },
   "contract_hashes": {
-    "client_feedback_rev44": "ea31516b703aab17d471081acf6d49622e0825643c2c4460247396633aecffc2",
-    "replication_a": "1fb26382fd44d321d0cd3c632af98d73658f5aced1b37141695a203830a9bf16",
-    "replication_b": "c1d10a5330d916fdbe3c15c6039a9ee2f01b4c3f7265f3f1179ab730da8ee768"
+    "client_feedback_rev44": "8277aa223eec1f4aae669afea4d6ac4b0af7d22ae05ba729ba4aff61c6eff6ce",
+    "replication_a": "3dc4aa1ff025e0b1c36d5470f226d46e8280d496e183fdd05da3790e1026639a",
+    "replication_b": "442c13f4ba96915d414601f74c1afe8dccd6f7457f47698a24dce53dfe5b7860"
+  },
+  "contract_versions": {
+    "client_feedback_rev44": "joewrks.action-conformance/1.0",
+    "replication_a": "joewrks.downstream.regression-slice/1.0",
+    "replication_b": "joewrks.downstream.regression-slice/1.0"
   },
   "coverage": {
     "authority_loss": {
@@ -252,7 +286,12 @@
       "tree": "6294fc9072521fdb762808b87203a7e8bac4f7f5"
     }
   },
-  "harness_version": "0.4.1",
+  "harness_version": "0.4.1.1",
+  "production_handoff_eligible": {
+    "client_feedback_rev44": true,
+    "replication_a": false,
+    "replication_b": false
+  },
   "regressions": {
     "A_UI_DOMAIN_DISCONNECT": {
       "detected": true,

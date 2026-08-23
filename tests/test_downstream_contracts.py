@@ -8,7 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILL_ROOT = ROOT / "skills" / "joewrks-product-definition"
 sys.path.insert(0, str(SKILL_ROOT))
 
-from downstream.contracts import ContractError, compile_contract
+from downstream.contracts import (
+    ContractError,
+    FULL_CONTRACT_VERSION,
+    REGRESSION_SLICE_VERSION,
+    compile_contract,
+)
 from downstream.provenance import make_source_ref, resolve_pointer, sha256_json
 
 
@@ -46,6 +51,102 @@ def authority_state():
     }
 
 
+def review(value):
+    return {
+        "value": value,
+        "source_refs": [0],
+        "derivation": {
+            "kind": "REVIEW_REQUIRED",
+            "explanation": "The unit fixture requires reviewed semantic interpretation.",
+        },
+    }
+
+
+def no_op_expectation():
+    return {
+        "authoritative_state": "UNCHANGED",
+        "revision": "UNCHANGED",
+        "history": "UNCHANGED",
+        "business_side_effects": "UNCHANGED",
+        "delivery_effects": "UNCHANGED",
+    }
+
+
+def slice_action(source):
+    return {
+        "action_id": "approve",
+        "sources": [source],
+        "default_result": review("REJECTED"),
+        "input_invariants": review([]),
+        "result_expectations": review({"REJECTED": no_op_expectation()}),
+        "test_obligations": review(["authority-unit"]),
+    }
+
+
+def full_action(source):
+    action = {
+        "action_id": "approve",
+        "sources": [source],
+        "actor": review("owner"),
+        "authentication": review("authenticated owner"),
+        "relationship_predicate": review("owns target"),
+        "object_binding": review("target ID"),
+        "concurrency": review("expected revision"),
+        "preconditions": review(["OPEN"]),
+        "allowed_current_states": review(["OPEN"]),
+        "forbidden_states": review(["APPROVED"]),
+        "input_invariants": review([]),
+        "command": review("APPROVE"),
+        "expected_domain_mutation": review("OPEN -> APPROVED"),
+        "forbidden_mutations": review([]),
+        "default_result": review("SUCCESS"),
+        "result_expectations": review(
+            {
+                "SUCCESS": {
+                    "authoritative_state": "CHANGED",
+                    "revision": "CHANGED",
+                    "history": "CHANGED",
+                    "business_side_effects": "UNCHANGED",
+                    "delivery_effects": "UNCHANGED",
+                }
+            }
+        ),
+        "version_result": review("advance"),
+        "history_result": review("append"),
+        "business_side_effects": review("none"),
+        "delivery_effects": review("none"),
+        "idempotency": review("replay"),
+        "rejection": review("no-op"),
+        "recovery": review("read latest"),
+        "visible_success": review("approved"),
+        "visible_error": review("conflict"),
+        "superseded_rules": review("inactive"),
+        "test_obligations": review(["happy", "wrong_role"]),
+        "trace": review(["control", "handler", "state"]),
+    }
+    return action
+
+
+def full_lifecycle(source, superseded):
+    return {
+        "lifecycle_id": "approval",
+        "sources": [source],
+        "current_states": review(["OPEN", "APPROVED"]),
+        "allowed_transitions": review(["OPEN -> APPROVED"]),
+        "forbidden_transitions": review(["APPROVED -> OPEN"]),
+        "boundary_conditions": review(["expected revision"]),
+        "reversibility": review("terminal"),
+        "reversal_window": review("none"),
+        "object_outcome": review("approved"),
+        "required_reason": review("none"),
+        "required_confirmation": review("required"),
+        "required_evidence": review("readback"),
+        "authority": review("owner"),
+        "history_preservation": review("append-only"),
+        "superseded_sentinels": [superseded],
+    }
+
+
 class ProvenanceTest(unittest.TestCase):
     def test_json_pointer_and_hash_are_exact_and_deterministic(self):
         state = authority_state()
@@ -70,24 +171,10 @@ class ProvenanceTest(unittest.TestCase):
         bundle = compile_contract(
             state,
             {
+                "contract_schema_version": FULL_CONTRACT_VERSION,
                 "product_slug": "test-product",
-                "actions": [
-                    {
-                        "action_id": "approve",
-                        "sources": [rule],
-                        "command": "APPROVE",
-                        "input_invariants": [],
-                        "result_expectations": {},
-                        "test_obligations": ["happy", "wrong_role"],
-                    }
-                ],
-                "lifecycles": [
-                    {
-                        "lifecycle_id": "approval",
-                        "sources": [lifecycle],
-                        "superseded_sentinels": [superseded],
-                    }
-                ],
+                "actions": [full_action(rule)],
+                "lifecycles": [full_lifecycle(lifecycle, superseded)],
             },
         )
         self.assertEqual(7, bundle["source_authority"]["approved_revision"])
@@ -110,8 +197,9 @@ class ProvenanceTest(unittest.TestCase):
                     compile_contract(
                         state,
                         {
+                            "contract_schema_version": REGRESSION_SLICE_VERSION,
                             "product_slug": "test-product",
-                            "actions": [{"action_id": "approve", "sources": [source]}],
+                            "actions": [slice_action(source)],
                             "lifecycles": [],
                         },
                     )
@@ -128,8 +216,9 @@ class ProvenanceTest(unittest.TestCase):
             compile_contract(
                 state,
                 {
+                    "contract_schema_version": REGRESSION_SLICE_VERSION,
                     "product_slug": "test-product",
-                    "actions": [{"action_id": "approve", "sources": [mismatched]}],
+                    "actions": [slice_action(mismatched)],
                     "lifecycles": [],
                 },
             )

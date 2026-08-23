@@ -82,6 +82,29 @@ class FrozenRuntimeRegressionTest(unittest.TestCase):
                 b_worktree=Path(os.environ["JOEWRKS_FROZEN_B_WORKTREE"]),
                 output_dir=Path(directory),
             )
+            self.assertEqual("0.4.1.1", report["harness_version"])
+            self.assertEqual(
+                {
+                    "replication_a": "joewrks.downstream.regression-slice/1.0",
+                    "replication_b": "joewrks.downstream.regression-slice/1.0",
+                    "client_feedback_rev44": "joewrks.action-conformance/1.0",
+                },
+                report["contract_versions"],
+            )
+            self.assertEqual(
+                {
+                    "replication_a": False,
+                    "replication_b": False,
+                    "client_feedback_rev44": True,
+                },
+                report["production_handoff_eligible"],
+            )
+            self.assertEqual(0, report["authority_assessments"]["replication_a"]["machine_derived_field_count"])
+            self.assertEqual(4, report["authority_assessments"]["replication_a"]["review_required_field_count"])
+            self.assertEqual(0, report["authority_assessments"]["replication_b"]["machine_derived_field_count"])
+            self.assertEqual(64, report["authority_assessments"]["replication_b"]["review_required_field_count"])
+            self.assertEqual(1, report["authority_assessments"]["client_feedback_rev44"]["machine_derived_field_count"])
+            self.assertEqual(37, report["authority_assessments"]["client_feedback_rev44"]["review_required_field_count"])
             expected = {
                 "A_UI_DOMAIN_DISCONNECT",
                 "B030_REJECTED_PARTIAL_MUTATION",

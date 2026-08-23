@@ -5,7 +5,9 @@
 - frozen source commit: `eecebc28701006dd2c7be4045a22542e34719705`
 - exact implementation tree: `6294fc9072521fdb762808b87203a7e8bac4f7f5`
 - adapter: `frozen-b-vitest-engine-selectors@1.0.0`
-- executable contract: `c1d10a5330d916fdbe3c15c6039a9ee2f01b4c3f7265f3f1179ab730da8ee768`
+- evaluator contract version: `joewrks.downstream.regression-slice/1.0`
+- executable slice: `442c13f4ba96915d414601f74c1afe8dccd6f7457f47698a24dce53dfe5b7860`
+- semantic authority: MACHINE_DERIVED `0`, REVIEW_REQUIRED `64`, production handoff `no`
 
 The external runner imported and executed the actual frozen `engine.ts`, `seed.ts`, and `selectors.ts`. It did not modify frozen source.
 

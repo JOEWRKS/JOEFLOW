@@ -12,6 +12,7 @@ from downstream.runner import SEQUENCE_CLASSES, evaluate_sequence, validate_sequ
 from downstream.invariants import evaluate_domain_invariants
 from downstream.verifier import (
     COMPONENTS,
+    VerificationError,
     classify_result,
     verify_execution,
     verify_lifecycle_transition,
@@ -40,7 +41,95 @@ def evidence(before, after, status="rejected", code="VALIDATION_FAILED", command
     }
 
 
+def review(value):
+    return {
+        "value": value,
+        "source_refs": [0],
+        "derivation": {
+            "kind": "REVIEW_REQUIRED",
+            "explanation": "Compiler-reviewed fixture semantics.",
+        },
+    }
+
+
+def no_op_expectation():
+    return {
+        "authoritative_state": "UNCHANGED",
+        "revision": "UNCHANGED",
+        "history": "UNCHANGED",
+        "business_side_effects": "UNCHANGED",
+        "delivery_effects": "UNCHANGED",
+    }
+
+
+def compiled_action(default_result, expectations, invariants=None):
+    return {
+        "default_result": review(default_result),
+        "input_invariants": review([] if invariants is None else invariants),
+        "result_expectations": review(expectations),
+    }
+
+
 class DeepVerifierTest(unittest.TestCase):
+    def test_verifier_consumes_compiled_semantic_envelopes(self):
+        action = {
+            "default_result": review("REJECTED"),
+            "input_invariants": review([]),
+            "result_expectations": review(
+                {
+                    "REJECTED": {
+                        "authoritative_state": "UNCHANGED",
+                        "revision": "UNCHANGED",
+                        "history": "UNCHANGED",
+                        "business_side_effects": "UNCHANGED",
+                        "delivery_effects": "UNCHANGED",
+                    }
+                }
+            ),
+        }
+        unchanged = snapshot({"value": 1})
+        report = verify_execution(action, evidence(unchanged, unchanged))
+        self.assertTrue(report["conformant"])
+
+    def test_verifier_rejects_missing_explicit_component_expectation(self):
+        action = {
+            "default_result": review("REJECTED"),
+            "input_invariants": review([]),
+            "result_expectations": review(
+                {
+                    "REJECTED": {
+                        "authoritative_state": "UNCHANGED",
+                        "revision": "UNCHANGED",
+                        "history": "UNCHANGED",
+                        "business_side_effects": "UNCHANGED",
+                    }
+                }
+            ),
+        }
+        unchanged = snapshot({"value": 1})
+        with self.assertRaisesRegex(VerificationError, "missing component: delivery_effects"):
+            verify_execution(action, evidence(unchanged, unchanged))
+
+    def test_sequence_override_must_be_declared_by_compiled_contract(self):
+        action = {
+            "default_result": review("SUCCESS"),
+            "input_invariants": review([]),
+            "result_expectations": review(
+                {
+                    "SUCCESS": {
+                        "authoritative_state": "CHANGED",
+                        "revision": "CHANGED",
+                        "history": "CHANGED",
+                        "business_side_effects": "UNCHANGED",
+                        "delivery_effects": "UNCHANGED",
+                    }
+                }
+            ),
+        }
+        unchanged = snapshot({"value": 1})
+        with self.assertRaisesRegex(VerificationError, "result expectation is not declared: STALE"):
+            verify_execution(action, evidence(unchanged, unchanged, code="STALE_VERSION"), expected_result="STALE")
+
     def test_required_sequence_classes_are_executable_catalog_values(self):
         expected = {
             "valid_happy_transition",
@@ -95,7 +184,8 @@ class DeepVerifierTest(unittest.TestCase):
         self.assertTrue(all(item["passed"] for item in results))
     def test_rejected_no_op_reports_five_independent_components(self):
         before = snapshot({"value": 1})
-        report = verify_execution({}, evidence(before, snapshot({"value": 1})), expected_result="REJECTED")
+        action = compiled_action("REJECTED", {"REJECTED": no_op_expectation()})
+        report = verify_execution(action, evidence(before, snapshot({"value": 1})), expected_result="REJECTED")
         self.assertTrue(report["conformant"])
         self.assertEqual(set(COMPONENTS), set(report["components"]))
         self.assertTrue(all(item["passed"] for item in report["components"].values()))
@@ -103,15 +193,17 @@ class DeepVerifierTest(unittest.TestCase):
     def test_rejected_partial_mutation_is_visible_even_when_version_and_history_are_unchanged(self):
         before = snapshot({"adjustment": {"status": "Failed"}})
         after = snapshot({"adjustment": {"status": "Failed", "verification": {"result": "Executed"}}})
-        report = verify_execution({}, evidence(before, after), expected_result="REJECTED")
+        action = compiled_action("REJECTED", {"REJECTED": no_op_expectation()})
+        report = verify_execution(action, evidence(before, after), expected_result="REJECTED")
         self.assertFalse(report["conformant"])
         self.assertFalse(report["components"]["authoritative_state"]["passed"])
         self.assertTrue(report["components"]["revision"]["passed"])
         self.assertTrue(report["components"]["history"]["passed"])
 
     def test_declared_success_can_separate_business_commit_from_delivery_failure(self):
-        action = {
-            "result_expectations": {
+        action = compiled_action(
+            "SUCCESS",
+            {
                 "SUCCESS": {
                     "authoritative_state": "CHANGED",
                     "revision": "CHANGED",
@@ -119,8 +211,8 @@ class DeepVerifierTest(unittest.TestCase):
                     "business_side_effects": "UNCHANGED",
                     "delivery_effects": "CHANGED",
                 }
-            }
-        }
+            },
+        )
         before = snapshot({"status": "Submitted"})
         after = snapshot(
             {"status": "Approved"},
@@ -138,7 +230,20 @@ class DeepVerifierTest(unittest.TestCase):
         self.assertEqual("IDEMPOTENT_REPLAY", classify_result({"status": "committed", "code": "OK", "replay": True}))
 
     def test_input_invariant_derives_rejection_for_real_non_finite_values(self):
-        action = {"input_invariants": [{"type": "finite_number", "pointer": "/amountKrw"}]}
+        action = compiled_action(
+            "SUCCESS",
+            {
+                "SUCCESS": {
+                    "authoritative_state": "CHANGED",
+                    "revision": "CHANGED",
+                    "history": "ANY",
+                    "business_side_effects": "ANY",
+                    "delivery_effects": "ANY",
+                },
+                "REJECTED": no_op_expectation(),
+            },
+            invariants=[{"type": "finite_number", "pointer": "/amountKrw"}],
+        )
         before = snapshot({"draft": {"amountKrw": 100}})
         for number in (math.nan, math.inf, -math.inf):
             record = evidence(
@@ -177,10 +282,22 @@ class DeepVerifierTest(unittest.TestCase):
         }
         bundle = {
             "actions": [
-                {"action_id": "mutate"},
+                {
+                    "action_id": "mutate",
+                    **compiled_action(
+                        "REJECTED",
+                        {
+                            "REJECTED": no_op_expectation(),
+                            "STALE": no_op_expectation(),
+                            "IDEMPOTENT_REPLAY": no_op_expectation(),
+                        },
+                    ),
+                },
                 {
                     "action_id": "deliver",
-                    "result_expectations": {
+                    **compiled_action(
+                        "SUCCESS",
+                        {
                         "SUCCESS": {
                             "authoritative_state": "CHANGED",
                             "revision": "CHANGED",
@@ -188,7 +305,8 @@ class DeepVerifierTest(unittest.TestCase):
                             "business_side_effects": "UNCHANGED",
                             "delivery_effects": "CHANGED",
                         }
-                    },
+                        },
+                    ),
                 },
             ]
         }
@@ -197,9 +315,11 @@ class DeepVerifierTest(unittest.TestCase):
         self.assertEqual(4, len(report["steps"]))
 
     def test_result_assertions_detect_missing_latest_value_and_false_history_projection(self):
-        action = {
-            "result_expectations": {
+        action = compiled_action(
+            "STALE",
+            {
                 "STALE": {
+                    **no_op_expectation(),
                     "assertions": [
                         {"type": "path_present", "pointer": "/result/latestValues/user.active"}
                     ]
@@ -221,8 +341,8 @@ class DeepVerifierTest(unittest.TestCase):
                         }
                     ],
                 },
-            }
-        }
+            },
+        )
         unchanged = snapshot({"status": "Submitted"})
         stale_record = evidence(unchanged, unchanged, code="STALE_VERSION")
         stale_record["result"]["latestValues"] = {}

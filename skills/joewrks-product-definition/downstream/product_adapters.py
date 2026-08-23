@@ -2,9 +2,101 @@
 
 from __future__ import annotations
 
+import copy
 from typing import Any
 
 from .provenance import find_object_pointer
+
+
+REGRESSION_SLICE_VERSION = "joewrks.downstream.regression-slice/1.0"
+COMPONENTS = (
+    "authoritative_state",
+    "revision",
+    "history",
+    "business_side_effects",
+    "delivery_effects",
+)
+NO_OP = {component: "UNCHANGED" for component in COMPONENTS}
+SUCCESS_DEFAULT = {
+    "authoritative_state": "CHANGED",
+    "revision": "ANY",
+    "history": "ANY",
+    "business_side_effects": "ANY",
+    "delivery_effects": "ANY",
+}
+
+
+def _review(value: Any, source_refs: list[int], explanation: str) -> dict[str, Any]:
+    return {
+        "value": value,
+        "source_refs": source_refs,
+        "derivation": {
+            "kind": "REVIEW_REQUIRED",
+            "explanation": explanation,
+        },
+    }
+
+
+def _explicit_expectation(result_class: str, configured: dict[str, Any]) -> dict[str, Any]:
+    defaults = SUCCESS_DEFAULT if result_class == "SUCCESS" else NO_OP
+    expectation = {**defaults, **copy.deepcopy(configured)}
+    return expectation
+
+
+def _regression_action(action: dict[str, Any]) -> dict[str, Any]:
+    """Make every evaluator semantic explicit without claiming machine derivation."""
+
+    compiled = copy.deepcopy(action)
+    all_refs = list(range(len(compiled["sources"])))
+    default_result = compiled.pop("default_result", "SUCCESS")
+    required_results = set(compiled.pop("required_results", []))
+    raw_invariants = compiled.pop("input_invariants", [])
+    invariant_refs = sorted(
+        {
+            ref
+            for invariant in raw_invariants
+            if isinstance(invariant, dict)
+            for ref in invariant.get("source_refs", [])
+        }
+    )
+    invariants = [
+        {key: value for key, value in invariant.items() if key != "source_refs"}
+        for invariant in raw_invariants
+    ]
+    raw_expectations = compiled.pop("result_expectations", {})
+    result_classes = set(raw_expectations) | required_results | {default_result}
+    expectations = {
+        result_class: _explicit_expectation(
+            result_class,
+            raw_expectations.get(result_class, {}),
+        )
+        for result_class in sorted(result_classes)
+    }
+    obligations = compiled.pop(
+        "test_obligations",
+        [f"frozen-regression:{compiled['action_id']}"],
+    )
+    compiled["default_result"] = _review(
+        default_result,
+        all_refs,
+        "The harness result-class enum is a reviewed interpretation of the cited frozen product clauses.",
+    )
+    compiled["input_invariants"] = _review(
+        invariants,
+        invariant_refs or all_refs,
+        "The input constraint list requires interpretation of the cited canonical clauses.",
+    )
+    compiled["result_expectations"] = _review(
+        expectations,
+        all_refs,
+        "The result class and five-component change table are reviewed evaluator expectations, not exact canonical values.",
+    )
+    compiled["test_obligations"] = _review(
+        obligations,
+        all_refs,
+        "Known-defect regression scope is a reviewed mapping from the cited clauses to executable evaluator coverage.",
+    )
+    return compiled
 
 
 def _source(state: dict[str, Any], object_id: str, field: str) -> dict[str, str]:
@@ -12,7 +104,8 @@ def _source(state: dict[str, Any], object_id: str, field: str) -> dict[str, str]
 
 
 def replication_a_definition(state: dict[str, Any]) -> dict[str, Any]:
-    return {
+    definition = {
+        "contract_schema_version": REGRESSION_SLICE_VERSION,
         "product_slug": "studio-booking-dogfood",
         "actions": [
             {
@@ -41,6 +134,8 @@ def replication_a_definition(state: dict[str, Any]) -> dict[str, Any]:
         ],
         "lifecycles": [],
     }
+    definition["actions"] = [_regression_action(action) for action in definition["actions"]]
+    return definition
 
 
 def replication_b_definition(state: dict[str, Any]) -> dict[str, Any]:
@@ -88,6 +183,7 @@ def replication_b_definition(state: dict[str, Any]) -> dict[str, Any]:
         {
             "action_id": "resolve_adjustment_executed",
             "sources": adjustment_sources + stale_sources,
+            "required_results": ["REJECTED"],
             "input_invariants": [
                 {"type": "required", "pointer": "/actualAmountKrw", "source_refs": [3]},
                 {"type": "required", "pointer": "/actualDate", "source_refs": [3]},
@@ -97,10 +193,12 @@ def replication_b_definition(state: dict[str, Any]) -> dict[str, Any]:
         {
             "action_id": "create_adjustment_after_rejection",
             "sources": adjustment_sources[:2] + stale_sources,
+            "required_results": ["REJECTED"],
         },
         {
             "action_id": "update_draft_money",
             "sources": money_sources,
+            "required_results": ["REJECTED"],
             "input_invariants": [
                 {"type": "finite_number", "pointer": "/originalAmount", "source_refs": [0, 1]},
                 {"type": "finite_number", "pointer": "/krwAmount", "source_refs": [0, 1]},
@@ -114,6 +212,7 @@ def replication_b_definition(state: dict[str, Any]) -> dict[str, Any]:
         {
             "action_id": "admin_stale",
             "sources": stale_sources,
+            "default_result": "STALE",
             "result_expectations": {
                 "STALE": {
                     "assertions": [
@@ -223,6 +322,7 @@ def replication_b_definition(state: dict[str, Any]) -> dict[str, Any]:
         {
             "action_id": "update_draft",
             "sources": stale_sources + [_source(state, "RULE-136", "statement")],
+            "required_results": ["STALE", "IDEMPOTENT_REPLAY"],
             "result_expectations": {
                 "SUCCESS": {
                     "authoritative_state": "CHANGED",
@@ -284,7 +384,8 @@ def replication_b_definition(state: dict[str, Any]) -> dict[str, Any]:
         },
     ]
     return {
+        "contract_schema_version": REGRESSION_SLICE_VERSION,
         "product_slug": "expense-reimbursement-dogfood",
-        "actions": actions,
+        "actions": [_regression_action(action) for action in actions],
         "lifecycles": [],
     }

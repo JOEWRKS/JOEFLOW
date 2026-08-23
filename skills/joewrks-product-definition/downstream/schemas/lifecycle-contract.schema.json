@@ -1,32 +1,78 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://joewrks.example/schemas/lifecycle-contract.schema.json",
-  "title": "JOEWRKS Lifecycle and Reversal Contract",
-  "type": "object",
+  "title": "JOEWRKS Full Lifecycle Conformance Item",
   "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["object_id", "pointer", "value_sha256", "source_status", "active"],
+      "properties": {
+        "object_id": {"type": "string"},
+        "pointer": {"type": "string", "pattern": "^/"},
+        "value_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_status": {"enum": ["CURRENT", "SUPERSEDED"]},
+        "active": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "machineDerivation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "operator"],
+          "properties": {"kind": {"const": "MACHINE_DERIVED"}, "operator": {"const": "exact"}},
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "operator", "pointer"],
+          "properties": {
+            "kind": {"const": "MACHINE_DERIVED"},
+            "operator": {"const": "extract"},
+            "pointer": {"type": "string", "pattern": "^/"}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "reviewDerivation": {
+      "type": "object",
+      "required": ["kind", "explanation"],
+      "properties": {
+        "kind": {"const": "REVIEW_REQUIRED"},
+        "explanation": {"type": "string", "pattern": ".*\\S.*"}
+      },
+      "additionalProperties": false
+    },
+    "semanticField": {
+      "type": "object",
+      "required": ["value", "source_refs", "derivation"],
+      "properties": {
+        "value": {},
+        "source_refs": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 0}},
+        "derivation": {"oneOf": [{"$ref": "#/$defs/machineDerivation"}, {"$ref": "#/$defs/reviewDerivation"}]}
+      },
+      "additionalProperties": false
+    },
     "lifecycle": {
       "type": "object",
-      "required": [
-        "lifecycle_id", "sources", "current_states", "allowed_transitions", "forbidden_transitions",
-        "boundary_conditions", "reversibility", "reversal_window", "object_outcome", "required_reason",
-        "required_confirmation", "required_evidence", "authority", "history_preservation", "superseded_sentinels"
-      ],
+      "required": ["lifecycle_id", "sources", "current_states", "allowed_transitions", "forbidden_transitions", "boundary_conditions", "reversibility", "reversal_window", "object_outcome", "required_reason", "required_confirmation", "required_evidence", "authority", "history_preservation", "superseded_sentinels"],
       "properties": {
         "lifecycle_id": {"type": "string"},
-        "sources": {"type": "array", "minItems": 1},
-        "current_states": {},
-        "allowed_transitions": {},
-        "forbidden_transitions": {},
-        "boundary_conditions": {},
-        "reversibility": {},
-        "reversal_window": {},
-        "object_outcome": {},
-        "required_reason": {},
-        "required_confirmation": {},
-        "required_evidence": {},
-        "authority": {},
-        "history_preservation": {},
-        "superseded_sentinels": {"type": "array"}
+        "sources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/source"}},
+        "current_states": {"$ref": "#/$defs/semanticField"},
+        "allowed_transitions": {"$ref": "#/$defs/semanticField"},
+        "forbidden_transitions": {"$ref": "#/$defs/semanticField"},
+        "boundary_conditions": {"$ref": "#/$defs/semanticField"},
+        "reversibility": {"$ref": "#/$defs/semanticField"},
+        "reversal_window": {"$ref": "#/$defs/semanticField"},
+        "object_outcome": {"$ref": "#/$defs/semanticField"},
+        "required_reason": {"$ref": "#/$defs/semanticField"},
+        "required_confirmation": {"$ref": "#/$defs/semanticField"},
+        "required_evidence": {"$ref": "#/$defs/semanticField"},
+        "authority": {"$ref": "#/$defs/semanticField"},
+        "history_preservation": {"$ref": "#/$defs/semanticField"},
+        "superseded_sentinels": {"type": "array", "items": {"$ref": "#/$defs/source"}}
       },
       "additionalProperties": false
     }

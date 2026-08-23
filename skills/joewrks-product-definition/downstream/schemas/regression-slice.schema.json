@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://joewrks.example/schemas/action-contract.schema.json",
-  "title": "JOEWRKS Full Action Conformance Contract",
+  "$id": "https://joewrks.example/schemas/regression-slice.schema.json",
+  "title": "JOEWRKS Evaluator Regression Slice",
   "type": "object",
   "required": ["contract_schema_version", "compiler", "source_authority", "actions", "lifecycles", "authority_assessment", "contract_hash"],
   "properties": {
-    "contract_schema_version": {"const": "joewrks.action-conformance/1.0"},
+    "contract_schema_version": {"const": "joewrks.downstream.regression-slice/1.0"},
     "compiler": {"$ref": "#/$defs/compiler"},
     "source_authority": {"$ref": "#/$defs/authority"},
     "actions": {"type": "array", "items": {"$ref": "#/$defs/action"}},
@@ -54,11 +54,7 @@
         {
           "type": "object",
           "required": ["kind", "operator", "pointer"],
-          "properties": {
-            "kind": {"const": "MACHINE_DERIVED"},
-            "operator": {"const": "extract"},
-            "pointer": {"type": "string", "pattern": "^/"}
-          },
+          "properties": {"kind": {"const": "MACHINE_DERIVED"}, "operator": {"const": "extract"}, "pointer": {"type": "string", "pattern": "^/"}},
           "additionalProperties": false
         }
       ]
@@ -66,10 +62,7 @@
     "reviewDerivation": {
       "type": "object",
       "required": ["kind", "explanation"],
-      "properties": {
-        "kind": {"const": "REVIEW_REQUIRED"},
-        "explanation": {"type": "string", "pattern": ".*\\S.*"}
-      },
+      "properties": {"kind": {"const": "REVIEW_REQUIRED"}, "explanation": {"type": "string", "pattern": ".*\\S.*"}},
       "additionalProperties": false
     },
     "semanticField": {
@@ -78,12 +71,7 @@
       "properties": {
         "value": {},
         "source_refs": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 0}},
-        "derivation": {
-          "oneOf": [
-            {"$ref": "#/$defs/machineDerivation"},
-            {"$ref": "#/$defs/reviewDerivation"}
-          ]
-        }
+        "derivation": {"oneOf": [{"$ref": "#/$defs/machineDerivation"}, {"$ref": "#/$defs/reviewDerivation"}]}
       },
       "additionalProperties": false
     },
@@ -103,36 +91,14 @@
     },
     "action": {
       "type": "object",
-      "required": ["action_id", "sources", "actor", "authentication", "relationship_predicate", "object_binding", "concurrency", "preconditions", "allowed_current_states", "forbidden_states", "input_invariants", "command", "expected_domain_mutation", "forbidden_mutations", "default_result", "result_expectations", "version_result", "history_result", "business_side_effects", "delivery_effects", "idempotency", "rejection", "recovery", "visible_success", "visible_error", "superseded_rules", "test_obligations", "trace"],
+      "required": ["action_id", "sources", "default_result", "input_invariants", "result_expectations", "test_obligations"],
       "properties": {
         "action_id": {"type": "string"},
         "sources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/source"}},
-        "actor": {"$ref": "#/$defs/semanticField"},
-        "authentication": {"$ref": "#/$defs/semanticField"},
-        "relationship_predicate": {"$ref": "#/$defs/semanticField"},
-        "object_binding": {"$ref": "#/$defs/semanticField"},
-        "concurrency": {"$ref": "#/$defs/semanticField"},
-        "preconditions": {"$ref": "#/$defs/semanticField"},
-        "allowed_current_states": {"$ref": "#/$defs/semanticField"},
-        "forbidden_states": {"$ref": "#/$defs/semanticField"},
-        "input_invariants": {"$ref": "#/$defs/semanticField"},
-        "command": {"$ref": "#/$defs/semanticField"},
-        "expected_domain_mutation": {"$ref": "#/$defs/semanticField"},
-        "forbidden_mutations": {"$ref": "#/$defs/semanticField"},
         "default_result": {"$ref": "#/$defs/semanticField"},
+        "input_invariants": {"$ref": "#/$defs/semanticField"},
         "result_expectations": {"$ref": "#/$defs/semanticField"},
-        "version_result": {"$ref": "#/$defs/semanticField"},
-        "history_result": {"$ref": "#/$defs/semanticField"},
-        "business_side_effects": {"$ref": "#/$defs/semanticField"},
-        "delivery_effects": {"$ref": "#/$defs/semanticField"},
-        "idempotency": {"$ref": "#/$defs/semanticField"},
-        "rejection": {"$ref": "#/$defs/semanticField"},
-        "recovery": {"$ref": "#/$defs/semanticField"},
-        "visible_success": {"$ref": "#/$defs/semanticField"},
-        "visible_error": {"$ref": "#/$defs/semanticField"},
-        "superseded_rules": {"$ref": "#/$defs/semanticField"},
-        "test_obligations": {"$ref": "#/$defs/semanticField"},
-        "trace": {"$ref": "#/$defs/semanticField"}
+        "test_obligations": {"$ref": "#/$defs/semanticField"}
       },
       "additionalProperties": false
     }

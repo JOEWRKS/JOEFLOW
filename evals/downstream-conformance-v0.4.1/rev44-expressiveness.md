@@ -5,9 +5,22 @@
 - product: `client-feedback-portal-dogfood`
 - approved revision: `44`
 - approved digest: `2ffc3d304830327516f85e39df8c2be2800eda62568eaec45001f393379f07d1`
-- compiled contract: `ea31516b703aab17d471081acf6d49622e0825643c2c4460247396633aecffc2`
+- contract version: `joewrks.action-conformance/1.0`
+- compiled contract: `8277aa223eec1f4aae669afea4d6ac4b0af7d22ae05ba729ba4aff61c6eff6ce`
 
 Compilation read the preserved `state.json` and wrote no canonical data. This is an expressiveness probe, not a new Figma Make run or verdict.
+
+## Authority assessment
+
+- structurally valid: yes;
+- provenance valid: yes;
+- machine-derived obligations verified: yes;
+- MACHINE_DERIVED: 1;
+- REVIEW_REQUIRED: 37;
+- machine-verifiable coverage: `1/38` (`2.631578947%`);
+- review-required obligations outstanding/present: yes.
+
+Only `current_states` is machine-derived by exact equality with `STATE-001.values`. The action expectations and remaining lifecycle semantics synthesize canonical prose/records, so they remain REVIEW_REQUIRED and are not described as automatically verified.
 
 ## Expressed semantics
 

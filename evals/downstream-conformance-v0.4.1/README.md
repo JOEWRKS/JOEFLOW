@@ -1,6 +1,6 @@
-# Downstream Conformance v0.4.1
+# Downstream Conformance v0.4.1.1
 
-This evaluation freezes the first executable downstream conformance layer for approved JOEWRKS Product Definitions. It starts from `main` commit `16fc6edc362321ea03613339e224472b98bc1a04` and does not change canonical Product Definition, interrogation, taxonomy, schema, validators, or Closure semantics.
+This evaluation freezes the authority-hardened executable downstream conformance layer for approved JOEWRKS Product Definitions. It starts from `main` commit `16fc6edc362321ea03613339e224472b98bc1a04` and does not change canonical Product Definition, interrogation, taxonomy, state schema, validators, or Closure semantics.
 
 ## Outcome
 
@@ -15,6 +15,8 @@ The Python core executed pinned JavaScript/TypeScript through versioned JSONL ad
 
 Positive coverage passed for authority loss, stale no-op, idempotent replay, business-state/delivery separation, and manual delivery retry. The superseded-rule sentinel intentionally produced NONCONFORMANT when `DEC-011` was observed as active.
 
+The rev44 production bundle is `joewrks.action-conformance/1.0`. A/B are explicitly `joewrks.downstream.regression-slice/1.0`, evaluator-only, and ineligible for implementation/Figma-Make handoff. The compiler verifies one rev44 field mechanically and leaves 37 interpretive fields visibly REVIEW_REQUIRED; it does not count those 37 as automatically verified.
+
 ## Authority pins
 
 - base: `16fc6edc362321ea03613339e224472b98bc1a04`
@@ -27,9 +29,9 @@ Positive coverage passed for authority loss, stale no-op, idempotent replay, bus
 
 - `evidence/frozen-a-evidence.jsonl` — 1 actual public-action record.
 - `evidence/frozen-b-evidence.jsonl` — 22 actual engine/selector records.
-- `evidence/replication-a-contract.json` — contract SHA-256 `1fb26382fd44d321d0cd3c632af98d73658f5aced1b37141695a203830a9bf16`.
-- `evidence/replication-b-contract.json` — contract SHA-256 `c1d10a5330d916fdbe3c15c6039a9ee2f01b4c3f7265f3f1179ab730da8ee768`.
-- `evidence/client-feedback-rev44-contract.json` — contract SHA-256 `ea31516b703aab17d471081acf6d49622e0825643c2c4460247396633aecffc2`.
+- `evidence/replication-a-contract.json` — evaluator slice SHA-256 `3dc4aa1ff025e0b1c36d5470f226d46e8280d496e183fdd05da3790e1026639a`.
+- `evidence/replication-b-contract.json` — evaluator slice SHA-256 `442c13f4ba96915d414601f74c1afe8dccd6f7457f47698a24dce53dfe5b7860`.
+- `evidence/client-feedback-rev44-contract.json` — full contract SHA-256 `8277aa223eec1f4aae669afea4d6ac4b0af7d22ae05ba729ba4aff61c6eff6ce`.
 - `evidence/harness-report.json` — Python-core verdicts and component failures.
 
 Responsive behavior is excluded from v0.4.1. No new Figma Make generation or product verdict was performed.

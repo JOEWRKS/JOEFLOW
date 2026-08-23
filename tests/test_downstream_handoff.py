@@ -1,17 +1,55 @@
+import json
 import unittest
+import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills" / "joewrks-product-definition"
+sys.path.insert(0, str(SKILL))
+
+from downstream import contracts
 
 
 class DownstreamHandoffTest(unittest.TestCase):
+    def test_production_handoff_gate_rejects_regression_slice(self):
+        gate = getattr(contracts, "is_full_handoff_contract", lambda bundle: None)
+        assessment = {
+            "structurally_valid": True,
+            "provenance_valid": True,
+            "machine_derived_obligations_verified": True,
+            "machine_derived_field_count": 1,
+            "review_required_field_count": 1,
+            "review_required_obligations_present": True,
+            "machine_verifiable_coverage": 0.5,
+        }
+        full = json.loads(
+            (
+                ROOT
+                / "evals"
+                / "downstream-conformance-v0.4.1"
+                / "evidence"
+                / "client-feedback-rev44-contract.json"
+            ).read_text(encoding="utf-8")
+        )
+        forged_partial_full = {
+            "contract_schema_version": "joewrks.action-conformance/1.0",
+            "authority_assessment": assessment,
+        }
+        regression_slice = {
+            "contract_schema_version": "joewrks.downstream.regression-slice/1.0",
+            "authority_assessment": assessment,
+        }
+        self.assertTrue(gate(full))
+        self.assertFalse(gate(forged_partial_full))
+        self.assertFalse(gate(regression_slice))
+
     def test_handoff_template_keeps_prose_and_names_executable_bundle(self):
         template = (SKILL / "templates" / "figma-make-handoff.md").read_text(encoding="utf-8")
         self.assertIn("## Objective, scope, and non-goals", template)
         self.assertIn("## Executable downstream conformance", template)
         for placeholder in (
+            "{{CONTRACT_SCHEMA_VERSION}}",
             "{{ACTION_CONTRACT_PATH}}",
             "{{LIFECYCLE_CONTRACT_PATH}}",
             "{{EXECUTABLE_CONTRACT_SHA256}}",

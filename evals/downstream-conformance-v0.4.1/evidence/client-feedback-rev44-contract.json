@@ -3,6 +3,10 @@
     {
       "action_id": "approve_version",
       "actor": {
+        "derivation": {
+          "explanation": "The transition actor ID and designated-reviewer rule require a human-readable role synthesis.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           1,
           7
@@ -10,6 +14,10 @@
         "value": "USR-002 Client Reviewer"
       },
       "allowed_current_states": {
+        "derivation": {
+          "explanation": "Selecting the approval transition's from-state requires transition interpretation.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           1
         ],
@@ -18,18 +26,30 @@
         ]
       },
       "authentication": {
+        "derivation": {
+          "explanation": "The canonical reviewer rule requires interpretation into an authentication obligation.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           7
         ],
         "value": "verified designated reviewer email identity"
       },
       "business_side_effects": {
+        "derivation": {
+          "explanation": "Absence of an additional business effect is a reviewed contract interpretation.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           1
         ],
         "value": "none asserted outside Version state"
       },
       "command": {
+        "derivation": {
+          "explanation": "The UI action and canonical transition require naming a runtime command.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           0,
           1
@@ -37,13 +57,31 @@
         "value": "APPROVE_VERSION"
       },
       "concurrency": {
+        "derivation": {
+          "explanation": "The emitted concurrency rule synthesizes two canonical prose clauses.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           2,
           8
         ],
         "value": "expected state revision must equal current revision"
       },
+      "default_result": {
+        "derivation": {
+          "explanation": "The canonical transition does not directly encode the harness result-class enum.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          1
+        ],
+        "value": "SUCCESS"
+      },
       "delivery_effects": {
+        "derivation": {
+          "explanation": "Delivery behavior combines a prose rule with declared delivery fields.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           5,
           6
@@ -51,12 +89,20 @@
         "value": "separate immediate Designer email event with delivery status"
       },
       "expected_domain_mutation": {
+        "derivation": {
+          "explanation": "The readable mutation statement is synthesized from the canonical transition object.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           1
         ],
         "value": "same exact Version IN_REVIEW -> APPROVED"
       },
       "forbidden_mutations": {
+        "derivation": {
+          "explanation": "Forbidden mutations combine transition scope and idempotency prose.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           1,
           4
@@ -67,6 +113,10 @@
         ]
       },
       "forbidden_states": {
+        "derivation": {
+          "explanation": "The complement of the allowed approval state is a reviewed interpretation.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           1
         ],
@@ -77,19 +127,41 @@
         ]
       },
       "history_result": {
+        "derivation": {
+          "explanation": "The canonical history rule requires interpretation into an implementation obligation.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           3
         ],
         "value": "preserve exact Version approval actor/timestamp/version"
       },
       "idempotency": {
+        "derivation": {
+          "explanation": "The runtime replay obligation is a direct human interpretation of the idempotency rule.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           4
         ],
         "value": "same exact Version approval retry reuses the prior result without duplicate approval"
       },
-      "input_invariants": [],
+      "input_invariants": {
+        "derivation": {
+          "explanation": "No additional payload invariant is asserted beyond reviewed state and revision guards.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          1,
+          2
+        ],
+        "value": []
+      },
       "object_binding": {
+        "derivation": {
+          "explanation": "The transition and concurrency clauses jointly imply exact-version binding.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           1,
           2
@@ -97,6 +169,10 @@
         "value": "exact Version ID"
       },
       "preconditions": {
+        "derivation": {
+          "explanation": "The precondition list is an interpretation of transition and reviewer authority.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           1,
           7
@@ -107,6 +183,10 @@
         ]
       },
       "recovery": {
+        "derivation": {
+          "explanation": "Recovery combines latest-value and visible-state rules.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           8,
           9
@@ -114,6 +194,10 @@
         "value": "return and display latest Version state/revision"
       },
       "rejection": {
+        "derivation": {
+          "explanation": "The no-op rejection obligation combines concurrency and stale response prose.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           2,
           8
@@ -121,32 +205,51 @@
         "value": "no mutation on stale expected state revision"
       },
       "relationship_predicate": {
+        "derivation": {
+          "explanation": "Reviewer designation is expressed in prose and cannot be reproduced by exact or extract.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           7
         ],
         "value": "current designated reviewer for the project"
       },
       "result_expectations": {
-        "IDEMPOTENT_REPLAY": {
-          "authoritative_state": "UNCHANGED",
-          "business_side_effects": "UNCHANGED",
-          "delivery_effects": "UNCHANGED",
-          "history": "UNCHANGED",
-          "revision": "UNCHANGED"
+        "derivation": {
+          "explanation": "Result classes and five-component change expectations synthesize state, history, idempotency, and delivery clauses.",
+          "kind": "REVIEW_REQUIRED"
         },
-        "STALE": {
-          "authoritative_state": "UNCHANGED",
-          "business_side_effects": "UNCHANGED",
-          "delivery_effects": "UNCHANGED",
-          "history": "UNCHANGED",
-          "revision": "UNCHANGED"
-        },
-        "SUCCESS": {
-          "authoritative_state": "CHANGED",
-          "business_side_effects": "UNCHANGED",
-          "delivery_effects": "CHANGED",
-          "history": "CHANGED",
-          "revision": "CHANGED"
+        "source_refs": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          8
+        ],
+        "value": {
+          "IDEMPOTENT_REPLAY": {
+            "authoritative_state": "UNCHANGED",
+            "business_side_effects": "UNCHANGED",
+            "delivery_effects": "UNCHANGED",
+            "history": "UNCHANGED",
+            "revision": "UNCHANGED"
+          },
+          "STALE": {
+            "authoritative_state": "UNCHANGED",
+            "business_side_effects": "UNCHANGED",
+            "delivery_effects": "UNCHANGED",
+            "history": "UNCHANGED",
+            "revision": "UNCHANGED"
+          },
+          "SUCCESS": {
+            "authoritative_state": "CHANGED",
+            "business_side_effects": "UNCHANGED",
+            "delivery_effects": "CHANGED",
+            "history": "CHANGED",
+            "revision": "CHANGED"
+          }
         }
       },
       "sources": [
@@ -222,19 +325,42 @@
         }
       ],
       "superseded_rules": {
+        "derivation": {
+          "explanation": "The relationship between active transitions and lifecycle sentinels is a reviewed downstream obligation.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           1
         ],
         "value": "inactive sentinels are enforced by lifecycle compilation"
       },
-      "test_obligations": [
-        "authority-loss",
-        "exact-version-stale",
-        "idempotent-replay",
-        "delivery-separation",
-        "append-only-history"
-      ],
+      "test_obligations": {
+        "derivation": {
+          "explanation": "Executable test categories are a reviewed synthesis of the cited canonical clauses.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          8
+        ],
+        "value": [
+          "authority-loss",
+          "exact-version-stale",
+          "idempotent-replay",
+          "delivery-separation",
+          "append-only-history"
+        ]
+      },
       "trace": {
+        "derivation": {
+          "explanation": "The end-to-end implementation trace combines multiple canonical artifacts.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           0,
           1,
@@ -255,6 +381,10 @@
         ]
       },
       "version_result": {
+        "derivation": {
+          "explanation": "The result wording combines concurrency and stale-recovery clauses.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           2,
           8
@@ -262,6 +392,10 @@
         "value": "advance on commit; latest state/revision on stale"
       },
       "visible_error": {
+        "derivation": {
+          "explanation": "The visible conflict representation combines stale and readback rules.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           8,
           9
@@ -269,6 +403,10 @@
         "value": "latest Version conflict state/revision"
       },
       "visible_success": {
+        "derivation": {
+          "explanation": "The visible-success gate is interpreted from canonical readback prose.",
+          "kind": "REVIEW_REQUIRED"
+        },
         "source_refs": [
           9
         ],
@@ -276,40 +414,160 @@
       }
     }
   ],
+  "authority_assessment": {
+    "machine_derived_field_count": 1,
+    "machine_derived_obligations_verified": true,
+    "machine_verifiable_coverage": 0.02631578947368421,
+    "provenance_valid": true,
+    "review_required_field_count": 37,
+    "review_required_obligations_present": true,
+    "structurally_valid": true
+  },
   "compiler": {
     "id": "joewrks-product-definition/downstream",
-    "version": "0.4.1"
+    "version": "0.4.1.1"
   },
-  "contract_hash": "ea31516b703aab17d471081acf6d49622e0825643c2c4460247396633aecffc2",
+  "contract_hash": "8277aa223eec1f4aae669afea4d6ac4b0af7d22ae05ba729ba4aff61c6eff6ce",
   "contract_schema_version": "joewrks.action-conformance/1.0",
   "lifecycles": [
     {
-      "allowed_transitions": [
-        "DRAFT -> IN_REVIEW",
-        "IN_REVIEW -> CHANGES_REQUESTED",
-        "IN_REVIEW -> APPROVED"
-      ],
-      "authority": "Designer for review request; designated Client Reviewer for decision",
-      "boundary_conditions": [
-        "exact Version expected state revision"
-      ],
-      "current_states": [
-        "DRAFT",
-        "IN_REVIEW",
-        "CHANGES_REQUESTED",
-        "APPROVED"
-      ],
-      "forbidden_transitions": [
-        "APPROVED -> any state on the same Version"
-      ],
-      "history_preservation": "approval actor, timestamp, and exact Version remain preserved",
+      "allowed_transitions": {
+        "derivation": {
+          "explanation": "Readable transitions are formatted interpretations of canonical transition objects.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          1
+        ],
+        "value": [
+          "DRAFT -> IN_REVIEW",
+          "IN_REVIEW -> CHANGES_REQUESTED",
+          "IN_REVIEW -> APPROVED"
+        ]
+      },
+      "authority": {
+        "derivation": {
+          "explanation": "Actor IDs and transition roles require human-readable role interpretation.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          1
+        ],
+        "value": "Designer for review request; designated Client Reviewer for decision"
+      },
+      "boundary_conditions": {
+        "derivation": {
+          "explanation": "The runtime boundary is a reviewed interpretation associated with the transition set.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          1
+        ],
+        "value": [
+          "exact Version expected state revision"
+        ]
+      },
+      "current_states": {
+        "derivation": {
+          "kind": "MACHINE_DERIVED",
+          "operator": "exact"
+        },
+        "source_refs": [
+          0
+        ],
+        "value": [
+          "DRAFT",
+          "IN_REVIEW",
+          "CHANGES_REQUESTED",
+          "APPROVED"
+        ]
+      },
+      "forbidden_transitions": {
+        "derivation": {
+          "explanation": "The forbidden transition statement combines terminal-state and transition records.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          1,
+          2
+        ],
+        "value": [
+          "APPROVED -> any state on the same Version"
+        ]
+      },
+      "history_preservation": {
+        "derivation": {
+          "explanation": "The preserved-history obligation interprets the canonical approval-history rule.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          3
+        ],
+        "value": "approval actor, timestamp, and exact Version remain preserved"
+      },
       "lifecycle_id": "exact-version-approval",
-      "object_outcome": "changes after approval require a new immutable Version",
-      "required_confirmation": "not declared for approval",
-      "required_evidence": "authoritative approval readback and preserved history",
-      "required_reason": "CHANGES_REQUESTED guard as recorded by STATE-001",
-      "reversal_window": "none for the same Version",
-      "reversibility": "APPROVED is terminal for the same immutable Version",
+      "object_outcome": {
+        "derivation": {
+          "explanation": "Post-approval object outcome synthesizes terminal state and approval history prose.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          2,
+          3
+        ],
+        "value": "changes after approval require a new immutable Version"
+      },
+      "required_confirmation": {
+        "derivation": {
+          "explanation": "No confirmation requirement is an explicit reviewed interpretation, not an exact derivation.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          1
+        ],
+        "value": "not declared for approval"
+      },
+      "required_evidence": {
+        "derivation": {
+          "explanation": "Evidence requirements combine transition and approval-history clauses.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          1,
+          3
+        ],
+        "value": "authoritative approval readback and preserved history"
+      },
+      "required_reason": {
+        "derivation": {
+          "explanation": "The reason requirement is selected from the change-request transition guard.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          1
+        ],
+        "value": "CHANGES_REQUESTED guard as recorded by STATE-001"
+      },
+      "reversal_window": {
+        "derivation": {
+          "explanation": "The absence of a reversal window is interpreted from the terminal state.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          2
+        ],
+        "value": "none for the same Version"
+      },
+      "reversibility": {
+        "derivation": {
+          "explanation": "Terminal-state data requires interpretation into a reversibility rule.",
+          "kind": "REVIEW_REQUIRED"
+        },
+        "source_refs": [
+          2
+        ],
+        "value": "APPROVED is terminal for the same immutable Version"
+      },
       "sources": [
         {
           "active": true,

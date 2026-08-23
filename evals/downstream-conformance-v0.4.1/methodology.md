@@ -2,7 +2,9 @@
 
 ## Boundary
 
-Canonical Product Definition is read-only authority. Product adapters select canonical clauses by current stable ID and JSON Pointer. Compilation adds the exact canonical JSON value hash, approved revision/digest, canonical state hash, compiler identity/version, and deterministic contract hash.
+Canonical Product Definition is read-only authority. Product adapters select canonical clauses by current stable ID and JSON Pointer. Compilation adds the exact canonical JSON value hash, approved revision/digest, canonical state hash, compiler identity/version, and deterministic contract hash. Full production contracts and evaluator-only regression slices use distinct schema versions and cannot be interchanged by the handoff gate.
+
+Every material semantic value is an envelope. `MACHINE_DERIVED` runs only `exact` or `extract` and compares the emitted value with the compiler-computed canonical value. `REVIEW_REQUIRED` retains sources and a non-empty explanation but remains outstanding interpretation rather than automated proof.
 
 Runtime adapters translate JSONL requests into actual frozen runtime calls and return before/result/after observations. They do not state expected behavior or emit a conformance verdict. The Python standard-library core derives expectations from the executable contract and evaluates each component.
 
@@ -35,6 +37,6 @@ Deep verification independently compares:
 4. business side effects;
 5. delivery/notification effects.
 
-Default REJECTED/STALE/IDEMPOTENT REPLAY semantics require all five to remain unchanged. Canonical denial audit is an explicit action-contract exception. Additional result assertions validate latest-value presence, historical event projection, and terminal flags.
+Every declared result class explicitly states all five component expectations. There is no verifier component fallback. Canonical denial audit is an explicit REVIEW_REQUIRED slice expectation. Additional result assertions within the same semantic envelope validate latest-value presence, historical event projection, and terminal flags.
 
 The harness result is PASS only because it detected the known frozen failures. A frozen application NONCONFORMANT result is expected evidence, not a harness failure.

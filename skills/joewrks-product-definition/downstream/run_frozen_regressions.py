@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .adapter_runtime import build_request, run_file_jsonl_adapter
-from .contracts import compile_contract, materialize_definition
+from .contracts import compile_contract, is_full_handoff_contract, materialize_definition
 from .product_adapters import replication_a_definition, replication_b_definition
 from .verifier import verify_execution, verify_lifecycle_transition
 
@@ -251,7 +251,7 @@ def execute_frozen_regressions(
     )
 
     report = {
-        "harness_version": "0.4.1",
+        "harness_version": "0.4.1.1",
         "frozen_sources": {
             "replication_a": {"commit": A_COMMIT, "tree": a_tree},
             "replication_b": {"commit": B_COMMIT, "tree": b_tree},
@@ -260,6 +260,21 @@ def execute_frozen_regressions(
             "replication_a": a_bundle["contract_hash"],
             "replication_b": b_bundle["contract_hash"],
             "client_feedback_rev44": client_bundle["contract_hash"],
+        },
+        "contract_versions": {
+            "replication_a": a_bundle["contract_schema_version"],
+            "replication_b": b_bundle["contract_schema_version"],
+            "client_feedback_rev44": client_bundle["contract_schema_version"],
+        },
+        "authority_assessments": {
+            "replication_a": a_bundle["authority_assessment"],
+            "replication_b": b_bundle["authority_assessment"],
+            "client_feedback_rev44": client_bundle["authority_assessment"],
+        },
+        "production_handoff_eligible": {
+            "replication_a": is_full_handoff_contract(a_bundle),
+            "replication_b": is_full_handoff_contract(b_bundle),
+            "client_feedback_rev44": is_full_handoff_contract(client_bundle),
         },
         "regressions": {
             "A_UI_DOMAIN_DISCONNECT": {"detected": not a_report["conformant"] and not a_report["components"]["authoritative_state"]["passed"], "verification": a_report},

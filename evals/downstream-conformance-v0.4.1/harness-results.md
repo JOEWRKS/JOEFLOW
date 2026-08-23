@@ -1,5 +1,17 @@
 # Harness Results
 
+Harness/compiler version: `0.4.1.1`.
+
+## Contract authority readback
+
+| Bundle | Contract kind | MACHINE_DERIVED | REVIEW_REQUIRED | Machine-verifiable coverage | Production handoff |
+|---|---|---:|---:|---:|---:|
+| Replication A | evaluator regression slice | 0 | 4 | 0% | no |
+| Replication B | evaluator regression slice | 0 | 64 | 0% | no |
+| client-feedback rev44 | full action conformance | 1 | 37 | 2.631578947% | yes |
+
+All three are structurally/provenance valid. The rev44 machine-derived subset is verified; REVIEW_REQUIRED fields remain explicit outstanding interpretations.
+
 ## Frozen regressions
 
 | Result ID | Actual runtime observation | Python-core result |
@@ -32,4 +44,4 @@
 
 The evidence records contain exact commands, setup, before/result/after snapshots, and deltas. Counts are inventory only; the verdicts above come from the executed transition evidence.
 
-Verification after evidence freeze: full suite `71/71 PASS`, including the pinned A/B runtime integration; original baseline `43/43 PASS` separately.
+Verification after evidence freeze: full suite `85/85 PASS`, including the pinned A/B runtime integration; original baseline `43/43 PASS` separately.

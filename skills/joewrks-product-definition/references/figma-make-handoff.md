@@ -12,7 +12,9 @@ After Figma Make output, create `MAKE_REVIEW.md` covering missing/extra screens 
 
 After Product Definition Closure, implementation handoff may bundle a derived executable contract by following [`downstream/README.md`](../downstream/README.md). Canonical Product Definition remains authority; the action/lifecycle bundle is a read-only, provenance-pinned projection and does not change Closure or `state.json`.
 
-Keep the human-readable handoff. Add the compiled action contract path, lifecycle contract path, exact contract SHA-256, adapter identity/version, frozen source commit/tree, and sequence-runner command. Runtime evidence uses `joewrks.downstream.execution/1.0`; generator adapters only invoke/read back the implementation, while the Python core determines semantic conformance.
+Production implementation and Figma-Make handoff accepts only `joewrks.action-conformance/1.0`. `joewrks.downstream.regression-slice/1.0` is limited to frozen evaluator regression, harness development, and known-defect reproduction. It must not be supplied or described as a full executable implementation contract.
+
+Keep the human-readable handoff. Add the exact contract schema version, compiled action contract path, lifecycle contract path, exact contract SHA-256, adapter identity/version, frozen source commit/tree, and sequence-runner command. Record `MACHINE_DERIVED` and `REVIEW_REQUIRED` counts separately; review-required fields remain outstanding human interpretations even when the full contract is structurally valid. Runtime evidence uses `joewrks.downstream.execution/1.0`; generator adapters only invoke/read back the implementation, while the Python core determines semantic conformance.
 
 After implementation, use the downstream blind-audit procedure. Trace every material action from precondition through public action, handler, domain state, provenance/side effects, and visible result or recovery. A rendered label, handler existence, helper test, build result, visual similarity, implementation self-report, or green test count is not transition evidence.
 

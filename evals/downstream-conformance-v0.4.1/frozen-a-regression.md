@@ -5,7 +5,9 @@
 - commit: `9408434e640b9cf0bf6afaadd8f9d1f5f52e8943`
 - implementation tree: `189d9f969d046ecf905680e090f65f15114aeeb4`
 - adapter: `frozen-a-node-public-ui@1.0.0`
-- executable contract: `1fb26382fd44d321d0cd3c632af98d73658f5aced1b37141695a203830a9bf16`
+- evaluator contract version: `joewrks.downstream.regression-slice/1.0`
+- executable slice: `3dc4aa1ff025e0b1c36d5470f226d46e8280d496e183fdd05da3790e1026639a`
+- semantic authority: MACHINE_DERIVED `0`, REVIEW_REQUIRED `4`, production handoff `no`
 
 ## Executed sequence
 

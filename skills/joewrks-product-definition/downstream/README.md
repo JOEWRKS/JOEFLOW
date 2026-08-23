@@ -4,9 +4,31 @@ Use this subsystem after Product Definition Closure to compile approved canonica
 
 ## Authority model
 
-Every derived bundle records the product slug, approved revision/digest, canonical state hash, compiler identity/version, and deterministic contract hash. Every active semantic source resolves to one current stable object ID plus an exact JSON Pointer and SHA-256 of the referenced canonical JSON value. Active superseded sources, pointer drift, and hash drift fail compilation. Inactive superseded sources may appear only as sentinels.
+Every derived bundle records the product slug, approved revision/digest, canonical state hash, compiler identity/version, and deterministic contract hash. Every active semantic source resolves to one current stable object ID plus an exact JSON Pointer and SHA-256 of the referenced canonical JSON value. Active superseded sources, pointer drift, hash drift, empty/out-of-range semantic source references, and machine-derived value drift fail compilation. Inactive superseded sources may appear only as sentinels.
 
 Product adapters map canonical clauses to executable fields. The Python core decides expected results and verification; runtime adapters only translate the protocol into actual invocation/readback.
+
+### Contract kinds
+
+- `joewrks.action-conformance/1.0` is the structurally complete production implementation/Figma-Make handoff contract.
+- `joewrks.downstream.regression-slice/1.0` is an evaluator-only partial fixture for frozen regressions, harness development, and known-defect reproduction. It is never eligible for production handoff.
+
+The `is_full_handoff_contract()` gate rejects the regression-slice version even when its evaluator fields are valid.
+
+### Semantic derivation integrity
+
+Every material semantic field contains `value`, non-empty `source_refs`, and a machine-readable `derivation`:
+
+- `MACHINE_DERIVED` executes `exact` or `extract` against the cited canonical source and requires the emitted value to equal the compiler-computed value.
+- `REVIEW_REQUIRED` preserves exact provenance and a non-empty interpretation explanation, but the compiler does not prove the semantic value itself.
+
+No natural-language parser, heuristic mapper, arbitrary executable mapping, or caller-provided constant mapping exists. If `exact` or `extract` cannot reproduce the value, it remains review-required.
+
+Each bundle reports `structurally_valid`, `provenance_valid`, `machine_derived_obligations_verified`, both derivation-class field counts, review-required presence, and machine-verifiable coverage. Structural validity does not convert review-required obligations into automated semantic proof.
+
+### Repository schema subset
+
+The stdlib-only validator implements the subset used by these repository schemas: local `$ref`, `type`, `required`, `properties`, `additionalProperties`, `items`, `minItems`, `minimum`, `const`, `enum`, `pattern`, and `oneOf`, plus schema annotations. Unsupported validation keywords fail rather than being ignored. This is not a general or complete JSON Schema Draft 2020-12 implementation.
 
 ## Runtime protocol
 
@@ -24,7 +46,7 @@ The adapter decodes these immediately before the runtime call and re-encodes obs
 
 ## Deep verification
 
-The verifier reports authoritative domain state, revision/version, audit/history, business side effects, and notification/delivery effects separately. REJECTED and STALE default to no change in all five components. A canonical denial-audit or other permitted change must be declared explicitly in the action contract. SUCCESS and IDEMPOTENT REPLAY are evaluated from contract obligations, never from an adapter verdict.
+The verifier reports authoritative domain state, revision/version, audit/history, business side effects, and notification/delivery effects separately. Every usable result class and all five component expectations must be explicitly present in the compiled semantic envelope. A canonical denial-audit or other permitted change must be declared explicitly in the action contract. Sequence overrides not declared by that contract fail verification. SUCCESS, REJECTED, STALE, and IDEMPOTENT REPLAY are evaluated from compiled obligations, never from an adapter verdict or generic fallback.
 
 ## Sequence catalog
 
@@ -53,7 +75,8 @@ Sequence definitions supply product-specific commands and canonical expectations
 
 ## Files
 
-- `contracts.py`, `provenance.py`: deterministic compilation and source validation.
+- `contracts.py`, `provenance.py`: deterministic compilation, derivation, source validation, and handoff classification.
+- `schema_validation.py`: repository-specific schema-keyword-subset enforcement.
 - `protocol.py`, `schemas/execution-record.schema.json`: JSONL and typed-number contract.
 - `verifier.py`, `invariants.py`, `runner.py`: semantic result, deep no-op, invariant, lifecycle, and sequence evaluation.
 - `adapter_runtime.py`, `adapters/`: external invocation/readback boundary.
