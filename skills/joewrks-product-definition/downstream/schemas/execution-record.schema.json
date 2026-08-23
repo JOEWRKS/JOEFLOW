@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://joewrks.example/schemas/execution-record.schema.json",
+  "title": "JOEWRKS Downstream JSONL Execution Evidence",
+  "type": "object",
+  "required": [
+    "protocol_version", "record_kind", "sequence_id", "test_id", "product_slug", "authority",
+    "contract_hash", "adapter", "frozen_source", "command", "before", "result", "after", "deltas"
+  ],
+  "properties": {
+    "protocol_version": {"const": "joewrks.downstream.execution/1.0"},
+    "record_kind": {"const": "execution_evidence"},
+    "sequence_id": {"type": "string"},
+    "test_id": {"type": "string"},
+    "product_slug": {"type": "string"},
+    "authority": {
+      "type": "object",
+      "required": ["approved_revision", "approved_digest"]
+    },
+    "contract_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "adapter": {"type": "object", "required": ["name", "version"]},
+    "frozen_source": {"type": "object", "required": ["commit", "tree"]},
+    "command": {"type": "object"},
+    "before": {
+      "$ref": "#/$defs/snapshot",
+      "required": ["authoritative_state", "revision", "history", "business_side_effects", "delivery_effects"]
+    },
+    "result": {"type": "object"},
+    "after": {
+      "$ref": "#/$defs/snapshot",
+      "required": ["authoritative_state", "revision", "history", "business_side_effects", "delivery_effects"]
+    },
+    "deltas": {
+      "type": "object",
+      "required": ["history", "business_side_effects", "delivery_effects"]
+    }
+  },
+  "$defs": {
+    "typedNumber": {
+      "type": "object",
+      "properties": {"$number": {"enum": ["NaN", "+Infinity", "-Infinity"]}},
+      "required": ["$number"],
+      "additionalProperties": false
+    },
+    "snapshot": {
+      "type": "object",
+      "required": ["authoritative_state", "revision", "history", "business_side_effects", "delivery_effects"],
+      "properties": {
+        "authoritative_state": {},
+        "revision": {},
+        "history": {},
+        "business_side_effects": {},
+        "delivery_effects": {}
+      }
+    }
+  },
+  "additionalProperties": true
+}

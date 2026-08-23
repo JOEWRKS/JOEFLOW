@@ -1,0 +1,79 @@
+{
+  "actions": [
+    {
+      "action_id": "confirm_booking",
+      "default_result": "SUCCESS",
+      "input_invariants": [],
+      "result_expectations": {
+        "SUCCESS": {
+          "authoritative_state": "CHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "ANY",
+          "history": "ANY",
+          "revision": "CHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "SCR-001",
+          "pointer": "/objects/screens/0/major_actions",
+          "source_status": "CURRENT",
+          "value_sha256": "3bbe8b2177cff7aabced06ca00fc00655775e0c64442053b8fe31d10de8a188c"
+        },
+        {
+          "active": true,
+          "object_id": "REQ-001",
+          "pointer": "/objects/requirements/0/behavior",
+          "source_status": "CURRENT",
+          "value_sha256": "f45ebb3c10d7517b3cf8090817c9761ca8c611c36c73b3a7914ac7ee3cb78a22"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-001",
+          "pointer": "/objects/rules/0/rule",
+          "source_status": "CURRENT",
+          "value_sha256": "fd79b3ceb85e8649c37c8d0327a969d091c399eeeda0f5473932e72f01486fdb"
+        },
+        {
+          "active": true,
+          "object_id": "STATE-001",
+          "pointer": "/objects/states/0/meaning",
+          "source_status": "CURRENT",
+          "value_sha256": "7a7d0d967c4f31b02ec09e2d274eea7c19d199a1bc25825c8842cefe95f6ed4d"
+        },
+        {
+          "active": true,
+          "object_id": "AC-001",
+          "pointer": "/objects/acceptance_criteria/0/criterion",
+          "source_status": "CURRENT",
+          "value_sha256": "4585d38f337b9fd3d146c6410f5ae2a20a882d857eb15df2b1fccf248843afa1"
+        },
+        {
+          "active": true,
+          "object_id": "AC-002",
+          "pointer": "/objects/acceptance_criteria/1/criterion",
+          "source_status": "CURRENT",
+          "value_sha256": "da6a028e1a8ee26ebd2616f338a4af072a6d3ab72f592f02d7eb3431a69099ca"
+        }
+      ],
+      "test_obligations": [
+        "ui-to-domain-trace",
+        "atomic-booking-creation"
+      ]
+    }
+  ],
+  "compiler": {
+    "id": "joewrks-product-definition/downstream",
+    "version": "0.4.1"
+  },
+  "contract_hash": "1fb26382fd44d321d0cd3c632af98d73658f5aced1b37141695a203830a9bf16",
+  "contract_schema_version": "joewrks.action-conformance/1.0",
+  "lifecycles": [],
+  "source_authority": {
+    "approved_digest": "8ebb472aa66a5b680961e102db950214cea2d0be3b644164f23712030b9d8a7c",
+    "approved_revision": 62,
+    "canonical_state_sha256": "dffeb021179616c53b1e27948aa2ccabde73fb1328836d9ec24ee6c02095cbb5",
+    "product_slug": "studio-booking-dogfood"
+  }
+}

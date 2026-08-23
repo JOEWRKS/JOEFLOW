@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://joewrks.example/schemas/action-contract.schema.json",
+  "title": "JOEWRKS Action Conformance Contract",
+  "type": "object",
+  "required": ["contract_schema_version", "compiler", "source_authority", "actions", "contract_hash"],
+  "properties": {
+    "contract_schema_version": {"const": "joewrks.action-conformance/1.0"},
+    "compiler": {
+      "type": "object",
+      "required": ["id", "version"],
+      "properties": {"id": {"type": "string"}, "version": {"type": "string"}},
+      "additionalProperties": false
+    },
+    "source_authority": {"$ref": "#/$defs/authority"},
+    "actions": {"type": "array", "items": {"$ref": "#/$defs/action"}},
+    "contract_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "authority": {
+      "type": "object",
+      "required": ["product_slug", "approved_revision", "approved_digest", "canonical_state_sha256"],
+      "properties": {
+        "product_slug": {"type": "string"},
+        "approved_revision": {"type": "integer"},
+        "approved_digest": {"type": "string"},
+        "canonical_state_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["object_id", "pointer", "value_sha256", "source_status", "active"],
+      "properties": {
+        "object_id": {"type": "string"},
+        "pointer": {"type": "string", "pattern": "^/"},
+        "value_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_status": {"type": "string"},
+        "active": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "semanticField": {
+      "type": "object",
+      "required": ["value", "source_refs"],
+      "properties": {
+        "value": {},
+        "source_refs": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 0}},
+        "mapping": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "action": {
+      "type": "object",
+      "required": [
+        "action_id", "sources", "actor", "authentication", "relationship_predicate", "object_binding",
+        "concurrency", "preconditions", "allowed_current_states", "forbidden_states", "input_invariants",
+        "command", "expected_domain_mutation", "forbidden_mutations", "result_expectations", "version_result",
+        "history_result", "business_side_effects", "delivery_effects", "idempotency", "rejection", "recovery",
+        "visible_success", "visible_error", "superseded_rules", "test_obligations", "trace"
+      ],
+      "properties": {
+        "action_id": {"type": "string"},
+        "sources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/source"}},
+        "actor": {"$ref": "#/$defs/semanticField"},
+        "authentication": {"$ref": "#/$defs/semanticField"},
+        "relationship_predicate": {"$ref": "#/$defs/semanticField"},
+        "object_binding": {"$ref": "#/$defs/semanticField"},
+        "concurrency": {"$ref": "#/$defs/semanticField"},
+        "preconditions": {"$ref": "#/$defs/semanticField"},
+        "allowed_current_states": {"$ref": "#/$defs/semanticField"},
+        "forbidden_states": {"$ref": "#/$defs/semanticField"},
+        "input_invariants": {"type": "array"},
+        "command": {"$ref": "#/$defs/semanticField"},
+        "expected_domain_mutation": {"$ref": "#/$defs/semanticField"},
+        "forbidden_mutations": {"$ref": "#/$defs/semanticField"},
+        "result_expectations": {"type": "object"},
+        "version_result": {"$ref": "#/$defs/semanticField"},
+        "history_result": {"$ref": "#/$defs/semanticField"},
+        "business_side_effects": {"$ref": "#/$defs/semanticField"},
+        "delivery_effects": {"$ref": "#/$defs/semanticField"},
+        "idempotency": {"$ref": "#/$defs/semanticField"},
+        "rejection": {"$ref": "#/$defs/semanticField"},
+        "recovery": {"$ref": "#/$defs/semanticField"},
+        "visible_success": {"$ref": "#/$defs/semanticField"},
+        "visible_error": {"$ref": "#/$defs/semanticField"},
+        "superseded_rules": {"$ref": "#/$defs/semanticField"},
+        "test_obligations": {"type": "array", "items": {"type": "string"}},
+        "trace": {"$ref": "#/$defs/semanticField"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

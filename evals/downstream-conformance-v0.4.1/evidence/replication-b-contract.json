@@ -1,0 +1,560 @@
+{
+  "actions": [
+    {
+      "action_id": "create_adjustment",
+      "result_expectations": {
+        "SUCCESS": {
+          "authoritative_state": "CHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "UNCHANGED",
+          "history": "CHANGED",
+          "revision": "CHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-148",
+          "pointer": "/objects/rules/147/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "31a14fefe4d1ebf10465860a51b4ba5b0e7ef1514e1f27dca44056f6751b88b2"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-149",
+          "pointer": "/objects/rules/148/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "dfad095c9468ba28879a637ada3095b37eebaa4821da119e29d92f3b0f3341db"
+        }
+      ]
+    },
+    {
+      "action_id": "fail_adjustment",
+      "result_expectations": {
+        "SUCCESS": {
+          "authoritative_state": "CHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "CHANGED",
+          "history": "CHANGED",
+          "revision": "CHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-148",
+          "pointer": "/objects/rules/147/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "31a14fefe4d1ebf10465860a51b4ba5b0e7ef1514e1f27dca44056f6751b88b2"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-149",
+          "pointer": "/objects/rules/148/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "dfad095c9468ba28879a637ada3095b37eebaa4821da119e29d92f3b0f3341db"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-153",
+          "pointer": "/objects/rules/152/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "61091d51c89bcc851c4bb8d2c374139dc548b582355ed70a7c279eda305eb945"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-155",
+          "pointer": "/objects/rules/154/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "c032950c8ffae7d901825bdeda47466c76023e82882d83af9c3e7325ed84c4fc"
+        }
+      ]
+    },
+    {
+      "action_id": "resolve_adjustment_executed",
+      "input_invariants": [
+        {
+          "pointer": "/actualAmountKrw",
+          "source_refs": [
+            3
+          ],
+          "type": "required"
+        },
+        {
+          "pointer": "/actualDate",
+          "source_refs": [
+            3
+          ],
+          "type": "required"
+        },
+        {
+          "pointer": "/externalReference",
+          "source_refs": [
+            3
+          ],
+          "type": "required"
+        }
+      ],
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-148",
+          "pointer": "/objects/rules/147/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "31a14fefe4d1ebf10465860a51b4ba5b0e7ef1514e1f27dca44056f6751b88b2"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-149",
+          "pointer": "/objects/rules/148/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "dfad095c9468ba28879a637ada3095b37eebaa4821da119e29d92f3b0f3341db"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-153",
+          "pointer": "/objects/rules/152/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "61091d51c89bcc851c4bb8d2c374139dc548b582355ed70a7c279eda305eb945"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-155",
+          "pointer": "/objects/rules/154/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "c032950c8ffae7d901825bdeda47466c76023e82882d83af9c3e7325ed84c4fc"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-133",
+          "pointer": "/objects/rules/132/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "431f1e5bcfa273d48e653525f3aed58c0d233d225408d117b25d61f596f1a309"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-134",
+          "pointer": "/objects/rules/133/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "40551e5eb0663c19af21660af7b544da5970e57b249fc585fa875881b2d9d784"
+        }
+      ]
+    },
+    {
+      "action_id": "create_adjustment_after_rejection",
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-148",
+          "pointer": "/objects/rules/147/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "31a14fefe4d1ebf10465860a51b4ba5b0e7ef1514e1f27dca44056f6751b88b2"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-149",
+          "pointer": "/objects/rules/148/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "dfad095c9468ba28879a637ada3095b37eebaa4821da119e29d92f3b0f3341db"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-133",
+          "pointer": "/objects/rules/132/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "431f1e5bcfa273d48e653525f3aed58c0d233d225408d117b25d61f596f1a309"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-134",
+          "pointer": "/objects/rules/133/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "40551e5eb0663c19af21660af7b544da5970e57b249fc585fa875881b2d9d784"
+        }
+      ]
+    },
+    {
+      "action_id": "update_draft_money",
+      "input_invariants": [
+        {
+          "pointer": "/originalAmount",
+          "source_refs": [
+            0,
+            1
+          ],
+          "type": "finite_number"
+        },
+        {
+          "pointer": "/krwAmount",
+          "source_refs": [
+            0,
+            1
+          ],
+          "type": "finite_number"
+        }
+      ],
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-010",
+          "pointer": "/objects/rules/9/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "1984ef5abf0f3e20a4ec70f51ad2bae60aa9252cf4d4846ea86eac3038f15dc5"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-015",
+          "pointer": "/objects/rules/14/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "53748272f7d602a8453f6029eb113ec73899169ac77d07c40891724d789413df"
+        }
+      ]
+    },
+    {
+      "action_id": "submit_invalid_money",
+      "default_result": "REJECTED",
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-010",
+          "pointer": "/objects/rules/9/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "1984ef5abf0f3e20a4ec70f51ad2bae60aa9252cf4d4846ea86eac3038f15dc5"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-015",
+          "pointer": "/objects/rules/14/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "53748272f7d602a8453f6029eb113ec73899169ac77d07c40891724d789413df"
+        }
+      ]
+    },
+    {
+      "action_id": "admin_stale",
+      "result_expectations": {
+        "STALE": {
+          "assertions": [
+            {
+              "pointer": "/result/latestValues/user.active",
+              "type": "path_present"
+            }
+          ]
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-133",
+          "pointer": "/objects/rules/132/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "431f1e5bcfa273d48e653525f3aed58c0d233d225408d117b25d61f596f1a309"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-134",
+          "pointer": "/objects/rules/133/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "40551e5eb0663c19af21660af7b544da5970e57b249fc585fa875881b2d9d784"
+        }
+      ]
+    },
+    {
+      "action_id": "timeline_query",
+      "result_expectations": {
+        "SUCCESS": {
+          "assertions": [
+            {
+              "field": "businessStatus",
+              "match_field": "action",
+              "match_value": "APPROVE_CLAIM",
+              "pointer": "/result/query",
+              "type": "collection_item_field_equals",
+              "value": "Payment pending"
+            }
+          ],
+          "authoritative_state": "UNCHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "UNCHANGED",
+          "history": "UNCHANGED",
+          "revision": "UNCHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-130",
+          "pointer": "/objects/rules/129/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "34572f3b22defcf8d86379f32e3fc4a90fc97921487cc430962c838415b3f898"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-138",
+          "pointer": "/objects/rules/137/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "e0c43965bb3c9a0629c6264bc02f3ca75bd9ee3b144424c170c6ecc7f53c8750"
+        }
+      ]
+    },
+    {
+      "action_id": "complete_payment_terminal",
+      "result_expectations": {
+        "SUCCESS": {
+          "assertions": [
+            {
+              "pointer": "/after/authoritative_state/claims/clm-scheduled/payment/overdue",
+              "type": "path_equals",
+              "value": false
+            }
+          ],
+          "authoritative_state": "CHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "CHANGED",
+          "history": "CHANGED",
+          "revision": "CHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-075",
+          "pointer": "/objects/rules/74/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "8233c76cb84d2b7cb1eb5ba7b4750846a7c5126e44a0a1f3b348f945eedf8078"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-077",
+          "pointer": "/objects/rules/76/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "f9a7c9617f9c8b83f5e5d0f6fc8fff59b9076f0a165ef44fac586b4eb4991082"
+        }
+      ]
+    },
+    {
+      "action_id": "terminal_reminder_retry",
+      "result_expectations": {
+        "SUCCESS": {
+          "authoritative_state": "UNCHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "UNCHANGED",
+          "history": "CHANGED",
+          "revision": "UNCHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-172",
+          "pointer": "/objects/rules/171/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "43edfc565a3450e9edfb4884e71904666d09d118696668f4d78e44b58b29ed49"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-173",
+          "pointer": "/objects/rules/172/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "2f4f952d749b50c71379d087d22e83639b80a452b81b58d66080dd48f99076a3"
+        }
+      ]
+    },
+    {
+      "action_id": "issue_file_access",
+      "result_expectations": {
+        "SUCCESS": {
+          "authoritative_state": "CHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "UNCHANGED",
+          "history": "CHANGED",
+          "revision": "UNCHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-165",
+          "pointer": "/objects/rules/164/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "b88aa2460928f4b86e2ab042c8b82eceed46cdfa5bd981379eeea195a44a53de"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-169",
+          "pointer": "/objects/rules/168/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "e139ad88db9e7d80b93ab446e9e0f27ce4663d359b5b3933403dc6c39b9e8432"
+        }
+      ]
+    },
+    {
+      "action_id": "download_after_authority_loss",
+      "default_result": "REJECTED",
+      "result_expectations": {
+        "REJECTED": {
+          "authoritative_state": "UNCHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "UNCHANGED",
+          "history": "CHANGED",
+          "revision": "UNCHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-138",
+          "pointer": "/objects/rules/137/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "e0c43965bb3c9a0629c6264bc02f3ca75bd9ee3b144424c170c6ecc7f53c8750"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-169",
+          "pointer": "/objects/rules/168/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "e139ad88db9e7d80b93ab446e9e0f27ce4663d359b5b3933403dc6c39b9e8432"
+        }
+      ]
+    },
+    {
+      "action_id": "update_draft",
+      "result_expectations": {
+        "SUCCESS": {
+          "authoritative_state": "CHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "UNCHANGED",
+          "history": "CHANGED",
+          "revision": "CHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-133",
+          "pointer": "/objects/rules/132/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "431f1e5bcfa273d48e653525f3aed58c0d233d225408d117b25d61f596f1a309"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-134",
+          "pointer": "/objects/rules/133/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "40551e5eb0663c19af21660af7b544da5970e57b249fc585fa875881b2d9d784"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-136",
+          "pointer": "/objects/rules/135/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "e46ffc9ed01f0fcb7acf682fbd8db9f1e39b41b1eab7369c9a9cb0795f16b71f"
+        }
+      ]
+    },
+    {
+      "action_id": "reassign_manager",
+      "result_expectations": {
+        "SUCCESS": {
+          "authoritative_state": "CHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "CHANGED",
+          "history": "CHANGED",
+          "revision": "CHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-193",
+          "pointer": "/objects/rules/192/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "3b056f350fe4427f70e4bb73460cd373a97aa40ddf2df9b1bf700b6bffe2a84e"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-196",
+          "pointer": "/objects/rules/195/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "08361fbe3a2dc72f092aa1f42730998c391135d396b196dd109ba143678a1b6a"
+        }
+      ]
+    },
+    {
+      "action_id": "delivery_failure_after_commit",
+      "result_expectations": {
+        "SUCCESS": {
+          "authoritative_state": "UNCHANGED",
+          "business_side_effects": "CHANGED",
+          "delivery_effects": "CHANGED",
+          "history": "CHANGED",
+          "revision": "UNCHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-194",
+          "pointer": "/objects/rules/193/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "13b7bf3609c4f18fc508d8e1d9d685f5264cadee30c23470ee6f20c6a2bbeaa7"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-196",
+          "pointer": "/objects/rules/195/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "08361fbe3a2dc72f092aa1f42730998c391135d396b196dd109ba143678a1b6a"
+        }
+      ]
+    },
+    {
+      "action_id": "manual_delivery_retry",
+      "result_expectations": {
+        "SUCCESS": {
+          "authoritative_state": "UNCHANGED",
+          "business_side_effects": "CHANGED",
+          "delivery_effects": "CHANGED",
+          "history": "CHANGED",
+          "revision": "CHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "RULE-194",
+          "pointer": "/objects/rules/193/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "13b7bf3609c4f18fc508d8e1d9d685f5264cadee30c23470ee6f20c6a2bbeaa7"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-195",
+          "pointer": "/objects/rules/194/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "609f18c5146788b1c3170a9a2b243c0740c342b7041581d03438652d9c318269"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-196",
+          "pointer": "/objects/rules/195/statement",
+          "source_status": "CURRENT",
+          "value_sha256": "08361fbe3a2dc72f092aa1f42730998c391135d396b196dd109ba143678a1b6a"
+        }
+      ]
+    }
+  ],
+  "compiler": {
+    "id": "joewrks-product-definition/downstream",
+    "version": "0.4.1"
+  },
+  "contract_hash": "c1d10a5330d916fdbe3c15c6039a9ee2f01b4c3f7265f3f1179ab730da8ee768",
+  "contract_schema_version": "joewrks.action-conformance/1.0",
+  "lifecycles": [],
+  "source_authority": {
+    "approved_digest": "18db3c33caa36d8925960523116ed4646a3756b8047cdb9098256cf67097b48f",
+    "approved_revision": 55,
+    "canonical_state_sha256": "2faa665eb1a00e73a3c71e7ac93f922e685a4d7df4535b21621c27523f408772",
+    "product_slug": "expense-reimbursement-dogfood"
+  }
+}

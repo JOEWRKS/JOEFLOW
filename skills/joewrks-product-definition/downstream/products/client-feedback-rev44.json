@@ -1,0 +1,75 @@
+{
+  "product_slug": "client-feedback-portal-dogfood",
+  "actions": [
+    {
+      "action_id": "approve_version",
+      "sources": [
+        {"object_id": "SCR-008", "pointer": "/objects/screens/7/major_actions"},
+        {"object_id": "STATE-001", "pointer": "/objects/states/0/transitions"},
+        {"object_id": "STATE-001", "pointer": "/objects/states/0/mutation_concurrency"},
+        {"object_id": "RULE-008", "pointer": "/objects/rules/7/text"},
+        {"object_id": "RULE-062", "pointer": "/objects/rules/61/text"},
+        {"object_id": "RULE-037", "pointer": "/objects/rules/36/text"},
+        {"object_id": "DATA-006", "pointer": "/objects/data/5/fields"},
+        {"object_id": "RULE-001", "pointer": "/objects/rules/0/text"},
+        {"object_id": "RULE-060", "pointer": "/objects/rules/59/text"},
+        {"object_id": "RULE-061", "pointer": "/objects/rules/60/text"}
+      ],
+      "actor": {"value": "USR-002 Client Reviewer", "source_refs": [1, 7]},
+      "authentication": {"value": "verified designated reviewer email identity", "source_refs": [7]},
+      "relationship_predicate": {"value": "current designated reviewer for the project", "source_refs": [7]},
+      "object_binding": {"value": "exact Version ID", "source_refs": [1, 2]},
+      "concurrency": {"value": "expected state revision must equal current revision", "source_refs": [2, 8]},
+      "preconditions": {"value": ["Version is IN_REVIEW", "current reviewer authority"], "source_refs": [1, 7]},
+      "allowed_current_states": {"value": ["IN_REVIEW"], "source_refs": [1]},
+      "forbidden_states": {"value": ["APPROVED", "DRAFT", "CHANGES_REQUESTED"], "source_refs": [1]},
+      "input_invariants": [],
+      "command": {"value": "APPROVE_VERSION", "source_refs": [0, 1]},
+      "expected_domain_mutation": {"value": "same exact Version IN_REVIEW -> APPROVED", "source_refs": [1]},
+      "forbidden_mutations": {"value": ["other Version status", "duplicate approval record"], "source_refs": [1, 4]},
+      "result_expectations": {
+        "SUCCESS": {"authoritative_state": "CHANGED", "revision": "CHANGED", "history": "CHANGED", "business_side_effects": "UNCHANGED", "delivery_effects": "CHANGED"},
+        "STALE": {"authoritative_state": "UNCHANGED", "revision": "UNCHANGED", "history": "UNCHANGED", "business_side_effects": "UNCHANGED", "delivery_effects": "UNCHANGED"},
+        "IDEMPOTENT_REPLAY": {"authoritative_state": "UNCHANGED", "revision": "UNCHANGED", "history": "UNCHANGED", "business_side_effects": "UNCHANGED", "delivery_effects": "UNCHANGED"}
+      },
+      "version_result": {"value": "advance on commit; latest state/revision on stale", "source_refs": [2, 8]},
+      "history_result": {"value": "preserve exact Version approval actor/timestamp/version", "source_refs": [3]},
+      "business_side_effects": {"value": "none asserted outside Version state", "source_refs": [1]},
+      "delivery_effects": {"value": "separate immediate Designer email event with delivery status", "source_refs": [5, 6]},
+      "idempotency": {"value": "same exact Version approval retry reuses the prior result without duplicate approval", "source_refs": [4]},
+      "rejection": {"value": "no mutation on stale expected state revision", "source_refs": [2, 8]},
+      "recovery": {"value": "return and display latest Version state/revision", "source_refs": [8, 9]},
+      "visible_success": {"value": "only after authoritative success/readback", "source_refs": [9]},
+      "visible_error": {"value": "latest Version conflict state/revision", "source_refs": [8, 9]},
+      "superseded_rules": {"value": "inactive sentinels are enforced by lifecycle compilation", "source_refs": [1]},
+      "test_obligations": ["authority-loss", "exact-version-stale", "idempotent-replay", "delivery-separation", "append-only-history"],
+      "trace": {"value": ["approve_version", "public control", "handler", "APPROVE_VERSION", "Version state", "approval history", "Designer delivery", "visible result"], "source_refs": [0, 1, 3, 5, 6, 9]}
+    }
+  ],
+  "lifecycles": [
+    {
+      "lifecycle_id": "exact-version-approval",
+      "sources": [
+        {"object_id": "STATE-001", "pointer": "/objects/states/0/values"},
+        {"object_id": "STATE-001", "pointer": "/objects/states/0/transitions"},
+        {"object_id": "STATE-001", "pointer": "/objects/states/0/terminal_states"},
+        {"object_id": "RULE-008", "pointer": "/objects/rules/7/text"}
+      ],
+      "current_states": ["DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "APPROVED"],
+      "allowed_transitions": ["DRAFT -> IN_REVIEW", "IN_REVIEW -> CHANGES_REQUESTED", "IN_REVIEW -> APPROVED"],
+      "forbidden_transitions": ["APPROVED -> any state on the same Version"],
+      "boundary_conditions": ["exact Version expected state revision"],
+      "reversibility": "APPROVED is terminal for the same immutable Version",
+      "reversal_window": "none for the same Version",
+      "object_outcome": "changes after approval require a new immutable Version",
+      "required_reason": "CHANGES_REQUESTED guard as recorded by STATE-001",
+      "required_confirmation": "not declared for approval",
+      "required_evidence": "authoritative approval readback and preserved history",
+      "authority": "Designer for review request; designated Client Reviewer for decision",
+      "history_preservation": "approval actor, timestamp, and exact Version remain preserved",
+      "superseded_sentinels": [
+        {"object_id": "DEC-011", "pointer": "/objects/decisions/10/decision", "active": false}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,841 @@
+{
+  "contract_hashes": {
+    "client_feedback_rev44": "ea31516b703aab17d471081acf6d49622e0825643c2c4460247396633aecffc2",
+    "replication_a": "1fb26382fd44d321d0cd3c632af98d73658f5aced1b37141695a203830a9bf16",
+    "replication_b": "c1d10a5330d916fdbe3c15c6039a9ee2f01b4c3f7265f3f1179ab730da8ee768"
+  },
+  "coverage": {
+    "authority_loss": {
+      "action_id": "download_after_authority_loss",
+      "assertions": [],
+      "components": {
+        "authoritative_state": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        },
+        "business_side_effects": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        },
+        "delivery_effects": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        },
+        "history": {
+          "changed": true,
+          "expectation": "CHANGED",
+          "passed": true
+        },
+        "revision": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        }
+      },
+      "conformant": true,
+      "expected_result": "REJECTED",
+      "failures": [],
+      "input_invariant_failures": [],
+      "observed_result": "REJECTED",
+      "result_matches": true
+    },
+    "delivery_business_separation": {
+      "business_commit": {
+        "action_id": "reassign_manager",
+        "assertions": [],
+        "components": {
+          "authoritative_state": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          },
+          "business_side_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          },
+          "history": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          },
+          "revision": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          }
+        },
+        "conformant": true,
+        "expected_result": "SUCCESS",
+        "failures": [],
+        "input_invariant_failures": [],
+        "observed_result": "SUCCESS",
+        "result_matches": true
+      },
+      "conformant": true,
+      "delivery_failure": {
+        "action_id": "delivery_failure_after_commit",
+        "assertions": [],
+        "components": {
+          "authoritative_state": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "business_side_effects": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          },
+          "history": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          },
+          "revision": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          }
+        },
+        "conformant": true,
+        "expected_result": "SUCCESS",
+        "failures": [],
+        "input_invariant_failures": [],
+        "observed_result": "SUCCESS",
+        "result_matches": true
+      }
+    },
+    "idempotent_replay": {
+      "action_id": "update_draft",
+      "assertions": [],
+      "components": {
+        "authoritative_state": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        },
+        "business_side_effects": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        },
+        "delivery_effects": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        },
+        "history": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        },
+        "revision": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        }
+      },
+      "conformant": true,
+      "expected_result": "IDEMPOTENT_REPLAY",
+      "failures": [],
+      "input_invariant_failures": [],
+      "observed_result": "IDEMPOTENT_REPLAY",
+      "result_matches": true
+    },
+    "manual_delivery_retry": {
+      "action_id": "manual_delivery_retry",
+      "assertions": [],
+      "components": {
+        "authoritative_state": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        },
+        "business_side_effects": {
+          "changed": true,
+          "expectation": "CHANGED",
+          "passed": true
+        },
+        "delivery_effects": {
+          "changed": true,
+          "expectation": "CHANGED",
+          "passed": true
+        },
+        "history": {
+          "changed": true,
+          "expectation": "CHANGED",
+          "passed": true
+        },
+        "revision": {
+          "changed": true,
+          "expectation": "CHANGED",
+          "passed": true
+        }
+      },
+      "conformant": true,
+      "expected_result": "SUCCESS",
+      "failures": [],
+      "input_invariant_failures": [],
+      "observed_result": "SUCCESS",
+      "result_matches": true
+    },
+    "stale_no_op": {
+      "action_id": "update_draft",
+      "assertions": [],
+      "components": {
+        "authoritative_state": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        },
+        "business_side_effects": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        },
+        "delivery_effects": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        },
+        "history": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        },
+        "revision": {
+          "changed": false,
+          "expectation": "UNCHANGED",
+          "passed": true
+        }
+      },
+      "conformant": true,
+      "expected_result": "STALE",
+      "failures": [],
+      "input_invariant_failures": [],
+      "observed_result": "STALE",
+      "result_matches": true
+    },
+    "superseded_transition_sentinel": {
+      "conformant": false,
+      "failures": [
+        "superseded source implemented as current: DEC-011"
+      ],
+      "lifecycle_id": "exact-version-approval",
+      "matched_superseded_sources": [
+        "DEC-011"
+      ],
+      "transition": "superseded-link-rule-as-current"
+    }
+  },
+  "frozen_sources": {
+    "replication_a": {
+      "commit": "9408434e640b9cf0bf6afaadd8f9d1f5f52e8943",
+      "tree": "189d9f969d046ecf905680e090f65f15114aeeb4"
+    },
+    "replication_b": {
+      "commit": "eecebc28701006dd2c7be4045a22542e34719705",
+      "tree": "6294fc9072521fdb762808b87203a7e8bac4f7f5"
+    }
+  },
+  "harness_version": "0.4.1",
+  "regressions": {
+    "A_UI_DOMAIN_DISCONNECT": {
+      "detected": true,
+      "verification": {
+        "action_id": "confirm_booking",
+        "assertions": [],
+        "components": {
+          "authoritative_state": {
+            "changed": false,
+            "expectation": "CHANGED",
+            "passed": false
+          },
+          "business_side_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": false,
+            "expectation": "ANY",
+            "passed": true
+          },
+          "history": {
+            "changed": false,
+            "expectation": "ANY",
+            "passed": true
+          },
+          "revision": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          }
+        },
+        "conformant": false,
+        "expected_result": "SUCCESS",
+        "failures": [
+          "authoritative_state expected CHANGED"
+        ],
+        "input_invariant_failures": [],
+        "observed_result": "SUCCESS",
+        "result_matches": true
+      }
+    },
+    "B030_REJECTED_PARTIAL_MUTATION": {
+      "detected": true,
+      "resolve_verification": {
+        "action_id": "resolve_adjustment_executed",
+        "assertions": [],
+        "components": {
+          "authoritative_state": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "business_side_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "history": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "revision": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          }
+        },
+        "conformant": false,
+        "expected_result": "REJECTED",
+        "failures": [
+          "authoritative_state expected UNCHANGED"
+        ],
+        "input_invariant_failures": [
+          {
+            "observed": null,
+            "pointer": "/actualAmountKrw",
+            "type": "required"
+          },
+          {
+            "observed": null,
+            "pointer": "/actualDate",
+            "type": "required"
+          },
+          {
+            "observed": null,
+            "pointer": "/externalReference",
+            "type": "required"
+          }
+        ],
+        "observed_result": "REJECTED",
+        "result_matches": true
+      },
+      "second_command_verification": {
+        "action_id": "create_adjustment_after_rejection",
+        "assertions": [],
+        "components": {
+          "authoritative_state": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "business_side_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "history": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "revision": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          }
+        },
+        "conformant": false,
+        "expected_result": "REJECTED",
+        "failures": [
+          "expected REJECTED, observed SUCCESS",
+          "authoritative_state expected UNCHANGED",
+          "revision expected UNCHANGED",
+          "history expected UNCHANGED"
+        ],
+        "input_invariant_failures": [],
+        "observed_result": "SUCCESS",
+        "result_matches": false
+      }
+    },
+    "B031_NAN_SUBMISSION": {
+      "detected": true,
+      "runtime_non_finite_inputs": [
+        {
+          "classification": "NaN",
+          "pointer": "/krwAmount"
+        },
+        {
+          "classification": "NaN",
+          "pointer": "/originalAmount"
+        }
+      ],
+      "submit_verification": {
+        "action_id": "submit_invalid_money",
+        "assertions": [],
+        "components": {
+          "authoritative_state": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "business_side_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "history": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "revision": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          }
+        },
+        "conformant": false,
+        "expected_result": "REJECTED",
+        "failures": [
+          "expected REJECTED, observed SUCCESS",
+          "authoritative_state expected UNCHANGED",
+          "revision expected UNCHANGED",
+          "history expected UNCHANGED",
+          "delivery_effects expected UNCHANGED"
+        ],
+        "input_invariant_failures": [],
+        "observed_result": "SUCCESS",
+        "result_matches": false
+      },
+      "update_verification": {
+        "action_id": "update_draft_money",
+        "assertions": [],
+        "components": {
+          "authoritative_state": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "business_side_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "history": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "revision": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          }
+        },
+        "conformant": false,
+        "expected_result": "REJECTED",
+        "failures": [
+          "expected REJECTED, observed SUCCESS",
+          "authoritative_state expected UNCHANGED",
+          "revision expected UNCHANGED",
+          "history expected UNCHANGED"
+        ],
+        "input_invariant_failures": [
+          {
+            "observed": {
+              "$number": "NaN"
+            },
+            "pointer": "/originalAmount",
+            "type": "finite_number"
+          },
+          {
+            "observed": {
+              "$number": "NaN"
+            },
+            "pointer": "/krwAmount",
+            "type": "finite_number"
+          }
+        ],
+        "observed_result": "SUCCESS",
+        "result_matches": false
+      }
+    },
+    "B031_POSITIVE_INFINITY_SUBMISSION": {
+      "detected": true,
+      "runtime_non_finite_inputs": [
+        {
+          "classification": "+Infinity",
+          "pointer": "/krwAmount"
+        },
+        {
+          "classification": "+Infinity",
+          "pointer": "/originalAmount"
+        }
+      ],
+      "submit_verification": {
+        "action_id": "submit_invalid_money",
+        "assertions": [],
+        "components": {
+          "authoritative_state": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "business_side_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "history": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "revision": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          }
+        },
+        "conformant": false,
+        "expected_result": "REJECTED",
+        "failures": [
+          "expected REJECTED, observed SUCCESS",
+          "authoritative_state expected UNCHANGED",
+          "revision expected UNCHANGED",
+          "history expected UNCHANGED",
+          "delivery_effects expected UNCHANGED"
+        ],
+        "input_invariant_failures": [],
+        "observed_result": "SUCCESS",
+        "result_matches": false
+      },
+      "update_verification": {
+        "action_id": "update_draft_money",
+        "assertions": [],
+        "components": {
+          "authoritative_state": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "business_side_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "history": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "revision": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          }
+        },
+        "conformant": false,
+        "expected_result": "REJECTED",
+        "failures": [
+          "expected REJECTED, observed SUCCESS",
+          "authoritative_state expected UNCHANGED",
+          "revision expected UNCHANGED",
+          "history expected UNCHANGED"
+        ],
+        "input_invariant_failures": [
+          {
+            "observed": {
+              "$number": "+Infinity"
+            },
+            "pointer": "/originalAmount",
+            "type": "finite_number"
+          },
+          {
+            "observed": {
+              "$number": "+Infinity"
+            },
+            "pointer": "/krwAmount",
+            "type": "finite_number"
+          }
+        ],
+        "observed_result": "SUCCESS",
+        "result_matches": false
+      }
+    },
+    "B_HISTORICAL_STATUS_PROJECTION": {
+      "detected": true,
+      "verification": {
+        "action_id": "timeline_query",
+        "assertions": [
+          {
+            "expected": "Payment pending",
+            "observed": [
+              {
+                "action": "APPROVE_CLAIM",
+                "actorName": "Joon Park",
+                "actorRoles": [
+                  "MANAGER"
+                ],
+                "at": "2026-08-22T09:00:00+09:00",
+                "businessStatus": "Submitted",
+                "id": "audit-0001",
+                "revision": 1,
+                "targetId": "clm-submitted"
+              },
+              {
+                "action": "REVOKE_APPROVAL",
+                "actorName": "Joon Park",
+                "actorRoles": [
+                  "MANAGER"
+                ],
+                "at": "2026-08-22T09:00:00+09:00",
+                "businessStatus": "Submitted",
+                "id": "audit-0006",
+                "managerComment": "Receipt invalidated",
+                "revision": 1,
+                "targetId": "clm-submitted"
+              }
+            ],
+            "passed": false,
+            "pointer": "/result/query",
+            "type": "collection_item_field_equals"
+          }
+        ],
+        "components": {
+          "authoritative_state": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "business_side_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "history": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "revision": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          }
+        },
+        "conformant": false,
+        "expected_result": "SUCCESS",
+        "failures": [
+          "evidence assertion failed: collection_item_field_equals /result/query"
+        ],
+        "input_invariant_failures": [],
+        "observed_result": "SUCCESS",
+        "result_matches": true
+      }
+    },
+    "B_STALE_LATEST_VALUE": {
+      "detected": true,
+      "verification": {
+        "action_id": "admin_stale",
+        "assertions": [
+          {
+            "expected": null,
+            "observed": null,
+            "passed": false,
+            "pointer": "/result/latestValues/user.active",
+            "type": "path_present"
+          }
+        ],
+        "components": {
+          "authoritative_state": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "business_side_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "history": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "revision": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          }
+        },
+        "conformant": false,
+        "expected_result": "STALE",
+        "failures": [
+          "evidence assertion failed: path_present /result/latestValues/user.active"
+        ],
+        "input_invariant_failures": [],
+        "observed_result": "STALE",
+        "result_matches": true
+      }
+    },
+    "B_TERMINAL_RETRY_STOP": {
+      "detected": true,
+      "payment_verification": {
+        "action_id": "complete_payment_terminal",
+        "assertions": [
+          {
+            "expected": false,
+            "observed": true,
+            "passed": false,
+            "pointer": "/after/authoritative_state/claims/clm-scheduled/payment/overdue",
+            "type": "path_equals"
+          }
+        ],
+        "components": {
+          "authoritative_state": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          },
+          "business_side_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          },
+          "history": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          },
+          "revision": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          }
+        },
+        "conformant": false,
+        "expected_result": "SUCCESS",
+        "failures": [
+          "evidence assertion failed: path_equals /after/authoritative_state/claims/clm-scheduled/payment/overdue"
+        ],
+        "input_invariant_failures": [],
+        "observed_result": "SUCCESS",
+        "result_matches": true
+      },
+      "retry_verification": {
+        "action_id": "terminal_reminder_retry",
+        "assertions": [],
+        "components": {
+          "authoritative_state": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "business_side_effects": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          },
+          "delivery_effects": {
+            "changed": true,
+            "expectation": "UNCHANGED",
+            "passed": false
+          },
+          "history": {
+            "changed": true,
+            "expectation": "CHANGED",
+            "passed": true
+          },
+          "revision": {
+            "changed": false,
+            "expectation": "UNCHANGED",
+            "passed": true
+          }
+        },
+        "conformant": false,
+        "expected_result": "SUCCESS",
+        "failures": [
+          "delivery_effects expected UNCHANGED"
+        ],
+        "input_invariant_failures": [],
+        "observed_result": "SUCCESS",
+        "result_matches": true
+      }
+    }
+  }
+}

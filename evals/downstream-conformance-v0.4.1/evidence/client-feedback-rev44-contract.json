@@ -1,0 +1,360 @@
+{
+  "actions": [
+    {
+      "action_id": "approve_version",
+      "actor": {
+        "source_refs": [
+          1,
+          7
+        ],
+        "value": "USR-002 Client Reviewer"
+      },
+      "allowed_current_states": {
+        "source_refs": [
+          1
+        ],
+        "value": [
+          "IN_REVIEW"
+        ]
+      },
+      "authentication": {
+        "source_refs": [
+          7
+        ],
+        "value": "verified designated reviewer email identity"
+      },
+      "business_side_effects": {
+        "source_refs": [
+          1
+        ],
+        "value": "none asserted outside Version state"
+      },
+      "command": {
+        "source_refs": [
+          0,
+          1
+        ],
+        "value": "APPROVE_VERSION"
+      },
+      "concurrency": {
+        "source_refs": [
+          2,
+          8
+        ],
+        "value": "expected state revision must equal current revision"
+      },
+      "delivery_effects": {
+        "source_refs": [
+          5,
+          6
+        ],
+        "value": "separate immediate Designer email event with delivery status"
+      },
+      "expected_domain_mutation": {
+        "source_refs": [
+          1
+        ],
+        "value": "same exact Version IN_REVIEW -> APPROVED"
+      },
+      "forbidden_mutations": {
+        "source_refs": [
+          1,
+          4
+        ],
+        "value": [
+          "other Version status",
+          "duplicate approval record"
+        ]
+      },
+      "forbidden_states": {
+        "source_refs": [
+          1
+        ],
+        "value": [
+          "APPROVED",
+          "DRAFT",
+          "CHANGES_REQUESTED"
+        ]
+      },
+      "history_result": {
+        "source_refs": [
+          3
+        ],
+        "value": "preserve exact Version approval actor/timestamp/version"
+      },
+      "idempotency": {
+        "source_refs": [
+          4
+        ],
+        "value": "same exact Version approval retry reuses the prior result without duplicate approval"
+      },
+      "input_invariants": [],
+      "object_binding": {
+        "source_refs": [
+          1,
+          2
+        ],
+        "value": "exact Version ID"
+      },
+      "preconditions": {
+        "source_refs": [
+          1,
+          7
+        ],
+        "value": [
+          "Version is IN_REVIEW",
+          "current reviewer authority"
+        ]
+      },
+      "recovery": {
+        "source_refs": [
+          8,
+          9
+        ],
+        "value": "return and display latest Version state/revision"
+      },
+      "rejection": {
+        "source_refs": [
+          2,
+          8
+        ],
+        "value": "no mutation on stale expected state revision"
+      },
+      "relationship_predicate": {
+        "source_refs": [
+          7
+        ],
+        "value": "current designated reviewer for the project"
+      },
+      "result_expectations": {
+        "IDEMPOTENT_REPLAY": {
+          "authoritative_state": "UNCHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "UNCHANGED",
+          "history": "UNCHANGED",
+          "revision": "UNCHANGED"
+        },
+        "STALE": {
+          "authoritative_state": "UNCHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "UNCHANGED",
+          "history": "UNCHANGED",
+          "revision": "UNCHANGED"
+        },
+        "SUCCESS": {
+          "authoritative_state": "CHANGED",
+          "business_side_effects": "UNCHANGED",
+          "delivery_effects": "CHANGED",
+          "history": "CHANGED",
+          "revision": "CHANGED"
+        }
+      },
+      "sources": [
+        {
+          "active": true,
+          "object_id": "SCR-008",
+          "pointer": "/objects/screens/7/major_actions",
+          "source_status": "CURRENT",
+          "value_sha256": "077575036319419923ec64834f8bbc4c54fcbbc5d94aa00c7574d8957a782637"
+        },
+        {
+          "active": true,
+          "object_id": "STATE-001",
+          "pointer": "/objects/states/0/transitions",
+          "source_status": "CURRENT",
+          "value_sha256": "2786e087b22a020badb1b6f79cae32d75277f3fc7ff3e713e3ac1b82169a320a"
+        },
+        {
+          "active": true,
+          "object_id": "STATE-001",
+          "pointer": "/objects/states/0/mutation_concurrency",
+          "source_status": "CURRENT",
+          "value_sha256": "d869d8dae812da5d34a67383af205a602f5d2c8edf250e12334c63c04e6ccf3b"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-008",
+          "pointer": "/objects/rules/7/text",
+          "source_status": "CURRENT",
+          "value_sha256": "68d4352951faa60fb117e015be2178f1104c90c56af5bd674c71d1f106020f49"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-062",
+          "pointer": "/objects/rules/61/text",
+          "source_status": "CURRENT",
+          "value_sha256": "1557fe12c69a56f3a0a2c9dddaec9f7e8e71b71e5b38fd4d6318c8b733351f29"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-037",
+          "pointer": "/objects/rules/36/text",
+          "source_status": "CURRENT",
+          "value_sha256": "f3eb51cda93bb9cebc21d128e40bcaa3b3004bdc3214f59e554fd7427e643fd2"
+        },
+        {
+          "active": true,
+          "object_id": "DATA-006",
+          "pointer": "/objects/data/5/fields",
+          "source_status": "CURRENT",
+          "value_sha256": "b4e8bda1e566c2c0ea0094292155139bea2b264755f4871adbb2621c3d17f1d1"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-001",
+          "pointer": "/objects/rules/0/text",
+          "source_status": "CURRENT",
+          "value_sha256": "820ed63409adfe49d9369eaec54903327dcc2bb2927a350df8eb260a7cafc7b4"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-060",
+          "pointer": "/objects/rules/59/text",
+          "source_status": "CURRENT",
+          "value_sha256": "3ecece13498c2aa3708eeebaee8a0097f7a058be9a57f7933aa8363de57908b7"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-061",
+          "pointer": "/objects/rules/60/text",
+          "source_status": "CURRENT",
+          "value_sha256": "e011d924dd9abcdff9705ce464350dddea200e6050d4d458f12d16bbaddc278a"
+        }
+      ],
+      "superseded_rules": {
+        "source_refs": [
+          1
+        ],
+        "value": "inactive sentinels are enforced by lifecycle compilation"
+      },
+      "test_obligations": [
+        "authority-loss",
+        "exact-version-stale",
+        "idempotent-replay",
+        "delivery-separation",
+        "append-only-history"
+      ],
+      "trace": {
+        "source_refs": [
+          0,
+          1,
+          3,
+          5,
+          6,
+          9
+        ],
+        "value": [
+          "approve_version",
+          "public control",
+          "handler",
+          "APPROVE_VERSION",
+          "Version state",
+          "approval history",
+          "Designer delivery",
+          "visible result"
+        ]
+      },
+      "version_result": {
+        "source_refs": [
+          2,
+          8
+        ],
+        "value": "advance on commit; latest state/revision on stale"
+      },
+      "visible_error": {
+        "source_refs": [
+          8,
+          9
+        ],
+        "value": "latest Version conflict state/revision"
+      },
+      "visible_success": {
+        "source_refs": [
+          9
+        ],
+        "value": "only after authoritative success/readback"
+      }
+    }
+  ],
+  "compiler": {
+    "id": "joewrks-product-definition/downstream",
+    "version": "0.4.1"
+  },
+  "contract_hash": "ea31516b703aab17d471081acf6d49622e0825643c2c4460247396633aecffc2",
+  "contract_schema_version": "joewrks.action-conformance/1.0",
+  "lifecycles": [
+    {
+      "allowed_transitions": [
+        "DRAFT -> IN_REVIEW",
+        "IN_REVIEW -> CHANGES_REQUESTED",
+        "IN_REVIEW -> APPROVED"
+      ],
+      "authority": "Designer for review request; designated Client Reviewer for decision",
+      "boundary_conditions": [
+        "exact Version expected state revision"
+      ],
+      "current_states": [
+        "DRAFT",
+        "IN_REVIEW",
+        "CHANGES_REQUESTED",
+        "APPROVED"
+      ],
+      "forbidden_transitions": [
+        "APPROVED -> any state on the same Version"
+      ],
+      "history_preservation": "approval actor, timestamp, and exact Version remain preserved",
+      "lifecycle_id": "exact-version-approval",
+      "object_outcome": "changes after approval require a new immutable Version",
+      "required_confirmation": "not declared for approval",
+      "required_evidence": "authoritative approval readback and preserved history",
+      "required_reason": "CHANGES_REQUESTED guard as recorded by STATE-001",
+      "reversal_window": "none for the same Version",
+      "reversibility": "APPROVED is terminal for the same immutable Version",
+      "sources": [
+        {
+          "active": true,
+          "object_id": "STATE-001",
+          "pointer": "/objects/states/0/values",
+          "source_status": "CURRENT",
+          "value_sha256": "387e1e7d714991fa44d3a99219313b7255ff18af9c0d4b2c58d49c9389fbc77f"
+        },
+        {
+          "active": true,
+          "object_id": "STATE-001",
+          "pointer": "/objects/states/0/transitions",
+          "source_status": "CURRENT",
+          "value_sha256": "2786e087b22a020badb1b6f79cae32d75277f3fc7ff3e713e3ac1b82169a320a"
+        },
+        {
+          "active": true,
+          "object_id": "STATE-001",
+          "pointer": "/objects/states/0/terminal_states",
+          "source_status": "CURRENT",
+          "value_sha256": "dcaf024db4a1c9095bc76b44dae623d2cae19b4951281dabf9eaadd5bd90d8b4"
+        },
+        {
+          "active": true,
+          "object_id": "RULE-008",
+          "pointer": "/objects/rules/7/text",
+          "source_status": "CURRENT",
+          "value_sha256": "68d4352951faa60fb117e015be2178f1104c90c56af5bd674c71d1f106020f49"
+        }
+      ],
+      "superseded_sentinels": [
+        {
+          "active": false,
+          "object_id": "DEC-011",
+          "pointer": "/objects/decisions/10/decision",
+          "source_status": "SUPERSEDED",
+          "value_sha256": "517e44cf79227a8df7b8dc9f044232fdd88a0ce63ffb3431db1ffdecf98dbc61"
+        }
+      ]
+    }
+  ],
+  "source_authority": {
+    "approved_digest": "2ffc3d304830327516f85e39df8c2be2800eda62568eaec45001f393379f07d1",
+    "approved_revision": 44,
+    "canonical_state_sha256": "b65c722dfc3de8e93cdddbeb99b7d9a914f5e1bcdfa27fd40b946bfb168c1e76",
+    "product_slug": "client-feedback-portal-dogfood"
+  }
+}
