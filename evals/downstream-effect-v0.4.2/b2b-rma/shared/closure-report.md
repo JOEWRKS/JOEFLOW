@@ -4,10 +4,10 @@
 
 - Canonical directory: `product-definition/b2b-rma-dogfood/`
 - Canonical files: exactly `8`; child directories: `0`
-- Revision: `78`
-- Digest: `555bd1762c00b950825324e84ca9a1b9016f2d0d859fc678acdbb7e4d4913e56`
+- Revision: `79`
+- Digest: `1f329295fa2f11bda80709a63c5f6005d0bf47f9549b8978c712059230780a9a`
 - Status: `CLOSED`
-- Approval: exact revision/digest, `2026-08-26T13:04:53+09:00`
+- Approval: exact revision/digest, `2026-08-26T18:34:49+09:00`
 
 ## Definition metrics
 
@@ -18,16 +18,47 @@
 - Screens: `4`; major actions: `46`
 - UX coverage: `64/64` state cells, `88/88` screen-axis cells, `1,012/1,012` action cells
 - Contradictions: `0`
-- Implementation started: `false`
-- Figma at closure: `NOT VERIFIED`
+- `implementation_started`: `false`
+- Tasks: `0`
 
 ## Independent controller validation
 
-Official `validate_state.py` result: `valid=true`, errors `0`, exit `0`.
-
-Official `validate_closure.py` result: `closed=true`, definition digest exact match, errors `0`, all 19 reported closure metrics `0`, exit `0`.
+- State validator: `PASS`; `valid=true`, errors `0`, exit `0`.
+- Closure validator: `PASS`; `closed=true`, exact revision-79 digest, errors `0`, exit `0`.
+- All `19` Closure metrics are `0`:
+  - `blocking_unknowns`
+  - `contradictions`
+  - `coverage_gaps`
+  - `invalid_closed_status`
+  - `minimum_definition_gaps`
+  - `missing_acceptance_criterion`
+  - `missing_active_goal`
+  - `missing_material_requirement`
+  - `missing_user_approval`
+  - `open_material_decisions`
+  - `orphan_acceptance_criteria`
+  - `orphan_requirements`
+  - `orphan_screens`
+  - `screen_action_gaps`
+  - `screen_state_gaps`
+  - `stale_approval`
+  - `stale_artifacts`
+  - `stale_user_approval`
+  - `unmapped_implementation_tasks`
 
 The controller also verified the exact canonical file set, no canonical subdirectories, and no remaining `.codex-tmp` directory.
 
-Semantic Product Definition and implementation-plan traceability audits are separate pre-Figma gates and are recorded in their dedicated shared evidence files.
+## Historical rev78 evidence
 
+The rev78 Closure and traceability state remains preserved as historical evidence. Its failed traceability audit is not rewritten as a pass. The current revision 79 authority superseded that run state through a traceability-only repair with no Product Definition semantic change.
+
+Semantic Product Definition and implementation-plan traceability audits remain separate gates and are recorded in their dedicated shared evidence files.
+
+## Subsequent shared design stage
+
+Figma is not part of Product Definition Closure. After Closure, the separate shared native-design stage completed with `FIGMA DESIGN AUDIT — PASS` for file key `C8vxL0pVRja04HhqGFwSQU`.
+
+- Shared implementation handoff: `SHARED_IMPLEMENTATION_HANDOFF_REV79.md`
+- Treatment executable contract: `NOT STARTED`
+- Control: `NOT STARTED`
+- Treatment: `NOT STARTED`
