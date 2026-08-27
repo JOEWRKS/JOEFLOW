@@ -1,0 +1,5 @@
+/skills/joewrks-product-definition/downstream/semantic_review/** text eol=lf
+/skills/joewrks-product-definition/downstream/schemas/semantic-review-*.json text eol=lf
+/tests/fixtures/semantic-review-v1/** text eol=lf
+/tests/semantic_review_support.py text eol=lf
+/tests/test_semantic_review_*.py text eol=lf

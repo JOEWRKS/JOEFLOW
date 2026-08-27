@@ -1,3 +1,4 @@
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -18,6 +19,31 @@ from downstream.semantic_review.hashing import (
 
 
 class SemanticReviewHashingTest(unittest.TestCase):
+    def test_hash_bound_artifacts_are_pinned_to_lf_by_git_attributes(self):
+        paths = [
+            "skills/joewrks-product-definition/downstream/semantic_review/artifacts/reviewer-brief-v1.md",
+            "skills/joewrks-product-definition/downstream/semantic_review/artifacts/responsibility-profile-v1.json",
+            "skills/joewrks-product-definition/downstream/schemas/semantic-review-input-manifest.schema.json",
+            "skills/joewrks-product-definition/downstream/schemas/semantic-review-output.schema.json",
+            "tests/fixtures/semantic-review-v1/golden-cases.json",
+            "tests/fixtures/semantic-review-v1/golden-review-outputs.json",
+            "tests/fixtures/semantic-review-v1/build_golden_fixtures.py",
+        ]
+        result = subprocess.run(
+            ["git", "check-attr", "eol", "--", *paths],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        observed = {
+            line.rsplit(": eol: ", 1)[0].replace("\\", "/"): line.rsplit(
+                ": eol: ", 1
+            )[1]
+            for line in result.stdout.splitlines()
+        }
+        self.assertEqual(observed, {path: "lf" for path in paths})
+
     def test_canonical_json_bytes_are_stable_utf8_and_reject_nan(self):
         self.assertEqual(
             canonical_json_bytes({"z": "한글", "a": [2, 1]}),
