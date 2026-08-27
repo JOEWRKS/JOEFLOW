@@ -1,0 +1,22 @@
+{
+  "schema_version": "joewrks.semantic-review-golden-answers/1.0",
+  "adjudication_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+  "reviewer_package_inclusion": "FORBIDDEN",
+  "answers": [
+    {"case_id": "G-001", "verdict": "REJECTED_CANDIDATE", "rationale_code": "MISSING_OWNED_SEMANTIC"},
+    {"case_id": "G-002", "verdict": "APPROVED", "rationale_code": "SUPPORTED_EXACTLY"},
+    {"case_id": "G-003", "verdict": "APPROVED", "rationale_code": "SUPPORTED_EXACTLY"},
+    {"case_id": "G-004", "verdict": "REJECTED_CANDIDATE", "rationale_code": "MISSING_OWNED_SEMANTIC"},
+    {"case_id": "G-005", "verdict": "APPROVED", "rationale_code": "SUPPORTED_EXACTLY"},
+    {"case_id": "G-006", "verdict": "REJECTED_CANDIDATE", "rationale_code": "UNSUPPORTED_OVERREACH"},
+    {"case_id": "G-007", "verdict": "REJECTED_CANDIDATE", "rationale_code": "MISSING_OWNED_SEMANTIC"},
+    {"case_id": "G-008", "verdict": "APPROVED", "rationale_code": "SUPPORTED_EXACTLY"},
+    {"case_id": "G-009", "verdict": "REJECTED_CANDIDATE", "rationale_code": "CONTRADICTS_OWNER"},
+    {"case_id": "G-010", "verdict": "REJECTED_CANDIDATE", "rationale_code": "UNSUPPORTED_OVERREACH"},
+    {"case_id": "G-011", "verdict": "APPROVED", "rationale_code": "SUPPORTED_EXACTLY"},
+    {"case_id": "G-012", "verdict": "INPUT_PACKAGE_ERROR", "rationale_code": "ACTIVE_SUPERSEDED_SOURCE"},
+    {"case_id": "G-013", "verdict": "INPUT_PACKAGE_ERROR", "rationale_code": "INVALID_PROVENANCE"},
+    {"case_id": "G-014", "verdict": "REJECTED_CANDIDATE", "rationale_code": "UNSUPPORTED_OVERREACH"},
+    {"case_id": "G-015", "verdict": "RUBRIC_ERROR", "rationale_code": "RESPONSIBILITY_UNDEFINED"}
+  ]
+}

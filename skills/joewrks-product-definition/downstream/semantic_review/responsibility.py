@@ -56,6 +56,9 @@ def load_responsibility_profile(path: Path) -> dict[str, Any]:
         "action": EXPECTED_ACTION_FIELDS,
         "lifecycle": EXPECTED_LIFECYCLE_FIELDS,
     }
+    brief_labels = profile.get("brief_ownership_labels")
+    if not isinstance(brief_labels, dict) or len(brief_labels) != 38:
+        raise ResponsibilityError("RESPONSIBILITY_UNDEFINED", "brief ownership labels")
     all_ids: list[str] = []
     for kind, fields in expected.items():
         rules = profile.get(kind)
@@ -68,6 +71,13 @@ def load_responsibility_profile(path: Path) -> dict[str, Any]:
                 raise ResponsibilityError("RESPONSIBILITY_UNDEFINED", f"{kind}:{field}")
             if rule.get("completeness_mode") not in VALID_MODES:
                 raise ResponsibilityError("COMPLETENESS_UNDEFINED", field)
+            if not isinstance(brief_labels.get(expected_id), str) or not brief_labels[
+                expected_id
+            ]:
+                raise ResponsibilityError(
+                    "RESPONSIBILITY_UNDEFINED", f"brief ownership {field}"
+                )
+            rule["brief_owns_label"] = brief_labels[expected_id]
             required_metadata = {
                 "owns", "may_reference_fields", "allowed_sibling_rules",
                 "must_not_duplicate", "omission", "overreach", "omission_code",
