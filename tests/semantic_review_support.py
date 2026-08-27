@@ -39,6 +39,7 @@ def make_run_set(verdicts, *, run_count=3, rule_id="FR-A09"):
     inventory = {
         identity: {
             "semantic_value_hash": _stable_hash("semantic", index),
+            "semantic_value_text": f"synthetic semantic value {index}",
             "provenance_set_hash": _stable_hash("provenance-set", index),
             "responsibility_rule_id": rule_id,
             "completeness_mode": "LOCAL",
@@ -48,6 +49,16 @@ def make_run_set(verdicts, *, run_count=3, rule_id="FR-A09"):
     base_package = {
         **BASE_HASHES,
         "previous_reviewer_verdicts_present": False,
+        "reviewer_brief_text": "Use frozen composition rules.\n",
+        "responsibility_profile_excerpt": {
+            rule_id: {"completeness_mode": "LOCAL"}
+        },
+        "manifest_declared_files": [
+            "canonical_authority",
+            "action_contract",
+            "responsibility_profile",
+            "reviewer_brief",
+        ],
         "role_hashes": {"reviewer_brief": BASE_HASHES["reviewer_brief_hash"]},
         "review_output_schema": json.loads(SCHEMA_PATH.read_text(encoding="utf-8")),
         "expected_identities": expected,

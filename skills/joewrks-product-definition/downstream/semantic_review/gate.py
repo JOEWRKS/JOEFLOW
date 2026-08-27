@@ -278,6 +278,9 @@ def evaluate_reliability_gate(
     disagreement_report = validate_disagreement_classifications(
         outputs, classifications
     )
+    metrics["unchanged_disagreement_count"] = disagreement_report[
+        "disagreement_count"
+    ]
     if disagreement_report["unresolved_normative_count"]:
         _append_unique(failures, "FAIL/RUBRIC_NORMATIVE_AMBIGUITY")
     if disagreement_report["repeated_rule_ids"]:

@@ -1,0 +1,38 @@
+{
+  "schema_version": "joewrks.semantic-review-v042-instability-summary/1.0",
+  "fixture_scope": "GENERIC_COUNTS_ONLY",
+  "product_specific_semantics_present": false,
+  "historical_reviewer_truth_oracle": "NONE",
+  "review_identity_count": 665,
+  "identity_mismatch_count": 0,
+  "semantic_change_count": 4,
+  "unchanged_identity_count": 661,
+  "unchanged_flip_count": 176,
+  "unchanged_flip_distribution": {
+    "input_invariants": 60,
+    "visible_error": 60,
+    "test_obligations": 56
+  },
+  "candidate_b_rejected_count": 180,
+  "candidate_b_rejected_distribution": {
+    "input_invariants": 62,
+    "visible_error": 60,
+    "test_obligations": 58
+  },
+  "authorized_semantic_changes": [
+    {"generic_action_ref": "A04", "semantic_field": "input_invariants", "historical_transition": "REJECTED_TO_REJECTED"},
+    {"generic_action_ref": "A04", "semantic_field": "test_obligations", "historical_transition": "REJECTED_TO_REJECTED"},
+    {"generic_action_ref": "A05", "semantic_field": "input_invariants", "historical_transition": "REJECTED_TO_REJECTED"},
+    {"generic_action_ref": "A05", "semantic_field": "test_obligations", "historical_transition": "REJECTED_TO_REJECTED"}
+  ],
+  "historical_adjudication": {
+    "REVIEW_RUBRIC_AMBIGUOUS": 176,
+    "FALSE_NEGATIVE": 0,
+    "FALSE_POSITIVE": 0
+  },
+  "required_generic_detection": [
+    "FAIL/EXACT_AGREEMENT",
+    "FAIL/RUBRIC_NORMATIVE_AMBIGUITY",
+    "FAIL/RESPONSIBILITY_RULE_INSTABILITY"
+  ]
+}
