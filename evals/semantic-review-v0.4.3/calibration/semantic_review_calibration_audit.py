@@ -23,9 +23,11 @@ POSIX_CONTROLLER_PATH_RE = re.compile(
     re.IGNORECASE,
 )
 OUTCOME_HINT_RE = re.compile(
-    r"\b(?:approved|rejected(?:_candidate)?|supported|defective|defect|"
-    r"missing(?:_required_reference|_owned_semantic)?|unsupported(?:_overreach)?|"
-    r"overreach|contradicts?(?:_owner)?|invalid(?:_duplication)?|rationale)\b",
+    r"\b(?:approved|rejected(?: candidate)?|supported(?: exactly)?|defective|defect|"
+    r"missing(?: required reference| owned semantic)?|unsupported(?: overreach)?|"
+    r"omit(?:ted|s)?|omission|overreach(?:ed|es|ing)?|"
+    r"contradict(?:s|ed|ion|ions|ory)?(?: owner)?|"
+    r"duplicat(?:e|ed|es|ing|ion|ions)|invalid(?: duplication)?|rationale)\b",
     re.IGNORECASE,
 )
 OUTCOME_KEYS = {
@@ -91,9 +93,14 @@ def _normalize_key(key: Any) -> str:
     return str(key).strip().lower().replace("-", "_")
 
 
+def _outcome_hint_text(value: str) -> bool:
+    normalized = re.sub(r"[^A-Za-z0-9]+", " ", value)
+    return OUTCOME_HINT_RE.search(normalized) is not None
+
+
 def _contains_outcome_hint(value: Any) -> bool:
     if isinstance(value, str):
-        return OUTCOME_HINT_RE.search(value) is not None
+        return _outcome_hint_text(value)
     if isinstance(value, dict):
         if {_normalize_key(key) for key in value} & OUTCOME_KEYS:
             return True
@@ -196,7 +203,7 @@ def find_answer_leaks(
                 has_identity = IDENTITY_IN_TEXT_RE.search(line) or OWNER_ID_IN_TEXT_RE.search(
                     line
                 )
-                if has_identity and OUTCOME_HINT_RE.search(line):
+                if has_identity and _outcome_hint_text(line):
                     findings.append(
                         _finding(
                             "PER_IDENTITY_OUTCOME",

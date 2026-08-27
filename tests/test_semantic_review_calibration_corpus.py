@@ -213,6 +213,39 @@ class SemanticReviewCalibrationCorpusTest(unittest.TestCase):
             findings = audit.find_answer_leaks([leaked], allowed_exact_sha256=set())
         self.assertIn("PER_IDENTITY_OUTCOME", {item["code"] for item in findings})
 
+    def test_leak_detector_rejects_frozen_underscore_rationale_form(self):
+        self.assertTrue(CALIBRATION_AUDIT_PATH.is_file(), "calibration audit missing")
+        audit = load_calibration_audit()
+        identity = ":".join(("action", "ACT-SYNTHETIC", "actor"))
+        rationale = "_".join(("SUPPORTED", "EXACTLY"))
+        with tempfile.TemporaryDirectory() as temporary:
+            leaked = Path(temporary) / "synthetic.txt"
+            leaked.write_text(f"{identity} => {rationale}", encoding="utf-8")
+            findings = audit.find_answer_leaks([leaked], allowed_exact_sha256=set())
+        self.assertIn("PER_IDENTITY_OUTCOME", {item["code"] for item in findings})
+
+    def test_leak_detector_rejects_structured_defect_labels_in_plaintext(self):
+        self.assertTrue(CALIBRATION_AUDIT_PATH.is_file(), "calibration audit missing")
+        audit = load_calibration_audit()
+        owner = "-".join(("ACT", "SYNTHETIC"))
+        defect_labels = (
+            "_".join(("owned", "secondary", "clause", "omitted")),
+            "_".join(("unowned", "secondary", "clause", "overreach")),
+            "_".join(("owner", "predicate", "contradiction")),
+            "_".join(("owned", "secondary", "clause", "duplication")),
+        )
+        for defect_label in defect_labels:
+            with self.subTest(defect_label=defect_label):
+                with tempfile.TemporaryDirectory() as temporary:
+                    leaked = Path(temporary) / "synthetic.txt"
+                    leaked.write_text(f"{owner} actor => {defect_label}", encoding="utf-8")
+                    findings = audit.find_answer_leaks(
+                        [leaked], allowed_exact_sha256=set()
+                    )
+                self.assertIn(
+                    "PER_IDENTITY_OUTCOME", {item["code"] for item in findings}
+                )
+
     def test_leak_detector_rejects_synthetic_external_evidence_path(self):
         self.assertTrue(CALIBRATION_AUDIT_PATH.is_file(), "calibration audit missing")
         audit = load_calibration_audit()
