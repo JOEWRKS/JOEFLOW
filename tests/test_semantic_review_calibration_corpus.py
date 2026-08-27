@@ -1,8 +1,10 @@
+import copy
 import hashlib
+import importlib.util
 import json
-import re
 import subprocess
 import sys
+import tempfile
 import unittest
 from collections import Counter
 from pathlib import Path
@@ -27,9 +29,12 @@ PACKAGE_ROOT = FIXTURE_ROOT / "reviewer-package"
 RECORD_PATH = FIXTURE_ROOT / "calibration-record.json"
 HUMAN_PACKET_PATH = FIXTURE_ROOT / "human-adjudication-packet.md"
 AUDIT_EVIDENCE_PATH = FIXTURE_ROOT / "implementation-audit-evidence.md"
-EXTERNAL_ORACLE_PATH = Path(
-    "D:/JOEWRKS/JOEWRKS-Product-v043-calibration-controller-evidence/"
-    "semantic-review-calibration-v1-seed-oracle.json"
+CALIBRATION_AUDIT_PATH = (
+    ROOT
+    / "evals"
+    / "semantic-review-v0.4.3"
+    / "calibration"
+    / "semantic_review_calibration_audit.py"
 )
 
 PROFILE_SOURCE = (
@@ -66,6 +71,35 @@ def sha256(path: Path):
     return hashlib.sha256(data).hexdigest(), len(data)
 
 
+def load_calibration_audit():
+    spec = importlib.util.spec_from_file_location(
+        "semantic_review_calibration_audit", CALIBRATION_AUDIT_PATH
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def tracked_calibration_paths():
+    result = subprocess.run(
+        [
+            "git",
+            "ls-files",
+            "-z",
+            "--",
+            "evals/semantic-review-v0.4.3/calibration",
+            "tests/test_semantic_review_calibration_corpus.py",
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    )
+    paths = [ROOT / item for item in result.stdout.decode("utf-8").split("\0") if item]
+    if CALIBRATION_AUDIT_PATH not in paths:
+        paths.append(CALIBRATION_AUDIT_PATH)
+    return paths
+
+
 class SemanticReviewCalibrationCorpusTest(unittest.TestCase):
     def test_corpus_has_three_complete_owners_and_exact_rule_coverage(self):
         contract = read_json(PACKAGE_ROOT / "action-contract.json")
@@ -100,7 +134,9 @@ class SemanticReviewCalibrationCorpusTest(unittest.TestCase):
             any(item["semantic_field"] == "superseded_sentinels" for item in identities)
         )
 
-    def test_calibration_specific_material_is_synthetic_and_product_neutral(self):
+    def test_structured_calibration_semantics_are_product_neutral(self):
+        self.assertTrue(CALIBRATION_AUDIT_PATH.is_file(), "calibration audit missing")
+        audit = load_calibration_audit()
         record = read_json(RECORD_PATH)
         self.assertEqual(record["fixture_name"], "semantic-review-calibration-v1")
         self.assertEqual(record["fixture_kind"], "synthetic_calibration_fixture")
@@ -109,34 +145,101 @@ class SemanticReviewCalibrationCorpusTest(unittest.TestCase):
             record["semantic_scope"],
             "neutral generic request and document approval semantics",
         )
-
-        calibration_specific_paths = [
-            RECORD_PATH,
-            HUMAN_PACKET_PATH,
-            AUDIT_EVIDENCE_PATH,
-            PACKAGE_ROOT / "canonical-authority.json",
-            PACKAGE_ROOT / "action-contract.json",
-            PACKAGE_ROOT / "provenance-inventory.json",
-            PACKAGE_ROOT / "semantic-obligation-index.json",
-            PACKAGE_ROOT / "review-identity-inventory.json",
-            PACKAGE_ROOT / "exclusion-manifest.json",
-            PACKAGE_ROOT / "manifest.json",
-        ]
-        combined = "\n".join(
-            path.read_text(encoding="utf-8").lower()
-            for path in calibration_specific_paths
+        findings = audit.audit_product_neutrality(
+            read_json(PACKAGE_ROOT / "canonical-authority.json"),
+            read_json(PACKAGE_ROOT / "action-contract.json"),
+            read_json(PACKAGE_ROOT / "semantic-obligation-index.json"),
+            read_json(PACKAGE_ROOT / "review-identity-inventory.json"),
         )
-        for prohibited in (
-            "client-feedback-portal",
-            "expense reimbursement",
-            "expense-reimbursement",
-            "studio booking",
-            "studio-booking",
-        ):
-            self.assertNotIn(prohibited, combined)
-        self.assertIsNone(re.search(r"\brma\b", combined))
+        self.assertEqual(findings, [])
 
-    def test_oracle_is_external_and_matches_only_the_tracked_commitment(self):
+    def test_structured_neutrality_rejects_product_specific_semantics(self):
+        self.assertTrue(CALIBRATION_AUDIT_PATH.is_file(), "calibration audit missing")
+        audit = load_calibration_audit()
+        authority = read_json(PACKAGE_ROOT / "canonical-authority.json")
+        authority = copy.deepcopy(authority)
+        authority["objects"]["rules"][0]["text"] = (
+            "The actor for REQUEST-01 must authorize a purchase order; "
+            "it must also settle a vendor invoice."
+        )
+        findings = audit.audit_product_neutrality(
+            authority,
+            read_json(PACKAGE_ROOT / "action-contract.json"),
+            read_json(PACKAGE_ROOT / "semantic-obligation-index.json"),
+            read_json(PACKAGE_ROOT / "review-identity-inventory.json"),
+        )
+        self.assertIn("NON_NEUTRAL_TERM", {item["code"] for item in findings})
+
+    def test_leak_detector_rejects_synthetic_per_identity_outcome(self):
+        self.assertTrue(CALIBRATION_AUDIT_PATH.is_file(), "calibration audit missing")
+        audit = load_calibration_audit()
+        identity = ":".join(("action", "ACT-SYNTHETIC", "actor"))
+        outcome_key = "_".join(("intended", "verdict"))
+        outcome_value = "".join(("APP", "ROVED"))
+        with tempfile.TemporaryDirectory() as temporary:
+            leaked = Path(temporary) / "synthetic.json"
+            leaked.write_text(
+                json.dumps({"review_identity": identity, outcome_key: outcome_value}),
+                encoding="utf-8",
+            )
+            findings = audit.find_answer_leaks([leaked], allowed_exact_sha256=set())
+        self.assertIn("PER_IDENTITY_OUTCOME", {item["code"] for item in findings})
+
+    def test_leak_detector_rejects_synthetic_owner_field_outcome(self):
+        self.assertTrue(CALIBRATION_AUDIT_PATH.is_file(), "calibration audit missing")
+        audit = load_calibration_audit()
+        support_key = "_".join(("expected", "support"))
+        support_value = "".join(("defect", "ive"))
+        payload = {
+            "owner_kind": "action",
+            "owner_id": "ACT-SYNTHETIC",
+            "semantic_field": "actor",
+            support_key: support_value,
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            leaked = Path(temporary) / "synthetic.json"
+            leaked.write_text(json.dumps(payload), encoding="utf-8")
+            findings = audit.find_answer_leaks([leaked], allowed_exact_sha256=set())
+        self.assertIn("PER_IDENTITY_OUTCOME", {item["code"] for item in findings})
+
+    def test_leak_detector_rejects_synthetic_plaintext_outcome_hint(self):
+        self.assertTrue(CALIBRATION_AUDIT_PATH.is_file(), "calibration audit missing")
+        audit = load_calibration_audit()
+        owner = "-".join(("ACT", "SYNTHETIC"))
+        outcome = "".join(("defect", "ive"))
+        with tempfile.TemporaryDirectory() as temporary:
+            leaked = Path(temporary) / "synthetic.txt"
+            leaked.write_text(f"{owner} actor is {outcome}", encoding="utf-8")
+            findings = audit.find_answer_leaks([leaked], allowed_exact_sha256=set())
+        self.assertIn("PER_IDENTITY_OUTCOME", {item["code"] for item in findings})
+
+    def test_leak_detector_rejects_synthetic_external_evidence_path(self):
+        self.assertTrue(CALIBRATION_AUDIT_PATH.is_file(), "calibration audit missing")
+        audit = load_calibration_audit()
+        absolute_path = "".join(
+            ("D:", "/controlled/", "calibration-controller-", "evidence/", "hidden.json")
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            leaked = Path(temporary) / "synthetic.txt"
+            leaked.write_text(absolute_path, encoding="utf-8")
+            findings = audit.find_answer_leaks([leaked], allowed_exact_sha256=set())
+        self.assertIn("EXTERNAL_ORACLE_PATH", {item["code"] for item in findings})
+
+    def test_all_tracked_calibration_surfaces_are_answer_blind(self):
+        self.assertTrue(CALIBRATION_AUDIT_PATH.is_file(), "calibration audit missing")
+        audit = load_calibration_audit()
+        allowed_public_hashes = {
+            sha256(BRIEF_SOURCE)[0],
+            sha256(PROFILE_SOURCE)[0],
+            sha256(OUTPUT_SCHEMA_SOURCE)[0],
+        }
+        findings = audit.find_answer_leaks(
+            tracked_calibration_paths(),
+            allowed_exact_sha256=allowed_public_hashes,
+        )
+        self.assertEqual(findings, [])
+
+    def test_oracle_commitment_is_aggregate_only_and_portable(self):
         record = read_json(RECORD_PATH)
         commitment = record["oracle_commitment"]
         self.assertEqual(
@@ -157,22 +260,13 @@ class SemanticReviewCalibrationCorpusTest(unittest.TestCase):
         self.assertEqual(commitment["expected_identity_count"], 114)
         self.assertEqual(commitment["intended_approved_count"], 76)
         self.assertEqual(commitment["intended_rejected_candidate_count"], 38)
-        self.assertTrue(EXTERNAL_ORACLE_PATH.is_file())
-        self.assertEqual(sha256(EXTERNAL_ORACLE_PATH), (commitment["sha256"], commitment["bytes"]))
-
-        package_files = {path.name for path in PACKAGE_ROOT.iterdir() if path.is_file()}
-        self.assertFalse(any("oracle" in name.lower() for name in package_files))
-        self.assertFalse(
-            any(
-                "golden" in name.lower()
-                or "review-results" in name.lower()
-                or "review-verdicts" in name.lower()
-                for name in package_files
-            )
+        self.assertRegex(commitment["sha256"], r"^[0-9a-f]{64}$")
+        self.assertGreater(commitment["bytes"], 0)
+        self.assertEqual(
+            commitment["intended_approved_count"]
+            + commitment["intended_rejected_candidate_count"],
+            commitment["expected_identity_count"],
         )
-        packet_text = HUMAN_PACKET_PATH.read_text(encoding="utf-8")
-        self.assertNotIn("REJECTED_CANDIDATE", packet_text)
-        self.assertNotIn("SUPPORTED_EXACTLY", packet_text)
 
     def test_package_uses_exact_frozen_copies_and_no_undeclared_files(self):
         self.assertEqual(
