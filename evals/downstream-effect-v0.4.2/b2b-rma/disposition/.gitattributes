@@ -1,0 +1,8 @@
+# Preserve controller and raw evidence as exact bytes.
+CONTRACT_REVIEW_ADJUDICATION.md -text -diff
+CONTRACT_REVIEW_DISAGREEMENT_MATRIX.json -text -diff
+CONTRACT_REVIEW_IDENTITY_DIFF.md -text -diff
+CONTRACT_REVIEW_REJECTION_FAMILIES.md -text -diff
+CONTRACT_REVIEW_RELIABILITY_REPORT.md -text -diff
+V042_EXPERIMENT_DISPOSITION.md -text -diff
+raw/** -text -diff

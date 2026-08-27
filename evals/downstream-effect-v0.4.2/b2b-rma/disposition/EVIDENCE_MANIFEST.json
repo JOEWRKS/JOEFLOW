@@ -1,0 +1,160 @@
+{
+  "candidates": {
+    "candidate_a": {
+      "contract_hash": "2dd2f41e996b37c22f6b960aee624160dd459b04afb31ef9e78c4e09cb76e1df",
+      "raw_review_preserved": true,
+      "review": {
+        "approved": 661,
+        "deferred": 0,
+        "pending": 0,
+        "rejected": 4,
+        "total": 665,
+        "unique_identities": 665
+      }
+    },
+    "candidate_b": {
+      "contract_hash": "2621e7da2b576ca7d902989a720b6ed7af62b6c8895c2cfca77850421871e074",
+      "raw_review_preserved": true,
+      "review": {
+        "approved": 485,
+        "deferred": 0,
+        "pending": 0,
+        "rejected": 180,
+        "total": 665,
+        "unique_identities": 665
+      }
+    }
+  },
+  "classification": "STOPPED — TREATMENT_INTERVENTION_CONSTRUCTION_FAILED",
+  "deterministic_identity_summary": {
+    "confusion_matrix": {
+      "APPROVED_TO_APPROVED": 485,
+      "APPROVED_TO_REJECTED": 176,
+      "REJECTED_TO_APPROVED": 0,
+      "REJECTED_TO_REJECTED": 4
+    },
+    "identity_mismatch": 0,
+    "review_identities": 665,
+    "semantic_changes": 4,
+    "unchanged_semantic_verdict_flips": 176
+  },
+  "experiment": "v0.4.2 RMA paired downstream efficacy",
+  "files": [
+    {
+      "byte_identical_to_source": false,
+      "bytes": 359,
+      "relative_path": ".gitattributes",
+      "sha256": "3e4982b4ee561cd95c73a5d640961ba6c014660a6ede7a4d0bf541be26f20dd5",
+      "source_local_path": "GENERATED_FOR_EXACT_EVIDENCE_BYTE_PRESERVATION"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 279830,
+      "relative_path": "CONTRACT_REVIEW_ADJUDICATION.md",
+      "sha256": "de3aa2e089a48ad5afad3f75c6e4d793d2f23dd1ae3cc744277d31742da8490c",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-controller-evidence\\v0.4.2-rma\\contract-review-disagreement-audit\\CONTRACT_REVIEW_ADJUDICATION.md"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 4171834,
+      "relative_path": "CONTRACT_REVIEW_DISAGREEMENT_MATRIX.json",
+      "sha256": "b3b1180f662e4915ea8c95fa72682ade71b1e37b3db0cd81e89d6d0423cc8450",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-controller-evidence\\v0.4.2-rma\\contract-review-disagreement-audit\\CONTRACT_REVIEW_DISAGREEMENT_MATRIX.json"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 11038,
+      "relative_path": "CONTRACT_REVIEW_IDENTITY_DIFF.md",
+      "sha256": "47eeacead508ecf00eb659fbcee44401ebc39a71a4b6d9dd3900ef9d69651d01",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-controller-evidence\\v0.4.2-rma\\contract-review-disagreement-audit\\CONTRACT_REVIEW_IDENTITY_DIFF.md"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 139966,
+      "relative_path": "CONTRACT_REVIEW_REJECTION_FAMILIES.md",
+      "sha256": "2f04935a26b2c131b8507917390956f32186dcb85acad46b7c7cb40971eaa757",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-controller-evidence\\v0.4.2-rma\\contract-review-disagreement-audit\\CONTRACT_REVIEW_REJECTION_FAMILIES.md"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 3364,
+      "relative_path": "CONTRACT_REVIEW_RELIABILITY_REPORT.md",
+      "sha256": "4f21f79425c16b9019ee5aa9546326ed61128eaed52d81586d07178831c4659a",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-controller-evidence\\v0.4.2-rma\\contract-review-disagreement-audit\\CONTRACT_REVIEW_RELIABILITY_REPORT.md"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 372168,
+      "relative_path": "raw/adjudication/ADJUDICATION_RESULT.json",
+      "sha256": "deb4a75907cd70fef01d14dbb91f6089a811bb85c42c9bebf604c19b74b4d758",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-controller-evidence\\v0.4.2-rma\\contract-review-disagreement-audit\\_adjudication-package\\ADJUDICATION_RESULT.json"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 2102707,
+      "relative_path": "raw/candidate-a/action-conformance-contract.json",
+      "sha256": "f573bcc761a2b37184e0e2a2e5be245423fb1a15ce750cfd31823b6f449f7d74",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-review-packages\\v0.4.2-rma-explicit-2dd2f41e\\candidate\\action-conformance-contract.json"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 9924851,
+      "relative_path": "raw/candidate-a/review-required-decisions.COMPLETED.json",
+      "sha256": "0bdb26a6c4df1a24cb8011131ed5fcb6eee7f2e5bfe8c6972c180c58bc910e9b",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-review-packages\\v0.4.2-rma-explicit-2dd2f41e\\review-required-decisions.COMPLETED.json"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 3608,
+      "relative_path": "raw/candidate-a/REVIEW_BRIEF.md",
+      "sha256": "c9063a3e1199a30183969b44331c42c43338d0a8d1a60d50746a23d6458c232d",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-review-packages\\v0.4.2-rma-explicit-2dd2f41e\\REVIEW_BRIEF.md"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 2104307,
+      "relative_path": "raw/candidate-b/action-conformance-contract.json",
+      "sha256": "04161d1e77bc6dd5097c6771c099c3035d33dd5e9e0b0a4b62dd6586dac7866e",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-review-packages\\v0.4.2-rma-2621e7da-fresh-review\\candidate\\action-conformance-contract.json"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 9910389,
+      "relative_path": "raw/candidate-b/review-required-decisions.COMPLETED.json",
+      "sha256": "cf9d059dd1e7407119ecb523ced351b65ea65b6902dfb6017ef2054abfb038fb",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-review-packages\\v0.4.2-rma-2621e7da-fresh-review\\review-required-decisions.COMPLETED.json"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 2657,
+      "relative_path": "raw/candidate-b/REVIEW_BRIEF.md",
+      "sha256": "e5aa4ba0a302a82749341e1acf4ae46f55e3ce3363b889359c1b699dd48ae737",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-review-packages\\v0.4.2-rma-2621e7da-fresh-review\\REVIEW_BRIEF.md"
+    },
+    {
+      "byte_identical_to_source": false,
+      "bytes": 4840,
+      "relative_path": "README.md",
+      "sha256": "f45c24f57c4e6aff99eefa1b453353a269a9083b3f3fc35f232a94e734844903",
+      "source_local_path": "GENERATED_FOR_FINAL_DISPOSITION_FREEZE"
+    },
+    {
+      "byte_identical_to_source": true,
+      "bytes": 1497,
+      "relative_path": "V042_EXPERIMENT_DISPOSITION.md",
+      "sha256": "da5ee60e2a3e3722634dc0686d0205caf2b7dd6654ed60a4ba2730f77172b2a0",
+      "source_local_path": "D:\\JOEWRKS\\JOEWRKS-Product-controller-evidence\\v0.4.2-rma\\contract-review-disagreement-audit\\V042_EXPERIMENT_DISPOSITION.md"
+    }
+  ],
+  "frozen_identities": {
+    "figma_file_key": "C8vxL0pVRja04HhqGFwSQU",
+    "product_definition_digest": "1f329295fa2f11bda80709a63c5f6005d0bf47f9549b8978c712059230780a9a",
+    "product_definition_revision": 79,
+    "remote_main": "efd96410f6401cbf9624328e94b795c315164b7f",
+    "s0": "e557cd2a46c163f134acd0006eee84b19f9f9b8f"
+  },
+  "paired_efficacy_result": "NOT RUN",
+  "payload_file_count": 15,
+  "payload_total_bytes": 29033415,
+  "schema_version": "joewrks.rma-v042-final-disposition-evidence/1.0"
+}
