@@ -1,3 +1,4 @@
+import copy
 import json
 import sys
 import tempfile
@@ -14,6 +15,10 @@ from downstream.semantic_review.package import (
     PackageError,
     load_and_verify_package,
     verify_run_envelope,
+)
+from downstream.semantic_review.responsibility import (
+    EXPECTED_ACTION_FIELDS,
+    EXPECTED_LIFECYCLE_FIELDS,
 )
 
 
@@ -45,37 +50,64 @@ def _write_package(root: Path, *, active_superseded=False):
         "source_status": "CURRENT",
         "active": True,
     }
+    superseded_value = "An obsolete lifecycle transition."
+    sentinel_ref = {
+        "object_id": "RULE-OLD",
+        "pointer": "/objects/rules/1/text",
+        "value_sha256": sha256_bytes(_json_bytes(superseded_value)),
+        "source_status": "SUPERSEDED",
+        "active": active_superseded,
+    }
     semantic_value = ["reason is non-empty"]
     provenance_hashes = [sha256_bytes(_json_bytes(evidence_ref))]
+    def semantic_field(field, *, review=False):
+        return {
+            "value": semantic_value if field == "input_invariants" else [field],
+            "source_refs": [0],
+            "derivation": (
+                {
+                    "kind": "REVIEW_REQUIRED",
+                    "explanation": "The input predicate requires semantic review.",
+                }
+                if review
+                else {"kind": "MACHINE_DERIVED", "operator": "exact"}
+            ),
+        }
+
+    action = {
+        "action_id": "ACT-001",
+        "sources": [evidence_ref],
+        **{
+            field: semantic_field(field, review=field == "input_invariants")
+            for field in EXPECTED_ACTION_FIELDS
+        },
+    }
+    lifecycle = {
+        "lifecycle_id": "LC-001",
+        "sources": [evidence_ref],
+        **{field: semantic_field(field) for field in EXPECTED_LIFECYCLE_FIELDS},
+        "superseded_sentinels": [sentinel_ref],
+    }
     contract = {
         "contract_schema_version": "joewrks.action-conformance/1.0",
-        "actions": [
-            {
-                "action_id": "ACT-001",
-                "input_invariants": {
-                    "value": semantic_value,
-                    "source_refs": [0],
-                    "derivation": {
-                        "kind": "REVIEW_REQUIRED",
-                        "explanation": "The input predicate requires semantic review.",
-                    },
-                },
-            }
-        ],
-        "lifecycles": [
-            {
-                "lifecycle_id": "LC-001",
-                "superseded_sentinels": [
-                    {
-                        "object_id": "RULE-001",
-                        "source_status": (
-                            "SUPERSEDED" if active_superseded else "CURRENT"
-                        ),
-                        "active": active_superseded,
-                    }
-                ],
-            }
-        ],
+        "compiler": {"id": "semantic-review-test", "version": "1.0"},
+        "source_authority": {
+            "product_slug": "semantic-review-fixture",
+            "approved_revision": 1,
+            "approved_digest": "fixture",
+            "canonical_state_sha256": "d" * 64,
+        },
+        "actions": [action],
+        "lifecycles": [lifecycle],
+        "authority_assessment": {
+            "structurally_valid": True,
+            "provenance_valid": True,
+            "machine_derived_obligations_verified": True,
+            "machine_derived_field_count": 37,
+            "review_required_field_count": 1,
+            "review_required_obligations_present": True,
+            "machine_verifiable_coverage": 1,
+        },
     }
     contract["contract_hash"] = sha256_bytes(_json_bytes(contract))
     profile_path = (
@@ -108,7 +140,8 @@ def _write_package(root: Path, *, active_superseded=False):
         "canonical_authority": {
             "objects": {
                 "rules": [
-                    {"id": "RULE-001", "status": "CURRENT", "text": canonical_value}
+                    {"id": "RULE-001", "status": "CURRENT", "text": canonical_value},
+                    {"id": "RULE-OLD", "status": "SUPERSEDED", "text": superseded_value},
                 ]
             }
         },
@@ -187,6 +220,31 @@ class SemanticReviewPackageTest(unittest.TestCase):
         manifest["reviewer_input_manifest_hash"] = manifest_hash(manifest)
         (self.root / "manifest.json").write_bytes(_json_bytes(manifest))
 
+    def _replace_role(self, logical_role, value):
+        manifest = json.loads((self.root / "manifest.json").read_text("utf-8"))
+        item = next(
+            entry for entry in manifest["files"] if entry["logical_role"] == logical_role
+        )
+        data = value if isinstance(value, bytes) else _json_bytes(value)
+        (self.root / item["path"]).write_bytes(data)
+        item["sha256"] = sha256_bytes(data)
+        item["bytes"] = len(data)
+        self._rewrite_manifest(manifest)
+
+    def _mutate_contract(self, mutation, *, rebind_sidecars=False):
+        contract = json.loads((self.root / "contract.json").read_text("utf-8"))
+        mutation(contract)
+        contract.pop("contract_hash", None)
+        contract["contract_hash"] = sha256_bytes(_json_bytes(contract))
+        self._replace_role("action_contract", contract)
+        if rebind_sidecars:
+            obligations = json.loads((self.root / "obligations.json").read_text("utf-8"))
+            obligations["contract_hash"] = contract["contract_hash"]
+            self._replace_role("semantic_obligation_index", obligations)
+            identities = json.loads((self.root / "identities.json").read_text("utf-8"))
+            identities["contract_hash"] = contract["contract_hash"]
+            self._replace_role("review_identity_inventory", identities)
+
     def test_package_verifies_exact_hashes_roles_and_package_identity(self):
         verified = load_and_verify_package(self.root)
         expected = package_hash(
@@ -232,6 +290,80 @@ class SemanticReviewPackageTest(unittest.TestCase):
         with self.assertRaisesRegex(PackageError, "PREVIOUS_VERDICT_EXPOSURE"):
             load_and_verify_package(self.root)
 
+    def test_package_rejects_disguised_declared_review_output_payload(self):
+        data = _json_bytes(
+            {
+                "review_identity": "action:ACT-001:input_invariants",
+                "verdict": "APPROVED",
+                "rationale_code": "SUPPORTED_EXACTLY",
+            }
+        )
+        (self.root / "supporting.json").write_bytes(data)
+        manifest = json.loads((self.root / "manifest.json").read_text("utf-8"))
+        manifest["files"].append(
+            {
+                "logical_role": "supporting_projection",
+                "path": "supporting.json",
+                "sha256": sha256_bytes(data),
+                "bytes": len(data),
+                "schema_identity": "joewrks.semantic-review-supporting/1.0",
+            }
+        )
+        self._rewrite_manifest(manifest)
+        with self.assertRaisesRegex(PackageError, "PREVIOUS_VERDICT_EXPOSURE"):
+            load_and_verify_package(self.root)
+
+    def test_package_rejects_disguised_prior_review_inside_required_role(self):
+        authority = json.loads((self.root / "authority.json").read_text("utf-8"))
+        authority["prior_assessment"] = {
+            "review_identity": "action:ACT-001:input_invariants",
+            "verdict": "APPROVED",
+            "rationale_code": "SUPPORTED_EXACTLY",
+        }
+        self._replace_role("canonical_authority", authority)
+        with self.assertRaisesRegex(PackageError, "PREVIOUS_VERDICT_EXPOSURE"):
+            load_and_verify_package(self.root)
+
+    def test_package_rejects_action_and_lifecycle_schema_drift(self):
+        self._mutate_contract(lambda contract: contract.pop("compiler"))
+        with self.assertRaisesRegex(PackageError, "CONTRACT_HASH_MISMATCH"):
+            load_and_verify_package(self.root)
+        self.temporary.cleanup()
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        _write_package(self.root)
+        self._mutate_contract(
+            lambda contract: contract["lifecycles"][0].pop("current_states")
+        )
+        with self.assertRaisesRegex(PackageError, "CONTRACT_HASH_MISMATCH"):
+            load_and_verify_package(self.root)
+
+    def test_package_rejects_forged_output_schema_with_same_id(self):
+        self._replace_role(
+            "review_output_schema",
+            {
+                "$id": (
+                    "https://joewrks.example/schemas/"
+                    "semantic-review-output-1.0.schema.json"
+                ),
+                "type": "object",
+            },
+        )
+        with self.assertRaisesRegex(PackageError, "OUTPUT_SCHEMA_VIOLATION"):
+            load_and_verify_package(self.root)
+
+    def test_package_rejects_declared_schema_identity_drift(self):
+        manifest = json.loads((self.root / "manifest.json").read_text("utf-8"))
+        item = next(
+            entry
+            for entry in manifest["files"]
+            if entry["logical_role"] == "action_contract"
+        )
+        item["schema_identity"] = "forged/action-contract"
+        self._rewrite_manifest(manifest)
+        with self.assertRaisesRegex(PackageError, "PACKAGE_HASH_MISMATCH"):
+            load_and_verify_package(self.root)
+
     def test_package_rejects_path_escape(self):
         manifest = json.loads((self.root / "manifest.json").read_text("utf-8"))
         manifest["files"][0]["path"] = "../outside.json"
@@ -245,6 +377,47 @@ class SemanticReviewPackageTest(unittest.TestCase):
         self.root = Path(self.temporary.name)
         _write_package(self.root, active_superseded=True)
         with self.assertRaisesRegex(PackageError, "ACTIVE_SUPERSEDED_SOURCE"):
+            load_and_verify_package(self.root)
+
+    def test_package_rejects_invalid_inactive_sentinel_provenance(self):
+        self._mutate_contract(
+            lambda contract: contract["lifecycles"][0]["superseded_sentinels"][0].update(
+                {"value_sha256": "f" * 64}
+            )
+        )
+        with self.assertRaisesRegex(PackageError, "INVALID_PROVENANCE"):
+            load_and_verify_package(self.root)
+
+    def test_package_rejects_invalid_contract_source_and_source_ref_index(self):
+        self._mutate_contract(
+            lambda contract: contract["actions"][0]["sources"][0].update(
+                {"value_sha256": "f" * 64}
+            ),
+            rebind_sidecars=True,
+        )
+        with self.assertRaisesRegex(PackageError, "INVALID_PROVENANCE"):
+            load_and_verify_package(self.root)
+
+    def test_package_rejects_duplicate_contract_owner_identity(self):
+        self._mutate_contract(
+            lambda contract: contract["actions"].append(
+                copy.deepcopy(contract["actions"][0])
+            ),
+            rebind_sidecars=True,
+        )
+        with self.assertRaisesRegex(PackageError, "CONTRACT_HASH_MISMATCH"):
+            load_and_verify_package(self.root)
+        self.temporary.cleanup()
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        _write_package(self.root)
+        self._mutate_contract(
+            lambda contract: contract["actions"][0]["actor"].update(
+                {"source_refs": [99]}
+            ),
+            rebind_sidecars=True,
+        )
+        with self.assertRaisesRegex(PackageError, "INVALID_PROVENANCE"):
             load_and_verify_package(self.root)
 
     def test_package_rejects_declared_byte_drift(self):

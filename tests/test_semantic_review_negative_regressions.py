@@ -164,13 +164,25 @@ class SemanticReviewNegativeRegressionTest(unittest.TestCase):
             {item["interpretation"] for item in classifications}, {interpretation}
         )
         self.assertGreaterEqual(
-            report["metrics"]["three_review_unanimity"], Fraction(99, 100)
+            Fraction(
+                report["metrics"]["three_review_unanimity"]["value"]["numerator"],
+                report["metrics"]["three_review_unanimity"]["value"]["denominator"],
+            ),
+            Fraction(99, 100),
         )
         self.assertTrue(
-            all(item.value >= Fraction(9, 10) for item in report["metrics"]["pairwise_cohen"])
+            all(
+                Fraction(item["value"]["numerator"], item["value"]["denominator"])
+                >= Fraction(9, 10)
+                for item in report["metrics"]["pairwise_cohen"]
+            )
         )
         self.assertGreaterEqual(
-            report["metrics"]["fleiss_kappa"].value, Fraction(9, 10)
+            Fraction(
+                report["metrics"]["fleiss_kappa"]["value"]["numerator"],
+                report["metrics"]["fleiss_kappa"]["value"]["denominator"],
+            ),
+            Fraction(9, 10),
         )
 
     def test_gate_rejects_missing_review_identity(self):

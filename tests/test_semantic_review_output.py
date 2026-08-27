@@ -32,12 +32,24 @@ HASHES = {
 
 def package_fixture():
     identity = "action:ACT-001:input_invariants"
+    evidence_ref = {
+        "object_id": "RULE-001",
+        "pointer": "/objects/rules/0/text",
+        "value_sha256": "b" * 64,
+        "source_status": "CURRENT",
+        "active": True,
+    }
+    provenance_hashes = [sha256_bytes(canonical_json_bytes(evidence_ref))]
     inventory = {
         identity: {
             "semantic_value_hash": "8" * 64,
-            "provenance_set_hash": "9" * 64,
+            "provenance_hashes": provenance_hashes,
+            "provenance_set_hash": sha256_bytes(
+                canonical_json_bytes(provenance_hashes)
+            ),
             "responsibility_rule_id": "FR-A09",
             "completeness_mode": "LOCAL",
+            "semantic_obligation_ids": ["OBL-INPUT-001"],
         }
     }
     return {
@@ -46,6 +58,19 @@ def package_fixture():
         "review_output_schema": json.loads(SCHEMA_PATH.read_text(encoding="utf-8")),
         "expected_identities": [identity],
         "identity_inventory": inventory,
+        "semantic_obligation_index": {
+            "obligations": [
+                {
+                    "obligation_id": "OBL-INPUT-001",
+                    "canonical_refs": [evidence_ref],
+                    "owner_kind": "action",
+                    "owner_id": "ACT-001",
+                    "owning_field": "input_invariants",
+                    "allowed_sibling_refs": [],
+                    "required_test_refs": ["TEST-ACT-001-INPUT"],
+                }
+            ]
+        },
     }
 
 
@@ -67,6 +92,8 @@ def run_envelope_fixture():
 
 def output_fixture():
     envelope = run_envelope_fixture()
+    package = package_fixture()
+    expected = package["identity_inventory"]["action:ACT-001:input_invariants"]
     record = {
         "review_schema_version": "joewrks.semantic-review/1.0",
         "reviewer_brief_hash": HASHES["reviewer_brief_hash"],
@@ -77,11 +104,11 @@ def output_fixture():
         "owner_id": "ACT-001",
         "semantic_field": "input_invariants",
         "semantic_value_hash": "8" * 64,
-        "provenance_hashes": ["a" * 64],
-        "provenance_set_hash": "9" * 64,
+        "provenance_hashes": expected["provenance_hashes"],
+        "provenance_set_hash": expected["provenance_set_hash"],
         "responsibility_rule_id": "FR-A09",
         "completeness_mode": "LOCAL",
-        "sibling_review_identity_refs": ["action:ACT-001:visible_error"],
+        "sibling_review_identity_refs": [],
         "semantic_obligation_ids": ["OBL-INPUT-001"],
         "test_obligation_refs": ["TEST-ACT-001-INPUT"],
         "verdict": "APPROVED",
@@ -203,6 +230,89 @@ class SemanticReviewOutputTest(unittest.TestCase):
             "OBL-Z",
             "OBL-A",
         ]
+        with self.assertRaisesRegex(OutputError, "INVALID_REFERENCE_SET"):
+            validate_review_output(self.package, self.envelope, self.output)
+
+    def test_output_rejects_forged_provenance_hashes_with_retained_set_hash(self):
+        self.output["records"][0]["provenance_hashes"] = ["f" * 64]
+        with self.assertRaisesRegex(OutputError, "IMMUTABLE_IDENTITY_MISMATCH"):
+            validate_review_output(self.package, self.envelope, self.output)
+
+    def test_output_rejects_forged_obligation_sibling_and_test_refs(self):
+        self.output["records"][0]["semantic_obligation_ids"] = ["OBL-FORGED"]
+        with self.assertRaisesRegex(OutputError, "INVALID_REFERENCE_SET"):
+            validate_review_output(self.package, self.envelope, self.output)
+        self.output = output_fixture()
+        self.output["records"][0]["sibling_review_identity_refs"] = [
+            "action:ACT-001:visible_error"
+        ]
+        with self.assertRaisesRegex(OutputError, "INVALID_REFERENCE_SET"):
+            validate_review_output(self.package, self.envelope, self.output)
+        self.output = output_fixture()
+        self.output["records"][0]["test_obligation_refs"] = ["TEST-FORGED"]
+        with self.assertRaisesRegex(OutputError, "INVALID_REFERENCE_SET"):
+            validate_review_output(self.package, self.envelope, self.output)
+
+    def test_output_rejects_forged_or_duplicate_canonical_evidence(self):
+        self.output["records"][0]["canonical_evidence_refs"][0][
+            "value_sha256"
+        ] = "d" * 64
+        with self.assertRaisesRegex(OutputError, "INVALID_REFERENCE_SET"):
+            validate_review_output(self.package, self.envelope, self.output)
+        self.output = output_fixture()
+        self.output["records"][0]["canonical_evidence_refs"].append(
+            copy.deepcopy(self.output["records"][0]["canonical_evidence_refs"][0])
+        )
+        with self.assertRaisesRegex(OutputError, "INVALID_REFERENCE_SET"):
+            validate_review_output(self.package, self.envelope, self.output)
+
+    def test_preflight_output_still_validates_any_emitted_records(self):
+        self.output["preflight_errors"] = [
+            {
+                "verdict": "RUBRIC_ERROR",
+                "rationale_code": "RESPONSIBILITY_UNDEFINED",
+                "scope": "responsibility-profile",
+                "canonical_evidence_refs": [],
+                "reviewer_explanation": "The owner taxonomy is incomplete.",
+            }
+        ]
+        record = self.output["records"][0]
+        record["semantic_value_hash"] = "f" * 64
+        record["rationale_code"] = "UNSUPPORTED_OVERREACH"
+        self.output["summary"]["verdict_counts"]["RUBRIC_ERROR"] = 1
+        self.output["summary"]["complete"] = False
+        with self.assertRaisesRegex(
+            OutputError, "IMMUTABLE_IDENTITY_MISMATCH|VERDICT_RATIONALE_MISMATCH"
+        ):
+            validate_review_output(self.package, self.envelope, self.output)
+
+    def test_preflight_evidence_rejects_duplicate_references(self):
+        self.output["records"] = []
+        evidence = copy.deepcopy(
+            output_fixture()["records"][0]["canonical_evidence_refs"][0]
+        )
+        self.output["preflight_errors"] = [
+            {
+                "verdict": "INPUT_PACKAGE_ERROR",
+                "rationale_code": "INVALID_PROVENANCE",
+                "scope": "provenance",
+                "canonical_evidence_refs": [evidence, copy.deepcopy(evidence)],
+                "reviewer_explanation": "The same source was cited twice.",
+            }
+        ]
+        self.output["summary"].update(
+            {
+                "record_count": 0,
+                "unique_identity_count": 0,
+                "verdict_counts": {
+                    "APPROVED": 0,
+                    "REJECTED_CANDIDATE": 0,
+                    "RUBRIC_ERROR": 0,
+                    "INPUT_PACKAGE_ERROR": 1,
+                },
+                "complete": False,
+            }
+        )
         with self.assertRaisesRegex(OutputError, "INVALID_REFERENCE_SET"):
             validate_review_output(self.package, self.envelope, self.output)
 

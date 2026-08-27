@@ -10,6 +10,7 @@ SKILL_ROOT = ROOT / "skills" / "joewrks-product-definition"
 sys.path.insert(0, str(SKILL_ROOT))
 
 from downstream.semantic_review.hashing import canonical_json_bytes, sha256_bytes
+from downstream.semantic_review.disagreement import responsibility_rule_hash
 
 
 SCHEMA_PATH = (
@@ -36,16 +37,41 @@ def _stable_hash(prefix, index):
 
 def make_run_set(verdicts, *, run_count=3, rule_id="FR-A09"):
     expected = sorted(_identity(index) for index in range(len(verdicts)))
-    inventory = {
-        identity: {
+    inventory = {}
+    obligations = []
+    for index, identity in enumerate(expected):
+        evidence_ref = {
+            "object_id": f"RULE-{index:04d}",
+            "pointer": f"/objects/rules/{index}/text",
+            "value_sha256": _stable_hash("canonical", index),
+            "source_status": "CURRENT",
+            "active": True,
+        }
+        provenance_hashes = [sha256_bytes(canonical_json_bytes(evidence_ref))]
+        obligation_id = f"OBL-INPUT-{index:04d}"
+        test_ref = f"TEST-INPUT-{index:04d}"
+        inventory[identity] = {
             "semantic_value_hash": _stable_hash("semantic", index),
             "semantic_value_text": f"synthetic semantic value {index}",
-            "provenance_set_hash": _stable_hash("provenance-set", index),
+            "provenance_hashes": provenance_hashes,
+            "provenance_set_hash": sha256_bytes(
+                canonical_json_bytes(provenance_hashes)
+            ),
             "responsibility_rule_id": rule_id,
             "completeness_mode": "LOCAL",
+            "semantic_obligation_ids": [obligation_id],
         }
-        for index, identity in enumerate(expected)
-    }
+        obligations.append(
+            {
+                "obligation_id": obligation_id,
+                "canonical_refs": [evidence_ref],
+                "owner_kind": "action",
+                "owner_id": f"ACT-{index:04d}",
+                "owning_field": "input_invariants",
+                "allowed_sibling_refs": [],
+                "required_test_refs": [test_ref],
+            }
+        )
     base_package = {
         **BASE_HASHES,
         "previous_reviewer_verdicts_present": False,
@@ -63,6 +89,7 @@ def make_run_set(verdicts, *, run_count=3, rule_id="FR-A09"):
         "review_output_schema": json.loads(SCHEMA_PATH.read_text(encoding="utf-8")),
         "expected_identities": expected,
         "identity_inventory": inventory,
+        "semantic_obligation_index": {"obligations": obligations},
     }
     packages = [copy.deepcopy(base_package) for _ in range(run_count)]
     envelopes = []
@@ -88,6 +115,7 @@ def make_run_set(verdicts, *, run_count=3, rule_id="FR-A09"):
         records = []
         for index, verdict in enumerate(verdicts):
             identity = expected[index]
+            obligation = obligations[index]
             rationale = (
                 "SUPPORTED_EXACTLY"
                 if verdict == "APPROVED"
@@ -106,7 +134,7 @@ def make_run_set(verdicts, *, run_count=3, rule_id="FR-A09"):
                     "owner_id": f"ACT-{index:04d}",
                     "semantic_field": "input_invariants",
                     "semantic_value_hash": inventory[identity]["semantic_value_hash"],
-                    "provenance_hashes": [_stable_hash("provenance", index)],
+                    "provenance_hashes": inventory[identity]["provenance_hashes"],
                     "provenance_set_hash": inventory[identity]["provenance_set_hash"],
                     "responsibility_rule_id": rule_id,
                     "completeness_mode": "LOCAL",
@@ -115,15 +143,7 @@ def make_run_set(verdicts, *, run_count=3, rule_id="FR-A09"):
                     "test_obligation_refs": [f"TEST-INPUT-{index:04d}"],
                     "verdict": verdict,
                     "rationale_code": rationale,
-                    "canonical_evidence_refs": [
-                        {
-                            "object_id": f"RULE-{index:04d}",
-                            "pointer": f"/objects/rules/{index}/text",
-                            "value_sha256": _stable_hash("canonical", index),
-                            "source_status": "CURRENT",
-                            "active": True,
-                        }
-                    ],
+                    "canonical_evidence_refs": obligation["canonical_refs"],
                     "reviewer_explanation": "The frozen owner rule determines this result.",
                 }
             )
@@ -199,7 +219,7 @@ def disagreement_classification(
             "REJECTED_CANDIDATE/MISSING_OWNED_SEMANTIC",
         ],
         "semantic_obligation_ids": [f"OBL-INPUT-{index}"],
-        "cited_rule_hash": "a" * 64,
+        "cited_rule_hash": responsibility_rule_hash(rule_id),
         "cited_evidence_hashes": [_stable_hash("canonical", int(index))],
         "classifier_context_id": f"classifier-{identity}",
         "cause_code": cause_code,

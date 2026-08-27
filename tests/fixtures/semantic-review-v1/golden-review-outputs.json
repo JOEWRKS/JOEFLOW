@@ -1,0 +1,1130 @@
+[
+  {
+    "case_id": "G-001",
+    "case_manifest_hash": "4ad0a4028b8818fd0e5ff8d23f7633d0e3aa2831e8c91f84f5fe01a983ce96f9",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-001",
+      "reviewer_context_id": "golden-context-G-001",
+      "reviewer_input_package_hash": "f62ca6765e4722965d60f48e437eb44007b804322b2992965ad02e7e7cca0ef3",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-001",
+      "reviewer_context_id": "golden-context-G-001",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "a7242fcb6e53b7259027334736053559b04fb7a0703d2ce771278e79d3ebebb9",
+      "reviewer_input_package_hash": "f62ca6765e4722965d60f48e437eb44007b804322b2992965ad02e7e7cca0ef3",
+      "contract_hash": "a3db9a25fe87a673ce61d5cd77e3a3eea956d0931b8d92623f67297400df3a01",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "b10072a1c2506c770a85a24b060a06ace08b7b0a307a46f8257a82fa0cbd6ddd",
+      "review_identity_inventory_hash": "7a6dad2964ec6083cebcbd776742f0dc8add461e9b44c2039af92a41b6fbb265",
+      "preflight_errors": [],
+      "records": [
+        {
+          "review_schema_version": "joewrks.semantic-review/1.0",
+          "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+          "reviewer_input_manifest_hash": "a7242fcb6e53b7259027334736053559b04fb7a0703d2ce771278e79d3ebebb9",
+          "contract_hash": "a3db9a25fe87a673ce61d5cd77e3a3eea956d0931b8d92623f67297400df3a01",
+          "review_identity": "action:ACT-G-001:input_invariants",
+          "owner_kind": "action",
+          "owner_id": "ACT-G-001",
+          "semantic_field": "input_invariants",
+          "semantic_value_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "provenance_hashes": [
+            "fb6e98b3849632bc190f113497c0f1871fb56d76a5b07bf1af0e56c43dff7dcc"
+          ],
+          "provenance_set_hash": "080d78bf4e025d965e127f6445b7a0aa7bbcdadce984df7f614f64343c9cfaa6",
+          "responsibility_rule_id": "FR-A09",
+          "completeness_mode": "LOCAL",
+          "sibling_review_identity_refs": [],
+          "semantic_obligation_ids": [
+            "OBL-G-001-FOCUS"
+          ],
+          "test_obligation_refs": [
+            "TEST-G-001-FOCUS"
+          ],
+          "verdict": "REJECTED_CANDIDATE",
+          "rationale_code": "MISSING_OWNED_SEMANTIC",
+          "canonical_evidence_refs": [
+            {
+              "active": true,
+              "object_id": "RULE-G-001",
+              "pointer": "/objects/rules/0/text",
+              "source_status": "CURRENT",
+              "value_sha256": "b20f50a7a10e909f337a65500039194360e3562b6f6b9dfbff2ff69be26f1ee5"
+            }
+          ],
+          "reviewer_explanation": "Canonical authority requires a non-empty reason input; the candidate omits the predicate from input_invariants."
+        }
+      ],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 1,
+        "unique_identity_count": 1,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 0,
+          "REJECTED_CANDIDATE": 1,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": true
+      }
+    }
+  },
+  {
+    "case_id": "G-002",
+    "case_manifest_hash": "9c2b43783ea25f6ed73248241e6d5dff25286c484279ab95de16c9e01cf35329",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-002",
+      "reviewer_context_id": "golden-context-G-002",
+      "reviewer_input_package_hash": "8b11c2985055d45306931178d856d8a368f581489cde9c68dea6d33dcd03e583",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-002",
+      "reviewer_context_id": "golden-context-G-002",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "ce880cfc11e2e25582cc773317bc24b79168a5d07a341f87f5822395e60b1ac1",
+      "reviewer_input_package_hash": "8b11c2985055d45306931178d856d8a368f581489cde9c68dea6d33dcd03e583",
+      "contract_hash": "1cc1cca43c44787f78e0d45b55591c2c21228999d2cc0682f8900d14fc37f1c8",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "2552088d15d99599a0f438dc24bfd4f39b7d876d1556012a1347a73c58d286c8",
+      "review_identity_inventory_hash": "58984f5c5a40972500d6505a66c70fbe1836dfcd163f48fc4c6fb744f176cbf5",
+      "preflight_errors": [],
+      "records": [
+        {
+          "review_schema_version": "joewrks.semantic-review/1.0",
+          "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+          "reviewer_input_manifest_hash": "ce880cfc11e2e25582cc773317bc24b79168a5d07a341f87f5822395e60b1ac1",
+          "contract_hash": "1cc1cca43c44787f78e0d45b55591c2c21228999d2cc0682f8900d14fc37f1c8",
+          "review_identity": "action:ACT-G-002:input_invariants",
+          "owner_kind": "action",
+          "owner_id": "ACT-G-002",
+          "semantic_field": "input_invariants",
+          "semantic_value_hash": "0fdeefbd2bf4547e79f801f8a016dee4740c6111f76214eb883156dc79c92298",
+          "provenance_hashes": [
+            "35010612393c61489f0a1cc97b34582c948220fd44c3977a30d91d4757eb0065"
+          ],
+          "provenance_set_hash": "9ac31e86f70a1aa247b20a37872cc3aa2fee74403fd6741c6b74fb29801fa4ed",
+          "responsibility_rule_id": "FR-A09",
+          "completeness_mode": "LOCAL",
+          "sibling_review_identity_refs": [],
+          "semantic_obligation_ids": [
+            "OBL-G-002-FOCUS"
+          ],
+          "test_obligation_refs": [
+            "TEST-G-002-FOCUS"
+          ],
+          "verdict": "APPROVED",
+          "rationale_code": "SUPPORTED_EXACTLY",
+          "canonical_evidence_refs": [
+            {
+              "active": true,
+              "object_id": "RULE-G-002",
+              "pointer": "/objects/rules/0/text",
+              "source_status": "CURRENT",
+              "value_sha256": "b20f50a7a10e909f337a65500039194360e3562b6f6b9dfbff2ff69be26f1ee5"
+            }
+          ],
+          "reviewer_explanation": "Required reason predicate is represented in input_invariants with exact current provenance."
+        }
+      ],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 1,
+        "unique_identity_count": 1,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 1,
+          "REJECTED_CANDIDATE": 0,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": true
+      }
+    }
+  },
+  {
+    "case_id": "G-003",
+    "case_manifest_hash": "12f6d29d570e1c3a2539346a681331a321fd8e309201ea10cbfb511b00205142",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-003",
+      "reviewer_context_id": "golden-context-G-003",
+      "reviewer_input_package_hash": "0350f17c8e9c2c333f3a611a6dc7b3adb587a525135a313204c9fc6d7eeb295e",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-003",
+      "reviewer_context_id": "golden-context-G-003",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "a58c26b6229202c60c2bb24dea094e806ee7a1f35251dec12145257bcfd0dbcb",
+      "reviewer_input_package_hash": "0350f17c8e9c2c333f3a611a6dc7b3adb587a525135a313204c9fc6d7eeb295e",
+      "contract_hash": "96a980c45eae15d11aff18a1773f5e37561c156e2b1359688074593419d1ec21",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "8c45816504b20370093fe0c9bb67e652cecd40d120c1d2f5d0db7f0aadb7638b",
+      "review_identity_inventory_hash": "1ea11c5f410dbc2080c3e7640142e5568a0091b28f7231464ed8def8b477d7e5",
+      "preflight_errors": [],
+      "records": [
+        {
+          "review_schema_version": "joewrks.semantic-review/1.0",
+          "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+          "reviewer_input_manifest_hash": "a58c26b6229202c60c2bb24dea094e806ee7a1f35251dec12145257bcfd0dbcb",
+          "contract_hash": "96a980c45eae15d11aff18a1773f5e37561c156e2b1359688074593419d1ec21",
+          "review_identity": "action:ACT-G-003:input_invariants",
+          "owner_kind": "action",
+          "owner_id": "ACT-G-003",
+          "semantic_field": "input_invariants",
+          "semantic_value_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "provenance_hashes": [
+            "0cc8115e7d6d2b9c909c3f6236ddef4b1d0542af814d36b70c63fd8e172e0146"
+          ],
+          "provenance_set_hash": "5c82b173957711ee02d076dda4e8f29df3d381429cde98e9ca286b651ea47f3c",
+          "responsibility_rule_id": "FR-A09",
+          "completeness_mode": "LOCAL",
+          "sibling_review_identity_refs": [],
+          "semantic_obligation_ids": [
+            "OBL-G-003-FOCUS"
+          ],
+          "test_obligation_refs": [
+            "TEST-G-003-FOCUS"
+          ],
+          "verdict": "APPROVED",
+          "rationale_code": "SUPPORTED_EXACTLY",
+          "canonical_evidence_refs": [
+            {
+              "active": true,
+              "object_id": "RULE-G-003",
+              "pointer": "/objects/rules/0/text",
+              "source_status": "CURRENT",
+              "value_sha256": "f3fe250acf6f2e041392249cd647f96f19fe96448a46aa1334efd6a0918f34aa"
+            }
+          ],
+          "reviewer_explanation": "An authority relationship is absent from input_invariants but correctly owned by relationship_predicate and linked through the obligation index."
+        }
+      ],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 1,
+        "unique_identity_count": 1,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 1,
+          "REJECTED_CANDIDATE": 0,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": true
+      }
+    }
+  },
+  {
+    "case_id": "G-004",
+    "case_manifest_hash": "e4b9040418aee1578ee238ebbbe2754766a28efea6321a55f1164bf9eadcc777",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-004",
+      "reviewer_context_id": "golden-context-G-004",
+      "reviewer_input_package_hash": "ef6fa674458c1ca9a825d710ed88405a8a09c8317aac7f83dc4fe294bb4c5391",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-004",
+      "reviewer_context_id": "golden-context-G-004",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "85e9d215c0b55063a2dc3edf54ee16f11600e6f1cc71c6af29d4680ec24f3080",
+      "reviewer_input_package_hash": "ef6fa674458c1ca9a825d710ed88405a8a09c8317aac7f83dc4fe294bb4c5391",
+      "contract_hash": "461c41086e95f9ed609662b9d4006de4b266b0e6fff62fa4703fe82aefdbc961",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "93f722704e1c2bd445af3a31ba5f2c15c4d9b9d95a00fee39316f37e4a60766c",
+      "review_identity_inventory_hash": "0011fe5750a479c1f205ebdab52a814df0b07a3a7300a2c5c8ee23da0e331064",
+      "preflight_errors": [],
+      "records": [
+        {
+          "review_schema_version": "joewrks.semantic-review/1.0",
+          "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+          "reviewer_input_manifest_hash": "85e9d215c0b55063a2dc3edf54ee16f11600e6f1cc71c6af29d4680ec24f3080",
+          "contract_hash": "461c41086e95f9ed609662b9d4006de4b266b0e6fff62fa4703fe82aefdbc961",
+          "review_identity": "action:ACT-G-004:visible_error",
+          "owner_kind": "action",
+          "owner_id": "ACT-G-004",
+          "semantic_field": "visible_error",
+          "semantic_value_hash": "c96cd2373f10e62c17e381efe7ca24bbc730a7dd50a3e2b1073e3ca53ef2af17",
+          "provenance_hashes": [
+            "219a912d59f0ee2767dd9bdeca6700a911346fad324da78fba02c97b312f08f7"
+          ],
+          "provenance_set_hash": "fd4b44d2033e82de7b26669792173abfb40963d3a333a8805507c0b038cfa71a",
+          "responsibility_rule_id": "FR-A23",
+          "completeness_mode": "COMPOSITIONAL",
+          "sibling_review_identity_refs": [],
+          "semantic_obligation_ids": [
+            "OBL-G-004-FOCUS"
+          ],
+          "test_obligation_refs": [
+            "TEST-G-004-FOCUS"
+          ],
+          "verdict": "REJECTED_CANDIDATE",
+          "rationale_code": "MISSING_OWNED_SEMANTIC",
+          "canonical_evidence_refs": [
+            {
+              "active": true,
+              "object_id": "RULE-G-004",
+              "pointer": "/objects/rules/0/text",
+              "source_status": "CURRENT",
+              "value_sha256": "6e26349bf8e852681bd4b5b1d1d32b3c6d5016f8fab965cba70ee09feb2e4c27"
+            }
+          ],
+          "reviewer_explanation": "Canonical failure UX requires preserving submitted input; visible_error omits preservation."
+        }
+      ],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 1,
+        "unique_identity_count": 1,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 0,
+          "REJECTED_CANDIDATE": 1,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": true
+      }
+    }
+  },
+  {
+    "case_id": "G-005",
+    "case_manifest_hash": "faf0105de6916103bcfe324a9a583cdf3bfcc1a1d623e6815b11ebed93dc1938",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-005",
+      "reviewer_context_id": "golden-context-G-005",
+      "reviewer_input_package_hash": "b973e00afa8ab39d00ec01c5f465f5e589df57df6a30d531b324aba855f0038f",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-005",
+      "reviewer_context_id": "golden-context-G-005",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "494540ff31c84bc5a4551dd21a6db1dd8fc57d43184ab8d67efd184d362c6ee4",
+      "reviewer_input_package_hash": "b973e00afa8ab39d00ec01c5f465f5e589df57df6a30d531b324aba855f0038f",
+      "contract_hash": "8edbaf0c2f9f35307d49cd48fdd074e1a6ec7411c537d52c0481f2799949dee4",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "cc08c3ad7e48aee0749dcb4fa1e82bd9c5eaf44faf5f2f7e0b5a0fead1a04d5f",
+      "review_identity_inventory_hash": "4a2f912b519c78f83a7a61172c4df11430e31d7d05d9a49ea865725bc218fde4",
+      "preflight_errors": [],
+      "records": [
+        {
+          "review_schema_version": "joewrks.semantic-review/1.0",
+          "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+          "reviewer_input_manifest_hash": "494540ff31c84bc5a4551dd21a6db1dd8fc57d43184ab8d67efd184d362c6ee4",
+          "contract_hash": "8edbaf0c2f9f35307d49cd48fdd074e1a6ec7411c537d52c0481f2799949dee4",
+          "review_identity": "action:ACT-G-005:visible_error",
+          "owner_kind": "action",
+          "owner_id": "ACT-G-005",
+          "semantic_field": "visible_error",
+          "semantic_value_hash": "b6bcdce31667688204acebfe0ad07288972fedc8dd71f7b45d0f42cc7028d505",
+          "provenance_hashes": [
+            "bb84713682b685f27aaadb2bb72ad1307749982a756585463684f4944294de56"
+          ],
+          "provenance_set_hash": "01654cf3764f22771167a80c0d5e2d881ded98fea8be28919ba7f5c73f8044a2",
+          "responsibility_rule_id": "FR-A23",
+          "completeness_mode": "COMPOSITIONAL",
+          "sibling_review_identity_refs": [],
+          "semantic_obligation_ids": [
+            "OBL-G-005-FOCUS"
+          ],
+          "test_obligation_refs": [
+            "TEST-G-005-FOCUS"
+          ],
+          "verdict": "APPROVED",
+          "rationale_code": "SUPPORTED_EXACTLY",
+          "canonical_evidence_refs": [
+            {
+              "active": true,
+              "object_id": "RULE-G-005",
+              "pointer": "/objects/rules/0/text",
+              "source_status": "CURRENT",
+              "value_sha256": "ce6dc649b56e71d69155326685581880f05cd7b86a7d01e3fe9e954873d7dde1"
+            }
+          ],
+          "reviewer_explanation": "The triggering input guard is not duplicated; visible_error references rejection and input obligations and owns presentation and recovery."
+        }
+      ],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 1,
+        "unique_identity_count": 1,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 1,
+          "REJECTED_CANDIDATE": 0,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": true
+      }
+    }
+  },
+  {
+    "case_id": "G-006",
+    "case_manifest_hash": "ef0037db1221cb316e6925a89c461ba2e5c370f7a2888b677f2bba4dfafb255d",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-006",
+      "reviewer_context_id": "golden-context-G-006",
+      "reviewer_input_package_hash": "1c6c2e27f1b2fa0462872db00b75198ab2c8637a1627d838ab953e63a5ab6ce4",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-006",
+      "reviewer_context_id": "golden-context-G-006",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "244cc68913900aff1b97dc053cda2ed285aa48e9712031fe7e8d67e430fbd170",
+      "reviewer_input_package_hash": "1c6c2e27f1b2fa0462872db00b75198ab2c8637a1627d838ab953e63a5ab6ce4",
+      "contract_hash": "900b6679bede20c3828925a94d8674cd9e68c8f914651db28fcfdfc23bb1581c",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "1f3993a8e26ac05cdc4d0846bc2dd6c48d2f3f837742ed8f3ea892e6100053d7",
+      "review_identity_inventory_hash": "eb91531c6d789a75207497aa6833b58367780ed66c88ac89737314f78a6a1156",
+      "preflight_errors": [],
+      "records": [
+        {
+          "review_schema_version": "joewrks.semantic-review/1.0",
+          "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+          "reviewer_input_manifest_hash": "244cc68913900aff1b97dc053cda2ed285aa48e9712031fe7e8d67e430fbd170",
+          "contract_hash": "900b6679bede20c3828925a94d8674cd9e68c8f914651db28fcfdfc23bb1581c",
+          "review_identity": "action:ACT-G-006:visible_error",
+          "owner_kind": "action",
+          "owner_id": "ACT-G-006",
+          "semantic_field": "visible_error",
+          "semantic_value_hash": "6655477f987dab482a906249b3c754f96912f0634e1c57f71a0708d89b415d2a",
+          "provenance_hashes": [
+            "b5e9ab1335e40d5a2b508d806a3154b43133c2544c64c63d1ab8e3a78e516700"
+          ],
+          "provenance_set_hash": "57f06c5b368619e77bb2eb19dcdfa7dd73e23ceac9287b4fed23a899f70a3ac4",
+          "responsibility_rule_id": "FR-A23",
+          "completeness_mode": "COMPOSITIONAL",
+          "sibling_review_identity_refs": [],
+          "semantic_obligation_ids": [
+            "OBL-G-006-FOCUS"
+          ],
+          "test_obligation_refs": [
+            "TEST-G-006-FOCUS"
+          ],
+          "verdict": "REJECTED_CANDIDATE",
+          "rationale_code": "UNSUPPORTED_OVERREACH",
+          "canonical_evidence_refs": [
+            {
+              "active": true,
+              "object_id": "RULE-G-006",
+              "pointer": "/objects/rules/0/text",
+              "source_status": "CURRENT",
+              "value_sha256": "b8efe4769a190ff44e0bbdda84f537b725e1e9f4e5d4b145be9501e2195bec99"
+            }
+          ],
+          "reviewer_explanation": "Candidate adds a retry or recovery affordance that canonical authority does not allow."
+        }
+      ],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 1,
+        "unique_identity_count": 1,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 0,
+          "REJECTED_CANDIDATE": 1,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": true
+      }
+    }
+  },
+  {
+    "case_id": "G-007",
+    "case_manifest_hash": "d3721a22d53ded09f9659ce87e5a3688da71d3897be783677ce3cc1a0f86c9a8",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-007",
+      "reviewer_context_id": "golden-context-G-007",
+      "reviewer_input_package_hash": "170d6d18fc7875a84078036ff5e6fde02ab2a696bc33faa425a1a861b30a8498",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-007",
+      "reviewer_context_id": "golden-context-G-007",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "bdf3ba551b1d869aa4bd18a1fdd8a8efc89fa8890e513358d01736ef0bdf7c3c",
+      "reviewer_input_package_hash": "170d6d18fc7875a84078036ff5e6fde02ab2a696bc33faa425a1a861b30a8498",
+      "contract_hash": "64778f4c85537c595d2513339538ab08b2b5a0019ef1a4a2becb828cfc18bb81",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "56e6708b5c2fb8348f2713e14ed446a3f17df3e254c9411eb750020235d3b826",
+      "review_identity_inventory_hash": "bcfbf0b8bf3bbe395852d1c37e4c4ba30a9d1d79a9f63c880f0e1f05056517f3",
+      "preflight_errors": [],
+      "records": [
+        {
+          "review_schema_version": "joewrks.semantic-review/1.0",
+          "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+          "reviewer_input_manifest_hash": "bdf3ba551b1d869aa4bd18a1fdd8a8efc89fa8890e513358d01736ef0bdf7c3c",
+          "contract_hash": "64778f4c85537c595d2513339538ab08b2b5a0019ef1a4a2becb828cfc18bb81",
+          "review_identity": "action:ACT-G-007:test_obligations",
+          "owner_kind": "action",
+          "owner_id": "ACT-G-007",
+          "semantic_field": "test_obligations",
+          "semantic_value_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "provenance_hashes": [
+            "d4517414046d11f2b55baceda1ae978bc26a7c58499a222a291da0a98ca1c235"
+          ],
+          "provenance_set_hash": "c9998c5f0ce645d93959fc57c2170f274b2bbe81a69bf1ffe059de811e00cd97",
+          "responsibility_rule_id": "FR-A25",
+          "completeness_mode": "REFERENCE_ONLY",
+          "sibling_review_identity_refs": [],
+          "semantic_obligation_ids": [
+            "OBL-G-007-FOCUS"
+          ],
+          "test_obligation_refs": [
+            "TEST-G-007-FOCUS"
+          ],
+          "verdict": "REJECTED_CANDIDATE",
+          "rationale_code": "MISSING_OWNED_SEMANTIC",
+          "canonical_evidence_refs": [
+            {
+              "active": true,
+              "object_id": "RULE-G-007",
+              "pointer": "/objects/rules/0/text",
+              "source_status": "CURRENT",
+              "value_sha256": "610d05676d05d186647166e09068c75c28e94981f435d8d00a9e49aaf769bc06"
+            }
+          ],
+          "reviewer_explanation": "One material semantic obligation has no stable test reference."
+        }
+      ],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 1,
+        "unique_identity_count": 1,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 0,
+          "REJECTED_CANDIDATE": 1,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": true
+      }
+    }
+  },
+  {
+    "case_id": "G-008",
+    "case_manifest_hash": "65d13ee0581831ff5b2491522906a89781dcc0f4ba6d9c5faeb24a1cf2d621e2",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-008",
+      "reviewer_context_id": "golden-context-G-008",
+      "reviewer_input_package_hash": "306a4eed4346a8ad586c2ca199c3c4592fd1be69f314fe308069f923c9c06876",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-008",
+      "reviewer_context_id": "golden-context-G-008",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "188f5d519627dbd4081f282ecf8cf703a9faf7d5b3d0e7a9ff5b618fdd1dadbb",
+      "reviewer_input_package_hash": "306a4eed4346a8ad586c2ca199c3c4592fd1be69f314fe308069f923c9c06876",
+      "contract_hash": "a4b626226007dbfa70023b69cc67710b6f9a0851dcf5471911adfffbf53ee23a",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "67bfeff9b44d6840daefa54a51fbe91000da67fecf99d06a6f4bdcd941b6329d",
+      "review_identity_inventory_hash": "f976f250b5bf9c62a6253cb96928856b8204c512c049b655ce423d1815b06777",
+      "preflight_errors": [],
+      "records": [
+        {
+          "review_schema_version": "joewrks.semantic-review/1.0",
+          "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+          "reviewer_input_manifest_hash": "188f5d519627dbd4081f282ecf8cf703a9faf7d5b3d0e7a9ff5b618fdd1dadbb",
+          "contract_hash": "a4b626226007dbfa70023b69cc67710b6f9a0851dcf5471911adfffbf53ee23a",
+          "review_identity": "action:ACT-G-008:test_obligations",
+          "owner_kind": "action",
+          "owner_id": "ACT-G-008",
+          "semantic_field": "test_obligations",
+          "semantic_value_hash": "c1bbbeb0591073ef0e3ead7fe2b1494346b1d535208430be980745d77a059285",
+          "provenance_hashes": [
+            "8a6acdd5a3f353612aac2f606e041526634e20328c0252acae7fd1425022f046"
+          ],
+          "provenance_set_hash": "e11e42e63d4369d0587d24b8e522fd62be3220be9a5589443a71d3be2c6d7f8c",
+          "responsibility_rule_id": "FR-A25",
+          "completeness_mode": "REFERENCE_ONLY",
+          "sibling_review_identity_refs": [],
+          "semantic_obligation_ids": [
+            "OBL-G-008-FOCUS"
+          ],
+          "test_obligation_refs": [
+            "TEST-G-008-FOCUS"
+          ],
+          "verdict": "APPROVED",
+          "rationale_code": "SUPPORTED_EXACTLY",
+          "canonical_evidence_refs": [
+            {
+              "active": true,
+              "object_id": "RULE-G-008",
+              "pointer": "/objects/rules/0/text",
+              "source_status": "CURRENT",
+              "value_sha256": "610d05676d05d186647166e09068c75c28e94981f435d8d00a9e49aaf769bc06"
+            }
+          ],
+          "reviewer_explanation": "All material obligations are covered by stable obligation IDs without duplicated semantic prose."
+        }
+      ],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 1,
+        "unique_identity_count": 1,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 1,
+          "REJECTED_CANDIDATE": 0,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": true
+      }
+    }
+  },
+  {
+    "case_id": "G-009",
+    "case_manifest_hash": "7b7b0f7f3c6043858b5154e0c075364709377b84bf2384473d3b61d2a90e099e",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-009",
+      "reviewer_context_id": "golden-context-G-009",
+      "reviewer_input_package_hash": "e20611b3fdb43216eea83d1c28cc29aacc0f9c1d0a23be9a1aadbd6a25d66e22",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-009",
+      "reviewer_context_id": "golden-context-G-009",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "e8a8505068fe45a96ef68ff5de2e6f653dcce1aa14a4dafd2b0fbbfc5cbae2b9",
+      "reviewer_input_package_hash": "e20611b3fdb43216eea83d1c28cc29aacc0f9c1d0a23be9a1aadbd6a25d66e22",
+      "contract_hash": "1639261551cf7f9b30243d1b06f685fda9e401f303af3fbdf7530721e97872e8",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "ee7adb5508f6bd07f47c9a1aebe831990a1f177585306d3b6813d306c86ec552",
+      "review_identity_inventory_hash": "2ae40cd349120cd8b8db806fac0f9fa5e7385cfa3006309c8400eaae97eb49b5",
+      "preflight_errors": [],
+      "records": [
+        {
+          "review_schema_version": "joewrks.semantic-review/1.0",
+          "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+          "reviewer_input_manifest_hash": "e8a8505068fe45a96ef68ff5de2e6f653dcce1aa14a4dafd2b0fbbfc5cbae2b9",
+          "contract_hash": "1639261551cf7f9b30243d1b06f685fda9e401f303af3fbdf7530721e97872e8",
+          "review_identity": "action:ACT-G-009:test_obligations",
+          "owner_kind": "action",
+          "owner_id": "ACT-G-009",
+          "semantic_field": "test_obligations",
+          "semantic_value_hash": "88c38cdacee0b2b7fc71cca41b64aee1459449cc6ee51906ce87fb13dd95f752",
+          "provenance_hashes": [
+            "ca35c83d03020c974edfa9798c75a74760a04135a9c2b5bd10bd0805b4b1d46a"
+          ],
+          "provenance_set_hash": "4a601498cc454bc615fb37998ddf9365db86cdc6b848cd33f4d529b1a0175580",
+          "responsibility_rule_id": "FR-A25",
+          "completeness_mode": "REFERENCE_ONLY",
+          "sibling_review_identity_refs": [],
+          "semantic_obligation_ids": [
+            "OBL-G-009-FOCUS"
+          ],
+          "test_obligation_refs": [
+            "TEST-G-009-FOCUS"
+          ],
+          "verdict": "REJECTED_CANDIDATE",
+          "rationale_code": "CONTRADICTS_OWNER",
+          "canonical_evidence_refs": [
+            {
+              "active": true,
+              "object_id": "RULE-G-009",
+              "pointer": "/objects/rules/0/text",
+              "source_status": "CURRENT",
+              "value_sha256": "4b0f5179919819859253d2f63c1c746b8f7a76e74df28c04469770e8685c21a6"
+            }
+          ],
+          "reviewer_explanation": "Copied semantic prose in a test obligation contradicts its owning field."
+        }
+      ],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 1,
+        "unique_identity_count": 1,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 0,
+          "REJECTED_CANDIDATE": 1,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": true
+      }
+    }
+  },
+  {
+    "case_id": "G-010",
+    "case_manifest_hash": "816071b43b289d8e1237adcbdb5b3a431de581d95b038477b77de69e1ec84f47",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-010",
+      "reviewer_context_id": "golden-context-G-010",
+      "reviewer_input_package_hash": "277d75113c1988be68f98ed099f9164a6521a4f83cc0fe56d9e61b3ab6b79560",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-010",
+      "reviewer_context_id": "golden-context-G-010",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "7dc4aa6372e126615278931c5d57765ec64a0537546d84ab54e12107f531c659",
+      "reviewer_input_package_hash": "277d75113c1988be68f98ed099f9164a6521a4f83cc0fe56d9e61b3ab6b79560",
+      "contract_hash": "8e219ed4c275d0d02932a61946978fd98f7f3cda4fa0d680c50b30d51677c20e",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "8122baf876c2dc7e39029d36a8575d3d8ca41967b08ffb151be6414046d60347",
+      "review_identity_inventory_hash": "02847b04319ca4b1b6761e691151511e382e7ab06bdf01ad44ae7a925ed35249",
+      "preflight_errors": [],
+      "records": [
+        {
+          "review_schema_version": "joewrks.semantic-review/1.0",
+          "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+          "reviewer_input_manifest_hash": "7dc4aa6372e126615278931c5d57765ec64a0537546d84ab54e12107f531c659",
+          "contract_hash": "8e219ed4c275d0d02932a61946978fd98f7f3cda4fa0d680c50b30d51677c20e",
+          "review_identity": "action:ACT-G-010:preconditions",
+          "owner_kind": "action",
+          "owner_id": "ACT-G-010",
+          "semantic_field": "preconditions",
+          "semantic_value_hash": "eb7e8a80ea2755cfdbb79385296b4393c4bf8c80579f156b3c80b983f11e65fd",
+          "provenance_hashes": [
+            "e26b2e826b0d0fcc6f455702f2bbf4f948a22b1713caa34506c5c68905bfda27"
+          ],
+          "provenance_set_hash": "c5e0bb0c8efe98d8b9049875ec4e2402ab7c1c2c6fc16740e84f149aae651182",
+          "responsibility_rule_id": "FR-A06",
+          "completeness_mode": "LOCAL",
+          "sibling_review_identity_refs": [],
+          "semantic_obligation_ids": [
+            "OBL-G-010-FOCUS"
+          ],
+          "test_obligation_refs": [
+            "TEST-G-010-FOCUS"
+          ],
+          "verdict": "REJECTED_CANDIDATE",
+          "rationale_code": "UNSUPPORTED_OVERREACH",
+          "canonical_evidence_refs": [
+            {
+              "active": true,
+              "object_id": "RULE-G-010",
+              "pointer": "/objects/rules/0/text",
+              "source_status": "CURRENT",
+              "value_sha256": "9ef79d22682073d5b3b0290e02a4353b4113201526387addd0f0432131f53135"
+            }
+          ],
+          "reviewer_explanation": "A field adds an extra constraint with valid-looking structure but no canonical support."
+        }
+      ],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 1,
+        "unique_identity_count": 1,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 0,
+          "REJECTED_CANDIDATE": 1,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": true
+      }
+    }
+  },
+  {
+    "case_id": "G-011",
+    "case_manifest_hash": "fb9d16595f0562733a60ae529a3ff5e592f2c522fef24183b7b45238fb9e3d17",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-011",
+      "reviewer_context_id": "golden-context-G-011",
+      "reviewer_input_package_hash": "2caf168d0e6b6fb051852fa0606ad11c55e140a2a7decfa03b9dcb21d5e4b190",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-011",
+      "reviewer_context_id": "golden-context-G-011",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "720e35328db67f10badf9328ae3adcb10e5995502f671e99eded7c87177e2e97",
+      "reviewer_input_package_hash": "2caf168d0e6b6fb051852fa0606ad11c55e140a2a7decfa03b9dcb21d5e4b190",
+      "contract_hash": "c4f48eaa757e2c9a928f54e7010fa7a5185d3bf552536e094b754731a1b1ea58",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "989668bed499493f370d5236a9ffa355402d4b240a8dd405596a4d4f76153ac7",
+      "review_identity_inventory_hash": "3b30308f2bfbc7079ceaa801b49887fed6b2d68d490d19183977ba4c10b82a29",
+      "preflight_errors": [],
+      "records": [
+        {
+          "review_schema_version": "joewrks.semantic-review/1.0",
+          "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+          "reviewer_input_manifest_hash": "720e35328db67f10badf9328ae3adcb10e5995502f671e99eded7c87177e2e97",
+          "contract_hash": "c4f48eaa757e2c9a928f54e7010fa7a5185d3bf552536e094b754731a1b1ea58",
+          "review_identity": "action:ACT-G-011:visible_success",
+          "owner_kind": "action",
+          "owner_id": "ACT-G-011",
+          "semantic_field": "visible_success",
+          "semantic_value_hash": "8c0fa1914938d74a3f3293807d0e3dbd6fcaf1a6e8657057748d9ccea51b8d45",
+          "provenance_hashes": [
+            "e9b0844bf02387a44ff105e40ebb10d663e59c7a6e6accb5f5b0c2c71a839c55"
+          ],
+          "provenance_set_hash": "581b84ffb6b83bbe2a7c4b29d6030f4a817cfc06f6bc8bd026f06e1c0e52e5c9",
+          "responsibility_rule_id": "FR-A22",
+          "completeness_mode": "COMPOSITIONAL",
+          "sibling_review_identity_refs": [],
+          "semantic_obligation_ids": [
+            "OBL-G-011-FOCUS"
+          ],
+          "test_obligation_refs": [
+            "TEST-G-011-FOCUS"
+          ],
+          "verdict": "APPROVED",
+          "rationale_code": "SUPPORTED_EXACTLY",
+          "canonical_evidence_refs": [
+            {
+              "active": true,
+              "object_id": "RULE-G-011",
+              "pointer": "/objects/rules/0/text",
+              "source_status": "CURRENT",
+              "value_sha256": "29185ec3adf0edf8d8f0fcde6aa448a0be04ac1ff81bd4cae8245324709a928e"
+            }
+          ],
+          "reviewer_explanation": "One canonical clause is correctly projected across distinct owning fields with declared sibling references and no uncontrolled duplication."
+        }
+      ],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 1,
+        "unique_identity_count": 1,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 1,
+          "REJECTED_CANDIDATE": 0,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": true
+      }
+    }
+  },
+  {
+    "case_id": "G-012",
+    "case_manifest_hash": "bff4be8e3a229b4fe0faa17eff04efe709426b1122d2f4c07f99cce9e18bb013",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-012",
+      "reviewer_context_id": "golden-context-G-012",
+      "reviewer_input_package_hash": "fe16715d0c8040b7d61abb8866f5484f18e7af73ec3c59b4de54e9f34c0b328f",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-012",
+      "reviewer_context_id": "golden-context-G-012",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "e96aa0577816104f6e0996932e1c48b8d067668d589ac72a077d9aa146f697ca",
+      "reviewer_input_package_hash": "fe16715d0c8040b7d61abb8866f5484f18e7af73ec3c59b4de54e9f34c0b328f",
+      "contract_hash": "1b879bd142563006e8cc0c381d2fa348f3f1cb48d49939c4953dc48c3a034216",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "15c8a3f2b124f6ff6687fbd6806d783157cc5f7e92a723ee82fdd179c87a657c",
+      "review_identity_inventory_hash": "e0aca974e4b3722345f14689375524fb4b0de097d3eabcb22849f54ae5c0cb39",
+      "preflight_errors": [
+        {
+          "verdict": "INPUT_PACKAGE_ERROR",
+          "rationale_code": "ACTIVE_SUPERSEDED_SOURCE",
+          "scope": "golden:G-012",
+          "canonical_evidence_refs": [],
+          "reviewer_explanation": "A lifecycle superseded_sentinels raw source record is both active and SUPERSEDED; no semantic identity is created for the array."
+        }
+      ],
+      "records": [],
+      "summary": {
+        "expected_identity_count": 0,
+        "record_count": 0,
+        "unique_identity_count": 0,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 0,
+          "REJECTED_CANDIDATE": 0,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 1
+        },
+        "complete": false
+      }
+    }
+  },
+  {
+    "case_id": "G-013",
+    "case_manifest_hash": "81cbc068a41f6710ffa3c4078e7f02f5a838a25834e86270938f96687c970997",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-013",
+      "reviewer_context_id": "golden-context-G-013",
+      "reviewer_input_package_hash": "1ddc73ad0659b8a79533e68ec8a7ec7d4a040e77d1040d59d6f6518900d5e7b6",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-013",
+      "reviewer_context_id": "golden-context-G-013",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "498e8d2263c467b792e3ffb78c188e3f17b8df1ec79369978b7f4acc85773d1c",
+      "reviewer_input_package_hash": "1ddc73ad0659b8a79533e68ec8a7ec7d4a040e77d1040d59d6f6518900d5e7b6",
+      "contract_hash": "a6a81db9abed197a3acbade2e1b3808926798f0f0b39017d7126831db814b654",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "e194b02ad1521004a62baffa1e4546f805956f76cf19074dee8737a9f6670b80",
+      "review_identity_inventory_hash": "dc091a4c1bf34c61734ad0be21225f1b4dc974a69ce89336e251b92f43aa400f",
+      "preflight_errors": [
+        {
+          "verdict": "INPUT_PACKAGE_ERROR",
+          "rationale_code": "INVALID_PROVENANCE",
+          "scope": "golden:G-013",
+          "canonical_evidence_refs": [],
+          "reviewer_explanation": "A review identity has missing provenance and an empty provenance set."
+        }
+      ],
+      "records": [],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 0,
+        "unique_identity_count": 0,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 0,
+          "REJECTED_CANDIDATE": 0,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 1
+        },
+        "complete": false
+      }
+    }
+  },
+  {
+    "case_id": "G-014",
+    "case_manifest_hash": "d8aa7fea5c06b2d3abb8b10aa0fa77066c0fd87dad0a709412e934134698651b",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-014",
+      "reviewer_context_id": "golden-context-G-014",
+      "reviewer_input_package_hash": "35a91d2cb6f95cab7c4b514c7b44b0177245a268d4f21f3d13d0ae2812952092",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-014",
+      "reviewer_context_id": "golden-context-G-014",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "f61193b4833a9b2e6ce3cf92e7fd879366691e7cab06f74207a2575372de571e",
+      "reviewer_input_package_hash": "35a91d2cb6f95cab7c4b514c7b44b0177245a268d4f21f3d13d0ae2812952092",
+      "contract_hash": "a4525f06ca8b119548be9146c6ab9f6326e7723f9dd9d472f3c6c6577eb6584b",
+      "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+      "semantic_obligation_index_hash": "d5d12c505496383469851a00add19f529b3c43a9caf113dce0c0513a8c745009",
+      "review_identity_inventory_hash": "1365943c1979ce4f031c6660b6661c8002a7345c82ced1a243f32cc169eff558",
+      "preflight_errors": [],
+      "records": [
+        {
+          "review_schema_version": "joewrks.semantic-review/1.0",
+          "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+          "reviewer_input_manifest_hash": "f61193b4833a9b2e6ce3cf92e7fd879366691e7cab06f74207a2575372de571e",
+          "contract_hash": "a4525f06ca8b119548be9146c6ab9f6326e7723f9dd9d472f3c6c6577eb6584b",
+          "review_identity": "action:ACT-G-014:input_invariants",
+          "owner_kind": "action",
+          "owner_id": "ACT-G-014",
+          "semantic_field": "input_invariants",
+          "semantic_value_hash": "0d260c88e2dc14dc4f2157f272ced22084571312deda60df46c24cca8c0bdcf2",
+          "provenance_hashes": [
+            "e2ac7ccbd541a05addca9983dbe8474b9b6af336fb1b5a5576f674d795398d8f"
+          ],
+          "provenance_set_hash": "0e56183bb64199096f744b70f66fba274a3342ffdf7885442b60411a1da2a689",
+          "responsibility_rule_id": "FR-A09",
+          "completeness_mode": "LOCAL",
+          "sibling_review_identity_refs": [],
+          "semantic_obligation_ids": [
+            "OBL-G-014-FOCUS"
+          ],
+          "test_obligation_refs": [
+            "TEST-G-014-FOCUS"
+          ],
+          "verdict": "REJECTED_CANDIDATE",
+          "rationale_code": "UNSUPPORTED_OVERREACH",
+          "canonical_evidence_refs": [
+            {
+              "active": true,
+              "object_id": "RULE-G-014",
+              "pointer": "/objects/rules/0/text",
+              "source_status": "CURRENT",
+              "value_sha256": "c2e2dea8ab101bc4409f686aa1ee0222fbf88d8aa5b396b268b6b22ba181b58b"
+            }
+          ],
+          "reviewer_explanation": "Exact provenance is valid, but the emitted interpretation is not supported by the canonical value."
+        }
+      ],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 1,
+        "unique_identity_count": 1,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 0,
+          "REJECTED_CANDIDATE": 1,
+          "RUBRIC_ERROR": 0,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": true
+      }
+    }
+  },
+  {
+    "case_id": "G-015",
+    "case_manifest_hash": "0a269e793b59ab710354748ddafa04258aa1e30e4a62c33cae6a783bf51f3d1a",
+    "run_envelope": {
+      "review_run_id": "golden-run-G-015",
+      "reviewer_context_id": "golden-context-G-015",
+      "reviewer_input_package_hash": "c16ca50eba27101400cc80984de6aada67fd686770ce6a43655cc56e41247054",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "isolation_attestation": {
+        "fresh_context": true,
+        "previous_verdict_access": false,
+        "manifest_only_evidence": true
+      },
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860"
+    },
+    "review_output": {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "review_run_id": "golden-run-G-015",
+      "reviewer_context_id": "golden-context-G-015",
+      "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "3bb48461b79bb782a0877f20bb6473823a6ecf8bf5811fd18e3c997f3160a414",
+      "reviewer_input_package_hash": "c16ca50eba27101400cc80984de6aada67fd686770ce6a43655cc56e41247054",
+      "contract_hash": "18ed407ae316a6efa756bf476a68505d58edb489f10149175e56368015fec363",
+      "responsibility_profile_hash": "3d2fbc9e36f8c9411a0c25f916eb9411aa2d879568b10061256ab3f8226466eb",
+      "semantic_obligation_index_hash": "769fce56bbdb3f61d01a0893e7596761afa754372d2de23c272960451a8b2e83",
+      "review_identity_inventory_hash": "f9edab78c5ba7c02cde0106756dccf41ba63a1cb1d24249c51e859debef27389",
+      "preflight_errors": [
+        {
+          "verdict": "RUBRIC_ERROR",
+          "rationale_code": "RESPONSIBILITY_UNDEFINED",
+          "scope": "golden:G-015",
+          "canonical_evidence_refs": [],
+          "reviewer_explanation": "A deliberately incomplete responsibility profile cannot determine which field owns an obligation."
+        }
+      ],
+      "records": [],
+      "summary": {
+        "expected_identity_count": 1,
+        "record_count": 0,
+        "unique_identity_count": 0,
+        "pending_count": 0,
+        "verdict_counts": {
+          "APPROVED": 0,
+          "REJECTED_CANDIDATE": 0,
+          "RUBRIC_ERROR": 1,
+          "INPUT_PACKAGE_ERROR": 0
+        },
+        "complete": false
+      }
+    }
+  }
+]

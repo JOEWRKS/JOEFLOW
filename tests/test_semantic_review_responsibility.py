@@ -15,6 +15,7 @@ from downstream.semantic_review.responsibility import (
     load_responsibility_profile,
     validate_obligation_index,
 )
+from downstream.semantic_review.hashing import canonical_json_bytes, sha256_bytes
 
 
 PROFILE_PATH = (
@@ -91,8 +92,10 @@ def valid_index():
                 "responsibility_rule_id": "FR-A09",
                 "completeness_mode": "LOCAL",
                 "semantic_value_pointer": "/actions/0/input_invariants/value",
-                "semantic_value_hash": "c" * 64,
-                "allowed_sibling_refs": ["action:ACT-001:visible_error"],
+                "semantic_value_hash": sha256_bytes(
+                    canonical_json_bytes(["reason is non-empty"])
+                ),
+                "allowed_sibling_refs": [],
                 "required_test_refs": ["TEST-ACT-001-INPUT"],
                 "projection_notes": "Reason input predicate.",
             }
@@ -103,9 +106,24 @@ def valid_index():
 class SemanticReviewResponsibilityTest(unittest.TestCase):
     def setUp(self):
         self.profile = load_responsibility_profile(PROFILE_PATH)
+        def reviewed(value):
+            return {
+                "value": value,
+                "source_refs": [0],
+                "derivation": {"kind": "REVIEW_REQUIRED", "explanation": "review"},
+            }
         self.contract = {
             "contract_hash": "a" * 64,
-            "actions": [{"action_id": "ACT-001"}],
+            "actions": [
+                {
+                    "action_id": "ACT-001",
+                    "sources": copy.deepcopy(valid_index()["obligations"][0]["canonical_refs"]),
+                    "input_invariants": reviewed(["reason is non-empty"]),
+                    "visible_error": reviewed(["show validation error"]),
+                    "actor": reviewed(["requester"]),
+                    "command": reviewed(["submit reason"]),
+                }
+            ],
             "lifecycles": [{"lifecycle_id": "LC-001"}],
         }
 
@@ -123,6 +141,10 @@ class SemanticReviewResponsibilityTest(unittest.TestCase):
         }
         self.assertNotIn("FR-L13", all_ids)
         self.assertNotIn("PR-P01", all_ids)
+        self.assertEqual(len(self.profile["obligation_taxonomy"]), 38)
+        self.assertEqual(
+            self.profile["obligation_taxonomy"]["input validity"], "FR-A09"
+        )
 
     def test_profile_carries_normative_modes_siblings_and_failure_codes(self):
         visible_error = self.profile["action"]["visible_error"]
@@ -173,6 +195,61 @@ class SemanticReviewResponsibilityTest(unittest.TestCase):
             "action:ACT-001:visible_error",
             "action:ACT-001:rejection",
         ]
+        with self.assertRaisesRegex(ResponsibilityError, "INVALID_OBLIGATION_INDEX"):
+            validate_obligation_index(self.contract, self.profile, index)
+
+    def test_obligation_type_must_match_closed_taxonomy(self):
+        index = valid_index()
+        index["obligations"][0]["obligation_type"] = "invented semantic category"
+        with self.assertRaisesRegex(ResponsibilityError, "INVALID_OBLIGATION_INDEX"):
+            validate_obligation_index(self.contract, self.profile, index)
+
+    def test_sibling_must_exist_and_be_allowed_by_owner_rule(self):
+        index = valid_index()
+        index["obligations"][0]["allowed_sibling_refs"] = [
+            "action:ACT-999:visible_error"
+        ]
+        with self.assertRaisesRegex(ResponsibilityError, "INVALID_OBLIGATION_INDEX"):
+            validate_obligation_index(self.contract, self.profile, index)
+        index = valid_index()
+        index["obligations"][0]["allowed_sibling_refs"] = ["action:ACT-001:actor"]
+        with self.assertRaisesRegex(ResponsibilityError, "INVALID_OBLIGATION_INDEX"):
+            validate_obligation_index(self.contract, self.profile, index)
+
+    def test_allowed_review_sibling_is_accepted(self):
+        index = valid_index()
+        index["obligations"][0]["allowed_sibling_refs"] = [
+            "action:ACT-001:command"
+        ]
+        validate_obligation_index(self.contract, self.profile, index)
+
+    def test_material_obligation_requires_test_reference(self):
+        index = valid_index()
+        index["obligations"][0]["required_test_refs"] = []
+        with self.assertRaisesRegex(ResponsibilityError, "INVALID_OBLIGATION_INDEX"):
+            validate_obligation_index(self.contract, self.profile, index)
+
+    def test_semantic_pointer_and_hash_must_resolve_exact_contract_value(self):
+        index = valid_index()
+        index["obligations"][0]["semantic_value_pointer"] = (
+            "/actions/0/visible_error/value"
+        )
+        with self.assertRaisesRegex(ResponsibilityError, "INVALID_OBLIGATION_INDEX"):
+            validate_obligation_index(self.contract, self.profile, index)
+        index = valid_index()
+        index["obligations"][0]["semantic_value_hash"] = "f" * 64
+        with self.assertRaisesRegex(ResponsibilityError, "INVALID_OBLIGATION_INDEX"):
+            validate_obligation_index(self.contract, self.profile, index)
+
+    def test_canonical_refs_must_be_declared_by_owning_semantic_field(self):
+        index = valid_index()
+        index["obligations"][0]["canonical_refs"][0].update(
+            {
+                "object_id": "RULE-OTHER",
+                "pointer": "/objects/rules/1/text",
+                "value_sha256": "d" * 64,
+            }
+        )
         with self.assertRaisesRegex(ResponsibilityError, "INVALID_OBLIGATION_INDEX"):
             validate_obligation_index(self.contract, self.profile, index)
 

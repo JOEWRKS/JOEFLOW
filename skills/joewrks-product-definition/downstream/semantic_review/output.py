@@ -7,6 +7,7 @@ from typing import Any
 
 from downstream.schema_validation import SchemaValidationError, validate_instance
 
+from .hashing import canonical_json_bytes, sha256_bytes
 from .package import PackageError, verify_run_envelope
 
 
@@ -75,8 +76,138 @@ def _validate_rationale(item: dict[str, Any], scope: str) -> None:
 
 
 def _validate_ordered_unique(value: Any, scope: str) -> None:
-    if not isinstance(value, list) or value != sorted(set(value)):
+    if (
+        not isinstance(value, list)
+        or not all(isinstance(item, str) and item for item in value)
+        or value != sorted(set(value))
+    ):
         raise OutputError("INVALID_REFERENCE_SET", scope)
+
+
+def _validate_exact_evidence(
+    observed: Any, expected: list[dict[str, Any]], scope: str
+) -> None:
+    if not isinstance(observed, list):
+        raise OutputError("INVALID_REFERENCE_SET", scope)
+    try:
+        observed_keys = [canonical_json_bytes(item) for item in observed]
+        expected_keys = sorted({canonical_json_bytes(item) for item in expected})
+    except (TypeError, ValueError) as error:
+        raise OutputError("INVALID_REFERENCE_SET", scope) from error
+    if (
+        observed_keys != sorted(observed_keys)
+        or len(observed_keys) != len(set(observed_keys))
+        or observed_keys != expected_keys
+    ):
+        raise OutputError("INVALID_REFERENCE_SET", scope)
+
+
+def _validate_evidence_set(observed: Any, scope: str) -> None:
+    if not isinstance(observed, list):
+        raise OutputError("INVALID_REFERENCE_SET", scope)
+    try:
+        keys = [canonical_json_bytes(item) for item in observed]
+    except (TypeError, ValueError) as error:
+        raise OutputError("INVALID_REFERENCE_SET", scope) from error
+    if keys != sorted(keys) or len(keys) != len(set(keys)):
+        raise OutputError("INVALID_REFERENCE_SET", scope)
+
+
+def _obligations_for_identity(
+    package: dict[str, Any], identity: str
+) -> list[dict[str, Any]]:
+    obligations = package.get("semantic_obligation_index", {}).get("obligations", [])
+    result = [
+        obligation
+        for obligation in obligations
+        if (
+            f"{obligation.get('owner_kind')}:{obligation.get('owner_id')}:"
+            f"{obligation.get('owning_field')}"
+        )
+        == identity
+    ]
+    return sorted(result, key=lambda item: item.get("obligation_id", ""))
+
+
+def _validate_record(
+    package: dict[str, Any], record: dict[str, Any]
+) -> str:
+    identity = _identity(record)
+    if record["review_identity"] != identity:
+        raise OutputError("IDENTITY_SET_MISMATCH", "record identity tuple mismatch")
+    expected = package["identity_inventory"].get(identity)
+    if expected is None:
+        raise OutputError("IDENTITY_SET_MISMATCH", identity)
+    for key in RECORD_HASHES:
+        if record[key] != package[key]:
+            raise OutputError("IMMUTABLE_HASH_MISMATCH", f"{identity}:{key}")
+    for key in (
+        "semantic_value_hash",
+        "provenance_set_hash",
+        "responsibility_rule_id",
+        "completeness_mode",
+    ):
+        if record[key] != expected[key]:
+            raise OutputError("IMMUTABLE_IDENTITY_MISMATCH", f"{identity}:{key}")
+
+    provenance = record["provenance_hashes"]
+    expected_provenance = expected.get("provenance_hashes")
+    if (
+        not isinstance(expected_provenance, list)
+        or provenance != expected_provenance
+        or provenance != sorted(set(provenance))
+        or sha256_bytes(canonical_json_bytes(provenance))
+        != record["provenance_set_hash"]
+    ):
+        raise OutputError("IMMUTABLE_IDENTITY_MISMATCH", f"{identity}:provenance")
+
+    for key, label in (
+        ("sibling_review_identity_refs", "siblings"),
+        ("semantic_obligation_ids", "obligations"),
+        ("test_obligation_refs", "tests"),
+    ):
+        _validate_ordered_unique(record[key], f"{identity}:{label}")
+
+    obligations = _obligations_for_identity(package, identity)
+    expected_obligation_ids = [item["obligation_id"] for item in obligations]
+    if (
+        not obligations
+        or expected.get("semantic_obligation_ids") != expected_obligation_ids
+        or record["semantic_obligation_ids"] != expected_obligation_ids
+    ):
+        raise OutputError("INVALID_REFERENCE_SET", f"{identity}:obligations")
+    allowed_siblings = sorted(
+        {
+            sibling
+            for obligation in obligations
+            for sibling in obligation["allowed_sibling_refs"]
+        }
+    )
+    if any(
+        sibling not in allowed_siblings
+        or sibling not in package["expected_identities"]
+        for sibling in record["sibling_review_identity_refs"]
+    ):
+        raise OutputError("INVALID_REFERENCE_SET", f"{identity}:siblings")
+    expected_tests = sorted(
+        {
+            test_ref
+            for obligation in obligations
+            for test_ref in obligation["required_test_refs"]
+        }
+    )
+    if record["test_obligation_refs"] != expected_tests:
+        raise OutputError("INVALID_REFERENCE_SET", f"{identity}:tests")
+    expected_evidence = [
+        reference
+        for obligation in obligations
+        for reference in obligation["canonical_refs"]
+    ]
+    _validate_exact_evidence(
+        record["canonical_evidence_refs"], expected_evidence, f"{identity}:evidence"
+    )
+    _validate_rationale(record, identity)
+    return identity
 
 
 def _validate_summary(
@@ -131,9 +262,22 @@ def validate_review_output(
         raise OutputError("IDENTITY_SET_MISMATCH", "invalid expected inventory")
     preflight = output["preflight_errors"]
     records = output["records"]
+    observed_identities = [_validate_record(package, record) for record in records]
+    if len(observed_identities) != len(set(observed_identities)):
+        raise OutputError("IDENTITY_SET_MISMATCH", "duplicate review identity")
     if preflight:
         for error in preflight:
+            if error["verdict"] not in {"RUBRIC_ERROR", "INPUT_PACKAGE_ERROR"}:
+                raise OutputError(
+                    "VERDICT_RATIONALE_MISMATCH", f"preflight:{error['scope']}"
+                )
             _validate_rationale(error, error["scope"])
+            _validate_evidence_set(
+                error["canonical_evidence_refs"],
+                f"preflight:{error['scope']}:evidence",
+            )
+        if any(identity not in expected_identities for identity in observed_identities):
+            raise OutputError("IDENTITY_SET_MISMATCH", "preflight record scope")
         if output["summary"]["complete"]:
             raise OutputError(
                 "INVALID_COMPLETION_STATE", "preflight failure cannot be complete"
@@ -143,9 +287,6 @@ def validate_review_output(
         )
         return dict(observed)
 
-    observed_identities = [_identity(record) for record in records]
-    if any(record["review_identity"] != _identity(record) for record in records):
-        raise OutputError("IDENTITY_SET_MISMATCH", "record identity tuple mismatch")
     if (
         len(observed_identities) != len(set(observed_identities))
         or set(observed_identities) != set(expected_identities)
@@ -158,35 +299,6 @@ def validate_review_output(
             "INVALID_COMPLETION_STATE",
             "valid completed review must be complete with zero pending",
         )
-    for record in records:
-        identity = _identity(record)
-        expected = package["identity_inventory"].get(identity)
-        if expected is None:
-            raise OutputError("IDENTITY_SET_MISMATCH", identity)
-        for key in RECORD_HASHES:
-            if record[key] != package[key]:
-                raise OutputError("IMMUTABLE_HASH_MISMATCH", f"{identity}:{key}")
-        for key in (
-            "semantic_value_hash",
-            "provenance_set_hash",
-            "responsibility_rule_id",
-            "completeness_mode",
-        ):
-            if record[key] != expected[key]:
-                raise OutputError("IMMUTABLE_IDENTITY_MISMATCH", f"{identity}:{key}")
-        provenance = record["provenance_hashes"]
-        if len(provenance) != len(set(provenance)):
-            raise OutputError("DUPLICATE_PROVENANCE", identity)
-        _validate_ordered_unique(
-            record["sibling_review_identity_refs"], f"{identity}:siblings"
-        )
-        _validate_ordered_unique(
-            record["semantic_obligation_ids"], f"{identity}:obligations"
-        )
-        _validate_ordered_unique(
-            record["test_obligation_refs"], f"{identity}:tests"
-        )
-        _validate_rationale(record, identity)
     observed = _validate_summary(
         output["summary"], len(expected_identities), records, preflight
     )

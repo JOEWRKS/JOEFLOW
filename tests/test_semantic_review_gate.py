@@ -1,3 +1,4 @@
+import json
 import sys
 import unittest
 from fractions import Fraction
@@ -37,16 +38,22 @@ class SemanticReviewGateTest(unittest.TestCase):
         self.assertTrue(report["passed"])
         self.assertEqual(report["failures"], [])
         self.assertEqual(report["metrics"]["population"], "BALANCED")
-        self.assertEqual(report["metrics"]["three_review_unanimity"], Fraction(1, 1))
+        self.assertEqual(
+            report["metrics"]["three_review_unanimity"]["value"],
+            {"numerator": 1, "denominator": 1},
+        )
 
     def test_imbalanced_known_good_run_set_passes_ac1_and_minority(self):
         report = self._evaluate(make_run_set([A] * 20 + [R]))
         self.assertTrue(report["passed"])
         self.assertEqual(report["metrics"]["population"], "IMBALANCED")
-        self.assertEqual(report["metrics"]["gwet_ac1"].value, Fraction(1, 1))
         self.assertEqual(
-            report["metrics"]["minority_class_agreement"].value,
-            Fraction(1, 1),
+            report["metrics"]["gwet_ac1"]["value"],
+            {"numerator": 1, "denominator": 1},
+        )
+        self.assertEqual(
+            report["metrics"]["minority_class_agreement"]["value"],
+            {"numerator": 1, "denominator": 1},
         )
 
     def test_all_one_class_cannot_pass_on_ac1_alone(self):
@@ -84,7 +91,10 @@ class SemanticReviewGateTest(unittest.TestCase):
         )
         report = self._evaluate(run_set, [classification])
         self.assertIn("FAIL/RUBRIC_NORMATIVE_AMBIGUITY", report["failures"])
-        self.assertEqual(report["metrics"]["three_review_unanimity"], Fraction(199, 200))
+        self.assertEqual(
+            report["metrics"]["three_review_unanimity"]["value"],
+            {"numerator": 199, "denominator": 200},
+        )
 
     def test_insufficient_runs_and_golden_misses_fail_conjunctively(self):
         run_set = make_run_set([A, R], run_count=2)
@@ -105,7 +115,37 @@ class SemanticReviewGateTest(unittest.TestCase):
         report = self._evaluate(make_run_set([]))
         self.assertFalse(report["passed"])
         self.assertIn("FAIL/IDENTITY_COVERAGE", report["failures"])
-        self.assertEqual(report["metrics"], {})
+        self.assertIsNone(report["metrics"]["fleiss_kappa"]["value"])
+        self.assertEqual(
+            report["metrics"]["fleiss_kappa"]["null_reason"],
+            "ZERO_ALIGNED_IDENTITIES",
+        )
+
+    def test_rationale_only_difference_does_not_reduce_verdict_unanimity(self):
+        run_set = make_run_set([R] * 200)
+        run_set[2][2]["records"][0]["rationale_code"] = "UNSUPPORTED_OVERREACH"
+        report = self._evaluate(run_set)
+        self.assertEqual(
+            report["metrics"]["three_review_unanimity"]["value"],
+            {"numerator": 1, "denominator": 1},
+        )
+
+    def test_gate_report_is_json_serializable(self):
+        passing = self._evaluate(make_run_set([A] * 10 + [R] * 10))
+        failing = self._evaluate(make_run_set([]))
+        json.dumps(passing, sort_keys=True)
+        json.dumps(failing, sort_keys=True)
+
+    def test_forged_disagreement_rule_hash_is_unresolved(self):
+        run_set = make_run_set([A] * 100 + [R] * 100)
+        identity = run_set[2][2]["records"][0]["review_identity"]
+        replace_verdict_and_recount(
+            run_set[2][2], identity, R, "MISSING_OWNED_SEMANTIC"
+        )
+        classification = disagreement_classification(identity)
+        classification["cited_rule_hash"] = "f" * 64
+        report = self._evaluate(run_set, [classification])
+        self.assertIn("FAIL/RUBRIC_NORMATIVE_AMBIGUITY", report["failures"])
 
 
 if __name__ == "__main__":

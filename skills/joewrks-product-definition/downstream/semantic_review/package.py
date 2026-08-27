@@ -6,7 +6,11 @@ import json
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from downstream.schema_validation import SchemaValidationError, validate_instance
+from downstream.schema_validation import (
+    SchemaValidationError,
+    _check_schema,
+    validate_instance,
+)
 from downstream.provenance import ProvenanceError, verify_source_ref
 
 from .hashing import (
@@ -17,6 +21,8 @@ from .hashing import (
     sha256_file,
 )
 from .responsibility import (
+    EXPECTED_ACTION_FIELDS,
+    EXPECTED_LIFECYCLE_FIELDS,
     ResponsibilityError,
     expected_responsibility,
     load_responsibility_profile,
@@ -34,6 +40,9 @@ REQUIRED_ROLES = {
     "review_output_schema",
     "review_identity_inventory",
     "exclusion_manifest",
+}
+EXPECTED_SCHEMA_IDENTITIES = {
+    role: f"joewrks.semantic-review-role/{role}" for role in REQUIRED_ROLES
 }
 TEXT_SUFFIXES = {".json", ".md", ".txt"}
 FORBIDDEN_NAME_MARKERS = {
@@ -76,6 +85,10 @@ def _schema_path() -> Path:
     return Path(__file__).resolve().parents[1] / "schemas" / (
         "semantic-review-input-manifest.schema.json"
     )
+
+
+def _downstream_schema_path(name: str) -> Path:
+    return Path(__file__).resolve().parents[1] / "schemas" / name
 
 
 def _safe_path(root: Path, relative: str) -> Path:
@@ -137,7 +150,11 @@ def _validate_manifest(manifest: Any) -> dict[str, Any]:
 def verify_exclusions(root: Path, manifest: dict[str, Any]) -> None:
     """Reject undeclared prior-review or hidden-answer material in the package root."""
 
-    declared = {PurePosixPath(item["path"]).as_posix() for item in manifest["files"]}
+    roles_by_path = {
+        PurePosixPath(item["path"]).as_posix(): item["logical_role"]
+        for item in manifest["files"]
+    }
+    declared = set(roles_by_path)
     declared.add("manifest.json")
     for path in root.rglob("*"):
         if not path.is_file():
@@ -154,14 +171,40 @@ def verify_exclusions(root: Path, manifest: dict[str, Any]) -> None:
                     raise PackageError(
                         "PACKAGE_HASH_MISMATCH", f"cannot scan declared file: {relative}"
                     ) from error
-                if _contains_forbidden_json(value):
+                role = roles_by_path.get(relative)
+                if role == "review_output_schema":
+                    continue
+                if _contains_forbidden_json(
+                    value,
+                    strict_review_scan=role
+                    in {"supporting_projection", "golden_suite_manifest"},
+                ):
                     raise PackageError("PREVIOUS_VERDICT_EXPOSURE", relative)
             continue
         raise PackageError("PACKAGE_HASH_MISMATCH", f"undeclared package file: {relative}")
 
 
-def _contains_forbidden_json(value: Any) -> bool:
+def _contains_forbidden_json(value: Any, *, strict_review_scan: bool = False) -> bool:
     if isinstance(value, dict):
+        normalized_keys = {
+            str(key).lower().replace("-", "_") for key in value
+        }
+        if "review_identity" in normalized_keys and normalized_keys & {
+            "verdict",
+            "rationale",
+            "rationale_code",
+            "reviewer_explanation",
+        }:
+            return True
+        if strict_review_scan and normalized_keys & {
+            "review_identity",
+            "verdict",
+            "rationale",
+            "rationale_code",
+            "reviewer_explanation",
+            "observed_verdict_rationale_pairs",
+        }:
+            return True
         for key, child in value.items():
             normalized = str(key).lower().replace("-", "_")
             if normalized in FORBIDDEN_JSON_KEYS:
@@ -173,11 +216,14 @@ def _contains_forbidden_json(value: Any) -> bool:
                 "unrelated_product_evidence_present",
             } and child is not False:
                 return True
-            if _contains_forbidden_json(child):
+            if _contains_forbidden_json(child, strict_review_scan=strict_review_scan):
                 return True
         return False
     if isinstance(value, list):
-        return any(_contains_forbidden_json(item) for item in value)
+        return any(
+            _contains_forbidden_json(item, strict_review_scan=strict_review_scan)
+            for item in value
+        )
     return False
 
 
@@ -190,6 +236,14 @@ def _validate_required_roles(files: list[dict[str, Any]]) -> None:
         if item["path"] in seen_paths:
             raise PackageError("PACKAGE_HASH_MISMATCH", f"duplicate path: {item['path']}")
         seen_paths.add(item["path"])
+        expected_schema_identity = EXPECTED_SCHEMA_IDENTITIES.get(role)
+        if (
+            expected_schema_identity is not None
+            and item.get("schema_identity") != expected_schema_identity
+        ):
+            raise PackageError(
+                "PACKAGE_HASH_MISMATCH", f"schema identity drift: {role}"
+            )
     invalid = sorted(role for role in REQUIRED_ROLES if counts.get(role) != 1)
     if invalid:
         raise PackageError(
@@ -200,7 +254,7 @@ def _validate_required_roles(files: list[dict[str, Any]]) -> None:
         raise PackageError("PACKAGE_HASH_MISMATCH", "duplicate golden_suite_manifest")
 
 
-def _validate_pr_p01(contract: Any) -> None:
+def _validate_pr_p01(authority: dict[str, Any], contract: Any) -> None:
     if not isinstance(contract, dict):
         raise PackageError("PACKAGE_HASH_MISMATCH", "action contract must be an object")
     lifecycles = contract.get("lifecycles", [])
@@ -209,7 +263,7 @@ def _validate_pr_p01(contract: Any) -> None:
     for lifecycle in lifecycles:
         if not isinstance(lifecycle, dict):
             continue
-        lifecycle_id = lifecycle.get("id", "<unknown>")
+        lifecycle_id = lifecycle.get("lifecycle_id", "<unknown>")
         sentinels = lifecycle.get("superseded_sentinels", [])
         if not isinstance(sentinels, list):
             raise PackageError(
@@ -227,6 +281,22 @@ def _validate_pr_p01(contract: Any) -> None:
                     "ACTIVE_SUPERSEDED_SOURCE",
                     f"PR-P01 {lifecycle_id} superseded_sentinels[{index}]",
                 )
+            if sentinel.get("active") is not False:
+                raise PackageError(
+                    "INVALID_PROVENANCE",
+                    f"PR-P01 {lifecycle_id} sentinel must be inactive",
+                )
+            try:
+                verified = verify_source_ref(
+                    authority, sentinel, require_current=False
+                )
+            except ProvenanceError as error:
+                raise PackageError("INVALID_PROVENANCE", str(error)) from error
+            if verified.get("source_status") != "SUPERSEDED":
+                raise PackageError(
+                    "INVALID_PROVENANCE",
+                    f"PR-P01 {lifecycle_id} sentinel is not superseded",
+                )
 
 
 def _verify_contract_hash(contract: dict[str, Any]) -> str:
@@ -238,6 +308,87 @@ def _verify_contract_hash(contract: dict[str, Any]) -> str:
     ):
         raise PackageError("CONTRACT_HASH_MISMATCH", "action contract self-hash")
     return declared
+
+
+def _validate_contract_schemas(contract: dict[str, Any]) -> None:
+    try:
+        action_schema = json.loads(
+            _downstream_schema_path("action-contract.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        lifecycle_schema = json.loads(
+            _downstream_schema_path("lifecycle-contract.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        validate_instance(contract, action_schema)
+        lifecycle_item_schema = lifecycle_schema["$defs"]["lifecycle"]
+        for lifecycle in contract.get("lifecycles", []):
+            validate_instance(
+                lifecycle, lifecycle_item_schema, root_schema=lifecycle_schema
+            )
+    except (OSError, KeyError, json.JSONDecodeError, SchemaValidationError) as error:
+        raise PackageError(
+            "CONTRACT_HASH_MISMATCH", f"invalid frozen contract schema: {error}"
+        ) from error
+
+
+def _validate_contract_provenance(
+    authority: dict[str, Any], contract: dict[str, Any]
+) -> None:
+    """Verify every active contract source and every semantic source index."""
+
+    for collection_name, fields, id_key in (
+        ("actions", EXPECTED_ACTION_FIELDS, "action_id"),
+        ("lifecycles", EXPECTED_LIFECYCLE_FIELDS, "lifecycle_id"),
+    ):
+        seen_owner_ids = set()
+        for owner in contract[collection_name]:
+            owner_id = owner[id_key]
+            if owner_id in seen_owner_ids:
+                raise PackageError(
+                    "CONTRACT_HASH_MISMATCH",
+                    f"duplicate contract owner: {collection_name}:{owner_id}",
+                )
+            seen_owner_ids.add(owner_id)
+            sources = owner["sources"]
+            verified_sources = []
+            seen_sources = set()
+            for source in sources:
+                if source.get("active") is True and source.get("source_status") == (
+                    "SUPERSEDED"
+                ):
+                    raise PackageError(
+                        "ACTIVE_SUPERSEDED_SOURCE", f"{collection_name}:{owner_id}"
+                    )
+                try:
+                    verified = verify_source_ref(
+                        authority, source, require_current=True
+                    )
+                except ProvenanceError as error:
+                    raise PackageError("INVALID_PROVENANCE", str(error)) from error
+                if verified.get("active") is not True:
+                    raise PackageError(
+                        "INVALID_PROVENANCE", f"inactive contract source: {owner_id}"
+                    )
+                key = canonical_json_bytes(verified)
+                if key in seen_sources:
+                    raise PackageError(
+                        "INVALID_PROVENANCE", f"duplicate contract source: {owner_id}"
+                    )
+                seen_sources.add(key)
+                verified_sources.append(verified)
+            for field in fields:
+                source_refs = owner[field]["source_refs"]
+                if source_refs != sorted(set(source_refs)):
+                    raise PackageError(
+                        "INVALID_PROVENANCE", f"source ref order: {owner_id}.{field}"
+                    )
+                if any(index >= len(verified_sources) for index in source_refs):
+                    raise PackageError(
+                        "INVALID_PROVENANCE", f"source ref range: {owner_id}.{field}"
+                    )
 
 
 def _validate_provenance_inventory(
@@ -490,8 +641,10 @@ def load_and_verify_package(root: Path) -> dict[str, Any]:
 
     authority = role_json("canonical_authority")
     contract = role_json("action_contract")
-    _validate_pr_p01(contract)
     contract_hash_value = _verify_contract_hash(contract)
+    _validate_contract_schemas(contract)
+    _validate_contract_provenance(authority, contract)
+    _validate_pr_p01(authority, contract)
     provenance_inventory = role_json("provenance_inventory")
     verified_provenance = _validate_provenance_inventory(
         authority, provenance_inventory
@@ -535,6 +688,21 @@ def load_and_verify_package(root: Path) -> dict[str, Any]:
         "https://joewrks.example/schemas/semantic-review-output-1.0.schema.json"
     ):
         raise PackageError("OUTPUT_SCHEMA_VIOLATION", "review output schema identity")
+    output_schema_path = role_paths["review_output_schema"]
+    packaged_output_schema_bytes = file_bytes[
+        output_schema_path.relative_to(root).as_posix()
+    ]
+    try:
+        frozen_output_schema_bytes = _downstream_schema_path(
+            "semantic-review-output.schema.json"
+        ).read_bytes()
+        _check_schema(review_output_schema)
+    except (OSError, SchemaValidationError) as error:
+        raise PackageError("OUTPUT_SCHEMA_VIOLATION", str(error)) from error
+    if packaged_output_schema_bytes != frozen_output_schema_bytes:
+        raise PackageError(
+            "OUTPUT_SCHEMA_VIOLATION", "review output schema differs from frozen bytes"
+        )
     exclusion_manifest = role_json("exclusion_manifest")
     _validate_exclusion_manifest(exclusion_manifest)
 

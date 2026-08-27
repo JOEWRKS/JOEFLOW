@@ -9,11 +9,13 @@ from typing import Any
 from .disagreement import validate_disagreement_classifications
 from .output import OutputError, validate_review_output
 from .statistics import (
+    MetricResult,
     fleiss_kappa,
     gwet_ac1,
     is_balanced,
     minority_class_agreement,
     pairwise_cohen_kappas,
+    serialize_metric,
 )
 
 
@@ -190,11 +192,8 @@ def _three_review_unanimity(outputs: list[dict[str, Any]]) -> Fraction:
     for selected in combinations(maps, 3):
         unanimous = 0
         for identity in identities:
-            pairs = {
-                (mapping[identity]["verdict"], mapping[identity]["rationale_code"])
-                for mapping in selected
-            }
-            unanimous += len(pairs) == 1
+            verdicts = {mapping[identity]["verdict"] for mapping in selected}
+            unanimous += len(verdicts) == 1
         results.append(Fraction(unanimous, len(identities)))
     return min(results)
 
@@ -240,6 +239,66 @@ def _agreement_failures(metrics: dict[str, Any]) -> list[str]:
     return failures
 
 
+def _serialize_thresholds() -> dict[str, Any]:
+    return {
+        key: value
+        if isinstance(value, int)
+        else serialize_metric(MetricResult(value))
+        for key, value in THRESHOLDS.items()
+    }
+
+
+def _serialize_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "population": metrics["population"],
+        "three_review_unanimity": serialize_metric(
+            MetricResult(metrics["three_review_unanimity"])
+        ),
+        "pairwise_cohen": [
+            serialize_metric(item) for item in metrics["pairwise_cohen"]
+        ],
+        "fleiss_kappa": serialize_metric(metrics["fleiss_kappa"]),
+        "gwet_ac1": serialize_metric(metrics["gwet_ac1"]),
+        "minority_class_agreement": serialize_metric(
+            metrics["minority_class_agreement"]
+        ),
+        "unchanged_disagreement_count": metrics.get(
+            "unchanged_disagreement_count", 0
+        ),
+    }
+
+
+def _structural_reason(failures: list[str], packages: list[dict[str, Any]]) -> str:
+    if "FAIL/INSUFFICIENT_INDEPENDENT_RUNS" in failures:
+        return "INSUFFICIENT_INDEPENDENT_RUNS"
+    if "FAIL/IDENTITY_COVERAGE" in failures:
+        expected = packages[0].get("expected_identities", []) if packages else []
+        return "ZERO_ALIGNED_IDENTITIES" if not expected else "IDENTITY_SET_MISMATCH"
+    if "FAIL/UNEXPECTED_ERROR_VERDICT" in failures:
+        return "UNEXPECTED_ERROR_VERDICT"
+    if "FAIL/BRIEF_IDENTITY_MISMATCH" in failures:
+        return "BRIEF_IDENTITY_MISMATCH"
+    if "FAIL/PACKAGE_IDENTITY_MISMATCH" in failures:
+        return "PACKAGE_IDENTITY_MISMATCH"
+    if "FAIL/REVIEWER_ISOLATION" in failures:
+        return "REVIEWER_ISOLATION"
+    return "STRUCTURAL_ACCEPTANCE_FAILED"
+
+
+def _null_metrics(reason: str) -> dict[str, Any]:
+    null_metric = serialize_metric(MetricResult(None, reason))
+    return {
+        "population": None,
+        "population_reason": reason,
+        "three_review_unanimity": dict(null_metric),
+        "pairwise_cohen": [dict(null_metric)],
+        "fleiss_kappa": dict(null_metric),
+        "gwet_ac1": dict(null_metric),
+        "minority_class_agreement": dict(null_metric),
+        "unchanged_disagreement_count": None,
+    }
+
+
 def evaluate_reliability_gate(
     run_packages: list[dict[str, Any]],
     run_envelopes: list[dict[str, Any]],
@@ -264,12 +323,13 @@ def evaluate_reliability_gate(
     ):
         _append_unique(failures, failure)
     if failures:
+        reason = _structural_reason(failures, run_packages)
         return {
             "passed": False,
             "failures": failures,
-            "metrics": {},
+            "metrics": _null_metrics(reason),
             "disagreements": {},
-            "thresholds": THRESHOLDS,
+            "thresholds": _serialize_thresholds(),
         }
 
     for failure in _golden_failures(golden_report):
@@ -292,7 +352,7 @@ def evaluate_reliability_gate(
     return {
         "passed": not failures,
         "failures": failures,
-        "metrics": metrics,
+        "metrics": _serialize_metrics(metrics),
         "disagreements": disagreement_report,
-        "thresholds": THRESHOLDS,
+        "thresholds": _serialize_thresholds(),
     }

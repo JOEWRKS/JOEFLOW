@@ -10,7 +10,11 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILL_ROOT = ROOT / "skills" / "joewrks-product-definition"
 sys.path.insert(0, str(SKILL_ROOT))
 
-from downstream.semantic_review.goldens import GoldenError, evaluate_goldens
+from downstream.semantic_review.goldens import (
+    GoldenError,
+    evaluate_goldens,
+    verify_golden_packages,
+)
 from downstream.semantic_review.hashing import canonical_json_bytes, sha256_bytes
 from downstream.semantic_review.responsibility import load_responsibility_profile
 
@@ -18,6 +22,7 @@ from downstream.semantic_review.responsibility import load_responsibility_profil
 FIXTURE_ROOT = ROOT / "tests" / "fixtures" / "semantic-review-v1"
 GOLDEN_CASES = FIXTURE_ROOT / "golden-cases.json"
 GOLDEN_ANSWERS = FIXTURE_ROOT / "golden-answers.json"
+GOLDEN_OUTPUTS = FIXTURE_ROOT / "golden-review-outputs.json"
 BRIEF = (
     SKILL_ROOT
     / "downstream"
@@ -31,16 +36,7 @@ class SemanticReviewGoldenTest(unittest.TestCase):
     def setUp(self):
         self.cases = json.loads(GOLDEN_CASES.read_text(encoding="utf-8"))
         self.answers = json.loads(GOLDEN_ANSWERS.read_text(encoding="utf-8"))
-
-    def _correct_outputs(self):
-        return [
-            {
-                "case_id": item["case_id"],
-                "verdict": item["verdict"],
-                "rationale_code": item["rationale_code"],
-            }
-            for item in self.answers["answers"]
-        ]
+        self.outputs = json.loads(GOLDEN_OUTPUTS.read_text(encoding="utf-8"))
 
     def test_golden_suite_has_exactly_fifteen_unique_hash_bound_cases(self):
         self.assertEqual(len(self.cases), 15)
@@ -58,6 +54,29 @@ class SemanticReviewGoldenTest(unittest.TestCase):
             self.assertNotIn("rationale_code", case)
         self.assertEqual(len(hashes), 15)
 
+    def test_each_golden_is_a_self_contained_hash_bound_package(self):
+        verified = verify_golden_packages(self.cases)
+        self.assertEqual(set(verified), {f"G-{index:03d}" for index in range(1, 16)})
+        required_roles = {
+            "canonical_authority",
+            "action_contract",
+            "provenance_inventory",
+            "responsibility_profile",
+            "semantic_obligation_index",
+            "reviewer_brief",
+            "review_output_schema",
+            "review_identity_inventory",
+            "exclusion_manifest",
+        }
+        for case in self.cases:
+            package = case["reviewer_package"]
+            self.assertEqual(
+                {item["logical_role"] for item in package["manifest"]["files"]},
+                required_roles,
+            )
+            self.assertNotIn("verdict", package)
+            self.assertNotIn("rationale_code", package)
+
     def test_answer_bank_is_separate_and_uses_exact_frozen_pairs(self):
         answers = {item["case_id"]: item for item in self.answers["answers"]}
         self.assertEqual(len(answers), 15)
@@ -74,26 +93,38 @@ class SemanticReviewGoldenTest(unittest.TestCase):
         )
 
     def test_golden_accuracy_requires_verdict_and_rationale_code(self):
-        outputs = self._correct_outputs()
-        outputs[0]["rationale_code"] = "UNSUPPORTED_OVERREACH"
-        report = evaluate_goldens(outputs, self.answers)
+        outputs = copy.deepcopy(self.outputs)
+        focus = self.cases[0]["focus_review_identity"]
+        record = next(
+            item
+            for item in outputs[0]["review_output"]["records"]
+            if item["review_identity"] == focus
+        )
+        record["rationale_code"] = "UNSUPPORTED_OVERREACH"
+        report = evaluate_goldens(outputs, self.answers, self.cases)
         self.assertEqual(report["verdict_accuracy"], Fraction(1, 1))
         self.assertLess(report["rationale_code_accuracy"], Fraction(1, 1))
 
     def test_golden_evaluator_reports_expected_errors_as_expected(self):
-        report = evaluate_goldens(self._correct_outputs(), self.answers)
+        report = evaluate_goldens(self.outputs, self.answers, self.cases)
         self.assertEqual(report["verdict_accuracy"], Fraction(1, 1))
         self.assertEqual(report["rationale_code_accuracy"], Fraction(1, 1))
         self.assertEqual(report["unexpected_rubric_error_count"], 0)
         self.assertEqual(report["unexpected_input_package_error_count"], 0)
 
     def test_golden_evaluator_rejects_missing_or_duplicate_identity(self):
-        outputs = self._correct_outputs()
+        outputs = copy.deepcopy(self.outputs)
         with self.assertRaisesRegex(GoldenError, "GOLDEN_IDENTITY_SET_MISMATCH"):
-            evaluate_goldens(outputs[:-1], self.answers)
+            evaluate_goldens(outputs[:-1], self.answers, self.cases)
         outputs[-1]["case_id"] = outputs[0]["case_id"]
         with self.assertRaisesRegex(GoldenError, "GOLDEN_IDENTITY_SET_MISMATCH"):
-            evaluate_goldens(outputs, self.answers)
+            evaluate_goldens(outputs, self.answers, self.cases)
+
+    def test_golden_evaluator_validates_full_hash_bound_review_output(self):
+        outputs = copy.deepcopy(self.outputs)
+        outputs[0]["review_output"]["records"][0]["semantic_value_hash"] = "f" * 64
+        with self.assertRaisesRegex(GoldenError, "GOLDEN_OUTPUT_INVALID"):
+            evaluate_goldens(outputs, self.answers, self.cases)
 
     def test_canonical_brief_is_lf_utf8_and_contains_all_frozen_rules(self):
         data = BRIEF.read_bytes()

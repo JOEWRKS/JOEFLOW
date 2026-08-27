@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import re
 from collections import Counter, defaultdict
+import json
+from pathlib import Path
 from typing import Any
+
+from .hashing import canonical_json_bytes, sha256_bytes
 
 
 CLOSED_CAUSE_CODES = {
@@ -37,6 +41,22 @@ REQUIRED_CLASSIFICATION_FIELDS = {
     "rationale_code",
     "canonical_obligation_type",
 }
+
+
+def responsibility_rule_hash(rule_id: str) -> str:
+    """Return the exact frozen normative rule hash cited by classifications."""
+
+    profile_path = (
+        Path(__file__).resolve().parent
+        / "artifacts"
+        / "responsibility-profile-v1.json"
+    )
+    profile = json.loads(profile_path.read_text(encoding="utf-8"))
+    for kind in ("action", "lifecycle"):
+        for rule in profile[kind].values():
+            if rule.get("responsibility_rule_id") == rule_id:
+                return sha256_bytes(canonical_json_bytes(rule))
+    raise ValueError(f"unknown responsibility rule: {rule_id}")
 
 
 def _records_by_identity(output: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -81,6 +101,12 @@ def _classification_valid(
     if classification["cited_evidence_hashes"] != evidence_hashes:
         return False
     if SHA256_RE.fullmatch(str(classification["cited_rule_hash"])) is None:
+        return False
+    try:
+        expected_rule_hash = responsibility_rule_hash(first["responsibility_rule_id"])
+    except (OSError, ValueError, KeyError, json.JSONDecodeError):
+        return False
+    if classification["cited_rule_hash"] != expected_rule_hash:
         return False
     if classification["cause_code"] not in CLOSED_CAUSE_CODES:
         return False
