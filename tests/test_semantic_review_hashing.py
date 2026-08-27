@@ -62,6 +62,21 @@ class SemanticReviewHashingTest(unittest.TestCase):
             package_hash("3" * 64, list(reversed(files))),
         )
 
+    def test_package_hash_uses_only_frozen_ordered_file_fields(self):
+        declared = {
+            "logical_role": "canonical_authority",
+            "path": "authority.json",
+            "sha256": "4" * 64,
+            "bytes": 7,
+        }
+        self.assertEqual(
+            package_hash("3" * 64, [declared]),
+            package_hash(
+                "3" * 64,
+                [{**declared, "schema_identity": "supporting-manifest-metadata"}],
+            ),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -44,7 +44,18 @@ def manifest_hash(manifest: dict[str, Any]) -> str:
 def package_hash(manifest_hash_value: str, files: list[dict[str, Any]]) -> str:
     """Hash an ordered logical package independent of manifest file order."""
 
-    ordered = sorted(files, key=lambda item: (item["logical_role"], item["path"]))
+    ordered = sorted(
+        (
+            {
+                "logical_role": item["logical_role"],
+                "path": item["path"],
+                "sha256": item["sha256"],
+                "bytes": item["bytes"],
+            }
+            for item in files
+        ),
+        key=lambda item: (item["logical_role"], item["path"]),
+    )
     return sha256_bytes(
         canonical_json_bytes(
             {"manifest_hash": manifest_hash_value, "ordered_files": ordered}

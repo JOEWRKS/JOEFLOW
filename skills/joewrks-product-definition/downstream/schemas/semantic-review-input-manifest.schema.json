@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://joewrks.example/schemas/semantic-review-input-manifest-1.0.schema.json",
+  "title": "JOEWRKS Semantic Review Input Manifest 1.0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "previous_reviewer_verdicts_present",
+    "files",
+    "reviewer_input_manifest_hash"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "joewrks.semantic-review-input/1.0"
+    },
+    "previous_reviewer_verdicts_present": {
+      "const": false
+    },
+    "files": {
+      "type": "array",
+      "minItems": 9,
+      "items": {
+        "$ref": "#/$defs/file"
+      }
+    },
+    "reviewer_input_manifest_hash": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "file": {
+      "type": "object",
+      "required": [
+        "logical_role",
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "properties": {
+        "logical_role": {
+          "type": "string",
+          "pattern": ".*\\S.*"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^[^\\\\/](?:.*[^/])?$"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "schema_identity": {
+          "type": "string",
+          "pattern": ".*\\S.*"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
