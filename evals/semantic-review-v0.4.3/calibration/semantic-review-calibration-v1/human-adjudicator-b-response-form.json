@@ -3,8 +3,8 @@
   "non_normative_form_identity": "HUMAN-ADJUDICATOR-B",
   "common_evidence_payload": {
     "path": "human-adjudication-common-evidence.json",
-    "sha256": "265edb58fa58f690b0177d84c72f2190289a2bec26ac507a6fb28237dd68a5b3",
-    "bytes": 21553
+    "sha256": "7f267df32956beb47f1408b9a7ff6e64fa2e72d44fdf1a32537d34e394b23909",
+    "bytes": 62532
   },
   "HUMAN_ADJUDICATION_COMPLETE": "NO",
   "responses": [

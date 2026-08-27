@@ -84,6 +84,20 @@ ALLOWED_ENUMERATIONS = {
     "allowed_verdicts": ALLOWED_VERDICTS,
     "allowed_rationale_codes": ALLOWED_RATIONALE_CODES,
 }
+# Canonical SHA-256 commitments for the exact responsibility-profile evidence
+# blocks materialized from G-001 through G-015.  Only these normative blocks
+# may contain ownership criteria vocabulary that overlaps outcome-hint terms.
+ALLOWED_RESPONSIBILITY_PROFILE_EVIDENCE_SHA256 = frozenset(
+    {
+        "75eb729833d000744f162104c3df020dcac69b97d865c57f933c74b41af8d86b",
+        "a18f7eda25fe12604e054bb2e2345ebe19711ba00f9a58e8fb3465bb601ffdc1",
+        "7d90a016757bda788c72b1bdd89e7888bdac8d3e7e3ff92d8e8379e265a2e561",
+        "a305f9513f17ed41e3efe634320c7bd380c9dfd61bc020606e4763d142f629d7",
+        "23789ea605023db30fe5c6843c0c976fca9fa037ca9e50c276a28bcf184d884d",
+        "58661105187209371446ead53849dd371e6ec1a778b1be2685478e237f7fcb96",
+        "5576336c118f677eb3c9f56dc0e87d6fb5a3ad14ac096de2c4c750aa00da1cbf",
+    }
+)
 
 ACTION_OWNER_RE = re.compile(r"^ACT-CAL-REQUEST-0[1-3]$")
 LIFECYCLE_OWNER_RE = re.compile(r"^LC-CAL-DOCUMENT-0[1-3]$")
@@ -147,14 +161,30 @@ def _is_empty_response_slot(key: Any, value: Any) -> bool:
     return _normalize_key(key) in {"verdict", "rationale_code"} and value is None
 
 
+def _is_exact_responsibility_profile_evidence(key: Any, value: Any) -> bool:
+    if _normalize_key(key) != "responsibility_profile_evidence" or not isinstance(
+        value, dict
+    ):
+        return False
+    canonical = json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return (
+        hashlib.sha256(canonical).hexdigest()
+        in ALLOWED_RESPONSIBILITY_PROFILE_EVIDENCE_SHA256
+    )
+
+
 def _contains_outcome_hint(value: Any) -> bool:
     if isinstance(value, str):
         return _outcome_hint_text(value)
     if isinstance(value, dict):
         for key, child in value.items():
             normalized_key = _normalize_key(key)
-            if _is_full_allowed_enumeration(key, child) or _is_empty_response_slot(
-                key, child
+            if (
+                _is_full_allowed_enumeration(key, child)
+                or _is_empty_response_slot(key, child)
+                or _is_exact_responsibility_profile_evidence(key, child)
             ):
                 continue
             if normalized_key in OUTCOME_KEYS or _contains_outcome_hint(child):
@@ -182,6 +212,7 @@ def _json_answer_findings(value: Any, path: str, pointer: str = "") -> list[dict
                 if key != "review_identity"
                 and not _is_full_allowed_enumeration(key, child)
                 and not _is_empty_response_slot(key, child)
+                and not _is_exact_responsibility_profile_evidence(key, child)
             )
             if outcome_keys or hinted_values:
                 findings.append(
@@ -204,6 +235,7 @@ def _json_answer_findings(value: Any, path: str, pointer: str = "") -> list[dict
                 if key not in identity_tuple_keys
                 and not _is_full_allowed_enumeration(key, child)
                 and not _is_empty_response_slot(key, child)
+                and not _is_exact_responsibility_profile_evidence(key, child)
             )
             if outcome_keys or hinted_values:
                 findings.append(
@@ -226,6 +258,7 @@ def _json_answer_findings(value: Any, path: str, pointer: str = "") -> list[dict
                 if key != "case_id"
                 and not _is_full_allowed_enumeration(key, child)
                 and not _is_empty_response_slot(key, child)
+                and not _is_exact_responsibility_profile_evidence(key, child)
             )
             partial_enumerations = any(
                 _normalize_key(key) in ALLOWED_ENUMERATIONS

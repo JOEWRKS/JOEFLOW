@@ -1,6 +1,8 @@
+import copy
 import hashlib
 import importlib.util
 import json
+import re
 import subprocess
 import tempfile
 import unittest
@@ -12,17 +14,22 @@ CALIBRATION_ROOT = (
     ROOT / "evals" / "semantic-review-v0.4.3" / "calibration"
 )
 FIXTURE_ROOT = CALIBRATION_ROOT / "semantic-review-calibration-v1"
+GOLDEN_CASES_PATH = (
+    ROOT / "tests" / "fixtures" / "semantic-review-v1" / "golden-cases.json"
+)
 PAYLOAD_PATH = FIXTURE_ROOT / "human-adjudication-common-evidence.json"
 MANIFEST_PATH = FIXTURE_ROOT / "human-adjudication-manifest.json"
 FORM_A_PATH = FIXTURE_ROOT / "human-adjudicator-a-response-form.json"
 FORM_B_PATH = FIXTURE_ROOT / "human-adjudicator-b-response-form.json"
 PROTOCOL_PATH = CALIBRATION_ROOT / "cohort-protocol-v1.json"
 AUDIT_PATH = CALIBRATION_ROOT / "semantic_review_calibration_audit.py"
+MATERIALIZER_PATH = CALIBRATION_ROOT / "materialize_human_adjudication_packet.py"
 TASK2_TEXT_PATHS = (
     CALIBRATION_ROOT / "CALIBRATION_CONTROLLER_PROTOCOL.md",
     CALIBRATION_ROOT / "cohort-protocol-v1.json",
     CALIBRATION_ROOT / "official_calibration_controller.py",
     CALIBRATION_ROOT / "semantic_review_calibration_audit.py",
+    MATERIALIZER_PATH,
     PAYLOAD_PATH,
     MANIFEST_PATH,
     FORM_A_PATH,
@@ -72,6 +79,44 @@ def load_audit():
     return module
 
 
+def canonical_sha256(value):
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def embedded_json(golden_case, logical_name):
+    return json.loads(
+        golden_case["reviewer_package"]["embedded_files"][logical_name]["text"]
+    )
+
+
+def resolve_pointer(document, pointer):
+    value = document
+    for token in pointer.lstrip("/").split("/"):
+        token = token.replace("~1", "/").replace("~0", "~")
+        value = value[int(token)] if isinstance(value, list) else value[token]
+    return value
+
+
+def owner_field(contract, review_identity):
+    owner_kind, owner_id, semantic_field = review_identity.split(":")
+    collection_name, id_key = (
+        ("actions", "action_id")
+        if owner_kind == "action"
+        else ("lifecycles", "lifecycle_id")
+    )
+    owner = next(
+        item for item in contract[collection_name] if item[id_key] == owner_id
+    )
+    return owner[semantic_field]
+
+
 class SemanticReviewHumanPacketTest(unittest.TestCase):
     def test_common_payload_has_exact_answer_blind_case_evidence(self):
         payload = read_json(PAYLOAD_PATH)
@@ -84,8 +129,12 @@ class SemanticReviewHumanPacketTest(unittest.TestCase):
             "canonical_clause",
             "canonical_evidence",
             "candidate_semantic_value",
+            "candidate_evidence",
+            "candidate_comparison_facts",
+            "semantic_obligation_evidence",
             "responsibility_rule_id",
             "completeness_mode",
+            "responsibility_profile_evidence",
             "relevant_sibling_refs",
             "allowed_verdicts",
             "allowed_rationale_codes",
@@ -107,17 +156,244 @@ class SemanticReviewHumanPacketTest(unittest.TestCase):
                 )
                 self.assertNotIn("verdict", case)
                 self.assertNotIn("rationale_code", case)
-                canonical_value_hash = hashlib.sha256(
-                    json.dumps(
-                        case["canonical_clause"],
-                        ensure_ascii=False,
-                        sort_keys=True,
-                        separators=(",", ":"),
-                    ).encode("utf-8")
-                ).hexdigest()
+                authority_record = case["canonical_evidence"].get(
+                    "authority_object", case["canonical_evidence"]
+                )
                 self.assertEqual(
-                    case["canonical_evidence"]["value_sha256"],
-                    canonical_value_hash,
+                    authority_record["value_sha256"],
+                    canonical_sha256(case["canonical_clause"]),
+                )
+
+    def test_all_15_cases_match_the_materialized_reviewer_packages_directly(self):
+        packet_cases = {
+            case["case_id"]: case for case in read_json(PAYLOAD_PATH)["cases"]
+        }
+        golden_cases = read_json(GOLDEN_CASES_PATH)
+        self.assertEqual(set(packet_cases), {case["case_id"] for case in golden_cases})
+
+        for golden_case in golden_cases:
+            case_id = golden_case["case_id"]
+            packet = packet_cases[case_id]
+            authority = embedded_json(golden_case, "authority.json")
+            contract = embedded_json(golden_case, "contract.json")
+            provenance = embedded_json(golden_case, "provenance.json")["records"]
+            obligations = embedded_json(golden_case, "obligations.json")["obligations"]
+            identities = embedded_json(golden_case, "identities.json")["identities"]
+            responsibility = embedded_json(golden_case, "responsibility.json")
+            responsibility_text = golden_case["reviewer_package"]["embedded_files"][
+                "responsibility.json"
+            ]["text"]
+            authority_rule = authority["objects"]["rules"][0]
+
+            with self.subTest(case_id=case_id):
+                self.assertEqual(packet["canonical_clause"], authority_rule["text"])
+                canonical_refs = (
+                    obligations[0]["canonical_refs"] if obligations else provenance[:1]
+                )
+                if canonical_refs:
+                    self.assertEqual(packet["canonical_evidence"], canonical_refs[0])
+                else:
+                    self.assertEqual(
+                        packet["canonical_evidence"],
+                        {
+                            "source_lookup_status": "ABSENT",
+                            "authority_object": {
+                                "object_id": authority_rule["id"],
+                                "pointer": "/objects/rules/0/text",
+                                "status": authority_rule["status"],
+                                "value_sha256": canonical_sha256(authority_rule["text"]),
+                            },
+                        },
+                    )
+
+                if identities:
+                    identity = identities[0]
+                    obligation = obligations[0]
+                    pointer = obligation["semantic_value_pointer"]
+                    candidate_value = resolve_pointer(contract, pointer)
+                    self.assertEqual(packet["candidate_semantic_value"], candidate_value)
+                    self.assertEqual(
+                        packet["candidate_evidence"],
+                        {
+                            "review_identity": identity["review_identity"],
+                            "semantic_value_pointer": pointer,
+                            "semantic_value_sha256": identity["semantic_value_hash"],
+                        },
+                    )
+                    self.assertEqual(
+                        canonical_sha256(candidate_value),
+                        identity["semantic_value_hash"],
+                    )
+                    self.assertEqual(
+                        packet["responsibility_rule_id"],
+                        identity["responsibility_rule_id"],
+                    )
+                    self.assertEqual(
+                        packet["completeness_mode"],
+                        identity["completeness_mode"],
+                    )
+                    self.assertEqual(
+                        packet["semantic_obligation_evidence"],
+                        {
+                            key: obligation[key]
+                            for key in (
+                                "obligation_id",
+                                "obligation_type",
+                                "owner_kind",
+                                "owner_id",
+                                "owning_field",
+                                "responsibility_rule_id",
+                                "completeness_mode",
+                                "semantic_value_pointer",
+                                "semantic_value_hash",
+                                "canonical_refs",
+                                "allowed_sibling_refs",
+                                "required_test_refs",
+                            )
+                        },
+                    )
+
+                    owner_kind = identity["owner_kind"]
+                    field = identity["semantic_field"]
+                    profile = responsibility[owner_kind][field]
+                    profile_evidence = packet["responsibility_profile_evidence"]
+                    self.assertEqual(
+                        profile_evidence["responsibility_profile_sha256"],
+                        hashlib.sha256(responsibility_text.encode("utf-8")).hexdigest(),
+                    )
+                    self.assertEqual(
+                        profile_evidence["responsibility_profile_sha256"],
+                        next(
+                            item["sha256"]
+                            for item in golden_case["reviewer_package"]["manifest"][
+                                "files"
+                            ]
+                            if item["logical_role"] == "responsibility_profile"
+                        ),
+                    )
+                    self.assertEqual(
+                        profile_evidence["field_lookup_path"],
+                        f"/{owner_kind}/{field}",
+                    )
+                    self.assertEqual(profile_evidence["field_lookup_status"], "PRESENT")
+                    self.assertEqual(profile_evidence["rule_semantics"], profile)
+                    taxonomy_key = obligation["obligation_type"]
+                    self.assertEqual(
+                        profile_evidence["obligation_taxonomy_lookup"],
+                        {
+                            "lookup_path": f"/obligation_taxonomy/{taxonomy_key}",
+                            "lookup_status": (
+                                "PRESENT"
+                                if taxonomy_key
+                                in responsibility["obligation_taxonomy"]
+                                else "ABSENT"
+                            ),
+                            "declared_responsibility_rule_id": identity[
+                                "responsibility_rule_id"
+                            ],
+                        },
+                    )
+                else:
+                    self.assertEqual(packet["responsibility_rule_id"], None)
+                    self.assertEqual(packet["completeness_mode"], None)
+                    self.assertEqual(
+                        packet["semantic_obligation_evidence"],
+                        {
+                            "identity_lookup_status": "ABSENT",
+                            "obligation_lookup_status": "ABSENT",
+                        },
+                    )
+                    pointer = "/lifecycles/0/superseded_sentinels"
+                    candidate_value = resolve_pointer(contract, pointer)
+                    self.assertEqual(packet["candidate_semantic_value"], candidate_value)
+                    self.assertEqual(
+                        packet["candidate_evidence"],
+                        {
+                            "review_identity_lookup_status": "ABSENT",
+                            "semantic_value_pointer": pointer,
+                            "semantic_value_sha256": canonical_sha256(candidate_value),
+                        },
+                    )
+                    self.assertEqual(
+                        packet["responsibility_profile_evidence"],
+                        {
+                            "responsibility_profile_sha256": hashlib.sha256(
+                                responsibility_text.encode("utf-8")
+                            ).hexdigest(),
+                            "field_lookup_path": None,
+                            "field_lookup_status": "NOT_APPLICABLE",
+                            "rule_semantics": None,
+                            "obligation_taxonomy_lookup": {
+                                "lookup_path": None,
+                                "lookup_status": "NOT_APPLICABLE",
+                                "declared_responsibility_rule_id": None,
+                            },
+                        },
+                    )
+
+                fixture = golden_case["candidate_fixture"]
+                fixture_refs = list(fixture.get("sibling_references", []))
+                if "sibling_reference" in fixture:
+                    fixture_refs.insert(0, fixture["sibling_reference"])
+                exact_sibling_refs = [
+                    re.sub(r"\b(ACT|LC)-G(\d{3})\b", r"\1-G-\2", value)
+                    for value in fixture_refs
+                ]
+                self.assertEqual(packet["relevant_sibling_refs"], exact_sibling_refs)
+
+                for sibling_ref in packet["relevant_sibling_refs"]:
+                    self.assertIsInstance(owner_field(contract, sibling_ref), dict)
+
+    def test_g015_keeps_declared_identity_while_taxonomy_lookup_is_absent(self):
+        packet = next(
+            case
+            for case in read_json(PAYLOAD_PATH)["cases"]
+            if case["case_id"] == "G-015"
+        )
+        self.assertEqual(packet["responsibility_rule_id"], "FR-A06")
+        self.assertEqual(packet["completeness_mode"], "LOCAL")
+        self.assertEqual(
+            packet["responsibility_profile_evidence"]["obligation_taxonomy_lookup"],
+            {
+                "lookup_path": "/obligation_taxonomy/deliberately unclassified",
+                "lookup_status": "ABSENT",
+                "declared_responsibility_rule_id": "FR-A06",
+            },
+        )
+
+    def test_neutral_candidate_facts_make_opaque_values_reviewable(self):
+        payload = read_json(PAYLOAD_PATH)
+        forbidden_projection_words = (
+            "expected",
+            "correct",
+            "correctly",
+            "defect",
+            "seeded",
+            "unsupported",
+            "contradictory",
+            "deliberately incomplete",
+        )
+        for case in payload["cases"]:
+            facts = case["candidate_comparison_facts"]
+            with self.subTest(case_id=case["case_id"]):
+                self.assertGreaterEqual(len(facts), 2)
+                fact_text = json.dumps(facts, ensure_ascii=False).lower()
+                for word in forbidden_projection_words:
+                    self.assertNotIn(word, fact_text)
+        by_id = {case["case_id"]: case for case in payload["cases"]}
+        for case_id in (
+            "G-008",
+            "G-009",
+            "G-010",
+            "G-011",
+            "G-013",
+            "G-014",
+            "G-015",
+        ):
+            with self.subTest(case_id=case_id):
+                self.assertNotEqual(
+                    by_id[case_id]["candidate_comparison_facts"],
+                    [str(by_id[case_id]["candidate_semantic_value"])],
                 )
 
     def test_manifest_records_exact_common_payload_hash_and_incomplete_status(self):
@@ -237,6 +513,27 @@ class SemanticReviewHumanPacketTest(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "hinted-form.json"
+            path.write_text(json.dumps(value), encoding="utf-8")
+            findings = audit.find_answer_leaks([path], allowed_exact_sha256=set())
+        self.assertIn("PER_CASE_OUTCOME", {item["code"] for item in findings})
+
+    def test_answer_leak_audit_accepts_exact_hash_bound_rule_semantics(self):
+        audit = load_audit()
+        value = read_json(PAYLOAD_PATH)["cases"][0]
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "normative-evidence.json"
+            path.write_text(json.dumps(value), encoding="utf-8")
+            findings = audit.find_answer_leaks([path], allowed_exact_sha256=set())
+        self.assertEqual(findings, [])
+
+    def test_answer_leak_audit_rejects_modified_rule_semantics_hint(self):
+        audit = load_audit()
+        value = copy.deepcopy(read_json(PAYLOAD_PATH)["cases"][0])
+        value["responsibility_profile_evidence"]["rule_semantics"][
+            "owns"
+        ] = "approved"
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "modified-normative-evidence.json"
             path.write_text(json.dumps(value), encoding="utf-8")
             findings = audit.find_answer_leaks([path], allowed_exact_sha256=set())
         self.assertIn("PER_CASE_OUTCOME", {item["code"] for item in findings})

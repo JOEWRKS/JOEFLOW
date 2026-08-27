@@ -1,20 +1,83 @@
 {
   "schema_version": "joewrks.semantic-review-human-adjudication-evidence/1.0",
-  "source": "frozen G-001 through G-015 reviewer inputs",
+  "source": "frozen G-001 through G-015 reviewer packages and case evidence",
   "cases": [
     {
       "case_id": "G-001",
       "canonical_clause": "A non-empty reason input is required.",
       "canonical_evidence": {
+        "active": true,
         "object_id": "RULE-G-001",
         "pointer": "/objects/rules/0/text",
         "source_status": "CURRENT",
-        "active": true,
         "value_sha256": "b20f50a7a10e909f337a65500039194360e3562b6f6b9dfbff2ff69be26f1ee5"
       },
       "candidate_semantic_value": [],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-001:input_invariants",
+        "semantic_value_pointer": "/actions/0/input_invariants/value",
+        "semantic_value_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "candidate_comparison_facts": [
+        "The candidate input_invariants array contains 0 entries.",
+        "The canonical clause states a non-empty reason-input requirement."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-001-FOCUS",
+        "obligation_type": "input validity",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-001",
+        "owning_field": "input_invariants",
+        "responsibility_rule_id": "FR-A09",
+        "completeness_mode": "LOCAL",
+        "semantic_value_pointer": "/actions/0/input_invariants/value",
+        "semantic_value_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-001",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "b20f50a7a10e909f337a65500039194360e3562b6f6b9dfbff2ff69be26f1ee5"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-001-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A09",
       "completeness_mode": "LOCAL",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/input_invariants",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A09",
+          "completeness_mode": "LOCAL",
+          "owns": "Command-input predicates evaluated before/as acceptance: required reason/evidence, bounds, enums, confirmation input, input-level binding",
+          "may_reference_fields": [
+            "command",
+            "object_binding",
+            "preconditions"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A04",
+            "FR-A06",
+            "FR-A10"
+          ],
+          "must_not_duplicate": "visible error, recovery, tests, domain mutation, non-input authority rules",
+          "omission": "applicable input predicate absent",
+          "overreach": "non-input domain/UX/test rule represented as input predicate",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/input validity",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A09"
+        }
+      },
       "relevant_sibling_refs": [],
       "allowed_verdicts": [
         "APPROVED",
@@ -47,17 +110,80 @@
       "case_id": "G-002",
       "canonical_clause": "A non-empty reason input is required.",
       "canonical_evidence": {
+        "active": true,
         "object_id": "RULE-G-002",
         "pointer": "/objects/rules/0/text",
         "source_status": "CURRENT",
-        "active": true,
         "value_sha256": "b20f50a7a10e909f337a65500039194360e3562b6f6b9dfbff2ff69be26f1ee5"
       },
       "candidate_semantic_value": [
         "reason is non-empty"
       ],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-002:input_invariants",
+        "semantic_value_pointer": "/actions/0/input_invariants/value",
+        "semantic_value_sha256": "0fdeefbd2bf4547e79f801f8a016dee4740c6111f76214eb883156dc79c92298"
+      },
+      "candidate_comparison_facts": [
+        "The candidate input_invariants array contains 1 entry.",
+        "That entry is `reason is non-empty`."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-002-FOCUS",
+        "obligation_type": "input validity",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-002",
+        "owning_field": "input_invariants",
+        "responsibility_rule_id": "FR-A09",
+        "completeness_mode": "LOCAL",
+        "semantic_value_pointer": "/actions/0/input_invariants/value",
+        "semantic_value_hash": "0fdeefbd2bf4547e79f801f8a016dee4740c6111f76214eb883156dc79c92298",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-002",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "b20f50a7a10e909f337a65500039194360e3562b6f6b9dfbff2ff69be26f1ee5"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-002-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A09",
       "completeness_mode": "LOCAL",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/input_invariants",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A09",
+          "completeness_mode": "LOCAL",
+          "owns": "Command-input predicates evaluated before/as acceptance: required reason/evidence, bounds, enums, confirmation input, input-level binding",
+          "may_reference_fields": [
+            "command",
+            "object_binding",
+            "preconditions"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A04",
+            "FR-A06",
+            "FR-A10"
+          ],
+          "must_not_duplicate": "visible error, recovery, tests, domain mutation, non-input authority rules",
+          "omission": "applicable input predicate absent",
+          "overreach": "non-input domain/UX/test rule represented as input predicate",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/input validity",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A09"
+        }
+      },
       "relevant_sibling_refs": [],
       "allowed_verdicts": [
         "APPROVED",
@@ -90,17 +216,80 @@
       "case_id": "G-003",
       "canonical_clause": "The current owner may invoke.",
       "canonical_evidence": {
+        "active": true,
         "object_id": "RULE-G-003",
         "pointer": "/objects/rules/0/text",
         "source_status": "CURRENT",
-        "active": true,
         "value_sha256": "f3fe250acf6f2e041392249cd647f96f19fe96448a46aa1334efd6a0918f34aa"
       },
       "candidate_semantic_value": [],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-003:input_invariants",
+        "semantic_value_pointer": "/actions/0/input_invariants/value",
+        "semantic_value_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "candidate_comparison_facts": [
+        "The candidate input_invariants array contains 0 entries.",
+        "The same candidate action has a relationship_predicate field with 1 entry."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-003-FOCUS",
+        "obligation_type": "input validity",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-003",
+        "owning_field": "input_invariants",
+        "responsibility_rule_id": "FR-A09",
+        "completeness_mode": "LOCAL",
+        "semantic_value_pointer": "/actions/0/input_invariants/value",
+        "semantic_value_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-003",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "f3fe250acf6f2e041392249cd647f96f19fe96448a46aa1334efd6a0918f34aa"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-003-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A09",
       "completeness_mode": "LOCAL",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/input_invariants",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A09",
+          "completeness_mode": "LOCAL",
+          "owns": "Command-input predicates evaluated before/as acceptance: required reason/evidence, bounds, enums, confirmation input, input-level binding",
+          "may_reference_fields": [
+            "command",
+            "object_binding",
+            "preconditions"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A04",
+            "FR-A06",
+            "FR-A10"
+          ],
+          "must_not_duplicate": "visible error, recovery, tests, domain mutation, non-input authority rules",
+          "omission": "applicable input predicate absent",
+          "overreach": "non-input domain/UX/test rule represented as input predicate",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/input validity",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A09"
+        }
+      },
       "relevant_sibling_refs": [
-        "action:ACT-G003:relationship_predicate"
+        "action:ACT-G-003:relationship_predicate"
       ],
       "allowed_verdicts": [
         "APPROVED",
@@ -133,17 +322,84 @@
       "case_id": "G-004",
       "canonical_clause": "Preserve submitted input after failure.",
       "canonical_evidence": {
-        "object_id": "RULE-G-004",
-        "pointer": "/objects/ux_requirements/0/text",
-        "source_status": "CURRENT",
         "active": true,
+        "object_id": "RULE-G-004",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
         "value_sha256": "6e26349bf8e852681bd4b5b1d1d32b3c6d5016f8fab965cba70ee09feb2e4c27"
       },
       "candidate_semantic_value": [
         "show validation category"
       ],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-004:visible_error",
+        "semantic_value_pointer": "/actions/0/visible_error/value",
+        "semantic_value_sha256": "c96cd2373f10e62c17e381efe7ca24bbc730a7dd50a3e2b1073e3ca53ef2af17"
+      },
+      "candidate_comparison_facts": [
+        "The candidate visible_error array contains 1 entry.",
+        "That entry is `show validation category`."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-004-FOCUS",
+        "obligation_type": "visible error",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-004",
+        "owning_field": "visible_error",
+        "responsibility_rule_id": "FR-A23",
+        "completeness_mode": "COMPOSITIONAL",
+        "semantic_value_pointer": "/actions/0/visible_error/value",
+        "semantic_value_hash": "c96cd2373f10e62c17e381efe7ca24bbc730a7dd50a3e2b1073e3ca53ef2af17",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-004",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "6e26349bf8e852681bd4b5b1d1d32b3c6d5016f8fab965cba70ee09feb2e4c27"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-004-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A23",
       "completeness_mode": "COMPOSITIONAL",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/visible_error",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A23",
+          "completeness_mode": "COMPOSITIONAL",
+          "owns": "Externally observable error category, authorized disclosure, preserved input, latest-state comparison, and recovery affordance",
+          "may_reference_fields": [
+            "rejection",
+            "recovery",
+            "input_invariants",
+            "relationship_predicate",
+            "concurrency"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A03",
+            "FR-A05",
+            "FR-A09",
+            "FR-A20",
+            "FR-A21"
+          ],
+          "must_not_duplicate": "every triggering guard or precondition",
+          "omission": "required presentation/preservation/affordance absent",
+          "overreach": "invented recovery, unauthorized disclosure, or unconditional latest-state exposure",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/visible error",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A23"
+        }
+      },
       "relevant_sibling_refs": [],
       "allowed_verdicts": [
         "APPROVED",
@@ -176,21 +432,88 @@
       "case_id": "G-005",
       "canonical_clause": "Present the input error and preserve input.",
       "canonical_evidence": {
-        "object_id": "RULE-G-005",
-        "pointer": "/objects/ux_requirements/0/text",
-        "source_status": "CURRENT",
         "active": true,
+        "object_id": "RULE-G-005",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
         "value_sha256": "ce6dc649b56e71d69155326685581880f05cd7b86a7d01e3fe9e954873d7dde1"
       },
       "candidate_semantic_value": [
         "present error",
         "preserve input"
       ],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-005:visible_error",
+        "semantic_value_pointer": "/actions/0/visible_error/value",
+        "semantic_value_sha256": "b6bcdce31667688204acebfe0ad07288972fedc8dd71f7b45d0f42cc7028d505"
+      },
+      "candidate_comparison_facts": [
+        "The candidate visible_error array contains 2 entries.",
+        "Those entries are `present error` and `preserve input`."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-005-FOCUS",
+        "obligation_type": "visible error",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-005",
+        "owning_field": "visible_error",
+        "responsibility_rule_id": "FR-A23",
+        "completeness_mode": "COMPOSITIONAL",
+        "semantic_value_pointer": "/actions/0/visible_error/value",
+        "semantic_value_hash": "b6bcdce31667688204acebfe0ad07288972fedc8dd71f7b45d0f42cc7028d505",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-005",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "ce6dc649b56e71d69155326685581880f05cd7b86a7d01e3fe9e954873d7dde1"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-005-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A23",
       "completeness_mode": "COMPOSITIONAL",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/visible_error",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A23",
+          "completeness_mode": "COMPOSITIONAL",
+          "owns": "Externally observable error category, authorized disclosure, preserved input, latest-state comparison, and recovery affordance",
+          "may_reference_fields": [
+            "rejection",
+            "recovery",
+            "input_invariants",
+            "relationship_predicate",
+            "concurrency"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A03",
+            "FR-A05",
+            "FR-A09",
+            "FR-A20",
+            "FR-A21"
+          ],
+          "must_not_duplicate": "every triggering guard or precondition",
+          "omission": "required presentation/preservation/affordance absent",
+          "overreach": "invented recovery, unauthorized disclosure, or unconditional latest-state exposure",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/visible error",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A23"
+        }
+      },
       "relevant_sibling_refs": [
-        "action:ACT-G005:input_invariants",
-        "action:ACT-G005:rejection"
+        "action:ACT-G-005:input_invariants",
+        "action:ACT-G-005:rejection"
       ],
       "allowed_verdicts": [
         "APPROVED",
@@ -223,18 +546,85 @@
       "case_id": "G-006",
       "canonical_clause": "Failure is terminal.",
       "canonical_evidence": {
-        "object_id": "RULE-G-006",
-        "pointer": "/objects/ux_requirements/0/text",
-        "source_status": "CURRENT",
         "active": true,
+        "object_id": "RULE-G-006",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
         "value_sha256": "b8efe4769a190ff44e0bbdda84f537b725e1e9f4e5d4b145be9501e2195bec99"
       },
       "candidate_semantic_value": [
         "show error",
         "offer retry"
       ],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-006:visible_error",
+        "semantic_value_pointer": "/actions/0/visible_error/value",
+        "semantic_value_sha256": "6655477f987dab482a906249b3c754f96912f0634e1c57f71a0708d89b415d2a"
+      },
+      "candidate_comparison_facts": [
+        "The candidate visible_error array contains 2 entries.",
+        "Those entries are `show error` and `offer retry`."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-006-FOCUS",
+        "obligation_type": "visible error",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-006",
+        "owning_field": "visible_error",
+        "responsibility_rule_id": "FR-A23",
+        "completeness_mode": "COMPOSITIONAL",
+        "semantic_value_pointer": "/actions/0/visible_error/value",
+        "semantic_value_hash": "6655477f987dab482a906249b3c754f96912f0634e1c57f71a0708d89b415d2a",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-006",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "b8efe4769a190ff44e0bbdda84f537b725e1e9f4e5d4b145be9501e2195bec99"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-006-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A23",
       "completeness_mode": "COMPOSITIONAL",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/visible_error",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A23",
+          "completeness_mode": "COMPOSITIONAL",
+          "owns": "Externally observable error category, authorized disclosure, preserved input, latest-state comparison, and recovery affordance",
+          "may_reference_fields": [
+            "rejection",
+            "recovery",
+            "input_invariants",
+            "relationship_predicate",
+            "concurrency"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A03",
+            "FR-A05",
+            "FR-A09",
+            "FR-A20",
+            "FR-A21"
+          ],
+          "must_not_duplicate": "every triggering guard or precondition",
+          "omission": "required presentation/preservation/affordance absent",
+          "overreach": "invented recovery, unauthorized disclosure, or unconditional latest-state exposure",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/visible error",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A23"
+        }
+      },
       "relevant_sibling_refs": [],
       "allowed_verdicts": [
         "APPROVED",
@@ -267,15 +657,111 @@
       "case_id": "G-007",
       "canonical_clause": "The material rule must be verified.",
       "canonical_evidence": {
-        "object_id": "RULE-G-007",
-        "pointer": "/objects/requirements/0/text",
-        "source_status": "CURRENT",
         "active": true,
+        "object_id": "RULE-G-007",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
         "value_sha256": "610d05676d05d186647166e09068c75c28e94981f435d8d00a9e49aaf769bc06"
       },
       "candidate_semantic_value": [],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-007:test_obligations",
+        "semantic_value_pointer": "/actions/0/test_obligations/value",
+        "semantic_value_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "candidate_comparison_facts": [
+        "The candidate test_obligations array contains 0 entries.",
+        "The semantic obligation records the stable reference `TEST-G-007-FOCUS`."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-007-FOCUS",
+        "obligation_type": "verification coverage",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-007",
+        "owning_field": "test_obligations",
+        "responsibility_rule_id": "FR-A25",
+        "completeness_mode": "REFERENCE_ONLY",
+        "semantic_value_pointer": "/actions/0/test_obligations/value",
+        "semantic_value_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-007",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "610d05676d05d186647166e09068c75c28e94981f435d8d00a9e49aaf769bc06"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-007-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A25",
       "completeness_mode": "REFERENCE_ONLY",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/test_obligations",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A25",
+          "completeness_mode": "REFERENCE_ONLY",
+          "owns": "Stable references proving coverage of owned obligations/result classes",
+          "may_reference_fields": [
+            "all obligation IDs",
+            "result classes"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A01",
+            "FR-A02",
+            "FR-A03",
+            "FR-A04",
+            "FR-A05",
+            "FR-A06",
+            "FR-A07",
+            "FR-A08",
+            "FR-A09",
+            "FR-A10",
+            "FR-A11",
+            "FR-A12",
+            "FR-A13",
+            "FR-A14",
+            "FR-A15",
+            "FR-A16",
+            "FR-A17",
+            "FR-A18",
+            "FR-A19",
+            "FR-A20",
+            "FR-A21",
+            "FR-A22",
+            "FR-A23",
+            "FR-A24",
+            "FR-A26",
+            "FR-L01",
+            "FR-L02",
+            "FR-L03",
+            "FR-L04",
+            "FR-L05",
+            "FR-L06",
+            "FR-L07",
+            "FR-L08",
+            "FR-L09",
+            "FR-L10",
+            "FR-L11",
+            "FR-L12"
+          ],
+          "must_not_duplicate": "copied canonical or sibling-field prose",
+          "omission": "a material obligation lacks a stable test reference",
+          "overreach": "invented test semantics or contradictory copied prose",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/verification coverage",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A25"
+        }
+      },
       "relevant_sibling_refs": [],
       "allowed_verdicts": [
         "APPROVED",
@@ -308,17 +794,113 @@
       "case_id": "G-008",
       "canonical_clause": "The material rule must be verified.",
       "canonical_evidence": {
-        "object_id": "RULE-G-008",
-        "pointer": "/objects/requirements/0/text",
-        "source_status": "CURRENT",
         "active": true,
+        "object_id": "RULE-G-008",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
         "value_sha256": "610d05676d05d186647166e09068c75c28e94981f435d8d00a9e49aaf769bc06"
       },
       "candidate_semantic_value": [
         "TEST-G008"
       ],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-008:test_obligations",
+        "semantic_value_pointer": "/actions/0/test_obligations/value",
+        "semantic_value_sha256": "c1bbbeb0591073ef0e3ead7fe2b1494346b1d535208430be980745d77a059285"
+      },
+      "candidate_comparison_facts": [
+        "The candidate test_obligations array contains the reference `TEST-G008`.",
+        "The frozen candidate fixture records its copied-business-prose flag as false."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-008-FOCUS",
+        "obligation_type": "verification coverage",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-008",
+        "owning_field": "test_obligations",
+        "responsibility_rule_id": "FR-A25",
+        "completeness_mode": "REFERENCE_ONLY",
+        "semantic_value_pointer": "/actions/0/test_obligations/value",
+        "semantic_value_hash": "c1bbbeb0591073ef0e3ead7fe2b1494346b1d535208430be980745d77a059285",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-008",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "610d05676d05d186647166e09068c75c28e94981f435d8d00a9e49aaf769bc06"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-008-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A25",
       "completeness_mode": "REFERENCE_ONLY",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/test_obligations",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A25",
+          "completeness_mode": "REFERENCE_ONLY",
+          "owns": "Stable references proving coverage of owned obligations/result classes",
+          "may_reference_fields": [
+            "all obligation IDs",
+            "result classes"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A01",
+            "FR-A02",
+            "FR-A03",
+            "FR-A04",
+            "FR-A05",
+            "FR-A06",
+            "FR-A07",
+            "FR-A08",
+            "FR-A09",
+            "FR-A10",
+            "FR-A11",
+            "FR-A12",
+            "FR-A13",
+            "FR-A14",
+            "FR-A15",
+            "FR-A16",
+            "FR-A17",
+            "FR-A18",
+            "FR-A19",
+            "FR-A20",
+            "FR-A21",
+            "FR-A22",
+            "FR-A23",
+            "FR-A24",
+            "FR-A26",
+            "FR-L01",
+            "FR-L02",
+            "FR-L03",
+            "FR-L04",
+            "FR-L05",
+            "FR-L06",
+            "FR-L07",
+            "FR-L08",
+            "FR-L09",
+            "FR-L10",
+            "FR-L11",
+            "FR-L12"
+          ],
+          "must_not_duplicate": "copied canonical or sibling-field prose",
+          "omission": "a material obligation lacks a stable test reference",
+          "overreach": "invented test semantics or contradictory copied prose",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/verification coverage",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A25"
+        }
+      },
       "relevant_sibling_refs": [],
       "allowed_verdicts": [
         "APPROVED",
@@ -351,17 +933,113 @@
       "case_id": "G-009",
       "canonical_clause": "The owning field permits one result.",
       "canonical_evidence": {
-        "object_id": "RULE-G-009",
-        "pointer": "/objects/requirements/0/text",
-        "source_status": "CURRENT",
         "active": true,
+        "object_id": "RULE-G-009",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
         "value_sha256": "4b0f5179919819859253d2f63c1c746b8f7a76e74df28c04469770e8685c21a6"
       },
       "candidate_semantic_value": [
         "TEST-G009"
       ],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-009:test_obligations",
+        "semantic_value_pointer": "/actions/0/test_obligations/value",
+        "semantic_value_sha256": "88c38cdacee0b2b7fc71cca41b64aee1459449cc6ee51906ce87fb13dd95f752"
+      },
+      "candidate_comparison_facts": [
+        "The candidate test_obligations array contains the reference `TEST-G009`.",
+        "The frozen candidate fixture also carries prose requiring a result distinct from the canonical permitted result."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-009-FOCUS",
+        "obligation_type": "verification coverage",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-009",
+        "owning_field": "test_obligations",
+        "responsibility_rule_id": "FR-A25",
+        "completeness_mode": "REFERENCE_ONLY",
+        "semantic_value_pointer": "/actions/0/test_obligations/value",
+        "semantic_value_hash": "88c38cdacee0b2b7fc71cca41b64aee1459449cc6ee51906ce87fb13dd95f752",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-009",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "4b0f5179919819859253d2f63c1c746b8f7a76e74df28c04469770e8685c21a6"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-009-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A25",
       "completeness_mode": "REFERENCE_ONLY",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/test_obligations",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A25",
+          "completeness_mode": "REFERENCE_ONLY",
+          "owns": "Stable references proving coverage of owned obligations/result classes",
+          "may_reference_fields": [
+            "all obligation IDs",
+            "result classes"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A01",
+            "FR-A02",
+            "FR-A03",
+            "FR-A04",
+            "FR-A05",
+            "FR-A06",
+            "FR-A07",
+            "FR-A08",
+            "FR-A09",
+            "FR-A10",
+            "FR-A11",
+            "FR-A12",
+            "FR-A13",
+            "FR-A14",
+            "FR-A15",
+            "FR-A16",
+            "FR-A17",
+            "FR-A18",
+            "FR-A19",
+            "FR-A20",
+            "FR-A21",
+            "FR-A22",
+            "FR-A23",
+            "FR-A24",
+            "FR-A26",
+            "FR-L01",
+            "FR-L02",
+            "FR-L03",
+            "FR-L04",
+            "FR-L05",
+            "FR-L06",
+            "FR-L07",
+            "FR-L08",
+            "FR-L09",
+            "FR-L10",
+            "FR-L11",
+            "FR-L12"
+          ],
+          "must_not_duplicate": "copied canonical or sibling-field prose",
+          "omission": "a material obligation lacks a stable test reference",
+          "overreach": "invented test semantics or contradictory copied prose",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/verification coverage",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A25"
+        }
+      },
       "relevant_sibling_refs": [],
       "allowed_verdicts": [
         "APPROVED",
@@ -394,17 +1072,80 @@
       "case_id": "G-010",
       "canonical_clause": "Only the declared constraint applies.",
       "canonical_evidence": {
+        "active": true,
         "object_id": "RULE-G-010",
         "pointer": "/objects/rules/0/text",
         "source_status": "CURRENT",
-        "active": true,
         "value_sha256": "9ef79d22682073d5b3b0290e02a4353b4113201526387addd0f0432131f53135"
       },
       "candidate_semantic_value": [
         "G-010 candidate preconditions"
       ],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-010:preconditions",
+        "semantic_value_pointer": "/actions/0/preconditions/value",
+        "semantic_value_sha256": "eb7e8a80ea2755cfdbb79385296b4393c4bf8c80579f156b3c80b983f11e65fd"
+      },
+      "candidate_comparison_facts": [
+        "The materialized candidate preconditions array contains 1 opaque fixture entry.",
+        "The frozen candidate fixture lists one `declared constraint` and one additional constraint."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-010-FOCUS",
+        "obligation_type": "non-input domain precondition",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-010",
+        "owning_field": "preconditions",
+        "responsibility_rule_id": "FR-A06",
+        "completeness_mode": "LOCAL",
+        "semantic_value_pointer": "/actions/0/preconditions/value",
+        "semantic_value_hash": "eb7e8a80ea2755cfdbb79385296b4393c4bf8c80579f156b3c80b983f11e65fd",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-010",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "9ef79d22682073d5b3b0290e02a4353b4113201526387addd0f0432131f53135"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-010-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A06",
       "completeness_mode": "LOCAL",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/preconditions",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A06",
+          "completeness_mode": "LOCAL",
+          "owns": "Non-input domain prerequisites before command acceptance",
+          "may_reference_fields": [
+            "allowed_current_states",
+            "relationship_predicate",
+            "object_binding"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A03",
+            "FR-A04",
+            "FR-A07"
+          ],
+          "must_not_duplicate": "raw input validation or result behavior",
+          "omission": "required domain prerequisite absent",
+          "overreach": "invented prerequisite",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/non-input domain precondition",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A06"
+        }
+      },
       "relevant_sibling_refs": [],
       "allowed_verdicts": [
         "APPROVED",
@@ -437,19 +1178,82 @@
       "case_id": "G-011",
       "canonical_clause": "Commit and visible readback form distinct projections.",
       "canonical_evidence": {
+        "active": true,
         "object_id": "RULE-G-011",
         "pointer": "/objects/rules/0/text",
         "source_status": "CURRENT",
-        "active": true,
         "value_sha256": "29185ec3adf0edf8d8f0fcde6aa448a0be04ac1ff81bd4cae8245324709a928e"
       },
       "candidate_semantic_value": [
         "G-011 candidate visible_success"
       ],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-011:visible_success",
+        "semantic_value_pointer": "/actions/0/visible_success/value",
+        "semantic_value_sha256": "8c0fa1914938d74a3f3293807d0e3dbd6fcaf1a6e8657057748d9ccea51b8d45"
+      },
+      "candidate_comparison_facts": [
+        "The frozen candidate fixture describes visible_success as visible readback.",
+        "The same candidate action has an authoritative-mutation sibling field with 1 entry."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-011-FOCUS",
+        "obligation_type": "visible success",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-011",
+        "owning_field": "visible_success",
+        "responsibility_rule_id": "FR-A22",
+        "completeness_mode": "COMPOSITIONAL",
+        "semantic_value_pointer": "/actions/0/visible_success/value",
+        "semantic_value_hash": "8c0fa1914938d74a3f3293807d0e3dbd6fcaf1a6e8657057748d9ccea51b8d45",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-011",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "29185ec3adf0edf8d8f0fcde6aa448a0be04ac1ff81bd4cae8245324709a928e"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-011-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A22",
       "completeness_mode": "COMPOSITIONAL",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/visible_success",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A22",
+          "completeness_mode": "COMPOSITIONAL",
+          "owns": "Externally observable success only after authoritative readback/commit",
+          "may_reference_fields": [
+            "expected_domain_mutation",
+            "result_expectations",
+            "delivery_effects"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A11",
+            "FR-A14",
+            "FR-A18"
+          ],
+          "must_not_duplicate": "domain mutation prose",
+          "omission": "required visible success/readback absent",
+          "overreach": "reports success before commit or exposes unsupported data",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/visible success",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A22"
+        }
+      },
       "relevant_sibling_refs": [
-        "action:ACT-G011:expected_domain_mutation"
+        "action:ACT-G-011:expected_domain_mutation"
       ],
       "allowed_verdicts": [
         "APPROVED",
@@ -482,18 +1286,11 @@
       "case_id": "G-012",
       "canonical_clause": "Raw lifecycle sentinel source.",
       "canonical_evidence": {
+        "active": true,
         "object_id": "RULE-G-012",
         "pointer": "/objects/rules/0/text",
         "source_status": "CURRENT",
-        "active": true,
-        "value_sha256": "4fdd21b2b6af69dcf59c49190f341b78c790c55368d994dec5636c7959538a99",
-        "candidate_source": {
-          "active": true,
-          "object_id": "RULE-G-012-OLD",
-          "pointer": "/objects/rules/1/text",
-          "source_status": "SUPERSEDED",
-          "value_sha256": "6eb8a936de98a1471bfd60f3e9210a875a627f6619aa8fabb3a573729b13fe0e"
-        }
+        "value_sha256": "4fdd21b2b6af69dcf59c49190f341b78c790c55368d994dec5636c7959538a99"
       },
       "candidate_semantic_value": [
         {
@@ -504,8 +1301,32 @@
           "value_sha256": "6eb8a936de98a1471bfd60f3e9210a875a627f6619aa8fabb3a573729b13fe0e"
         }
       ],
-      "responsibility_rule_id": "PR-P01",
-      "completeness_mode": "PROVENANCE_ONLY",
+      "candidate_evidence": {
+        "review_identity_lookup_status": "ABSENT",
+        "semantic_value_pointer": "/lifecycles/0/superseded_sentinels",
+        "semantic_value_sha256": "ab76272de6cba2ce26d8bd7d56b7ca7fee90c32fccc9ef8b5209fd862078342b"
+      },
+      "candidate_comparison_facts": [
+        "The candidate lifecycle superseded_sentinels array contains 1 source reference.",
+        "That reference has source_status SUPERSEDED and active true."
+      ],
+      "semantic_obligation_evidence": {
+        "identity_lookup_status": "ABSENT",
+        "obligation_lookup_status": "ABSENT"
+      },
+      "responsibility_rule_id": null,
+      "completeness_mode": null,
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": null,
+        "field_lookup_status": "NOT_APPLICABLE",
+        "rule_semantics": null,
+        "obligation_taxonomy_lookup": {
+          "lookup_path": null,
+          "lookup_status": "NOT_APPLICABLE",
+          "declared_responsibility_rule_id": null
+        }
+      },
       "relevant_sibling_refs": [],
       "allowed_verdicts": [
         "APPROVED",
@@ -538,18 +1359,74 @@
       "case_id": "G-013",
       "canonical_clause": "A current owned rule exists.",
       "canonical_evidence": {
-        "object_id": "RULE-G-013",
-        "pointer": "/objects/rules/0/text",
-        "source_status": "CURRENT",
-        "active": true,
-        "value_sha256": "990df9bb25d2e57bed16d28a6e0a048da8903c6567b00ca0e29dbb64254a59a4",
-        "candidate_provenance_hashes": []
+        "source_lookup_status": "ABSENT",
+        "authority_object": {
+          "object_id": "RULE-G-013",
+          "pointer": "/objects/rules/0/text",
+          "status": "CURRENT",
+          "value_sha256": "990df9bb25d2e57bed16d28a6e0a048da8903c6567b00ca0e29dbb64254a59a4"
+        }
       },
       "candidate_semantic_value": [
         "G-013 candidate input_invariants"
       ],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-013:input_invariants",
+        "semantic_value_pointer": "/actions/0/input_invariants/value",
+        "semantic_value_sha256": "28d2cb38240fc76a03c3f73ea606da33fa92deb3970acfde783eccce13af80a8"
+      },
+      "candidate_comparison_facts": [
+        "The candidate input_invariants array contains 1 opaque fixture entry.",
+        "The identity inventory contains 0 provenance hashes and the provenance inventory contains 0 records."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-013-FOCUS",
+        "obligation_type": "input validity",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-013",
+        "owning_field": "input_invariants",
+        "responsibility_rule_id": "FR-A09",
+        "completeness_mode": "LOCAL",
+        "semantic_value_pointer": "/actions/0/input_invariants/value",
+        "semantic_value_hash": "28d2cb38240fc76a03c3f73ea606da33fa92deb3970acfde783eccce13af80a8",
+        "canonical_refs": [],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-013-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A09",
       "completeness_mode": "LOCAL",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/input_invariants",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A09",
+          "completeness_mode": "LOCAL",
+          "owns": "Command-input predicates evaluated before/as acceptance: required reason/evidence, bounds, enums, confirmation input, input-level binding",
+          "may_reference_fields": [
+            "command",
+            "object_binding",
+            "preconditions"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A04",
+            "FR-A06",
+            "FR-A10"
+          ],
+          "must_not_duplicate": "visible error, recovery, tests, domain mutation, non-input authority rules",
+          "omission": "applicable input predicate absent",
+          "overreach": "non-input domain/UX/test rule represented as input predicate",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/input validity",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A09"
+        }
+      },
       "relevant_sibling_refs": [],
       "allowed_verdicts": [
         "APPROVED",
@@ -582,17 +1459,80 @@
       "case_id": "G-014",
       "canonical_clause": "The bounded input is permitted.",
       "canonical_evidence": {
+        "active": true,
         "object_id": "RULE-G-014",
         "pointer": "/objects/rules/0/text",
         "source_status": "CURRENT",
-        "active": true,
         "value_sha256": "c2e2dea8ab101bc4409f686aa1ee0222fbf88d8aa5b396b268b6b22ba181b58b"
       },
       "candidate_semantic_value": [
         "G-014 candidate input_invariants"
       ],
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-014:input_invariants",
+        "semantic_value_pointer": "/actions/0/input_invariants/value",
+        "semantic_value_sha256": "0d260c88e2dc14dc4f2157f272ced22084571312deda60df46c24cca8c0bdcf2"
+      },
+      "candidate_comparison_facts": [
+        "The materialized candidate input_invariants array contains 1 opaque fixture entry.",
+        "The frozen candidate fixture states `The bounded input is forbidden.`."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-014-FOCUS",
+        "obligation_type": "input validity",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-014",
+        "owning_field": "input_invariants",
+        "responsibility_rule_id": "FR-A09",
+        "completeness_mode": "LOCAL",
+        "semantic_value_pointer": "/actions/0/input_invariants/value",
+        "semantic_value_hash": "0d260c88e2dc14dc4f2157f272ced22084571312deda60df46c24cca8c0bdcf2",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-014",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "c2e2dea8ab101bc4409f686aa1ee0222fbf88d8aa5b396b268b6b22ba181b58b"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-014-FOCUS"
+        ]
+      },
       "responsibility_rule_id": "FR-A09",
       "completeness_mode": "LOCAL",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+        "field_lookup_path": "/action/input_invariants",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "responsibility_rule_id": "FR-A09",
+          "completeness_mode": "LOCAL",
+          "owns": "Command-input predicates evaluated before/as acceptance: required reason/evidence, bounds, enums, confirmation input, input-level binding",
+          "may_reference_fields": [
+            "command",
+            "object_binding",
+            "preconditions"
+          ],
+          "allowed_sibling_rules": [
+            "FR-A04",
+            "FR-A06",
+            "FR-A10"
+          ],
+          "must_not_duplicate": "visible error, recovery, tests, domain mutation, non-input authority rules",
+          "omission": "applicable input predicate absent",
+          "overreach": "non-input domain/UX/test rule represented as input predicate",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach_code": "UNSUPPORTED_OVERREACH"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/input validity",
+          "lookup_status": "PRESENT",
+          "declared_responsibility_rule_id": "FR-A09"
+        }
+      },
       "relevant_sibling_refs": [],
       "allowed_verdicts": [
         "APPROVED",
@@ -625,18 +1565,80 @@
       "case_id": "G-015",
       "canonical_clause": "One material obligation exists.",
       "canonical_evidence": {
+        "active": true,
         "object_id": "RULE-G-015",
         "pointer": "/objects/rules/0/text",
         "source_status": "CURRENT",
-        "active": true,
-        "value_sha256": "b02b0a7288c28bf112904d77c612b5edf9a3707651d2127c4e391fb277ab7d6c",
-        "responsibility_profile_entry": null
+        "value_sha256": "b02b0a7288c28bf112904d77c612b5edf9a3707651d2127c4e391fb277ab7d6c"
       },
       "candidate_semantic_value": [
         "G-015 candidate preconditions"
       ],
-      "responsibility_rule_id": null,
-      "completeness_mode": null,
+      "candidate_evidence": {
+        "review_identity": "action:ACT-G-015:preconditions",
+        "semantic_value_pointer": "/actions/0/preconditions/value",
+        "semantic_value_sha256": "2ddb4aef4907ab6dacbd35edc54e4f2c92b28a0f864efdfb763495008dd49f14"
+      },
+      "candidate_comparison_facts": [
+        "The candidate preconditions array contains 1 opaque fixture entry.",
+        "The frozen candidate fixture states `A candidate projection exists.`."
+      ],
+      "semantic_obligation_evidence": {
+        "obligation_id": "OBL-G-015-FOCUS",
+        "obligation_type": "deliberately unclassified",
+        "owner_kind": "action",
+        "owner_id": "ACT-G-015",
+        "owning_field": "preconditions",
+        "responsibility_rule_id": "FR-A06",
+        "completeness_mode": "LOCAL",
+        "semantic_value_pointer": "/actions/0/preconditions/value",
+        "semantic_value_hash": "2ddb4aef4907ab6dacbd35edc54e4f2c92b28a0f864efdfb763495008dd49f14",
+        "canonical_refs": [
+          {
+            "active": true,
+            "object_id": "RULE-G-015",
+            "pointer": "/objects/rules/0/text",
+            "source_status": "CURRENT",
+            "value_sha256": "b02b0a7288c28bf112904d77c612b5edf9a3707651d2127c4e391fb277ab7d6c"
+          }
+        ],
+        "allowed_sibling_refs": [],
+        "required_test_refs": [
+          "TEST-G-015-FOCUS"
+        ]
+      },
+      "responsibility_rule_id": "FR-A06",
+      "completeness_mode": "LOCAL",
+      "responsibility_profile_evidence": {
+        "responsibility_profile_sha256": "3d2fbc9e36f8c9411a0c25f916eb9411aa2d879568b10061256ab3f8226466eb",
+        "field_lookup_path": "/action/preconditions",
+        "field_lookup_status": "PRESENT",
+        "rule_semantics": {
+          "allowed_sibling_rules": [
+            "FR-A03",
+            "FR-A04",
+            "FR-A07"
+          ],
+          "completeness_mode": "LOCAL",
+          "may_reference_fields": [
+            "allowed_current_states",
+            "relationship_predicate",
+            "object_binding"
+          ],
+          "must_not_duplicate": "raw input validation or result behavior",
+          "omission": "required domain prerequisite absent",
+          "omission_code": "MISSING_OWNED_SEMANTIC",
+          "overreach": "invented prerequisite",
+          "overreach_code": "UNSUPPORTED_OVERREACH",
+          "owns": "Non-input domain prerequisites before command acceptance",
+          "responsibility_rule_id": "FR-A06"
+        },
+        "obligation_taxonomy_lookup": {
+          "lookup_path": "/obligation_taxonomy/deliberately unclassified",
+          "lookup_status": "ABSENT",
+          "declared_responsibility_rule_id": "FR-A06"
+        }
+      },
       "relevant_sibling_refs": [],
       "allowed_verdicts": [
         "APPROVED",

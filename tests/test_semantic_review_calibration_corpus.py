@@ -43,6 +43,7 @@ TASK2_SURFACE_PATHS = {
     FIXTURE_ROOT / "human-adjudicator-b-response-form.json",
     FIXTURE_ROOT.parent / "cohort-protocol-v1.json",
     FIXTURE_ROOT.parent / "official_calibration_controller.py",
+    FIXTURE_ROOT.parent / "materialize_human_adjudication_packet.py",
     ROOT / "tests" / "test_official_calibration_controller.py",
     ROOT / "tests" / "test_semantic_review_human_packet.py",
 }

@@ -4,7 +4,7 @@ This calibration-only layer is product-neutral. It records no reviewer execution
 
 - Full reviewer package SHA-256: `ccc2c5af60c74cde1b281ec7026bd8d42cac9717faf210c31fb3e8a719f59603`
 - Reviewer brief SHA-256: `3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c`
-- Common human evidence payload SHA-256: `265edb58fa58f690b0177d84c72f2190289a2bec26ac507a6fb28237dd68a5b3`
+- Common human evidence payload SHA-256: `7f267df32956beb47f1408b9a7ff6e64fa2e72d44fdf1a32537d34e394b23909`
 - `HUMAN_ADJUDICATION_COMPLETE = NO`
 - Cohorts: exactly `C1`, `C2`, and `C3`
 - Planned contexts: 3 full-review plus 45 one-case golden contexts, 48 unique total
