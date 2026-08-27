@@ -17,7 +17,7 @@ The calibration suite SHALL contain exactly 15 human-adjudicated cases before re
 | `G-009` | test obligations | Copied semantic prose in a test obligation contradicts its owning field. | `REJECTED_CANDIDATE` | `CONTRADICTS_OWNER` |
 | `G-010` | cross-cutting | A field adds an extra constraint with valid-looking structure but no canonical support. | `REJECTED_CANDIDATE` | `UNSUPPORTED_OVERREACH` |
 | `G-011` | cross-cutting | One canonical clause is correctly projected across distinct owning fields with declared sibling references and no uncontrolled duplication. | `APPROVED` | `SUPPORTED_EXACTLY` |
-| `G-012` | package/provenance | An active semantic source resolves to `SUPERSEDED`. | `INPUT_PACKAGE_ERROR` | `ACTIVE_SUPERSEDED_SOURCE` |
+| `G-012` | package/provenance | A lifecycle `superseded_sentinels` raw source record is both active and `SUPERSEDED`; no semantic review identity is created for the array. | `INPUT_PACKAGE_ERROR` | `ACTIVE_SUPERSEDED_SOURCE` |
 | `G-013` | package/provenance | A review identity has missing provenance or an empty provenance set. | `INPUT_PACKAGE_ERROR` | `INVALID_PROVENANCE` |
 | `G-014` | interpretation | Exact provenance is valid, but the emitted interpretation is not supported by the canonical value. | `REJECTED_CANDIDATE` | `UNSUPPORTED_OVERREACH` |
 | `G-015` | rubric meta-case | A deliberately incomplete responsibility profile cannot determine which field owns an obligation. | `RUBRIC_ERROR` | `RESPONSIBILITY_UNDEFINED` |
@@ -38,7 +38,7 @@ The reviewer SHALL not receive the expected answer file. The calibration control
 
 ## Expected-error distinction
 
-`G-012`, `G-013`, and `G-015` intentionally exercise finalized preflight failures rather than completed identity-level semantic reviews. Their expected error verdict/rationale pairs are read from `preflight_errors` and count as correct golden answers. “Unexpected `RUBRIC_ERROR` = 0” and “unexpected `INPUT_PACKAGE_ERROR` = 0” mean that no other golden or valid full-review scope may produce those verdicts. `G-015` is structurally hash-valid but contains a deliberately incomplete normative ownership taxonomy, so the correct result is `RUBRIC_ERROR`, not a hash/package failure.
+`G-012`, `G-013`, and `G-015` intentionally exercise finalized preflight failures rather than completed identity-level semantic reviews. Their expected error verdict/rationale pairs are read from `preflight_errors` and count as correct golden answers. `G-012` proves `PR-P01`: lifecycle `superseded_sentinels` is provenance-only, yields no synthetic `REVIEW_REQUIRED` identity, and fails before semantics when an active sentinel is superseded. “Unexpected `RUBRIC_ERROR` = 0” and “unexpected `INPUT_PACKAGE_ERROR` = 0” mean that no other golden or valid full-review scope may produce those verdicts. `G-015` is structurally hash-valid but contains a deliberately incomplete normative ownership taxonomy, so the correct result is `RUBRIC_ERROR`, not a hash/package failure.
 
 ## Human adjudication and freeze
 
@@ -58,7 +58,7 @@ Before reliability testing:
 - `test_obligations`: 3 cases (`G-007`–`G-009`)
 - unsupported extra constraint: 1 (`G-010`)
 - valid compositional representation: 1 (`G-011`)
-- active superseded source: 1 (`G-012`)
+- active superseded lifecycle sentinel provenance: 1 (`G-012`)
 - missing provenance: 1 (`G-013`)
 - valid provenance with unsupported interpretation: 1 (`G-014`)
 - ownership-indeterminate rubric: 1 (`G-015`)

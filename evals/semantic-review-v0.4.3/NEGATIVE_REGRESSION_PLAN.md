@@ -6,7 +6,7 @@ This plan defines exactly eight negative regression families. Every fixture SHAL
 |---|---|---|---|---|
 | `NR-01` | normative reviewer brief drift | Change exactly one normative instruction byte so one brief permits composition and another requires local duplication. | Brief hashes differ before review outputs are compared. | `FAIL/BRIEF_IDENTITY_MISMATCH` |
 | `NR-02` | completeness-mode drift | Assign one identity `LOCAL` in one package and `COMPOSITIONAL` in another without an approved profile version change. | Package/profile hash mismatch; mixed run set rejected. | `FAIL/PACKAGE_IDENTITY_MISMATCH` |
-| `NR-03` | sibling semantics treated as missing | In one full-review output, one reviewer rejects exactly one correctly sibling-owned semantic as absent from the local field. | A normative ownership/completeness disagreement is detected. | `FAIL/RUBRIC_NORMATIVE_AMBIGUITY` |
+| `NR-03` | repeated sibling-duplication execution error | In one full-review output, the same reviewer rejects exactly two distinct identities governed by the same responsibility rule because correctly sibling-owned semantics are absent from each LOCAL field. Freeze the same incorrect duplication interpretation and a valid `REVIEWER_EXECUTION_ERROR` classification for each identity; do not label either as normative ambiguity. | The repeated same-rule cluster is detected even though each individual mistake is determinate. | `FAIL/RESPONSIBILITY_RULE_INSTABILITY` |
 | `NR-04` | omitted review identity | Remove exactly one expected identity record from one completed output. | Coverage below 100%; pending count is not used to hide omission. | `FAIL/IDENTITY_COVERAGE` |
 | `NR-05` | previous verdict exposure | Add a prior completed review or verdict list to one reviewer package. | Exclusion scan and manifest declaration detect forbidden input. | `FAIL/PREVIOUS_VERDICT_EXPOSURE` before reliability calculation |
 | `NR-06` | unexpected candidate semantic-byte drift | Change one semantic value byte while keeping the run grouped with the prior candidate. | Recomputed semantic/contract/package hashes differ. | `FAIL/PACKAGE_IDENTITY_MISMATCH` |
@@ -21,7 +21,8 @@ The v0.4.2 disagreement matrix MAY be reduced to a generic regression summary fi
 - `0` identity mismatch;
 - `4` authorized semantic changes;
 - `176` unchanged-field verdict flips;
-- field distribution `input_invariants=62`, `visible_error=60`, `test_obligations=58`;
+- unchanged-flip distribution `input_invariants=60`, `visible_error=60`, `test_obligations=56`;
+- Candidate B total rejected-field distribution `input_invariants=62`, `visible_error=60`, `test_obligations=58`, where the extra 4 are the authorized semantic changes (`input_invariants=2`, `test_obligations=2`) that remained `REJECTED -> REJECTED` rather than flipping;
 - adjudication `REVIEW_RUBRIC_AMBIGUOUS=176`.
 
 The fixture SHALL contain no RMA canonical prose and SHALL not designate Candidate A or Candidate B verdicts as correct. Its oracle is only that a v0.4.2-shaped run set must fail:
@@ -41,13 +42,15 @@ Each regression test SHALL start from one known-good frozen calibration package/
 4. original fixture bytes are unchanged after the test;
 5. no production Product Definition or product-specific artifact is required.
 
+The frozen `NR-03` base set SHALL contain at least 200 unchanged identities with balanced margins and sufficient reliability headroom. Its two identity mutations therefore retain `three_review_unanimity >= 99%` and the balanced coefficient thresholds, proving that `FAIL/RESPONSIBILITY_RULE_INSTABILITY` is independently reachable rather than a side effect of another gate failure.
+
 ## Planned test mapping
 
 | Regression | Planned test name |
 |---|---|
 | `NR-01` | `test_gate_rejects_one_normative_brief_byte_difference` |
 | `NR-02` | `test_gate_rejects_completeness_mode_drift` |
-| `NR-03` | `test_gate_rejects_sibling_semantics_local_duplication_interpretation` |
+| `NR-03` | `test_gate_rejects_repeated_same_rule_sibling_duplication_execution_errors` |
 | `NR-04` | `test_gate_rejects_missing_review_identity` |
 | `NR-05` | `test_gate_rejects_previous_verdict_exposure` |
 | `NR-06` | `test_gate_rejects_unexpected_candidate_semantic_bytes` |

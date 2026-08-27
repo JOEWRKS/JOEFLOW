@@ -1,6 +1,8 @@
 # v0.4.3 Field Responsibility Matrix
 
-This matrix is normative for `joewrks.semantic-review/1.0`. It assigns one responsibility rule to every current `joewrks.action-conformance/1.0` action semantic field and every current lifecycle semantic field.
+This matrix is normative for `joewrks.semantic-review/1.0`. It assigns one responsibility rule to each of the 26 current action `semanticField` properties and 12 current lifecycle `semanticField` properties in `joewrks.action-conformance/1.0`.
+
+Lifecycle `superseded_sentinels` is not a `semanticField`: it is a raw array of source records with no `value`, `source_refs`, `derivation`, or `REVIEW_REQUIRED` identity. It is governed by package/provenance rule `PR-P01`, never by an `FR-L*` rule.
 
 The implemented machine-readable profile SHALL begin with `rubric_calibration_revision: 1` and increase it monotonically. Its complete file SHA-256 is the normative rubric hash. Every failed calibration increments that revision even when the diagnosed rule text does not otherwise change; old and new hashes are never pooled.
 
@@ -59,7 +61,12 @@ An omission exists only when an owned semantic projection is missing, contradict
 | `FR-L10` | `required_evidence` | LOCAL | Evidence required for transition/reversal | transition, boundary | general provenance | required evidence absent | unsupported evidence requirement |
 | `FR-L11` | `authority` | LOCAL | Actor/relationship allowed to perform transition | action actor/relationship | state or evidence rules | required authority absent | unauthorized actor allowed/valid actor denied |
 | `FR-L12` | `history_preservation` | COMPOSITIONAL | Immutable history and audit requirements across transitions/reversal | boundary, reversibility, reason/evidence | transition semantics | preservation/audit link absent | history rewrite or invented audit behavior |
-| `FR-L13` | `superseded_sentinels` | REFERENCE_ONLY | Inactive superseded lifecycle authority sentinels relevant to this lifecycle | provenance inventory | current lifecycle semantics or old prose | applicable sentinel reference absent | superseded rule treated as active/current |
+
+## Package/provenance-only rules
+
+| Rule | Structure | Responsibility | Failure |
+|---|---|---|---|
+| `PR-P01` | lifecycle `superseded_sentinels` raw source array | Validate every source record during package/provenance preflight; require sentinel sources to remain inactive and reject any active source whose status is `SUPERSEDED`. Do not create a semantic obligation, responsibility assignment, or review identity. | `INPUT_PACKAGE_ERROR/ACTIVE_SUPERSEDED_SOURCE` |
 
 ## Canonical obligation taxonomy and owner selection
 
@@ -103,7 +110,6 @@ An omission exists only when an owned semantic projection is missing, contradict
 | lifecycle evidence requirement | `FR-L10` | input/rejection/test projection when action-supplied |
 | lifecycle transition authority | `FR-L11` | action actor/relationship/rejection/test projection |
 | lifecycle history preservation | `FR-L12` | boundary/reversal/test sibling refs |
-| lifecycle superseded sentinel | `FR-L13` | provenance/package validation |
 
 ## Deterministic completeness decision
 

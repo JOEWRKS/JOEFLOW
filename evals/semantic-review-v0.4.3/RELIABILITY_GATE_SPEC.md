@@ -77,37 +77,115 @@ Every identity with a verdict or rationale-code difference SHALL receive exactly
 
 A single `REVIEWER_EXECUTION_ERROR` MAY remain diagnostic only when every other threshold still passes. Adjudication never rewrites original outputs, verdict/rationale accuracy, agreement, or reliability statistics and cannot convert a failed run set to PASS.
 
-## 6. Balanced-case statistics
+A determinate mistake that demands sibling-owned prose from one identity is `REVIEWER_EXECUTION_ERROR`, not normative ambiguity. If the same incorrect duplication interpretation appears on at least two distinct identities governed by the same responsibility rule, each identity may retain that execution-error classification, but the run set fails `FAIL/RESPONSIBILITY_RULE_INSTABILITY`.
 
-The full-review candidate verdict population is balanced when, after excluding expected meta/package-error fixtures, both `APPROVED` and `REJECTED_CANDIDATE` represent at least 5% of expected identities in every run.
+## 6. Frozen metric population and equations
 
-For all comparable runs:
+### 6.1 Common population and alignment
 
-- compute Cohen's kappa for every reviewer pair;
-- compute Fleiss' kappa across all reviewers;
-- minimum pairwise Cohen's kappa SHALL be `>= 0.90`;
-- Fleiss' kappa SHALL be `>= 0.90`.
+Let:
 
-All calculations use the same identity order and exact verdict classes. Error verdicts in a valid full-review package fail separately and are not collapsed into candidate rejection.
+- `m` be the number of comparable full-review runs, with `m >= 3`;
+- `N` be the number of expected unchanged review identities, with `N > 0`;
+- `C = {APPROVED, REJECTED_CANDIDATE}` and `K = |C| = 2`;
+- `x[i,j]` be reviewer `j`'s verdict for the `i`th identity after sorting exact `review_identity` strings by Unicode code-point order;
+- `n[i,c]` be the number of reviewers assigning category `c` to identity `i`.
 
-## 7. Imbalanced-case statistics
+Golden cases, preflight diagnostics, reviewer explanations, and rationale codes are not observations in these reliability coefficients. Every run SHALL have the exact same identity set and immutable package/semantic hashes before alignment; source order in output JSON is irrelevant after identity-keyed sorting.
 
-If either candidate verdict class is below 5% in any run, the run set is imbalanced. Kappa values SHALL still be reported but are diagnostic rather than the acceptance statistic.
+If `m < 3`, `N = 0`, an identity is missing/extra/duplicated, packages differ, or any full-review record contains `RUBRIC_ERROR`, `INPUT_PACKAGE_ERROR`, or an unknown verdict, structural acceptance fails and all set-level coefficients are reported as JSON `null` with a reason code. Error verdicts are never dropped, coerced to rejection, or treated as additional metric categories.
 
-Required:
+### 6.2 Pairwise unweighted nominal Cohen's kappa
 
-- multi-rater Gwet AC1 `>= 0.95`;
-- minority-class agreement `>= 0.95`.
-
-Minority-class agreement is:
+For each reviewer pair `(a,b)`:
 
 ```text
-identities unanimously assigned the pooled minority verdict
-/
-identities assigned that minority verdict by at least one reviewer
+p_o(a,b) = (1/N) * sum_i I[x[i,a] = x[i,b]]
+p_a(c)   = (1/N) * sum_i I[x[i,a] = c]
+p_b(c)   = (1/N) * sum_i I[x[i,b] = c]
+p_e(a,b) = sum_(c in C) p_a(c) * p_b(c)
+kappa_C(a,b) = (p_o(a,b) - p_e(a,b)) / (1 - p_e(a,b))
 ```
 
-If no reviewer assigns the minority verdict, the golden suite's minority-class cases remain the required sensitivity check; full-review minority-class agreement is reported as not applicable rather than `1.0`.
+This is unweighted nominal Cohen kappa over the two frozen verdict categories. Compute it for every unordered pair of the `m` reviewers. If `1 - p_e(a,b) = 0`, that pair's kappa is `null` with reason `ALL_ONE_CLASS_CHANCE_DENOMINATOR`; do not substitute `1`, `0`, or percent agreement.
+
+### 6.3 Multi-rater unweighted nominal Fleiss' kappa
+
+```text
+P_i       = [sum_(c in C) n[i,c] * (n[i,c] - 1)] / [m * (m - 1)]
+P_bar     = (1/N) * sum_i P_i
+p_c       = [sum_i n[i,c]] / [N * m]
+P_e_F     = sum_(c in C) p_c^2
+kappa_F   = (P_bar - P_e_F) / (1 - P_e_F)
+```
+
+Use all `m` reviewers and the same aligned identities. If `m < 3` or `N = 0`, report `null` with the corresponding input reason. If `1 - P_e_F = 0`, report `null` with reason `ALL_ONE_CLASS_CHANCE_DENOMINATOR`.
+
+### 6.4 Multi-rater unweighted nominal Gwet AC1
+
+The only permitted AC1 variant is the multi-rater, unweighted nominal coefficient using the same pair-agreement `P_bar` and the two fixed categories:
+
+```text
+p_c       = [sum_i n[i,c]] / [N * m]
+P_e_AC1   = [sum_(c in C) p_c * (1 - p_c)] / (K - 1)
+AC1       = (P_bar - P_e_AC1) / (1 - P_e_AC1)
+K         = 2
+```
+
+Do not substitute a two-rater marginal formula, weighted AC2, category-specific AC1, missing-rating variant, or software-library default. For `K = 2`, `P_e_AC1 <= 1/2`, so the denominator is positive whenever the common population is valid. An all-one-class, unanimously rated population has `P_e_AC1 = 0` and `AC1 = 1`.
+
+### 6.5 Minority-class agreement
+
+Let pooled category totals be `T_c = sum_i n[i,c]`.
+
+1. If exactly one category has the smaller positive `T_c`, it is `c_min`.
+2. Let `D = count_i[n[i,c_min] > 0]`.
+3. Let `U = count_i[n[i,c_min] = m]`.
+4. `minority_class_agreement = U / D`.
+
+If the pooled totals tie, there is no unique minority and the metric is `null` with reason `NO_UNIQUE_MINORITY`. If the smaller total is zero, `D = 0` and the metric is `null` with reason `MINORITY_CLASS_UNOBSERVED`; it MUST NOT be reported as `1.0`. Golden sensitivity cannot substitute for the required full-review minority metric.
+
+### 6.6 Exact arithmetic and reporting
+
+All counts, proportions, coefficients, balance checks, and threshold comparisons SHALL use exact reduced rational arithmetic equivalent to Python `fractions.Fraction`. Compare against exact thresholds `9/10`, `19/20`, `99/100`, and `1/20`; do not convert to binary floating point and do not round before a gate decision.
+
+Each non-null metric report SHALL store its reduced `{numerator, denominator}` and a separate six-decimal display string. The display string uses exact round-half-even at six places by integer quotient/remainder comparison; it is presentation only. A `null` metric SHALL store a stable reason code and never satisfies a numeric threshold when that metric is required by the selected gate branch.
+
+### 6.7 Edge-case table
+
+| Condition | Required result |
+|---|---|
+| fewer than 3 comparable full reviewers | all set-level metrics `null`; `FAIL/INSUFFICIENT_INDEPENDENT_RUNS` |
+| zero aligned identities | all metrics `null`; structural identity/coverage failure |
+| identity-set or immutable-byte mismatch | all metrics `null`; applicable package/identity failure |
+| any full-review `RUBRIC_ERROR` or `INPUT_PACKAGE_ERROR` | all metrics `null`; `FAIL/UNEXPECTED_ERROR_VERDICT` |
+| all ratings in one category | Cohen pairs `null`; Fleiss `null`; Gwet AC1 computed (`1` when unanimous); minority agreement `null` |
+| pooled category tie | minority agreement `null/NO_UNIQUE_MINORITY`; other metrics computed |
+| negative coefficient | preserve the exact negative rational value; do not clamp |
+
+## 7. Balanced/imbalanced gate selection
+
+For each reviewer `j` and category `c`, compute `share[j,c] = count_i[x[i,j] = c] / N` exactly.
+
+- `BALANCED` iff every reviewer has `share[j,APPROVED] >= 1/20` and `share[j,REJECTED_CANDIDATE] >= 1/20`. Equality at exactly 5% is balanced.
+- `IMBALANCED` otherwise. This includes an all-one-class run or any run in which one category is below 5%.
+
+Golden/meta/package-error fixtures are excluded from this classification because only the valid full-review identity population is used.
+
+For `BALANCED` populations:
+
+- every pairwise Cohen kappa SHALL be non-null and `>= 9/10`;
+- the exact minimum across all pairwise Cohen values SHALL be `>= 9/10`;
+- Fleiss kappa SHALL be non-null and `>= 9/10`;
+- Gwet AC1 and minority agreement are reported diagnostically but do not replace the kappa gates.
+
+For `IMBALANCED` populations:
+
+- multi-rater Gwet AC1 SHALL be non-null and `>= 19/20`;
+- minority-class agreement SHALL be non-null and `>= 19/20`;
+- pairwise Cohen and Fleiss values are diagnostic and do not replace either required imbalanced metric.
+
+A required `null` metric fails its branch. In particular, an all-one-class full review has AC1 `1` but minority agreement `null`, so it fails `FAIL/MINORITY_CLASS_RELIABILITY` rather than receiving a sensitivity exemption.
 
 ## 8. No systematic disagreement family
 

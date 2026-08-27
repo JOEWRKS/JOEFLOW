@@ -27,7 +27,7 @@ This phase does not change Product Definition, generic downstream production cod
 
 ### 3.1 Current behavior at the frozen baseline
 
-`joewrks.action-conformance/1.0` requires 26 action semantic fields. Each field contains `value`, non-empty `source_refs`, and either a `MACHINE_DERIVED` or `REVIEW_REQUIRED` derivation. The compiler validates structure, exact source identity, current/superseded status, source hashes, and machine derivations. For `REVIEW_REQUIRED`, it requires only a non-empty explanation; it does not prove the emitted meaning.
+`joewrks.action-conformance/1.0` requires 26 action semantic fields and 12 lifecycle semantic fields. Each semantic field contains `value`, non-empty `source_refs`, and either a `MACHINE_DERIVED` or `REVIEW_REQUIRED` derivation. Lifecycle `superseded_sentinels` is instead a raw array of source records and is not a semantic field. The compiler validates structure, exact source identity, current/superseded status, source hashes, and machine derivations. For `REVIEW_REQUIRED`, it requires only a non-empty explanation; it does not prove the emitted meaning.
 
 The current schema and compiler do not define:
 
@@ -53,7 +53,7 @@ The sidecar SHALL define field ownership without changing `joewrks.action-confor
 The semantic-review sidecar consists of five immutable layers:
 
 1. **Input manifest** — paths, byte hashes, logical roles, schema identities, expected review identities, and exclusion declarations; its verified file inventory is the input to the separately computed package hash.
-2. **Responsibility profile** — versioned rules assigning every supported action and lifecycle semantic field one responsibility rule and completeness mode. Its `rubric_calibration_revision` and file hash are the normative rubric version/hash for rerun control.
+2. **Responsibility profile** — versioned rules assigning all 26 action and 12 lifecycle semantic fields one responsibility rule and completeness mode. Its `rubric_calibration_revision` and file hash are the normative rubric version/hash for rerun control. Raw lifecycle `superseded_sentinels` is excluded and governed by package/provenance rule `PR-P01`.
 3. **Semantic obligation index** — a contract-hash-bound mapping from canonical clause projection to obligation type, owning field, allowed sibling references, and required test reference.
 4. **Canonical reviewer brief** — one versioned UTF-8/LF artifact whose exact bytes are included in the input manifest.
 5. **Review output** — for a valid completed review, one schema-valid record for every expected `REVIEW_REQUIRED` identity plus deterministic summary counts; for a terminal preflight failure, explicit diagnostics under the rules in §10.
@@ -108,6 +108,8 @@ Supporting projections MAY be included only when the manifest names their suppor
 
 The package SHALL declare `previous_reviewer_verdicts_present: false`. Any prior verdict, rationale, confusion matrix, or candidate correction hint inside the review boundary is `INPUT_PACKAGE_ERROR`.
 
+Package/provenance preflight SHALL validate the raw lifecycle `superseded_sentinels` array under `PR-P01`. It MUST NOT add `lifecycle:<id>:superseded_sentinels` to the review identity inventory or semantic obligation index. An active sentinel source with `source_status: SUPERSEDED` terminates as `INPUT_PACKAGE_ERROR/ACTIVE_SUPERSEDED_SOURCE`, as exercised by `G-012`.
+
 ## 7. Semantic obligation index
 
 Each obligation record SHALL include:
@@ -154,6 +156,8 @@ The expected identity is:
 ```text
 <owner_kind>:<owner_id>:<semantic_field>
 ```
+
+`semantic_field` SHALL resolve to one of the 26 action or 12 lifecycle properties whose schema is `$ref: #/$defs/semanticField`. Raw source arrays such as lifecycle `superseded_sentinels` are structurally ineligible and MUST NOT produce a review identity.
 
 For each expected `REVIEW_REQUIRED` identity, a completed review SHALL:
 
@@ -250,12 +254,13 @@ v0.4.3 retains `joewrks.action-conformance/1.0`. Responsibility, composition, ob
 This specification phase is acceptable only when:
 
 - all ten requested specification artifacts exist and agree;
-- all 26 action fields and all current lifecycle semantic fields have one responsibility rule;
+- all 26 action and all 12 lifecycle semantic fields have one responsibility rule, for 38 semantic responsibility rules total;
+- lifecycle `superseded_sentinels` remains provenance-only under `PR-P01` and creates no review identity;
 - exactly 15 golden cases and 8 negative-regression families are specified;
 - the PM-approved reliability thresholds are copied exactly and operationally defined;
 - the output schema proposal is valid JSON;
 - an isolated auditor answers all six required ambiguity questions and returns `PASS`;
 - no production downstream file differs from baseline;
-- the specification-only commit descends directly from `efd96410f6401cbf9624328e94b795c315164b7f`.
+- the specification branch history descends from `efd96410f6401cbf9624328e94b795c315164b7f`, and this repair commit is a normal, non-rewritten child of `7ffbc60e869f1681b48dd75e2085422d979ac14a`.
 
 Implementation, calibration execution, reviewer runs, action-contract migration, and efficacy testing remain not started.

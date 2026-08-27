@@ -100,7 +100,10 @@ This table is normative and SHALL be embedded in the canonical reviewer brief. D
 | `FR-L10` | `required_evidence` | LOCAL | evidence required for transition/reversal |
 | `FR-L11` | `authority` | LOCAL | actor/relationship allowed to perform transition |
 | `FR-L12` | `history_preservation` | COMPOSITIONAL | immutable history/audit across transition or reversal |
-| `FR-L13` | `superseded_sentinels` | REFERENCE_ONLY | inactive superseded lifecycle-authority sentinels |
+
+### 4.2 Provenance-only lifecycle sentinel boundary
+
+Lifecycle `superseded_sentinels` is a raw source array, not a `semanticField`. Do not create `lifecycle:<id>:superseded_sentinels`, do not assign an `FR-L*` rule, and do not review it as `REVIEW_REQUIRED`. Package/provenance preflight applies `PR-P01`; an active sentinel source with `source_status: SUPERSEDED` is `INPUT_PACKAGE_ERROR/ACTIVE_SUPERSEDED_SOURCE`.
 
 ### 5. Specific disputed-family rules
 

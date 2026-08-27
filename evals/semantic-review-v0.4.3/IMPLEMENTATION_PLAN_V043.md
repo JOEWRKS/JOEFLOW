@@ -21,6 +21,8 @@
 - Every failed calibration increments `rubric_calibration_revision`, changes the responsibility-profile/rubric hash, and requires a complete rerun.
 - Calibration uses exactly 15 frozen golden cases and at least 3 independent full reviews.
 - All PM-approved thresholds in `RELIABILITY_GATE_SPEC.md` are conjunctive.
+- The responsibility profile covers exactly 26 action plus 12 lifecycle `semanticField` properties (38 semantic rules). Lifecycle `superseded_sentinels` remains a raw provenance array under `PR-P01`; it never becomes a semantic identity or `FR-L*` rule.
+- Reliability coefficients, prevalence classification, display values, and threshold comparisons use exact reduced rational arithmetic; binary floating point and pre-decision rounding are forbidden.
 - The implementation uses only Python's standard library and existing repository schema validation.
 - v0.4.2 RMA artifacts are not runtime dependencies or generic semantic authority.
 
@@ -120,6 +122,15 @@ def test_package_rejects_path_escape(package_root):
     write_manifest(package_root, manifest)
     with self.assertRaisesRegex(PackageError, "INVALID_PACKAGE_PATH"):
         load_and_verify_package(package_root)
+
+def test_package_rejects_active_superseded_lifecycle_sentinel(package_root):
+    contract = load_contract(package_root)
+    sentinel = contract["lifecycles"][0]["superseded_sentinels"][0]
+    sentinel["source_status"] = "SUPERSEDED"
+    sentinel["active"] = True
+    write_contract_and_rehash(package_root, contract)
+    with self.assertRaisesRegex(PackageError, "ACTIVE_SUPERSEDED_SOURCE"):
+        load_and_verify_package(package_root)
 ```
 
 - [ ] **Step 2: Run the package tests and observe missing API failures**
@@ -151,7 +162,7 @@ def _safe_path(root: Path, relative: str) -> Path:
     return resolved
 ```
 
-Verify every declared byte size/hash, exact required role count, manifest hash, package hash, declared `previous_reviewer_verdicts_present: false`, and forbidden file scan before parsing semantic content.
+Verify every declared byte size/hash, exact required role count, manifest hash, package hash, declared `previous_reviewer_verdicts_present: false`, and forbidden file scan before parsing semantic content. Then apply provenance-only rule `PR-P01` to each raw lifecycle `superseded_sentinels` source record. An active record with `source_status: SUPERSEDED` raises `PackageError("ACTIVE_SUPERSEDED_SOURCE", ...)` before semantic review; no responsibility rule or review identity is created for that array.
 
 - [ ] **Step 4: Run package and hashing tests**
 
@@ -186,6 +197,9 @@ def test_profile_assigns_all_current_action_and_lifecycle_fields_once():
     profile = load_responsibility_profile(PROFILE_PATH)
     assert set(profile["action"]) == EXPECTED_ACTION_FIELDS
     assert set(profile["lifecycle"]) == EXPECTED_LIFECYCLE_FIELDS
+    assert len(profile["action"]) == 26
+    assert len(profile["lifecycle"]) == 12
+    assert "superseded_sentinels" not in profile["lifecycle"]
 
 def test_obligation_cannot_have_two_owners(valid_contract, profile, valid_index):
     duplicate = copy.deepcopy(valid_index["obligations"][0])
@@ -201,7 +215,7 @@ Run: `python -m unittest tests.test_semantic_review_responsibility -v`
 
 Expected: import/file failures.
 
-- [ ] **Step 3: Implement the 26 action and 13 lifecycle responsibility rules**
+- [ ] **Step 3: Implement the 26 action and 12 lifecycle responsibility rules**
 
 ```python
 VALID_MODES = {"LOCAL", "COMPOSITIONAL", "REFERENCE_ONLY"}
@@ -216,7 +230,7 @@ def expected_responsibility(profile, owner_kind, semantic_field):
     return rule["responsibility_rule_id"], rule["completeness_mode"]
 ```
 
-The JSON artifact SHALL copy every `FR-A01`–`FR-A26` and `FR-L01`–`FR-L13` rule from `FIELD_RESPONSIBILITY_MATRIX.md`, include a `rubric_calibration_revision`, and include allowed sibling rules, omission codes, and overreach codes.
+The JSON artifact SHALL copy every `FR-A01`–`FR-A26` and `FR-L01`–`FR-L12` rule from `FIELD_RESPONSIBILITY_MATRIX.md`, include a `rubric_calibration_revision`, and include allowed sibling rules, omission codes, and overreach codes. It SHALL contain exactly 38 semantic responsibility rules. `PR-P01` belongs to package/provenance validation in Task 2 and SHALL NOT appear as a semantic-field owner.
 
 - [ ] **Step 4: Run responsibility tests**
 
@@ -251,6 +265,17 @@ def test_completed_output_requires_exact_identity_set(valid_package, valid_outpu
     with self.assertRaisesRegex(OutputError, "IDENTITY_SET_MISMATCH"):
         validate_review_output(valid_package, valid_run_envelope, valid_output)
 
+def test_output_rejects_synthetic_lifecycle_sentinel_identity(valid_package, valid_output):
+    synthetic = copy.deepcopy(valid_output["records"][0])
+    synthetic.update({
+        "owner_kind": "lifecycle",
+        "semantic_field": "superseded_sentinels",
+        "review_identity": f"lifecycle:{synthetic['owner_id']}:superseded_sentinels",
+    })
+    valid_output["records"].append(synthetic)
+    with self.assertRaisesRegex(OutputError, "OUTPUT_SCHEMA_VIOLATION"):
+        validate_review_output(valid_package, valid_run_envelope, valid_output)
+
 def test_rubric_error_is_not_candidate_rejection(valid_package, valid_output):
     valid_output["records"] = []
     valid_output["preflight_errors"] = [{
@@ -283,6 +308,8 @@ Run: `python -m unittest tests.test_semantic_review_output -v`
 Expected: import failure for `validate_review_output`.
 
 - [ ] **Step 3: Implement schema, hash, responsibility, and identity validation**
+
+The output schema SHALL enumerate exactly the 38 semantic field names and exactly `FR-A01`–`FR-A26` plus `FR-L01`–`FR-L12`. `superseded_sentinels`, `PR-P01`, and `FR-L13` are schema-ineligible; the Python validator additionally enforces the owner-kind/field/rule tuple against the hash-bound identity inventory.
 
 ```python
 VERDICTS = {"APPROVED", "REJECTED_CANDIDATE", "RUBRIC_ERROR", "INPUT_PACKAGE_ERROR"}
@@ -379,8 +406,8 @@ def test_golden_accuracy_requires_verdict_and_rationale_code():
     outputs = make_correct_golden_outputs()
     outputs[0]["rationale_code"] = "UNSUPPORTED_OVERREACH"
     report = evaluate_goldens(outputs, GOLDEN_ANSWERS)
-    assert report["verdict_accuracy"] == 1.0
-    assert report["rationale_code_accuracy"] < 1.0
+    assert report["verdict_accuracy"] == Fraction(1, 1)
+    assert report["rationale_code_accuracy"] < Fraction(1, 1)
 ```
 
 - [ ] **Step 2: Run golden tests and observe missing fixtures/API failures**
@@ -402,7 +429,10 @@ def evaluate_goldens(outputs, answers):
     verdict_hits = sum(observed[key]["verdict"] == expected[key]["verdict"] for key in expected)
     rationale_hits = sum(observed[key]["rationale_code"] == expected[key]["rationale_code"] for key in expected)
     count = len(expected)
-    return {"verdict_accuracy": verdict_hits / count, "rationale_code_accuracy": rationale_hits / count}
+    return {
+        "verdict_accuracy": Fraction(verdict_hits, count),
+        "rationale_code_accuracy": Fraction(rationale_hits, count),
+    }
 ```
 
 - [ ] **Step 4: Run golden tests**
@@ -425,25 +455,68 @@ git commit -m "test: freeze semantic review golden calibration suite"
 - Test: `tests/test_semantic_review_statistics.py`
 
 **Interfaces:**
-- Produces: `cohen_kappa(left: list[str], right: list[str]) -> float`
-- Produces: `fleiss_kappa(runs: list[list[str]]) -> float`
-- Produces: `gwet_ac1(runs: list[list[str]]) -> float`
-- Produces: `minority_class_agreement(runs: list[list[str]]) -> float | None`
-- Produces: `is_balanced(runs: list[list[str]], floor: float = 0.05) -> bool`
+- Produces: `MetricResult(value: Fraction | None, null_reason: str | None)`
+- Produces: `cohen_kappa(left: list[str], right: list[str]) -> MetricResult`
+- Produces: `fleiss_kappa(runs: list[list[str]]) -> MetricResult`
+- Produces: `gwet_ac1(runs: list[list[str]]) -> MetricResult`
+- Produces: `minority_class_agreement(runs: list[list[str]]) -> MetricResult`
+- Produces: `is_balanced(runs: list[list[str]], floor: Fraction = Fraction(1, 20)) -> bool`
+- Produces: `format_metric(value: Fraction, places: int = 6) -> str`
+- Produces: `serialize_metric(result: MetricResult) -> dict[str, Any]`
 
-- [ ] **Step 1: Write statistic fixtures including the prevalence paradox**
+- [ ] **Step 1: Write hand-calculated deterministic statistic vectors**
 
 ```python
-def test_imbalanced_population_uses_ac1_and_minority_agreement():
+from fractions import Fraction
+
+A, R = "APPROVED", "REJECTED_CANDIDATE"
+
+def test_balanced_disagreement_vector_exact_readback():
     runs = [
-        ["APPROVED"] * 98 + ["REJECTED_CANDIDATE"] * 2,
-        ["APPROVED"] * 98 + ["REJECTED_CANDIDATE"] * 2,
-        ["APPROVED"] * 98 + ["REJECTED_CANDIDATE"] * 2,
+        [A, A, R, R],
+        [A, R, R, R],
+        [A, A, R, R],
     ]
+    assert is_balanced(runs)
+    assert [item.value for item in pairwise_cohen_kappas(runs)] == [Fraction(1, 2), Fraction(1, 1), Fraction(1, 2)]
+    assert fleiss_kappa(runs).value == Fraction(23, 35)
+    assert gwet_ac1(runs).value == Fraction(25, 37)
+    assert minority_class_agreement(runs).value == Fraction(1, 2)
+    assert format_metric(Fraction(23, 35)) == "0.657143"
+    assert format_metric(Fraction(25, 37)) == "0.675676"
+
+def test_imbalanced_prevalence_vector_exact_readback():
+    runs = [[A] * 20 + [R], [A] * 20 + [R], [A] * 21]
     assert not is_balanced(runs)
-    assert gwet_ac1(runs) == 1.0
-    assert minority_class_agreement(runs) == 1.0
+    assert [item.value for item in pairwise_cohen_kappas(runs)] == [Fraction(1, 1), Fraction(0, 1), Fraction(0, 1)]
+    assert fleiss_kappa(runs).value == Fraction(59, 122)
+    assert gwet_ac1(runs).value == Fraction(3599, 3725)
+    assert minority_class_agreement(runs).value == Fraction(0, 1)
+    assert format_metric(Fraction(59, 122)) == "0.483607"
+    assert format_metric(Fraction(3599, 3725)) == "0.966174"
+
+def test_all_one_class_has_frozen_null_semantics():
+    runs = [[A] * 4, [A] * 4, [A] * 4]
+    assert not is_balanced(runs)
+    pairs = pairwise_cohen_kappas(runs)
+    assert [item.value for item in pairs] == [None, None, None]
+    assert {item.null_reason for item in pairs} == {"ALL_ONE_CLASS_CHANCE_DENOMINATOR"}
+    assert fleiss_kappa(runs) == MetricResult(None, "ALL_ONE_CLASS_CHANCE_DENOMINATOR")
+    assert gwet_ac1(runs).value == Fraction(1, 1)
+    assert minority_class_agreement(runs) == MetricResult(None, "MINORITY_CLASS_UNOBSERVED")
+
+def test_perfect_balanced_vector_exposes_minority_tie_diagnostic():
+    runs = [[A, A, R, R]] * 3
+    assert is_balanced(runs)
+    assert [item.value for item in pairwise_cohen_kappas(runs)] == [Fraction(1, 1)] * 3
+    assert fleiss_kappa(runs).value == Fraction(1, 1)
+    assert gwet_ac1(runs).value == Fraction(1, 1)
+    assert minority_class_agreement(runs) == MetricResult(None, "NO_UNIQUE_MINORITY")
 ```
+
+For the balanced disagreement vector, `P_bar = 5/6`, pooled category shares are `5/12` and `7/12`, Fleiss `P_e = 37/72`, and Fleiss kappa is `(5/6 - 37/72)/(1 - 37/72) = 23/35`. Gwet `P_e = 35/72`, so AC1 is `(5/6 - 35/72)/(1 - 35/72) = 25/37`. The pooled minority is `APPROVED`; it appears at two identities and is unanimous at one, so minority agreement is `1/2`.
+
+For the imbalanced vector, `P_bar = 61/63`, pooled category shares are `61/63` and `2/63`, Fleiss `P_e = 3725/3969`, and Fleiss kappa is `59/122`. Gwet `P_e = 244/3969`, so AC1 is `3599/3725`. The pooled minority is `REJECTED_CANDIDATE`; it appears at one identity and is not unanimous, so minority agreement is `0`. The third review's minority share is `0 < 1/20`, making the vector imbalanced.
 
 - [ ] **Step 2: Run statistics tests and observe missing API failure**
 
@@ -451,27 +524,46 @@ Run: `python -m unittest tests.test_semantic_review_statistics -v`
 
 Expected: import failures for statistic functions.
 
-- [ ] **Step 3: Implement pairwise, multi-rater, AC1, and minority formulas**
+- [ ] **Step 3: Implement the exact frozen pairwise, multi-rater, AC1, minority, balance, and display formulas**
 
-Use exact identity-aligned categorical counts and `fractions.Fraction` internally until the final float conversion. Reject unequal run lengths, unknown verdicts, fewer than three runs for multi-rater metrics, and empty populations.
+Follow `RELIABILITY_GATE_SPEC.md` §§6–7 literally. First require exact identity-set equality, then sort and align that exact set before extracting the two verdict categories. Use `fractions.Fraction` for every intermediate and every non-null `MetricResult.value`; never convert to float. Reject missing/extra/duplicate identities, unknown verdicts, fewer than three runs for set-level metrics, and empty populations. A structural or review-error verdict makes the metric set null and fails the gate; it is never a third category.
 
 ```python
+@dataclass(frozen=True)
+class MetricResult:
+    value: Fraction | None
+    null_reason: str | None = None
+
+    def __post_init__(self):
+        if (self.value is None) == (self.null_reason is None):
+            raise ValueError("exactly one of value or null_reason is required")
+
 def minority_class_agreement(runs):
     candidate_classes = ("APPROVED", "REJECTED_CANDIDATE")
-    pooled = Counter(value for run in runs for value in run if value in candidate_classes)
-    minority = min(candidate_classes, key=lambda key: (pooled[key], key))
+    pooled = Counter(value for run in runs for value in run)
+    if pooled[candidate_classes[0]] == pooled[candidate_classes[1]]:
+        return MetricResult(None, "NO_UNIQUE_MINORITY")
+    minority = min(candidate_classes, key=lambda key: pooled[key])
     if pooled[minority] == 0:
-        return None
-    any_minority = [index for index in range(len(runs[0])) if any(run[index] == minority for run in runs)]
-    unanimous = sum(all(run[index] == minority for run in runs) for index in any_minority)
-    return unanimous / len(any_minority)
+        return MetricResult(None, "MINORITY_CLASS_UNOBSERVED")
+    detected = [index for index in range(len(runs[0])) if any(run[index] == minority for run in runs)]
+    if not detected:
+        return MetricResult(None, "MINORITY_CLASS_UNOBSERVED")
+    unanimous = sum(all(run[index] == minority for run in runs) for index in detected)
+    return MetricResult(Fraction(unanimous, len(detected)), None)
 ```
+
+Implement Cohen's kappa for every unordered reviewer pair with pair-specific marginals; a zero `1 - P_e` denominator yields `null/ALL_ONE_CLASS_CHANCE_DENOMINATOR`. Implement Fleiss' kappa with `P_i = sum_c n_ic(n_ic-1)/(m(m-1))`, `P_bar = sum_i P_i/N`, and pooled `P_e = sum_c p_c^2`; its zero denominator yields the same null reason. Implement the one required multi-rater unweighted nominal Gwet AC1 variant with the same `P_bar` and `P_e = sum_c p_c(1-p_c)/(K-1)` for frozen `K=2`; do not substitute another AC1/AC2 or weighted definition. If AC1's denominator is zero, return its named null reason, though the frozen all-one case has `P_e=0` and AC1 exactly `1`.
+
+For balance, calculate every reviewer/category share exactly and classify balanced iff all shares are `>= Fraction(1, 20)`; equality is balanced. `serialize_metric` stores a non-null reduced numerator/denominator and the six-decimal string from `format_metric`, or stores JSON null plus the stable `null_reason`. Half-even display rounding is derived by integer quotient/remainder arithmetic and never feeds a gate decision.
+
+Add edge tests for empty populations, fewer than three reviewers, mismatched identity sets, identity permutation/alignment, unexpected error verdicts, all-one categories, pooled ties, unobserved minority, equality at `1/20`, and one count below `1/20`. Every required null has a stable reason code and fails its selected gate branch.
 
 - [ ] **Step 4: Run statistics tests**
 
 Run: `python -m unittest tests.test_semantic_review_statistics -v`
 
-Expected: all tests pass, including known perfect, chance, imbalanced, and disagreement matrices.
+Expected: all tests pass, including the exact fractions, null reason codes, alignment failures, edge classifications, and six-decimal displays above.
 
 - [ ] **Step 5: Commit statistics**
 
@@ -498,11 +590,21 @@ git commit -m "feat: add semantic review reliability statistics"
 def test_majority_agreement_cannot_override_same_rule_disagreement(valid_run_set):
     target_rule = valid_run_set.repeated_rule_id
     targets = [record for record in valid_run_set.outputs[2]["records"] if record["responsibility_rule_id"] == target_rule][:2]
+    assert len({record["review_identity"] for record in targets}) == 2
     for record in targets:
         replace_verdict_and_recount(valid_run_set.outputs[2], record["review_identity"], "REJECTED_CANDIDATE", "MISSING_OWNED_SEMANTIC")
-    report = evaluate_reliability_gate(*valid_run_set.args)
+    classifications = [
+        reviewer_execution_error(
+            record["review_identity"],
+            target_rule,
+            interpretation="incorrectly required sibling-owned semantics in this LOCAL field",
+        )
+        for record in targets
+    ]
+    report = evaluate_reliability_gate(*valid_run_set.args, classifications=classifications)
     assert not report["passed"]
     assert "FAIL/RESPONSIBILITY_RULE_INSTABILITY" in report["failures"]
+    assert "FAIL/RUBRIC_NORMATIVE_AMBIGUITY" not in report["failures"]
 ```
 
 - [ ] **Step 2: Run gate tests and observe missing API failure**
@@ -516,12 +618,12 @@ Expected: import failure for `evaluate_reliability_gate`.
 ```python
 THRESHOLDS = {
     "minimum_runs": 3,
-    "golden_verdict_accuracy": 1.0,
-    "golden_rationale_code_accuracy": 1.0,
-    "unanimity": 0.99,
-    "balanced_kappa": 0.90,
-    "imbalanced_ac1": 0.95,
-    "minority_class_agreement": 0.95,
+    "golden_verdict_accuracy": Fraction(1, 1),
+    "golden_rationale_code_accuracy": Fraction(1, 1),
+    "unanimity": Fraction(99, 100),
+    "balanced_kappa": Fraction(9, 10),
+    "imbalanced_ac1": Fraction(19, 20),
+    "minority_class_agreement": Fraction(19, 20),
 }
 
 def evaluate_reliability_gate(run_packages, run_envelopes, outputs, golden_report, classifications):
@@ -548,7 +650,7 @@ def evaluate_reliability_gate(run_packages, run_envelopes, outputs, golden_repor
     return {"passed": not failures, "failures": failures, "metrics": metrics, "thresholds": THRESHOLDS}
 ```
 
-Compute unchanged identities from exact semantic/provenance/rule/mode/obligation hashes. For more than three runs, compute three-review unanimity for every three-run combination and gate on the minimum. Compute pairwise Cohen kappa for every pair and Fleiss kappa/Gwet AC1 across all reviewers. Require one exact closed-code classification for every verdict or rationale disagreement; missing/uncertain classifications are `UNRESOLVED_NORMATIVE`, and adjudication never rewrites original metrics. Cluster disagreements by rule, field, mode, rationale, and obligation type; two identities under one rule fail automatically.
+Compute unchanged identities from exact semantic/provenance/rule/mode/obligation hashes. For more than three runs, compute three-review unanimity for every three-run combination and gate on the minimum. Compute pairwise Cohen kappa for every pair and Fleiss kappa/Gwet AC1 across all reviewers using the exact `Fraction` values from Task 6. The balanced branch requires every pair and Fleiss to be non-null and `>= 9/10`; the imbalanced branch requires Gwet AC1 and minority agreement to be non-null and `>= 19/20`. A required null fails the selected branch, including all-one AC1 `1` with null minority agreement. Require one exact closed-code classification for every verdict or rationale disagreement; missing/uncertain classifications are `UNRESOLVED_NORMATIVE`, and adjudication never rewrites original metrics. A single sibling-duplication mistake that is mechanically resolved by an existing responsibility rule is `REVIEWER_EXECUTION_ERROR`, not normative ambiguity. Cluster disagreements by responsibility rule for the zero-repetition gate and additionally record the exact interpretation for diagnosis. Any two distinct disagreement identities under one rule fail `FAIL/RESPONSIBILITY_RULE_INSTABILITY`; `NR-03` freezes the determinate subcase in which both carry the same incorrect sibling-duplication interpretation.
 
 - [ ] **Step 4: Run the gate and all semantic-review unit tests**
 
@@ -579,7 +681,7 @@ git commit -m "feat: enforce semantic review reliability gate"
 EXPECTED = {
     "NR-01": {"FAIL/BRIEF_IDENTITY_MISMATCH"},
     "NR-02": {"FAIL/PACKAGE_IDENTITY_MISMATCH"},
-    "NR-03": {"FAIL/RUBRIC_NORMATIVE_AMBIGUITY"},
+    "NR-03": {"FAIL/RESPONSIBILITY_RULE_INSTABILITY"},
     "NR-04": {"FAIL/IDENTITY_COVERAGE"},
     "NR-05": {"FAIL/PREVIOUS_VERDICT_EXPOSURE"},
     "NR-06": {"FAIL/PACKAGE_IDENTITY_MISMATCH"},
@@ -599,9 +701,9 @@ Run: `python -m unittest tests.test_semantic_review_negative_regressions -v`
 
 Expected: failures for missing eight mutation fixtures and v0.4.2 summary.
 
-- [ ] **Step 3: Implement exactly eight single-variable mutations**
+- [ ] **Step 3: Implement exactly eight controlled regression-family mutations**
 
-Create mutation helpers that deep-copy the known-good package/run set, change only the named input, and assert the source fixture hash is unchanged after evaluation. The v0.4.2 summary SHALL contain only counts and generic field families, never RMA canonical text or historical reviewer truth labels.
+Create mutation helpers that deep-copy the known-good package/run set, apply only the named regression-family stimulus, and assert the source fixture hash is unchanged after evaluation. `NR-03` is one controlled repeated-interpretation family: on a frozen balanced base with at least 200 unchanged identities and coefficient headroom, mutate exactly two distinct identities governed by the same responsibility rule in one review, attach the same incorrect sibling-duplication interpretation and a determinate `REVIEWER_EXECUTION_ERROR` classification to each, and prove the gate emits only `FAIL/RESPONSIBILITY_RULE_INSTABILITY` while unanimity remains `>= 99%`, balanced coefficients remain above threshold, and normative ambiguity remains absent. Preserve `G-003`, `G-005`, and `G-008` as the positive composition-sensitivity proof that a single correct sibling reference remains acceptable. The v0.4.2 summary SHALL contain only counts and generic field families, never RMA canonical text or historical reviewer truth labels.
 
 - [ ] **Step 4: Run negative regressions and complete semantic-review suite**
 
