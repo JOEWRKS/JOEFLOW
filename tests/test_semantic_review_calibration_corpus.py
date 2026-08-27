@@ -231,6 +231,86 @@ class SemanticReviewCalibrationCorpusTest(unittest.TestCase):
                         self.assertNotIn(phrase, canonical)
                         self.assertNotIn(phrase, candidate)
 
+    def test_implication_prone_local_candidates_keep_an_explicit_owned_constraint(self):
+        contract = read_json(PACKAGE_ROOT / "action-contract.json")
+        alternatives = {
+            ("action", "actor"): (
+                "exclude unassigned participants",
+                "allow an unassigned participant to perform the operation",
+            ),
+            ("action", "relationship_predicate"): (
+                "reject an unrelated actor",
+                "allow an actor with no assignment to the request",
+            ),
+            ("action", "object_binding"): (
+                "reject a target outside that binding",
+                "allow a target outside the stated request and document binding",
+            ),
+            ("action", "allowed_current_states"): (
+                "exclude every other state",
+                "allow the operation from draft as well as pending",
+            ),
+            ("action", "history_result"): (
+                "preserve every earlier event",
+                "replace every earlier event with the new decision event",
+            ),
+            ("lifecycle", "required_confirmation"): (
+                "reject an absent confirmation",
+                "allow finalization without confirmation",
+            ),
+            ("lifecycle", "required_evidence"): (
+                "reject evidence bound to another request",
+                "accept evidence bound to another request",
+            ),
+            ("lifecycle", "authority"): (
+                "reject transition attempts by other actors",
+                "allow transitions by an unassigned actor",
+            ),
+        }
+        for (owner_kind, field), (required, explicit_alternative) in alternatives.items():
+            collection = contract["actions" if owner_kind == "action" else "lifecycles"]
+            id_key = "action_id" if owner_kind == "action" else "lifecycle_id"
+            for owner in collection:
+                candidate = " ".join(owner[field]["value"]).lower()
+                with self.subTest(owner_kind=owner_kind, field=field, owner=owner[id_key]):
+                    self.assertEqual(candidate.count(";"), 1)
+                    self.assertNotEqual(
+                        required in candidate,
+                        explicit_alternative in candidate,
+                    )
+
+    def test_candidate_surfaces_do_not_expose_a_unique_prose_slot(self):
+        authority = read_json(PACKAGE_ROOT / "canonical-authority.json")
+        contract = read_json(PACKAGE_ROOT / "action-contract.json")
+        profile = read_json(PROFILE_SOURCE)
+        canonical = {
+            (rule["owner_kind"], rule["owner_id"], rule["responsibility_rule_id"]): rule[
+                "text"
+            ]
+            for rule in authority["objects"]["rules"]
+        }
+        for owner_kind, collection_name, id_key in (
+            ("action", "actions", "action_id"),
+            ("lifecycle", "lifecycles", "lifecycle_id"),
+        ):
+            for field, rule in profile[owner_kind].items():
+                if rule["completeness_mode"] == "REFERENCE_ONLY":
+                    continue
+                signatures = []
+                for owner in contract[collection_name]:
+                    text = " ".join(owner[field]["value"])
+                    signatures.append(
+                        (
+                            text == canonical[
+                                (owner_kind, owner[id_key], rule["responsibility_rule_id"])
+                            ],
+                            text.count(";"),
+                        )
+                    )
+                with self.subTest(owner_kind=owner_kind, field=field):
+                    self.assertEqual(len(set(signatures)), 1)
+                    self.assertEqual(signatures[0], (False, 1))
+
     def test_leak_detector_rejects_synthetic_per_identity_outcome(self):
         self.assertTrue(CALIBRATION_AUDIT_PATH.is_file(), "calibration audit missing")
         audit = load_calibration_audit()

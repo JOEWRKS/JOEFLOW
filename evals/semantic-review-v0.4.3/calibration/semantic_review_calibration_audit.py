@@ -58,29 +58,36 @@ LIFECYCLE_OWNER_RE = re.compile(r"^LC-CAL-DOCUMENT-0[1-3]$")
 TEST_REFERENCE_RE = re.compile(
     r"^TEST-CAL-(?:ACT-CAL-REQUEST|LC-CAL-DOCUMENT)-0[1-3]-FR-[AL][0-9]{2}$"
 )
+STABLE_REFERENCE_TOKEN_RE = re.compile(
+    r"\b[A-Z]+-CAL-(?:REQUEST|DOCUMENT)-0[1-3]\b"
+)
+REFERENCE_ONLY_RULE_IDS = frozenset({"FR-A24", "FR-A25", "FR-A26"})
+REFERENCE_ONLY_FIELDS = frozenset({"superseded_rules", "test_obligations", "trace"})
 TOKEN_RE = re.compile(r"[a-z]+")
 NEUTRAL_SEMANTIC_TERMS = frozenset(
     """
-    a absent act action actor actors after all allow allowed also an and another append
+    a absent accept act action actor actors after all allow allowed also an and another append
     apply approval approver archival archived as assigned assignment attempt attempts audit
     authenticated authentication author authoritative authority avoid be before bind binding blocks
     bound boundary business by bytes cal calibration carry category classes close
     change class command commit committed concurrency conditions confirmation contain correctable
-    create current deadline decision decline declining default define delivery document
-    documents domain draft duplicate earlier effects empty enter entering error event
+    create current deadline decision decline declining default define deleted delivery detach
+    discard document documents domain draft duplicate earlier effects empty enter entering entry
+    error event
     every evidence exclude expectations expected expired explicit failing failure final
     finalization finalized for forbid forbidden from guarded history idempotency identifier
     effect execute guards immutable in increment incrementing input intended interval invariants irreversible is
     it its keep key lc leave lifecycle limit must mutation mutations no non notice
-    notification object obligation obligations on once one only op operation other outcome
-    outside owned participants pass pending per permit preconditions predicate preservation preserve
-    prevent prior projection queue ready reason recipient record recovery reference reject
+    new notification object obligation obligations on once one only op operation other outcome
+    outside owned participant participants pass pending per perform permit preconditions predicate
+    preservation preserve prevent prior projection queue ready reason recipient record recovery
+    reference reject remain replace requires
     rejection relationship report request require required result resulting retain retained
-    requesting retry return reuse reversal reversibility reversible rule rules same select separate
+    requesting retry return reuse reversal reversibility reversible reversing rule rules same select separate
     session set show side stable stale state stated states submitted success successful superseded
-    supersession synthetic target test that the to trace transition transitions unassigned unchanged
-    undeclared unrelated unresolved uploaded validation version visible when whitespace
-    window with without
+    supersession synthetic target test than that the to trace transition transitions treat
+    unassigned unchanged undeclared unrelated unresolved uploaded validation version visible well
+    when while whitespace window with without
     """.split()
 )
 
@@ -217,7 +224,11 @@ def find_answer_leaks(
 
 
 def _semantic_text_findings(
-    text: str, *, path: str, required_tag: str
+    text: str,
+    *,
+    path: str,
+    required_tag: str,
+    allow_stable_reference: bool = False,
 ) -> list[dict[str, str]]:
     findings: list[dict[str, str]] = []
     if required_tag.lower() not in text.lower():
@@ -228,7 +239,12 @@ def _semantic_text_findings(
                 f"semantic text does not bind generic scope {required_tag}",
             )
         )
-    unexpected = sorted(set(TOKEN_RE.findall(text.lower())) - NEUTRAL_SEMANTIC_TERMS)
+    vocabulary_text = (
+        STABLE_REFERENCE_TOKEN_RE.sub("", text) if allow_stable_reference else text
+    )
+    unexpected = sorted(
+        set(TOKEN_RE.findall(vocabulary_text.lower())) - NEUTRAL_SEMANTIC_TERMS
+    )
     if unexpected:
         findings.append(
             _finding(
@@ -321,6 +337,9 @@ def audit_product_neutrality(
                 text,
                 path=f"authority/objects/rules/{index}/text",
                 required_tag=tag,
+                allow_stable_reference=(
+                    rule.get("responsibility_rule_id") in REFERENCE_ONLY_RULE_IDS
+                ),
             )
         )
 
@@ -426,6 +445,7 @@ def audit_product_neutrality(
                     text,
                     path=f"contract/{review_identity}/value/{value_index}",
                     required_tag=tag,
+                    allow_stable_reference=semantic_field in REFERENCE_ONLY_FIELDS,
                 )
             )
 

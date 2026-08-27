@@ -6,7 +6,7 @@ Use only the self-contained `reviewer-package/` directory. Verify its manifest a
 
 Do not use prior review material or implementation outcomes. Record human judgments in a separate controlled location; no adjudication output belongs in this fixture.
 
-- Reviewer input manifest hash: `cf59d00b93b2312c00d926912b7254b84d8b509a520a6aee67554679fc41f5e5`
-- Reviewer input package hash: `4b7f35b8cb9fadd0c8877f09e14a90b927c77bbe5c7e365b60166e71a970d2eb`
-- Contract hash: `888b37edfd74408f132101c3e23f0fc0bfc475bf8684b9cbeb72d45f36579084`
+- Reviewer input manifest hash: `86cf39560dea5fa01732c981f7df7880d7faa2836713be99a3243f06a582eff7`
+- Reviewer input package hash: `ccc2c5af60c74cde1b281ec7026bd8d42cac9717faf210c31fb3e8a719f59603`
+- Contract hash: `a680b0e6f4ca7330aa810c445bcaa67d93575e79ae59f159a87992061a885755`
 - Human adjudication complete: `NO`
