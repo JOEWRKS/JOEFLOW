@@ -98,6 +98,30 @@ class DownstreamHandoffTest(unittest.TestCase):
         self.assertIn("self-report", audit.lower())
         self.assertIn("green test counts", audit.lower())
 
+    def test_downstream_reference_requires_semantic_review_sidecar_before_reliable_review(self):
+        readme = (SKILL / "downstream" / "README.md").read_text(encoding="utf-8")
+        self.assertIn("joewrks.semantic-review/1.0", readme)
+        self.assertIn("No majority-vote escape hatch", readme)
+        self.assertIn("joewrks.action-conformance/1.0 remains unchanged", readme)
+        for outcome in (
+            "APPROVED",
+            "REJECTED_CANDIDATE",
+            "RUBRIC_ERROR",
+            "INPUT_PACKAGE_ERROR",
+        ):
+            self.assertIn(outcome, readme)
+
+    def test_blind_audit_requires_hash_bound_sidecar_and_calibration_gate_evidence(self):
+        audit = (
+            SKILL / "downstream" / "references" / "drift-audit-procedure.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("reviewer input package hash", audit.lower())
+        self.assertIn("reviewer brief hash", audit.lower())
+        self.assertIn("responsibility profile hash", audit.lower())
+        self.assertIn("semantic obligation index hash", audit.lower())
+        self.assertIn("SEMANTIC_REVIEW_RELIABILITY_GATE — PASS", audit)
+        self.assertIn("HUMAN_ADJUDICATION_COMPLETE", audit)
+
 
 if __name__ == "__main__":
     unittest.main()

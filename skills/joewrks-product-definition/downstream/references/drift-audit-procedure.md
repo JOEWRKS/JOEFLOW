@@ -27,6 +27,14 @@ Missing any link leaves the action unverified. A UI control that reaches a gener
 5. Re-run original-failure sequences after any correction. New evidence receives a new record; prior failed evidence remains preserved.
 6. Report each missing or divergent chain link with canonical source ID/pointer, expected transition, observed transition, and severity.
 
+## Semantic-review sidecar audit
+
+Before accepting any `REVIEW_REQUIRED` semantic result as reliable review evidence, audit the actual `joewrks.semantic-review/1.0` sidecar rather than reviewer narration. Recompute the reviewer input manifest hash and reviewer input package hash, then read back the reviewer brief hash, contract hash, responsibility profile hash, semantic obligation index hash, review identity inventory hash, and output schema hash from the same byte-frozen package. Confirm every run used safe declared paths, identical package/brief bytes, a unique run/context, and a valid isolation attestation with no previous-verdict access.
+
+Verify exact 26 action plus 12 lifecycle responsibility coverage, one owner per obligation, and the owner-kind/field/rule/mode tuple on every output record. Confirm `superseded_sentinels` was handled only by package/provenance rule `PR-P01`, produced no semantic identity, and could not introduce `FR-L13`. Keep `APPROVED`, `REJECTED_CANDIDATE`, `RUBRIC_ERROR`, and `INPUT_PACKAGE_ERROR` distinct and preserve package → rubric → candidate → approval failure precedence.
+
+The evidence may state `SEMANTIC_REVIEW_RELIABILITY_GATE — PASS` only after all 15 frozen goldens, at least three fresh full reviews, exact identity coverage, zero pending records, disagreement gates, and the applicable exact-rational reliability thresholds pass together. `HUMAN_ADJUDICATION_COMPLETE` must remain `NO` until external human-adjudication evidence for the frozen answer bank is supplied; PM-approved synthetic fixtures or agent review cannot set it to `YES`. Preserve every failed run set and its hashes. Majority agreement, green tests, manual approval, or a display-rounded coefficient cannot override a failed gate.
+
 ## Result boundary
 
 Runtime adapters report observations only. They must not emit a conformance verdict. The auditor reports PASS only when every required material sequence is conformant and no frozen regression is silently excluded. Responsive/visual findings remain separate from semantic conformance unless the approved contract makes them material.

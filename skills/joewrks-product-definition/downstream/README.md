@@ -26,6 +26,18 @@ No natural-language parser, heuristic mapper, arbitrary executable mapping, or c
 
 Each bundle reports `structurally_valid`, `provenance_valid`, `machine_derived_obligations_verified`, both derivation-class field counts, review-required presence, and machine-verifiable coverage. Structural validity does not convert review-required obligations into automated semantic proof.
 
+### Deterministic semantic review
+
+`joewrks.semantic-review/1.0` is the mandatory hash-bound reliability sidecar for accepting `REVIEW_REQUIRED` interpretation as repeatable semantic-review evidence. `joewrks.action-conformance/1.0 remains unchanged`: the action contract can still compile without the sidecar, but it cannot pass the v0.4.3 semantic-review reliability gate without it.
+
+Every comparable reviewer run verifies the exact reviewer input manifest and package hashes plus independently declared hashes for the canonical reviewer brief, action contract, responsibility profile, semantic obligation index, expected identity inventory, and review output schema. Normative text uses UTF-8/LF without a BOM; changed bytes have no semantic-equivalence bypass. Packages use safe POSIX-relative paths and deterministic logical-role/path ordering. Run/context IDs and a hash-bound isolation attestation remain outside the byte-identical reviewer package.
+
+The responsibility profile assigns exactly 26 action fields to `FR-A01`–`FR-A26` and 12 lifecycle fields to `FR-L01`–`FR-L12`. Each obligation has one owning field and a declared `LOCAL`, `COMPOSITIONAL`, or `REFERENCE_ONLY` completeness mode. Lifecycle `superseded_sentinels` stays provenance-only under `PR-P01`; it never receives a semantic identity or `FR-L13`.
+
+The four distinct outcomes are `APPROVED`, `REJECTED_CANDIDATE`, `RUBRIC_ERROR`, and `INPUT_PACKAGE_ERROR`, with package → rubric → candidate → approval precedence. Exact identity coverage, zero pending records, golden accuracy, unchanged-identity unanimity, disagreement classifications, and balanced/imbalanced exact-rational statistics are conjunctive as frozen in `evals/semantic-review-v0.4.3/RELIABILITY_GATE_SPEC.md`.
+
+No majority-vote escape hatch, manual waiver, or post-result threshold change exists. A failed calibration preserves its packages, outputs, hashes, and metrics; increments the rubric calibration revision/profile hash; and requires a complete fresh rerun. PM-approved synthetic golden fixtures are not a substitute for the separately required external human adjudication or real independent calibration runs.
+
 ### Repository schema subset
 
 The stdlib-only validator implements the subset used by these repository schemas: local `$ref`, `type`, `required`, `properties`, `additionalProperties`, `items`, `minItems`, `minimum`, `const`, `enum`, `pattern`, and `oneOf`, plus schema annotations. Unsupported validation keywords fail rather than being ignored. This is not a general or complete JSON Schema Draft 2020-12 implementation.

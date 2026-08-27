@@ -39,7 +39,8 @@
         "logical_role",
         "path",
         "sha256",
-        "bytes"
+        "bytes",
+        "schema_identity"
       ],
       "properties": {
         "logical_role": {
