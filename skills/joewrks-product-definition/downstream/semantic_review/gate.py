@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import copy
 from fractions import Fraction
 from itertools import combinations
+import json
 from typing import Any
 
 from .disagreement import validate_disagreement_classifications
+from .hashing import sha256_bytes
 from .output import OutputError, validate_review_output
 from .statistics import (
     MetricResult,
@@ -86,6 +89,26 @@ def _unique_verified_contexts(
 def _cross_run_hash_failures(packages: list[dict[str, Any]]) -> list[str]:
     if not packages:
         return []
+    for package in packages:
+        profile_text = package.get("responsibility_profile_text")
+        declared_hash = package.get("responsibility_profile_hash")
+        role_hash = package.get("role_hashes", {}).get("responsibility_profile")
+        if (
+            not isinstance(profile_text, str)
+            or sha256_bytes(profile_text.encode("utf-8")) != declared_hash
+            or role_hash != declared_hash
+        ):
+            return ["FAIL/PACKAGE_IDENTITY_MISMATCH"]
+        try:
+            parsed_profile = json.loads(profile_text)
+            observed_profile = copy.deepcopy(package["responsibility_profile"])
+            for kind in ("action", "lifecycle"):
+                for rule in observed_profile[kind].values():
+                    rule.pop("brief_owns_label", None)
+        except (KeyError, TypeError, json.JSONDecodeError):
+            return ["FAIL/PACKAGE_IDENTITY_MISMATCH"]
+        if parsed_profile != observed_profile:
+            return ["FAIL/PACKAGE_IDENTITY_MISMATCH"]
     if len({item.get("reviewer_brief_hash") for item in packages}) != 1:
         return ["FAIL/BRIEF_IDENTITY_MISMATCH"]
     if len({item.get("reviewer_input_package_hash") for item in packages}) != 1:
@@ -336,7 +359,9 @@ def evaluate_reliability_gate(
         _append_unique(failures, failure)
     metrics = _reliability_metrics(outputs)
     disagreement_report = validate_disagreement_classifications(
-        outputs, classifications
+        outputs,
+        classifications,
+        run_packages[0].get("responsibility_profile", {}),
     )
     metrics["unchanged_disagreement_count"] = disagreement_report[
         "disagreement_count"

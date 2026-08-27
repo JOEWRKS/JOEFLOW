@@ -5,13 +5,19 @@ from __future__ import annotations
 from fractions import Fraction
 import json
 from pathlib import Path
+import tempfile
 from typing import Any
 
 from downstream.schema_validation import SchemaValidationError, validate_instance
 
 from .hashing import canonical_json_bytes, manifest_hash, package_hash, sha256_bytes
 from .output import OutputError, validate_review_output
-from .package import EXPECTED_SCHEMA_IDENTITIES, REQUIRED_ROLES
+from .package import (
+    EXPECTED_SCHEMA_IDENTITIES,
+    REQUIRED_ROLES,
+    PackageError,
+    load_and_verify_package,
+)
 
 
 class GoldenError(ValueError):
@@ -49,6 +55,48 @@ def _role_value(
         return json.loads(data)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise GoldenError("GOLDEN_PACKAGE_INVALID", f"invalid JSON role: {role}") from error
+
+
+def _load_with_production_package_validator(
+    package: dict[str, Any],
+) -> tuple[dict[str, Any] | None, PackageError | None]:
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        for relative in package["embedded_files"]:
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(_embedded_bytes(package, relative))
+        (root / "manifest.json").write_bytes(canonical_json_bytes(package["manifest"]))
+        try:
+            return load_and_verify_package(root), None
+        except PackageError as error:
+            return None, error
+
+
+def _package_error_preflight(error: PackageError) -> dict[str, Any]:
+    rationale = (
+        error.code
+        if error.code
+        in {
+            "INVALID_PROVENANCE",
+            "ACTIVE_SUPERSEDED_SOURCE",
+            "PACKAGE_HASH_MISMATCH",
+            "BRIEF_HASH_MISMATCH",
+            "CONTRACT_HASH_MISMATCH",
+            "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+            "OBLIGATION_INDEX_HASH_MISMATCH",
+            "IDENTITY_SET_MISMATCH",
+            "PREVIOUS_VERDICT_EXPOSURE",
+            "OUTPUT_SCHEMA_VIOLATION",
+        }
+        else "PACKAGE_HASH_MISMATCH"
+    )
+    return {
+        "verdict": "INPUT_PACKAGE_ERROR",
+        "rationale_code": rationale,
+        "scope": "package",
+        "canonical_evidence_refs": [],
+    }
 
 
 def verify_golden_packages(cases: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -181,7 +229,7 @@ def verify_golden_packages(cases: list[dict[str, Any]]) -> dict[str, dict[str, A
             "unrelated_product_evidence_present": False,
         }:
             raise GoldenError("GOLDEN_PACKAGE_INVALID", f"exclusions: {case_id}")
-        result[case_id] = {
+        manually_verified = {
             "reviewer_brief_hash": role_hashes["reviewer_brief"],
             "reviewer_input_manifest_hash": manifest[
                 "reviewer_input_manifest_hash"
@@ -207,6 +255,23 @@ def verify_golden_packages(cases: list[dict[str, Any]]) -> dict[str, dict[str, A
                 package, role_paths, "review_output_schema"
             ),
         }
+        loaded, package_error = _load_with_production_package_validator(package)
+        if package_error is None:
+            if loaded is None:
+                raise GoldenError(
+                    "GOLDEN_PACKAGE_INVALID", f"missing loader result: {case_id}"
+                )
+            result[case_id] = loaded
+        else:
+            if case.get("review_phase") != "preflight":
+                raise GoldenError(
+                    "GOLDEN_PACKAGE_INVALID",
+                    f"production package validation: {case_id}: {package_error}",
+                ) from package_error
+            manually_verified["expected_preflight_errors"] = [
+                _package_error_preflight(package_error)
+            ]
+            result[case_id] = manually_verified
     return result
 
 

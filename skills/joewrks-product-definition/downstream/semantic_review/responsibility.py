@@ -91,6 +91,14 @@ def load_responsibility_profile(path: Path) -> dict[str, Any]:
         profile = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise ResponsibilityError("RESPONSIBILITY_UNDEFINED", str(error)) from error
+    return validate_responsibility_profile(profile)
+
+
+def validate_responsibility_profile(profile: dict[str, Any]) -> dict[str, Any]:
+    """Validate one parsed responsibility profile and return that exact mapping."""
+
+    if not isinstance(profile, dict):
+        raise ResponsibilityError("RESPONSIBILITY_UNDEFINED", "profile object")
     if profile.get("schema_version") != "joewrks.semantic-responsibility-profile/1.0":
         raise ResponsibilityError("RESPONSIBILITY_UNDEFINED", "profile schema version")
     revision = profile.get("rubric_calibration_revision")

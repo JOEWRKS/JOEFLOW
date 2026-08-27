@@ -16,12 +16,19 @@ from downstream.semantic_review.disagreement import responsibility_rule_hash
 SCHEMA_PATH = (
     SKILL_ROOT / "downstream" / "schemas" / "semantic-review-output.schema.json"
 )
+PROFILE_PATH = (
+    SKILL_ROOT
+    / "downstream"
+    / "semantic_review"
+    / "artifacts"
+    / "responsibility-profile-v1.json"
+)
 BASE_HASHES = {
     "reviewer_brief_hash": "1" * 64,
     "reviewer_input_manifest_hash": "2" * 64,
     "reviewer_input_package_hash": "3" * 64,
     "contract_hash": "4" * 64,
-    "responsibility_profile_hash": "5" * 64,
+    "responsibility_profile_hash": sha256_bytes(PROFILE_PATH.read_bytes()),
     "semantic_obligation_index_hash": "6" * 64,
     "review_identity_inventory_hash": "7" * 64,
 }
@@ -79,13 +86,19 @@ def make_run_set(verdicts, *, run_count=3, rule_id="FR-A09"):
         "responsibility_profile_excerpt": {
             rule_id: {"completeness_mode": "LOCAL"}
         },
+        "responsibility_profile": json.loads(PROFILE_PATH.read_text(encoding="utf-8")),
+        "responsibility_profile_text": PROFILE_PATH.read_text(encoding="utf-8"),
+        "expected_preflight_errors": [],
         "manifest_declared_files": [
             "canonical_authority",
             "action_contract",
             "responsibility_profile",
             "reviewer_brief",
         ],
-        "role_hashes": {"reviewer_brief": BASE_HASHES["reviewer_brief_hash"]},
+        "role_hashes": {
+            "reviewer_brief": BASE_HASHES["reviewer_brief_hash"],
+            "responsibility_profile": BASE_HASHES["responsibility_profile_hash"],
+        },
         "review_output_schema": json.loads(SCHEMA_PATH.read_text(encoding="utf-8")),
         "expected_identities": expected,
         "identity_inventory": inventory,

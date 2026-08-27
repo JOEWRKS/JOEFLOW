@@ -921,7 +921,7 @@
         {
           "verdict": "INPUT_PACKAGE_ERROR",
           "rationale_code": "ACTIVE_SUPERSEDED_SOURCE",
-          "scope": "golden:G-012",
+          "scope": "package",
           "canonical_evidence_refs": [],
           "reviewer_explanation": "A lifecycle superseded_sentinels raw source record is both active and SUPERSEDED; no semantic identity is created for the array."
         }
@@ -973,7 +973,7 @@
         {
           "verdict": "INPUT_PACKAGE_ERROR",
           "rationale_code": "INVALID_PROVENANCE",
-          "scope": "golden:G-013",
+          "scope": "package",
           "canonical_evidence_refs": [],
           "reviewer_explanation": "A review identity has missing provenance and an empty provenance set."
         }
@@ -1106,7 +1106,7 @@
         {
           "verdict": "RUBRIC_ERROR",
           "rationale_code": "RESPONSIBILITY_UNDEFINED",
-          "scope": "golden:G-015",
+          "scope": "responsibility-profile",
           "canonical_evidence_refs": [],
           "reviewer_explanation": "A deliberately incomplete responsibility profile cannot determine which field owns an obligation."
         }

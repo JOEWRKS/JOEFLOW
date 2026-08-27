@@ -113,6 +113,15 @@ def _validate_evidence_set(observed: Any, scope: str) -> None:
         raise OutputError("INVALID_REFERENCE_SET", scope)
 
 
+def _preflight_binding(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "verdict": item.get("verdict"),
+        "rationale_code": item.get("rationale_code"),
+        "scope": item.get("scope"),
+        "canonical_evidence_refs": item.get("canonical_evidence_refs"),
+    }
+
+
 def _obligations_for_identity(
     package: dict[str, Any], identity: str
 ) -> list[dict[str, Any]]:
@@ -262,6 +271,9 @@ def validate_review_output(
         raise OutputError("IDENTITY_SET_MISMATCH", "invalid expected inventory")
     preflight = output["preflight_errors"]
     records = output["records"]
+    expected_preflight = package.get("expected_preflight_errors")
+    if not isinstance(expected_preflight, list):
+        raise OutputError("PREFLIGHT_BINDING_MISMATCH", "package diagnostics missing")
     observed_identities = [_validate_record(package, record) for record in records]
     if len(observed_identities) != len(set(observed_identities)):
         raise OutputError("IDENTITY_SET_MISMATCH", "duplicate review identity")
@@ -276,6 +288,11 @@ def validate_review_output(
                 error["canonical_evidence_refs"],
                 f"preflight:{error['scope']}:evidence",
             )
+        if [_preflight_binding(item) for item in preflight] != expected_preflight:
+            raise OutputError(
+                "PREFLIGHT_BINDING_MISMATCH",
+                "preflight verdict, rationale, scope, and evidence must match package diagnostics",
+            )
         if any(identity not in expected_identities for identity in observed_identities):
             raise OutputError("IDENTITY_SET_MISMATCH", "preflight record scope")
         if output["summary"]["complete"]:
@@ -286,6 +303,11 @@ def validate_review_output(
             output["summary"], len(expected_identities), records, preflight
         )
         return dict(observed)
+
+    if expected_preflight:
+        raise OutputError(
+            "PREFLIGHT_BINDING_MISMATCH", "required package diagnostic was omitted"
+        )
 
     if (
         len(observed_identities) != len(set(observed_identities))

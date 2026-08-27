@@ -10,6 +10,7 @@ SKILL_ROOT = ROOT / "skills" / "joewrks-product-definition"
 sys.path.insert(0, str(SKILL_ROOT))
 
 from downstream.semantic_review.gate import evaluate_reliability_gate
+from downstream.semantic_review.hashing import canonical_json_bytes, sha256_bytes
 from tests.semantic_review_support import (
     disagreement_classification,
     make_run_set,
@@ -144,6 +145,42 @@ class SemanticReviewGateTest(unittest.TestCase):
         )
         classification = disagreement_classification(identity)
         classification["cited_rule_hash"] = "f" * 64
+        report = self._evaluate(run_set, [classification])
+        self.assertIn("FAIL/RUBRIC_NORMATIVE_AMBIGUITY", report["failures"])
+
+    def test_declared_profile_hash_must_bind_run_package_profile_bytes(self):
+        run_set = make_run_set([A] * 100 + [R] * 100)
+        identity = run_set[2][2]["records"][0]["review_identity"]
+        replace_verdict_and_recount(
+            run_set[2][2], identity, R, "MISSING_OWNED_SEMANTIC"
+        )
+        for package, output in zip(run_set[0], run_set[2]):
+            package["responsibility_profile"]["action"]["input_invariants"][
+                "owns"
+            ] = "package-bound altered responsibility"
+            package["responsibility_profile_hash"] = "e" * 64
+            output["responsibility_profile_hash"] = "e" * 64
+        classification = disagreement_classification(identity)
+        report = self._evaluate(run_set, [classification])
+        self.assertIn("FAIL/PACKAGE_IDENTITY_MISMATCH", report["failures"])
+
+    def test_disagreement_rule_hash_is_bound_to_verified_run_package_profile(self):
+        run_set = make_run_set([A] * 100 + [R] * 100)
+        identity = run_set[2][2]["records"][0]["review_identity"]
+        replace_verdict_and_recount(
+            run_set[2][2], identity, R, "MISSING_OWNED_SEMANTIC"
+        )
+        for package, output in zip(run_set[0], run_set[2]):
+            package["responsibility_profile"]["action"]["input_invariants"][
+                "owns"
+            ] = "package-bound altered responsibility"
+            profile_bytes = canonical_json_bytes(package["responsibility_profile"])
+            profile_hash = sha256_bytes(profile_bytes)
+            package["responsibility_profile_text"] = profile_bytes.decode("utf-8")
+            package["responsibility_profile_hash"] = profile_hash
+            package["role_hashes"]["responsibility_profile"] = profile_hash
+            output["responsibility_profile_hash"] = profile_hash
+        classification = disagreement_classification(identity)
         report = self._evaluate(run_set, [classification])
         self.assertIn("FAIL/RUBRIC_NORMATIVE_AMBIGUITY", report["failures"])
 

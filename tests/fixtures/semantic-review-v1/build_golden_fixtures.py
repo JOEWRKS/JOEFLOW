@@ -352,11 +352,16 @@ def _build_output(case: dict[str, object]) -> dict[str, object]:
     preflight = []
     records = []
     if case["review_phase"] == "preflight":
+        scope = (
+            "responsibility-profile"
+            if verdict == "RUBRIC_ERROR"
+            else "package"
+        )
         preflight.append(
             {
                 "verdict": verdict,
                 "rationale_code": rationale,
-                "scope": f"golden:{case_id}",
+                "scope": scope,
                 "canonical_evidence_refs": [],
                 "reviewer_explanation": str(case["scenario"]),
             }

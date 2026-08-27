@@ -54,6 +54,7 @@ def package_fixture():
     }
     return {
         **HASHES,
+        "expected_preflight_errors": [],
         "role_hashes": {"reviewer_brief": HASHES["reviewer_brief_hash"]},
         "review_output_schema": json.loads(SCHEMA_PATH.read_text(encoding="utf-8")),
         "expected_identities": [identity],
@@ -184,17 +185,27 @@ class SemanticReviewOutputTest(unittest.TestCase):
 
     def test_rubric_error_is_not_candidate_rejection(self):
         self.output["records"] = []
-        self.output["preflight_errors"] = [
+        expected_error = {
+            "verdict": "RUBRIC_ERROR",
+            "rationale_code": "RESPONSIBILITY_UNDEFINED",
+            "scope": "responsibility-profile",
+            "canonical_evidence_refs": [],
+            "reviewer_explanation": (
+                "The frozen taxonomy has no unique owner for the fixture obligation."
+            ),
+        }
+        self.package["expected_preflight_errors"] = [
             {
-                "verdict": "RUBRIC_ERROR",
-                "rationale_code": "RESPONSIBILITY_UNDEFINED",
-                "scope": "responsibility-profile",
-                "canonical_evidence_refs": [],
-                "reviewer_explanation": (
-                    "The frozen taxonomy has no unique owner for the fixture obligation."
-                ),
+                key: expected_error[key]
+                for key in (
+                    "verdict",
+                    "rationale_code",
+                    "scope",
+                    "canonical_evidence_refs",
+                )
             }
         ]
+        self.output["preflight_errors"] = [expected_error]
         self.output["summary"].update(
             {
                 "record_count": 0,
@@ -211,6 +222,49 @@ class SemanticReviewOutputTest(unittest.TestCase):
         )
         summary = validate_review_output(self.package, self.envelope, self.output)
         self.assertEqual(summary, {"RUBRIC_ERROR": 1})
+
+    def test_preflight_scope_and_evidence_must_match_package_diagnostic(self):
+        self.package["expected_preflight_errors"] = [
+            {
+                "verdict": "INPUT_PACKAGE_ERROR",
+                "rationale_code": "INVALID_PROVENANCE",
+                "scope": "package",
+                "canonical_evidence_refs": [],
+            }
+        ]
+        self.output["records"] = []
+        self.output["preflight_errors"] = [
+            {
+                "verdict": "INPUT_PACKAGE_ERROR",
+                "rationale_code": "INVALID_PROVENANCE",
+                "scope": "forged-scope",
+                "canonical_evidence_refs": [
+                    {
+                        "object_id": "FORGED",
+                        "pointer": "/not/in/package",
+                        "value_sha256": "f" * 64,
+                        "source_status": "CURRENT",
+                        "active": True,
+                    }
+                ],
+                "reviewer_explanation": "Forged package evidence must not be accepted.",
+            }
+        ]
+        self.output["summary"] = {
+            "expected_identity_count": 1,
+            "record_count": 0,
+            "unique_identity_count": 0,
+            "pending_count": 0,
+            "verdict_counts": {
+                "APPROVED": 0,
+                "REJECTED_CANDIDATE": 0,
+                "RUBRIC_ERROR": 0,
+                "INPUT_PACKAGE_ERROR": 1,
+            },
+            "complete": False,
+        }
+        with self.assertRaisesRegex(OutputError, "PREFLIGHT_BINDING_MISMATCH"):
+            validate_review_output(self.package, self.envelope, self.output)
 
     def test_output_rejects_immutable_identity_and_verdict_rationale_drift(self):
         self.output["records"][0]["semantic_value_hash"] = "f" * 64

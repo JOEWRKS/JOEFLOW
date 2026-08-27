@@ -43,19 +43,27 @@ REQUIRED_CLASSIFICATION_FIELDS = {
 }
 
 
-def responsibility_rule_hash(rule_id: str) -> str:
+def responsibility_rule_hash(
+    rule_id: str, profile: dict[str, Any] | None = None
+) -> str:
     """Return the exact frozen normative rule hash cited by classifications."""
 
-    profile_path = (
-        Path(__file__).resolve().parent
-        / "artifacts"
-        / "responsibility-profile-v1.json"
-    )
-    profile = json.loads(profile_path.read_text(encoding="utf-8"))
+    if profile is None:
+        profile_path = (
+            Path(__file__).resolve().parent
+            / "artifacts"
+            / "responsibility-profile-v1.json"
+        )
+        profile = json.loads(profile_path.read_text(encoding="utf-8"))
     for kind in ("action", "lifecycle"):
-        for rule in profile[kind].values():
+        for rule in profile.get(kind, {}).values():
             if rule.get("responsibility_rule_id") == rule_id:
-                return sha256_bytes(canonical_json_bytes(rule))
+                exact_rule = {
+                    key: value
+                    for key, value in rule.items()
+                    if key != "brief_owns_label"
+                }
+                return sha256_bytes(canonical_json_bytes(exact_rule))
     raise ValueError(f"unknown responsibility rule: {rule_id}")
 
 
@@ -71,6 +79,7 @@ def _classification_valid(
     classification: dict[str, Any],
     identity: str,
     records: list[dict[str, Any]],
+    responsibility_profile: dict[str, Any],
 ) -> bool:
     if set(classification) != REQUIRED_CLASSIFICATION_FIELDS:
         return False
@@ -103,7 +112,9 @@ def _classification_valid(
     if SHA256_RE.fullmatch(str(classification["cited_rule_hash"])) is None:
         return False
     try:
-        expected_rule_hash = responsibility_rule_hash(first["responsibility_rule_id"])
+        expected_rule_hash = responsibility_rule_hash(
+            first["responsibility_rule_id"], responsibility_profile
+        )
     except (OSError, ValueError, KeyError, json.JSONDecodeError):
         return False
     if classification["cited_rule_hash"] != expected_rule_hash:
@@ -126,7 +137,9 @@ def _classification_valid(
 
 
 def validate_disagreement_classifications(
-    outputs: list[dict[str, Any]], classifications: list[dict[str, Any]]
+    outputs: list[dict[str, Any]],
+    classifications: list[dict[str, Any]],
+    responsibility_profile: dict[str, Any],
 ) -> dict[str, Any]:
     """Require one closed, evidence-bound classification per frozen disagreement."""
 
@@ -149,7 +162,7 @@ def validate_disagreement_classifications(
     for identity, records in disagreements.items():
         candidates = classification_groups.get(identity, [])
         if len(candidates) != 1 or not _classification_valid(
-            candidates[0], identity, records
+            candidates[0], identity, records, responsibility_profile
         ):
             invalid_or_missing.append(identity)
             resolved[identity] = {

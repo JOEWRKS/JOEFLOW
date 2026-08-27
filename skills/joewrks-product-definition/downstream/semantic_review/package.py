@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -23,9 +24,10 @@ from .hashing import (
 from .responsibility import (
     EXPECTED_ACTION_FIELDS,
     EXPECTED_LIFECYCLE_FIELDS,
+    OBLIGATION_TAXONOMY,
     ResponsibilityError,
     expected_responsibility,
-    load_responsibility_profile,
+    validate_responsibility_profile,
     validate_obligation_index,
 )
 
@@ -164,22 +166,31 @@ def verify_exclusions(root: Path, manifest: dict[str, Any]) -> None:
         if any(marker.replace("_", "-") in normalized for marker in FORBIDDEN_NAME_MARKERS):
             raise PackageError("PREVIOUS_VERDICT_EXPOSURE", relative)
         if relative in declared:
-            if path.suffix.lower() == ".json":
+            role = roles_by_path.get(relative)
+            if role == "review_output_schema":
+                continue
+            if path.suffix.lower() in TEXT_SUFFIXES:
                 try:
-                    value = _read_json(path, path.read_bytes())
+                    data = path.read_bytes()
+                    text = _read_text_bytes(path, data)
                 except OSError as error:
                     raise PackageError(
                         "PACKAGE_HASH_MISMATCH", f"cannot scan declared file: {relative}"
                     ) from error
-                role = roles_by_path.get(relative)
-                if role == "review_output_schema":
-                    continue
-                if _contains_forbidden_json(
-                    value,
-                    strict_review_scan=role
-                    in {"supporting_projection", "golden_suite_manifest"},
-                ):
-                    raise PackageError("PREVIOUS_VERDICT_EXPOSURE", relative)
+                try:
+                    value = json.loads(text)
+                except json.JSONDecodeError:
+                    if path.suffix.lower() == ".json":
+                        raise PackageError(
+                            "PACKAGE_HASH_MISMATCH", f"invalid JSON: {path.name}"
+                        )
+                else:
+                    if _contains_forbidden_json(
+                        value,
+                        strict_review_scan=role
+                        in {"supporting_projection", "golden_suite_manifest"},
+                    ):
+                        raise PackageError("PREVIOUS_VERDICT_EXPOSURE", relative)
             continue
         raise PackageError("PACKAGE_HASH_MISMATCH", f"undeclared package file: {relative}")
 
@@ -452,6 +463,69 @@ def _validate_brief_profile_consistency(
         )
 
 
+def _package_responsibility_profile(
+    raw_profile: dict[str, Any],
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Separate a hash-valid but incomplete rubric from package-byte failures."""
+
+    try:
+        return validate_responsibility_profile(copy.deepcopy(raw_profile)), []
+    except ResponsibilityError as error:
+        observed_taxonomy = raw_profile.get("obligation_taxonomy")
+        if (
+            error.code != "RESPONSIBILITY_UNDEFINED"
+            or not isinstance(observed_taxonomy, dict)
+            or not set(observed_taxonomy.items()) < set(OBLIGATION_TAXONOMY.items())
+        ):
+            raise PackageError(
+                "RESPONSIBILITY_PROFILE_HASH_MISMATCH", str(error)
+            ) from error
+        completed = copy.deepcopy(raw_profile)
+        completed["obligation_taxonomy"] = dict(OBLIGATION_TAXONOMY)
+        try:
+            profile = validate_responsibility_profile(completed)
+        except ResponsibilityError as completed_error:
+            raise PackageError(
+                "RESPONSIBILITY_PROFILE_HASH_MISMATCH", str(completed_error)
+            ) from completed_error
+        profile["obligation_taxonomy"] = copy.deepcopy(observed_taxonomy)
+        return profile, [
+            {
+                "verdict": "RUBRIC_ERROR",
+                "rationale_code": "RESPONSIBILITY_UNDEFINED",
+                "scope": "responsibility-profile",
+                "canonical_evidence_refs": [],
+            }
+        ]
+
+
+def _validate_obligations_with_rubric_preflight(
+    contract: dict[str, Any],
+    profile: dict[str, Any],
+    index: dict[str, Any],
+    expected_preflight_errors: list[dict[str, Any]],
+) -> None:
+    if not expected_preflight_errors:
+        validate_obligation_index(contract, profile, index)
+        return
+    validation_profile = copy.deepcopy(profile)
+    validation_profile["obligation_taxonomy"] = dict(OBLIGATION_TAXONOMY)
+    repaired_index = copy.deepcopy(index)
+    types_by_rule = {
+        rule_id: obligation_type
+        for obligation_type, rule_id in OBLIGATION_TAXONOMY.items()
+    }
+    try:
+        for obligation in repaired_index["obligations"]:
+            if obligation.get("obligation_type") not in profile["obligation_taxonomy"]:
+                obligation["obligation_type"] = types_by_rule[
+                    obligation["responsibility_rule_id"]
+                ]
+        validate_obligation_index(contract, validation_profile, repaired_index)
+    except (KeyError, TypeError, ResponsibilityError) as error:
+        raise PackageError("OBLIGATION_INDEX_HASH_MISMATCH", str(error)) from error
+
+
 def _validate_exclusion_manifest(value: dict[str, Any]) -> None:
     expected = {
         "previous_reviewer_verdicts_present": False,
@@ -649,22 +723,20 @@ def load_and_verify_package(root: Path) -> dict[str, Any]:
     verified_provenance = _validate_provenance_inventory(
         authority, provenance_inventory
     )
-    try:
-        responsibility_profile = load_responsibility_profile(
-            role_paths["responsibility_profile"]
-        )
-    except ResponsibilityError as error:
-        raise PackageError(
-            "RESPONSIBILITY_PROFILE_HASH_MISMATCH", str(error)
-        ) from error
+    responsibility_profile, expected_preflight_errors = (
+        _package_responsibility_profile(role_json("responsibility_profile"))
+    )
     brief_path = role_paths["reviewer_brief"]
     _validate_brief_profile_consistency(
         file_bytes[brief_path.relative_to(root).as_posix()], responsibility_profile
     )
     semantic_obligation_index = role_json("semantic_obligation_index")
     try:
-        validate_obligation_index(
-            contract, responsibility_profile, semantic_obligation_index
+        _validate_obligations_with_rubric_preflight(
+            contract,
+            responsibility_profile,
+            semantic_obligation_index,
+            expected_preflight_errors,
         )
     except ResponsibilityError as error:
         raise PackageError("OBLIGATION_INDEX_HASH_MISMATCH", str(error)) from error
@@ -710,12 +782,16 @@ def load_and_verify_package(root: Path) -> dict[str, Any]:
         "root": root,
         "manifest": manifest,
         "previous_reviewer_verdicts_present": False,
+        "expected_preflight_errors": expected_preflight_errors,
         "reviewer_input_manifest_hash": observed_manifest_hash,
         "reviewer_input_package_hash": package_hash(observed_manifest_hash, files),
         "reviewer_brief_hash": role_hashes["reviewer_brief"],
         "contract": contract,
         "contract_hash": contract_hash_value,
         "responsibility_profile": responsibility_profile,
+        "responsibility_profile_text": file_bytes[
+            role_paths["responsibility_profile"].relative_to(root).as_posix()
+        ].decode("utf-8"),
         "responsibility_profile_hash": role_hashes["responsibility_profile"],
         "semantic_obligation_index": semantic_obligation_index,
         "semantic_obligation_index_hash": role_hashes["semantic_obligation_index"],

@@ -313,6 +313,29 @@ class SemanticReviewPackageTest(unittest.TestCase):
         with self.assertRaisesRegex(PackageError, "PREVIOUS_VERDICT_EXPOSURE"):
             load_and_verify_package(self.root)
 
+    def test_package_rejects_json_review_output_disguised_as_markdown(self):
+        data = _json_bytes(
+            {
+                "review_identity": "action:ACT-001:input_invariants",
+                "verdict": "APPROVED",
+                "rationale_code": "SUPPORTED_EXACTLY",
+            }
+        )
+        (self.root / "context.md").write_bytes(data)
+        manifest = json.loads((self.root / "manifest.json").read_text("utf-8"))
+        manifest["files"].append(
+            {
+                "logical_role": "supporting_projection",
+                "path": "context.md",
+                "sha256": sha256_bytes(data),
+                "bytes": len(data),
+                "schema_identity": "joewrks.semantic-review-supporting/1.0",
+            }
+        )
+        self._rewrite_manifest(manifest)
+        with self.assertRaisesRegex(PackageError, "PREVIOUS_VERDICT_EXPOSURE"):
+            load_and_verify_package(self.root)
+
     def test_package_rejects_disguised_prior_review_inside_required_role(self):
         authority = json.loads((self.root / "authority.json").read_text("utf-8"))
         authority["prior_assessment"] = {

@@ -1,6 +1,7 @@
 import copy
 import json
 import sys
+import tempfile
 import unittest
 from fractions import Fraction
 from pathlib import Path
@@ -16,6 +17,7 @@ from downstream.semantic_review.goldens import (
     verify_golden_packages,
 )
 from downstream.semantic_review.hashing import canonical_json_bytes, sha256_bytes
+from downstream.semantic_review.package import load_and_verify_package
 from downstream.semantic_review.responsibility import load_responsibility_profile
 
 
@@ -76,6 +78,29 @@ class SemanticReviewGoldenTest(unittest.TestCase):
             )
             self.assertNotIn("verdict", package)
             self.assertNotIn("rationale_code", package)
+
+    def test_g015_is_hash_valid_and_reaches_rubric_preflight_in_package_loader(self):
+        case = next(item for item in self.cases if item["case_id"] == "G-015")
+        package = case["reviewer_package"]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for relative, embedded in package["embedded_files"].items():
+                (root / relative).write_bytes(embedded["text"].encode("utf-8"))
+            (root / "manifest.json").write_bytes(
+                canonical_json_bytes(package["manifest"])
+            )
+            verified = load_and_verify_package(root)
+        self.assertEqual(
+            verified["expected_preflight_errors"],
+            [
+                {
+                    "verdict": "RUBRIC_ERROR",
+                    "rationale_code": "RESPONSIBILITY_UNDEFINED",
+                    "scope": "responsibility-profile",
+                    "canonical_evidence_refs": [],
+                }
+            ],
+        )
 
     def test_answer_bank_is_separate_and_uses_exact_frozen_pairs(self):
         answers = {item["case_id"]: item for item in self.answers["answers"]}
