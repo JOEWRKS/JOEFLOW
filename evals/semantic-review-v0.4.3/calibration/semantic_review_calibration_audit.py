@@ -61,24 +61,24 @@ TEST_REFERENCE_RE = re.compile(
 TOKEN_RE = re.compile(r"[a-z]+")
 NEUTRAL_SEMANTIC_TERMS = frozenset(
     """
-    a absent act action actor actors after allow allowed also an and another append
-    approval approver archival archived as assigned assignment attempt attempts audit
-    authenticated authentication author authority avoid be before bind binding blocks
+    a absent act action actor actors after all allow allowed also an and another append
+    apply approval approver archival archived as assigned assignment attempt attempts audit
+    authenticated authentication author authoritative authority avoid be before bind binding blocks
     bound boundary business by bytes cal calibration carry category classes close
-    command commit committed concurrency conditions confirmation contain correctable
+    change class command commit committed concurrency conditions confirmation contain correctable
     create current deadline decision decline declining default define delivery document
     documents domain draft duplicate earlier effects empty enter entering error event
     every evidence exclude expectations expected expired explicit failing failure final
     finalization finalized for forbid forbidden from guarded history idempotency identifier
-    immutable in increment incrementing input intended interval invariants irreversible is
+    effect execute guards immutable in increment incrementing input intended interval invariants irreversible is
     it its keep key lc leave lifecycle limit must mutation mutations no non notice
     notification object obligation obligations on once one only op operation other outcome
-    outside participants pending per permit preconditions predicate preservation preserve
+    outside owned participants pass pending per permit preconditions predicate preservation preserve
     prevent prior projection queue ready reason recipient record recovery reference reject
     rejection relationship report request require required result resulting retain retained
-    retry return reuse reversal reversibility reversible rule rules same separate session
-    show side stable stale state stated states submitted success superseded supersession
-    synthetic target test that the to trace transition transitions unassigned unchanged
+    requesting retry return reuse reversal reversibility reversible rule rules same select separate
+    session set show side stable stale state stated states submitted success successful superseded
+    supersession synthetic target test that the to trace transition transitions unassigned unchanged
     undeclared unrelated unresolved uploaded validation version visible when whitespace
     window with without
     """.split()

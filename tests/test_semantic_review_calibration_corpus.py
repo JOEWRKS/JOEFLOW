@@ -170,6 +170,67 @@ class SemanticReviewCalibrationCorpusTest(unittest.TestCase):
         )
         self.assertIn("NON_NEUTRAL_TERM", {item["code"] for item in findings})
 
+    def test_corrected_owner_purity_families_do_not_borrow_adjacent_rules(self):
+        authority = read_json(PACKAGE_ROOT / "canonical-authority.json")
+        contract = read_json(PACKAGE_ROOT / "action-contract.json")
+        expectations = {
+            ("action", "expected_domain_mutation"): {
+                "canonical": (
+                    "authoritative decision state change",
+                    "submitted approval outcome",
+                ),
+                "candidate": "authoritative decision state change",
+                "foreign": ("unchanged", "preserve"),
+            },
+            ("action", "default_result"): {
+                "canonical": (
+                    "default result class after all owned guards pass",
+                    "successful decision outcome",
+                ),
+                "candidate": "default result class after all owned guards pass",
+                "foreign": ("no-op", "rejection"),
+            },
+            ("action", "business_side_effects"): {
+                "canonical": (
+                    "non-authoritative business record",
+                    "only after the authoritative decision commit",
+                ),
+                "candidate": "non-authoritative business record",
+                "foreign": ("notification", "delivery", "duplicate"),
+            },
+            ("lifecycle", "required_reason"): {
+                "canonical": (
+                    "non-empty reason when declining a transition",
+                    "non-empty reason when requesting a reversal",
+                ),
+                "candidate": "non-empty reason when declining a transition",
+                "foreign": ("history", "preserve"),
+            },
+        }
+        canonical_by_field = {
+            (rule["owner_kind"], rule["owner_id"], rule["responsibility_rule_id"]): rule[
+                "text"
+            ].lower()
+            for rule in authority["objects"]["rules"]
+        }
+
+        for (owner_kind, field), expected in expectations.items():
+            profile = read_json(PROFILE_SOURCE)[owner_kind][field]
+            rule_id = profile["responsibility_rule_id"]
+            collection = contract["actions" if owner_kind == "action" else "lifecycles"]
+            id_key = "action_id" if owner_kind == "action" else "lifecycle_id"
+            for owner in collection:
+                identity = (owner_kind, owner[id_key], rule_id)
+                canonical = canonical_by_field[identity]
+                candidate = " ".join(owner[field]["value"]).lower()
+                with self.subTest(owner_kind=owner_kind, field=field, owner=owner[id_key]):
+                    for phrase in expected["canonical"]:
+                        self.assertIn(phrase, canonical)
+                    self.assertIn(expected["candidate"], candidate)
+                    for phrase in expected["foreign"]:
+                        self.assertNotIn(phrase, canonical)
+                        self.assertNotIn(phrase, candidate)
+
     def test_leak_detector_rejects_synthetic_per_identity_outcome(self):
         self.assertTrue(CALIBRATION_AUDIT_PATH.is_file(), "calibration audit missing")
         audit = load_calibration_audit()
