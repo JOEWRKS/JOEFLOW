@@ -13,6 +13,8 @@ IDENTITY_RE = re.compile(r"^(?:action|lifecycle):[A-Za-z0-9_.-]+:[A-Za-z0-9_]+$"
 IDENTITY_IN_TEXT_RE = re.compile(
     r"\b(?:action|lifecycle):[A-Za-z0-9_.-]+:[A-Za-z0-9_]+\b"
 )
+CASE_ID_RE = re.compile(r"^G-(?:00[1-9]|01[0-5])$")
+CASE_ID_IN_TEXT_RE = re.compile(r"\bG-(?:00[1-9]|01[0-5])\b")
 OWNER_ID_IN_TEXT_RE = re.compile(r"\b(?:ACT|LC)-[A-Za-z0-9_.-]+\b")
 WINDOWS_CONTROLLER_PATH_RE = re.compile(
     r"[A-Za-z]:[\\/][^\r\n\"']*(?:calibration-controller-evidence|seed-oracle\.json)",
@@ -51,6 +53,36 @@ OUTCOME_KEYS = {
     "rationale_code",
     "supported",
     "verdict",
+}
+ALLOWED_VERDICTS = (
+    "APPROVED",
+    "REJECTED_CANDIDATE",
+    "RUBRIC_ERROR",
+    "INPUT_PACKAGE_ERROR",
+)
+ALLOWED_RATIONALE_CODES = (
+    "SUPPORTED_EXACTLY",
+    "MISSING_OWNED_SEMANTIC",
+    "MISSING_REQUIRED_REFERENCE",
+    "UNSUPPORTED_OVERREACH",
+    "CONTRADICTS_OWNER",
+    "INVALID_DUPLICATION",
+    "INVALID_PROVENANCE",
+    "ACTIVE_SUPERSEDED_SOURCE",
+    "RESPONSIBILITY_UNDEFINED",
+    "COMPLETENESS_UNDEFINED",
+    "PACKAGE_HASH_MISMATCH",
+    "BRIEF_HASH_MISMATCH",
+    "CONTRACT_HASH_MISMATCH",
+    "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+    "OBLIGATION_INDEX_HASH_MISMATCH",
+    "IDENTITY_SET_MISMATCH",
+    "PREVIOUS_VERDICT_EXPOSURE",
+    "OUTPUT_SCHEMA_VIOLATION",
+)
+ALLOWED_ENUMERATIONS = {
+    "allowed_verdicts": ALLOWED_VERDICTS,
+    "allowed_rationale_codes": ALLOWED_RATIONALE_CODES,
 }
 
 ACTION_OWNER_RE = re.compile(r"^ACT-CAL-REQUEST-0[1-3]$")
@@ -105,13 +137,29 @@ def _outcome_hint_text(value: str) -> bool:
     return OUTCOME_HINT_RE.search(normalized) is not None
 
 
+def _is_full_allowed_enumeration(key: Any, value: Any) -> bool:
+    normalized_key = _normalize_key(key)
+    allowed = ALLOWED_ENUMERATIONS.get(normalized_key)
+    return allowed is not None and isinstance(value, list) and tuple(value) == allowed
+
+
+def _is_empty_response_slot(key: Any, value: Any) -> bool:
+    return _normalize_key(key) in {"verdict", "rationale_code"} and value is None
+
+
 def _contains_outcome_hint(value: Any) -> bool:
     if isinstance(value, str):
         return _outcome_hint_text(value)
     if isinstance(value, dict):
-        if {_normalize_key(key) for key in value} & OUTCOME_KEYS:
-            return True
-        return any(_contains_outcome_hint(child) for child in value.values())
+        for key, child in value.items():
+            normalized_key = _normalize_key(key)
+            if _is_full_allowed_enumeration(key, child) or _is_empty_response_slot(
+                key, child
+            ):
+                continue
+            if normalized_key in OUTCOME_KEYS or _contains_outcome_hint(child):
+                return True
+        return False
     if isinstance(value, list):
         return any(_contains_outcome_hint(child) for child in value)
     return False
@@ -123,11 +171,17 @@ def _json_answer_findings(value: Any, path: str, pointer: str = "") -> list[dict
         normalized = {_normalize_key(key): child for key, child in value.items()}
         identity = normalized.get("review_identity")
         if isinstance(identity, str) and IDENTITY_RE.fullmatch(identity):
-            outcome_keys = sorted(set(normalized) & OUTCOME_KEYS)
+            outcome_keys = sorted(
+                key
+                for key in set(normalized) & OUTCOME_KEYS
+                if not _is_empty_response_slot(key, normalized[key])
+            )
             hinted_values = any(
                 _contains_outcome_hint(child)
                 for key, child in normalized.items()
                 if key != "review_identity"
+                and not _is_full_allowed_enumeration(key, child)
+                and not _is_empty_response_slot(key, child)
             )
             if outcome_keys or hinted_values:
                 findings.append(
@@ -139,11 +193,17 @@ def _json_answer_findings(value: Any, path: str, pointer: str = "") -> list[dict
                 )
         identity_tuple_keys = {"owner_kind", "owner_id", "semantic_field"}
         if identity_tuple_keys.issubset(normalized):
-            outcome_keys = sorted(set(normalized) & OUTCOME_KEYS)
+            outcome_keys = sorted(
+                key
+                for key in set(normalized) & OUTCOME_KEYS
+                if not _is_empty_response_slot(key, normalized[key])
+            )
             hinted_values = any(
                 _contains_outcome_hint(child)
                 for key, child in normalized.items()
                 if key not in identity_tuple_keys
+                and not _is_full_allowed_enumeration(key, child)
+                and not _is_empty_response_slot(key, child)
             )
             if outcome_keys or hinted_values:
                 findings.append(
@@ -151,6 +211,33 @@ def _json_answer_findings(value: Any, path: str, pointer: str = "") -> list[dict
                         "PER_IDENTITY_OUTCOME",
                         f"{path}{pointer}",
                         "owner/field tuple is paired with an outcome or defect hint",
+                    )
+                )
+        case_id = normalized.get("case_id")
+        if isinstance(case_id, str) and CASE_ID_RE.fullmatch(case_id):
+            outcome_keys = sorted(
+                key
+                for key in set(normalized) & OUTCOME_KEYS
+                if not _is_empty_response_slot(key, normalized[key])
+            )
+            hinted_values = any(
+                _contains_outcome_hint(child)
+                for key, child in normalized.items()
+                if key != "case_id"
+                and not _is_full_allowed_enumeration(key, child)
+                and not _is_empty_response_slot(key, child)
+            )
+            partial_enumerations = any(
+                _normalize_key(key) in ALLOWED_ENUMERATIONS
+                and not _is_full_allowed_enumeration(key, child)
+                for key, child in value.items()
+            )
+            if outcome_keys or hinted_values or partial_enumerations:
+                findings.append(
+                    _finding(
+                        "PER_CASE_OUTCOME",
+                        f"{path}{pointer}",
+                        "golden case is paired with a filled outcome or outcome hint",
                     )
                 )
         for key, child in value.items():
@@ -207,8 +294,10 @@ def find_answer_leaks(
             value = json.loads(text)
         except json.JSONDecodeError:
             for line_number, line in enumerate(text.splitlines(), start=1):
-                has_identity = IDENTITY_IN_TEXT_RE.search(line) or OWNER_ID_IN_TEXT_RE.search(
-                    line
+                has_identity = (
+                    IDENTITY_IN_TEXT_RE.search(line)
+                    or OWNER_ID_IN_TEXT_RE.search(line)
+                    or CASE_ID_IN_TEXT_RE.search(line)
                 )
                 if has_identity and _outcome_hint_text(line):
                     findings.append(

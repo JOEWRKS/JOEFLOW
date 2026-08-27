@@ -36,6 +36,16 @@ CALIBRATION_AUDIT_PATH = (
     / "calibration"
     / "semantic_review_calibration_audit.py"
 )
+TASK2_SURFACE_PATHS = {
+    FIXTURE_ROOT / "human-adjudication-common-evidence.json",
+    FIXTURE_ROOT / "human-adjudication-manifest.json",
+    FIXTURE_ROOT / "human-adjudicator-a-response-form.json",
+    FIXTURE_ROOT / "human-adjudicator-b-response-form.json",
+    FIXTURE_ROOT.parent / "cohort-protocol-v1.json",
+    FIXTURE_ROOT.parent / "official_calibration_controller.py",
+    ROOT / "tests" / "test_official_calibration_controller.py",
+    ROOT / "tests" / "test_semantic_review_human_packet.py",
+}
 
 PROFILE_SOURCE = (
     SKILL_ROOT
@@ -94,10 +104,21 @@ def tracked_calibration_paths():
         check=True,
         capture_output=True,
     )
-    paths = [ROOT / item for item in result.stdout.decode("utf-8").split("\0") if item]
-    if CALIBRATION_AUDIT_PATH not in paths:
-        paths.append(CALIBRATION_AUDIT_PATH)
-    return paths
+    paths = {
+        ROOT / item
+        for item in result.stdout.decode("utf-8").split("\0")
+        if item and (ROOT / item).is_file()
+    }
+    paths.update(
+        path
+        for path in FIXTURE_ROOT.parent.rglob("*")
+        if path.is_file()
+        and "__pycache__" not in path.parts
+        and path.suffix in {".json", ".md", ".py"}
+    )
+    paths.update(path for path in TASK2_SURFACE_PATHS if path.is_file())
+    paths.add(CALIBRATION_AUDIT_PATH)
+    return sorted(paths)
 
 
 class SemanticReviewCalibrationCorpusTest(unittest.TestCase):
@@ -412,6 +433,9 @@ class SemanticReviewCalibrationCorpusTest(unittest.TestCase):
             allowed_exact_sha256=allowed_public_hashes,
         )
         self.assertEqual(findings, [])
+
+    def test_answer_leak_audit_inventory_includes_every_task2_surface(self):
+        self.assertTrue(TASK2_SURFACE_PATHS.issubset(set(tracked_calibration_paths())))
 
     def test_oracle_commitment_is_aggregate_only_and_portable(self):
         record = read_json(RECORD_PATH)

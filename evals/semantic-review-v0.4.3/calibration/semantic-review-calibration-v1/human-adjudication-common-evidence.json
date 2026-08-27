@@ -1,0 +1,669 @@
+{
+  "schema_version": "joewrks.semantic-review-human-adjudication-evidence/1.0",
+  "source": "frozen G-001 through G-015 reviewer inputs",
+  "cases": [
+    {
+      "case_id": "G-001",
+      "canonical_clause": "A non-empty reason input is required.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-001",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "b20f50a7a10e909f337a65500039194360e3562b6f6b9dfbff2ff69be26f1ee5"
+      },
+      "candidate_semantic_value": [],
+      "responsibility_rule_id": "FR-A09",
+      "completeness_mode": "LOCAL",
+      "relevant_sibling_refs": [],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-002",
+      "canonical_clause": "A non-empty reason input is required.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-002",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "b20f50a7a10e909f337a65500039194360e3562b6f6b9dfbff2ff69be26f1ee5"
+      },
+      "candidate_semantic_value": [
+        "reason is non-empty"
+      ],
+      "responsibility_rule_id": "FR-A09",
+      "completeness_mode": "LOCAL",
+      "relevant_sibling_refs": [],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-003",
+      "canonical_clause": "The current owner may invoke.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-003",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "f3fe250acf6f2e041392249cd647f96f19fe96448a46aa1334efd6a0918f34aa"
+      },
+      "candidate_semantic_value": [],
+      "responsibility_rule_id": "FR-A09",
+      "completeness_mode": "LOCAL",
+      "relevant_sibling_refs": [
+        "action:ACT-G003:relationship_predicate"
+      ],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-004",
+      "canonical_clause": "Preserve submitted input after failure.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-004",
+        "pointer": "/objects/ux_requirements/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "6e26349bf8e852681bd4b5b1d1d32b3c6d5016f8fab965cba70ee09feb2e4c27"
+      },
+      "candidate_semantic_value": [
+        "show validation category"
+      ],
+      "responsibility_rule_id": "FR-A23",
+      "completeness_mode": "COMPOSITIONAL",
+      "relevant_sibling_refs": [],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-005",
+      "canonical_clause": "Present the input error and preserve input.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-005",
+        "pointer": "/objects/ux_requirements/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "ce6dc649b56e71d69155326685581880f05cd7b86a7d01e3fe9e954873d7dde1"
+      },
+      "candidate_semantic_value": [
+        "present error",
+        "preserve input"
+      ],
+      "responsibility_rule_id": "FR-A23",
+      "completeness_mode": "COMPOSITIONAL",
+      "relevant_sibling_refs": [
+        "action:ACT-G005:input_invariants",
+        "action:ACT-G005:rejection"
+      ],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-006",
+      "canonical_clause": "Failure is terminal.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-006",
+        "pointer": "/objects/ux_requirements/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "b8efe4769a190ff44e0bbdda84f537b725e1e9f4e5d4b145be9501e2195bec99"
+      },
+      "candidate_semantic_value": [
+        "show error",
+        "offer retry"
+      ],
+      "responsibility_rule_id": "FR-A23",
+      "completeness_mode": "COMPOSITIONAL",
+      "relevant_sibling_refs": [],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-007",
+      "canonical_clause": "The material rule must be verified.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-007",
+        "pointer": "/objects/requirements/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "610d05676d05d186647166e09068c75c28e94981f435d8d00a9e49aaf769bc06"
+      },
+      "candidate_semantic_value": [],
+      "responsibility_rule_id": "FR-A25",
+      "completeness_mode": "REFERENCE_ONLY",
+      "relevant_sibling_refs": [],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-008",
+      "canonical_clause": "The material rule must be verified.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-008",
+        "pointer": "/objects/requirements/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "610d05676d05d186647166e09068c75c28e94981f435d8d00a9e49aaf769bc06"
+      },
+      "candidate_semantic_value": [
+        "TEST-G008"
+      ],
+      "responsibility_rule_id": "FR-A25",
+      "completeness_mode": "REFERENCE_ONLY",
+      "relevant_sibling_refs": [],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-009",
+      "canonical_clause": "The owning field permits one result.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-009",
+        "pointer": "/objects/requirements/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "4b0f5179919819859253d2f63c1c746b8f7a76e74df28c04469770e8685c21a6"
+      },
+      "candidate_semantic_value": [
+        "TEST-G009"
+      ],
+      "responsibility_rule_id": "FR-A25",
+      "completeness_mode": "REFERENCE_ONLY",
+      "relevant_sibling_refs": [],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-010",
+      "canonical_clause": "Only the declared constraint applies.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-010",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "9ef79d22682073d5b3b0290e02a4353b4113201526387addd0f0432131f53135"
+      },
+      "candidate_semantic_value": [
+        "G-010 candidate preconditions"
+      ],
+      "responsibility_rule_id": "FR-A06",
+      "completeness_mode": "LOCAL",
+      "relevant_sibling_refs": [],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-011",
+      "canonical_clause": "Commit and visible readback form distinct projections.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-011",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "29185ec3adf0edf8d8f0fcde6aa448a0be04ac1ff81bd4cae8245324709a928e"
+      },
+      "candidate_semantic_value": [
+        "G-011 candidate visible_success"
+      ],
+      "responsibility_rule_id": "FR-A22",
+      "completeness_mode": "COMPOSITIONAL",
+      "relevant_sibling_refs": [
+        "action:ACT-G011:expected_domain_mutation"
+      ],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-012",
+      "canonical_clause": "Raw lifecycle sentinel source.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-012",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "4fdd21b2b6af69dcf59c49190f341b78c790c55368d994dec5636c7959538a99",
+        "candidate_source": {
+          "active": true,
+          "object_id": "RULE-G-012-OLD",
+          "pointer": "/objects/rules/1/text",
+          "source_status": "SUPERSEDED",
+          "value_sha256": "6eb8a936de98a1471bfd60f3e9210a875a627f6619aa8fabb3a573729b13fe0e"
+        }
+      },
+      "candidate_semantic_value": [
+        {
+          "active": true,
+          "object_id": "RULE-G-012-OLD",
+          "pointer": "/objects/rules/1/text",
+          "source_status": "SUPERSEDED",
+          "value_sha256": "6eb8a936de98a1471bfd60f3e9210a875a627f6619aa8fabb3a573729b13fe0e"
+        }
+      ],
+      "responsibility_rule_id": "PR-P01",
+      "completeness_mode": "PROVENANCE_ONLY",
+      "relevant_sibling_refs": [],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-013",
+      "canonical_clause": "A current owned rule exists.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-013",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "990df9bb25d2e57bed16d28a6e0a048da8903c6567b00ca0e29dbb64254a59a4",
+        "candidate_provenance_hashes": []
+      },
+      "candidate_semantic_value": [
+        "G-013 candidate input_invariants"
+      ],
+      "responsibility_rule_id": "FR-A09",
+      "completeness_mode": "LOCAL",
+      "relevant_sibling_refs": [],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-014",
+      "canonical_clause": "The bounded input is permitted.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-014",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "c2e2dea8ab101bc4409f686aa1ee0222fbf88d8aa5b396b268b6b22ba181b58b"
+      },
+      "candidate_semantic_value": [
+        "G-014 candidate input_invariants"
+      ],
+      "responsibility_rule_id": "FR-A09",
+      "completeness_mode": "LOCAL",
+      "relevant_sibling_refs": [],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    },
+    {
+      "case_id": "G-015",
+      "canonical_clause": "One material obligation exists.",
+      "canonical_evidence": {
+        "object_id": "RULE-G-015",
+        "pointer": "/objects/rules/0/text",
+        "source_status": "CURRENT",
+        "active": true,
+        "value_sha256": "b02b0a7288c28bf112904d77c612b5edf9a3707651d2127c4e391fb277ab7d6c",
+        "responsibility_profile_entry": null
+      },
+      "candidate_semantic_value": [
+        "G-015 candidate preconditions"
+      ],
+      "responsibility_rule_id": null,
+      "completeness_mode": null,
+      "relevant_sibling_refs": [],
+      "allowed_verdicts": [
+        "APPROVED",
+        "REJECTED_CANDIDATE",
+        "RUBRIC_ERROR",
+        "INPUT_PACKAGE_ERROR"
+      ],
+      "allowed_rationale_codes": [
+        "SUPPORTED_EXACTLY",
+        "MISSING_OWNED_SEMANTIC",
+        "MISSING_REQUIRED_REFERENCE",
+        "UNSUPPORTED_OVERREACH",
+        "CONTRADICTS_OWNER",
+        "INVALID_DUPLICATION",
+        "INVALID_PROVENANCE",
+        "ACTIVE_SUPERSEDED_SOURCE",
+        "RESPONSIBILITY_UNDEFINED",
+        "COMPLETENESS_UNDEFINED",
+        "PACKAGE_HASH_MISMATCH",
+        "BRIEF_HASH_MISMATCH",
+        "CONTRACT_HASH_MISMATCH",
+        "RESPONSIBILITY_PROFILE_HASH_MISMATCH",
+        "OBLIGATION_INDEX_HASH_MISMATCH",
+        "IDENTITY_SET_MISMATCH",
+        "PREVIOUS_VERDICT_EXPOSURE",
+        "OUTPUT_SCHEMA_VIOLATION"
+      ]
+    }
+  ]
+}

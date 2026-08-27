@@ -3,3 +3,5 @@
 /tests/fixtures/semantic-review-v1/** text eol=lf
 /tests/semantic_review_support.py text eol=lf
 /tests/test_semantic_review_*.py text eol=lf
+/tests/test_official_calibration_controller.py text eol=lf
+/evals/semantic-review-v0.4.3/calibration/** text eol=lf

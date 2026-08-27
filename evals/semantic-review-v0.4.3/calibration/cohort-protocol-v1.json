@@ -1,0 +1,989 @@
+{
+  "schema_version": "joewrks.semantic-review-calibration-cohort-protocol/1.0",
+  "cohort_ids": [
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "planned_full_review_context_count": 3,
+  "planned_golden_context_count": 45,
+  "planned_total_unique_context_count": 48,
+  "context_reuse_allowed": false,
+  "cohorts": [
+    {
+      "cohort_id": "C1",
+      "full_review_context": {
+        "planned_context_id": "C1-FULL-001",
+        "receives_only": [
+          "exact_full_reviewer_package",
+          "run_envelope"
+        ],
+        "visibility": {
+          "manifest_only_isolation_required": true,
+          "forbidden_visibility": [
+            "other_context_outputs",
+            "prior_verdicts",
+            "golden_answers",
+            "seed_oracle",
+            "repository_history",
+            "sibling_packages",
+            "controller_disagreement_analysis"
+          ]
+        }
+      },
+      "golden_contexts": [
+        {
+          "case_id": "G-001",
+          "planned_context_id": "C1-G-001-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-002",
+          "planned_context_id": "C1-G-002-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-003",
+          "planned_context_id": "C1-G-003-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-004",
+          "planned_context_id": "C1-G-004-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-005",
+          "planned_context_id": "C1-G-005-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-006",
+          "planned_context_id": "C1-G-006-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-007",
+          "planned_context_id": "C1-G-007-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-008",
+          "planned_context_id": "C1-G-008-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-009",
+          "planned_context_id": "C1-G-009-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-010",
+          "planned_context_id": "C1-G-010-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-011",
+          "planned_context_id": "C1-G-011-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-012",
+          "planned_context_id": "C1-G-012-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-013",
+          "planned_context_id": "C1-G-013-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-014",
+          "planned_context_id": "C1-G-014-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-015",
+          "planned_context_id": "C1-G-015-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "cohort_id": "C2",
+      "full_review_context": {
+        "planned_context_id": "C2-FULL-001",
+        "receives_only": [
+          "exact_full_reviewer_package",
+          "run_envelope"
+        ],
+        "visibility": {
+          "manifest_only_isolation_required": true,
+          "forbidden_visibility": [
+            "other_context_outputs",
+            "prior_verdicts",
+            "golden_answers",
+            "seed_oracle",
+            "repository_history",
+            "sibling_packages",
+            "controller_disagreement_analysis"
+          ]
+        }
+      },
+      "golden_contexts": [
+        {
+          "case_id": "G-001",
+          "planned_context_id": "C2-G-001-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-002",
+          "planned_context_id": "C2-G-002-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-003",
+          "planned_context_id": "C2-G-003-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-004",
+          "planned_context_id": "C2-G-004-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-005",
+          "planned_context_id": "C2-G-005-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-006",
+          "planned_context_id": "C2-G-006-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-007",
+          "planned_context_id": "C2-G-007-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-008",
+          "planned_context_id": "C2-G-008-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-009",
+          "planned_context_id": "C2-G-009-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-010",
+          "planned_context_id": "C2-G-010-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-011",
+          "planned_context_id": "C2-G-011-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-012",
+          "planned_context_id": "C2-G-012-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-013",
+          "planned_context_id": "C2-G-013-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-014",
+          "planned_context_id": "C2-G-014-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-015",
+          "planned_context_id": "C2-G-015-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "cohort_id": "C3",
+      "full_review_context": {
+        "planned_context_id": "C3-FULL-001",
+        "receives_only": [
+          "exact_full_reviewer_package",
+          "run_envelope"
+        ],
+        "visibility": {
+          "manifest_only_isolation_required": true,
+          "forbidden_visibility": [
+            "other_context_outputs",
+            "prior_verdicts",
+            "golden_answers",
+            "seed_oracle",
+            "repository_history",
+            "sibling_packages",
+            "controller_disagreement_analysis"
+          ]
+        }
+      },
+      "golden_contexts": [
+        {
+          "case_id": "G-001",
+          "planned_context_id": "C3-G-001-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-002",
+          "planned_context_id": "C3-G-002-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-003",
+          "planned_context_id": "C3-G-003-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-004",
+          "planned_context_id": "C3-G-004-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-005",
+          "planned_context_id": "C3-G-005-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-006",
+          "planned_context_id": "C3-G-006-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-007",
+          "planned_context_id": "C3-G-007-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-008",
+          "planned_context_id": "C3-G-008-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-009",
+          "planned_context_id": "C3-G-009-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-010",
+          "planned_context_id": "C3-G-010-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-011",
+          "planned_context_id": "C3-G-011-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-012",
+          "planned_context_id": "C3-G-012-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-013",
+          "planned_context_id": "C3-G-013-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-014",
+          "planned_context_id": "C3-G-014-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        },
+        {
+          "case_id": "G-015",
+          "planned_context_id": "C3-G-015-001",
+          "receives_only": [
+            "exact_single_golden_package",
+            "run_envelope"
+          ],
+          "visibility": {
+            "manifest_only_isolation_required": true,
+            "forbidden_visibility": [
+              "other_context_outputs",
+              "prior_verdicts",
+              "golden_answers",
+              "seed_oracle",
+              "repository_history",
+              "sibling_packages",
+              "controller_disagreement_analysis"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "future_blocker": "BLOCKED — MANIFEST_ONLY_ISOLATION_UNAVAILABLE",
+  "REAL_CALIBRATION_RUNS": 0,
+  "executed_output_paths": []
+}

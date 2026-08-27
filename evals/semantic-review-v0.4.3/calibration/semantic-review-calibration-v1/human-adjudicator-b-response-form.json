@@ -1,0 +1,87 @@
+{
+  "schema_version": "joewrks.semantic-review-human-adjudication-response-form/1.0",
+  "non_normative_form_identity": "HUMAN-ADJUDICATOR-B",
+  "common_evidence_payload": {
+    "path": "human-adjudication-common-evidence.json",
+    "sha256": "265edb58fa58f690b0177d84c72f2190289a2bec26ac507a6fb28237dd68a5b3",
+    "bytes": 21553
+  },
+  "HUMAN_ADJUDICATION_COMPLETE": "NO",
+  "responses": [
+    {
+      "case_id": "G-001",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-002",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-003",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-004",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-005",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-006",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-007",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-008",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-009",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-010",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-011",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-012",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-013",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-014",
+      "verdict": null,
+      "rationale_code": null
+    },
+    {
+      "case_id": "G-015",
+      "verdict": null,
+      "rationale_code": null
+    }
+  ]
+}
