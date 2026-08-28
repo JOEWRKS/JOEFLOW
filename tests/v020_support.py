@@ -25,6 +25,31 @@ def foundation_state():
     }
 
 
+def evidence_record(
+    evidence_id="EVD-001",
+    *,
+    source_kind="OBSERVED_IMPLEMENTATION",
+    authority_classes=None,
+    confidence="DIRECT",
+    status="CURRENT",
+    claim="The current implementation rejects duplicate submissions.",
+    locator="src/submit.py",
+):
+    if authority_classes is None:
+        authority_classes = ["FACTUAL", "BEHAVIORAL"]
+    return {
+        "id": evidence_id,
+        "status": status,
+        "source_kind": source_kind,
+        "locator": locator,
+        "claim": claim,
+        "confidence": confidence,
+        "authority_classes": list(authority_classes),
+        "observed_version": None,
+        "content_hash": None,
+    }
+
+
 def materiality(*, classification="NON_MATERIAL"):
     return {
         "outcome_divergence": "LOW",

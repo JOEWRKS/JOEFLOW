@@ -18,6 +18,21 @@ OBJECT_GROUPS = {
 DEFINITION_STATUSES = {"OPEN", "READY_FOR_REVIEW", "CLOSED", "BLOCKED"}
 NORMAL_AUTHORITY_STATUSES = {"CURRENT", "STALE", "SUPERSEDED", "RETIRED"}
 UNKNOWN_STATUSES = {"OPEN", "RESOLVED", "DEFERRED", "BLOCKED", "SUPERSEDED", "RETIRED"}
+EVIDENCE_STATUSES = {"CURRENT", "STALE", "SUPERSEDED", "UNAVAILABLE"}
+EVIDENCE_CONFIDENCE = {"DIRECT", "CORROBORATED", "INFERRED"}
+EVIDENCE_AUTHORITY_CLASSES = {"FACTUAL", "INTENT", "CONSTRAINT", "BEHAVIORAL", "PREFERENCE"}
+SOURCE_KIND_CAPABILITIES = {
+    "USER_CONFIRMED_INTENT": {"INTENT", "PREFERENCE"},
+    "DOCUMENTED_INTENT": {"INTENT", "PREFERENCE"},
+    "HISTORICAL_DECISION": {"INTENT", "PREFERENCE"},
+    "EXTERNAL_CONSTRAINT": {"FACTUAL", "CONSTRAINT"},
+    "OBSERVED_IMPLEMENTATION": {"FACTUAL", "BEHAVIORAL"},
+    "OBSERVED_RUNTIME": {"FACTUAL", "BEHAVIORAL"},
+    "TEST_ASSERTION": {"FACTUAL", "BEHAVIORAL"},
+    "DESIGN_ARTIFACT": {"INTENT", "PREFERENCE"},
+    "INFERRED_INTENT": {"INTENT", "PREFERENCE"},
+}
+CANDIDATE_ONLY_SOURCE_KINDS = {"INFERRED_INTENT", "DESIGN_ARTIFACT"}
 GROUP_PREFIXES = {
     "goals": "GOAL", "users": "USR", "requirements": "REQ",
     "unknowns": "UNK", "decisions": "DEC", "rules": "RULE",
@@ -147,6 +162,140 @@ def _collect_ids(
         for position, record in enumerate(surface_manifest["records"]):
             add_reserved(record, f"surface_manifest.records[{position}]")
     return index, errors
+
+
+def _collect_evidence(state: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    evidence = state.get("evidence")
+    if not isinstance(evidence, list):
+        return {}
+    return {
+        record["id"]: record
+        for record in evidence
+        if isinstance(record, dict) and isinstance(record.get("id"), str)
+    }
+
+
+def _evidence_is_current_closure_eligible(record: dict[str, Any]) -> bool:
+    authority_classes = record.get("authority_classes")
+    return (
+        record.get("status") == "CURRENT"
+        and record.get("source_kind") not in CANDIDATE_ONLY_SOURCE_KINDS
+        and isinstance(authority_classes, list)
+        and bool(authority_classes)
+        and all(isinstance(authority_class, str) for authority_class in authority_classes)
+    )
+
+
+def _evidence_can_support(
+    record: dict[str, Any], authority_class: str, *, for_closure: bool,
+) -> bool:
+    source_kind = record.get("source_kind")
+    authority_classes = record.get("authority_classes")
+    if (
+        not isinstance(source_kind, str)
+        or source_kind not in SOURCE_KIND_CAPABILITIES
+        or not isinstance(authority_classes, list)
+        or authority_class not in authority_classes
+        or authority_class not in SOURCE_KIND_CAPABILITIES[source_kind]
+    ):
+        return False
+    return not for_closure or _evidence_is_current_closure_eligible(record)
+
+
+def _validate_evidence(state: dict[str, Any]) -> list[dict[str, str]]:
+    evidence = state.get("evidence")
+    if not isinstance(evidence, list):
+        return []
+
+    evidence_index = _collect_evidence(state)
+    errors: list[dict[str, str]] = []
+    allowed_fields = {
+        "id", "status", "source_kind", "locator", "claim", "confidence",
+        "authority_classes", "observed_version", "content_hash",
+        "superseded_by", "unavailable_reason",
+    }
+    required_fields = allowed_fields - {"superseded_by", "unavailable_reason"}
+
+    for position, record in enumerate(evidence):
+        path = f"evidence[{position}]"
+        if not isinstance(record, dict):
+            errors.append(_error("invalid_evidence_shape", "evidence record must be an object", path))
+            continue
+        if set(record) - allowed_fields or required_fields - set(record):
+            errors.append(_error("invalid_evidence_shape", "evidence fields do not match the 0.2.0 contract", path))
+
+        evidence_id = record.get("id")
+        if not _is_stable_id(evidence_id, expected_prefix="EVD"):
+            errors.append(_error("invalid_evidence_id", "evidence id must use EVD-NNN form", f"{path}.id"))
+
+        status = record.get("status")
+        source_kind = record.get("source_kind")
+        confidence = record.get("confidence")
+        authority_classes = record.get("authority_classes")
+        shape_valid = (
+            isinstance(status, str)
+            and status in EVIDENCE_STATUSES
+            and isinstance(source_kind, str)
+            and source_kind in SOURCE_KIND_CAPABILITIES
+            and isinstance(confidence, str)
+            and confidence in EVIDENCE_CONFIDENCE
+            and _meaningful_text(record.get("locator"))
+            and _meaningful_text(record.get("claim"))
+            and isinstance(authority_classes, list)
+            and bool(authority_classes)
+            and all(isinstance(authority_class, str) for authority_class in authority_classes)
+            and len(authority_classes) == len(set(authority_classes))
+            and all(authority_class in EVIDENCE_AUTHORITY_CLASSES for authority_class in authority_classes)
+            and all(
+                value is None or _meaningful_text(value)
+                for value in (record.get("observed_version"), record.get("content_hash"))
+            )
+        )
+        if not shape_valid:
+            errors.append(_error("invalid_evidence_shape", "invalid evidence semantic shape", path))
+
+        if isinstance(source_kind, str) and source_kind in SOURCE_KIND_CAPABILITIES and isinstance(authority_classes, list):
+            if any(
+                not isinstance(authority_class, str)
+                or authority_class not in SOURCE_KIND_CAPABILITIES[source_kind]
+                for authority_class in authority_classes
+            ):
+                errors.append(_error("invalid_evidence_authority_class", "authority class is not supported by source kind", f"{path}.authority_classes"))
+
+        if status == "SUPERSEDED":
+            target_id = record.get("superseded_by")
+            target = evidence_index.get(target_id) if isinstance(target_id, str) else None
+            if (
+                not _is_stable_id(target_id, expected_prefix="EVD")
+                or target_id == evidence_id
+                or target is None
+                or target.get("status") != "CURRENT"
+            ):
+                errors.append(_error("invalid_evidence_supersession", "SUPERSEDED requires a different current EVD-* superseded_by target", path))
+        if status == "UNAVAILABLE" and not _meaningful_text(record.get("unavailable_reason")):
+            errors.append(_error("invalid_evidence_unavailable", "UNAVAILABLE requires a meaningful unavailable_reason", path))
+
+    graph = {
+        record["id"]: record["superseded_by"]
+        for record in evidence
+        if isinstance(record, dict)
+        and record.get("status") == "SUPERSEDED"
+        and isinstance(record.get("id"), str)
+        and isinstance(record.get("superseded_by"), str)
+    }
+    visited: set[str] = set()
+    for start in graph:
+        trail: list[str] = []
+        current = start
+        while current in graph and current not in visited:
+            if current in trail:
+                cycle = trail[trail.index(current):] + [current]
+                errors.append(_error("evidence_supersession_cycle", " -> ".join(cycle), "evidence"))
+                break
+            trail.append(current)
+            current = graph[current]
+        visited.update(trail)
+    return errors
 
 
 def _validate_materiality_shape(value: Any, path: str) -> list[dict[str, str]]:
@@ -364,6 +513,7 @@ def validate_state_v2(state: dict[str, Any]) -> list[dict[str, str]]:
             errors.append(_error("schema_error", f"{field} must be a {expected_type.__name__}", field))
     index, id_errors = _collect_ids(state)
     errors.extend(id_errors)
+    errors.extend(_validate_evidence(state))
     errors.extend(_validate_typed_semantic_minima(state))
     errors.extend(_validate_lifecycle(state, index))
     errors.extend(_validate_supersession_cycles(state))

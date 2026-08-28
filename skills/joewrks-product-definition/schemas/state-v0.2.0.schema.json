@@ -39,6 +39,28 @@
         {"if": {"properties": {"status": {"const": "RETIRED"}}, "required": ["status"]}, "then": {"required": ["retired_by", "retired_at_revision", "retirement_reason"]}}
       ]
     },
+    "evidence_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "source_kind", "locator", "claim", "confidence", "authority_classes", "observed_version", "content_hash"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^EVD-[0-9]{3,}$"},
+        "status": {"enum": ["CURRENT", "STALE", "SUPERSEDED", "UNAVAILABLE"]},
+        "source_kind": {"enum": ["USER_CONFIRMED_INTENT", "DOCUMENTED_INTENT", "HISTORICAL_DECISION", "EXTERNAL_CONSTRAINT", "OBSERVED_IMPLEMENTATION", "OBSERVED_RUNTIME", "TEST_ASSERTION", "DESIGN_ARTIFACT", "INFERRED_INTENT"]},
+        "locator": {"$ref": "#/$defs/text"},
+        "claim": {"$ref": "#/$defs/text"},
+        "confidence": {"enum": ["DIRECT", "CORROBORATED", "INFERRED"]},
+        "authority_classes": {"type": "array", "items": {"enum": ["FACTUAL", "INTENT", "CONSTRAINT", "BEHAVIORAL", "PREFERENCE"]}, "uniqueItems": true, "minItems": 1},
+        "observed_version": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+        "content_hash": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+        "superseded_by": {"type": "string", "pattern": "^EVD-[0-9]{3,}$"},
+        "unavailable_reason": {"$ref": "#/$defs/text"}
+      },
+      "allOf": [
+        {"if": {"properties": {"status": {"const": "SUPERSEDED"}}, "required": ["status"]}, "then": {"required": ["superseded_by"]}},
+        {"if": {"properties": {"status": {"const": "UNAVAILABLE"}}, "required": ["status"]}, "then": {"required": ["unavailable_reason"]}}
+      ]
+    },
     "goals": {
       "type": "object", "additionalProperties": false, "required": ["id", "status", "statement"],
       "properties": {
@@ -168,7 +190,7 @@
         "closure_contract": {"type": "object", "required": ["level"], "properties": {"level": {"const": "SEMANTIC_CLOSURE"}}}
       }
     },
-    "migration": {"type": "object"}, "evidence": {"type": "array"}, "surface_manifest": {"type": "object"},
+    "migration": {"type": "object"}, "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence_record"}}, "surface_manifest": {"type": "object"},
     "contradictions": {"type": "array"},
     "objects": {
       "type": "object", "additionalProperties": false,
