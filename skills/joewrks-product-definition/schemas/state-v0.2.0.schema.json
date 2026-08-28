@@ -3,69 +3,193 @@
   "title": "JOEWRKS Product Definition State 0.2.0 Foundation",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "project",
-    "migration",
-    "evidence",
-    "surface_manifest",
-    "contradictions",
-    "objects",
-    "coverage",
-    "ux_coverage",
-    "discovery_baseline",
-    "approval",
-    "approval_history"
-  ],
+  "required": ["schema_version", "project", "migration", "evidence", "surface_manifest", "contradictions", "objects", "coverage", "ux_coverage", "discovery_baseline", "approval", "approval_history"],
+  "$defs": {
+    "text": {"type": "string", "minLength": 1},
+    "string_array": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "normal_status": {"enum": ["CURRENT", "STALE", "SUPERSEDED", "RETIRED"]},
+    "unknown_status": {"enum": ["OPEN", "RESOLVED", "DEFERRED", "BLOCKED", "SUPERSEDED", "RETIRED"]},
+    "decision_authority": {"enum": ["EVIDENCE_RESOLVABLE", "AGENT_AUTONOMOUS", "USER_CONFIRMATION", "USER_DECISION_REQUIRED", "EXTERNAL_AUTHORITY_REQUIRED"]},
+    "resolution_mode": {"enum": ["EVIDENCE", "USER_DECISION", "USER_ACCEPTED_RECOMMENDATION", "AGENT_NON_MATERIAL_DEFAULT", "EXTERNAL_CONSTRAINT", "MIGRATION_RECONCILIATION"]},
+    "materiality": {
+      "type": "object",
+      "required": ["outcome_divergence", "fan_out", "user_visible", "reversibility", "risk_flags", "classification"],
+      "properties": {
+        "outcome_divergence": {"enum": ["NONE", "LOW", "MEDIUM", "HIGH"]},
+        "fan_out": {"enum": ["LOCAL", "MULTI_OBJECT", "MULTI_FLOW", "SYSTEMIC"]},
+        "user_visible": {"type": "boolean"},
+        "reversibility": {"enum": ["TRIVIALLY_REVERSIBLE", "REVERSIBLE", "COSTLY_TO_REVERSE", "IRREVERSIBLE"]},
+        "risk_flags": {
+          "type": "object",
+          "required": ["security", "privacy", "money", "legal_or_policy", "destructive", "data_loss", "external_commitment"],
+          "properties": {
+            "security": {"type": "boolean"}, "privacy": {"type": "boolean"}, "money": {"type": "boolean"},
+            "legal_or_policy": {"type": "boolean"}, "destructive": {"type": "boolean"},
+            "data_loss": {"type": "boolean"}, "external_commitment": {"type": "boolean"}
+          },
+          "additionalProperties": false
+        },
+        "classification": {"enum": ["MATERIAL", "NON_MATERIAL"]}
+      },
+      "additionalProperties": false
+    },
+    "lifecycle_requirements": {
+      "allOf": [
+        {"if": {"properties": {"status": {"const": "SUPERSEDED"}}, "required": ["status"]}, "then": {"required": ["superseded_by"]}},
+        {"if": {"properties": {"status": {"const": "RETIRED"}}, "required": ["status"]}, "then": {"required": ["retired_by", "retired_at_revision", "retirement_reason"]}}
+      ]
+    },
+    "goals": {
+      "type": "object", "additionalProperties": false, "required": ["id", "status", "statement"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^GOAL-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/normal_status"}, "statement": {"$ref": "#/$defs/text"},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
+    "users": {
+      "type": "object", "additionalProperties": false, "required": ["id", "status", "description", "actor_kind"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^USR-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/normal_status"}, "description": {"$ref": "#/$defs/text"}, "actor_kind": {"$ref": "#/$defs/text"},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
+    "requirements": {
+      "type": "object", "additionalProperties": false, "required": ["id", "status", "statement", "scope", "ui_required", "materiality"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^REQ-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/normal_status"}, "statement": {"$ref": "#/$defs/text"},
+        "scope": {"$ref": "#/$defs/text"}, "ui_required": {"type": "boolean"}, "materiality": {"$ref": "#/$defs/materiality"},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
+    "unknowns": {
+      "type": "object", "additionalProperties": false, "required": ["id", "status", "question", "materiality", "decision_authority"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^UNK-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/unknown_status"}, "question": {"$ref": "#/$defs/text"},
+        "materiality": {"$ref": "#/$defs/materiality"}, "decision_authority": {"$ref": "#/$defs/decision_authority"},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
+    "decisions": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "status", "statement", "decision_type", "resolution_mode", "decision_authority", "source_unknown_refs", "evidence_refs", "materiality", "affects"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/normal_status"}, "statement": {"$ref": "#/$defs/text"},
+        "decision_type": {"$ref": "#/$defs/text"}, "resolution_mode": {"$ref": "#/$defs/resolution_mode"}, "decision_authority": {"$ref": "#/$defs/decision_authority"},
+        "source_unknown_refs": {"$ref": "#/$defs/string_array"}, "evidence_refs": {"$ref": "#/$defs/string_array"},
+        "materiality": {"$ref": "#/$defs/materiality"}, "affects": {"$ref": "#/$defs/string_array"},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
+    "rules": {
+      "type": "object", "additionalProperties": false, "required": ["id", "status", "statement", "applies_to"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^RULE-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/normal_status"}, "statement": {"$ref": "#/$defs/text"}, "applies_to": {"$ref": "#/$defs/string_array"},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
+    "flows": {
+      "type": "object", "additionalProperties": false, "required": ["id", "status", "goal_refs", "entry", "preconditions", "paths", "outcomes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^FLOW-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/normal_status"}, "goal_refs": {"$ref": "#/$defs/string_array"},
+        "entry": {"$ref": "#/$defs/text"}, "preconditions": {"$ref": "#/$defs/string_array"}, "paths": {"$ref": "#/$defs/string_array"}, "outcomes": {"$ref": "#/$defs/string_array"},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
+    "screens": {
+      "type": "object", "additionalProperties": false, "required": ["id", "status", "purpose", "requirement_refs", "interaction_mode", "major_actions"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^SCR-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/normal_status"}, "purpose": {"$ref": "#/$defs/text"},
+        "requirement_refs": {"$ref": "#/$defs/string_array"}, "interaction_mode": {"$ref": "#/$defs/text"}, "major_actions": {"$ref": "#/$defs/string_array"},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
+    "states": {
+      "type": "object", "additionalProperties": false, "required": ["id", "status", "owner_refs", "state_name", "conditions"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^STATE-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/normal_status"}, "owner_refs": {"$ref": "#/$defs/string_array"},
+        "state_name": {"$ref": "#/$defs/text"}, "conditions": {"$ref": "#/$defs/string_array"},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
+    "data": {
+      "type": "object", "additionalProperties": false, "required": ["id", "status", "name", "purpose", "ownership"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^DATA-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/normal_status"}, "name": {"$ref": "#/$defs/text"},
+        "purpose": {"$ref": "#/$defs/text"}, "ownership": {"$ref": "#/$defs/text"},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
+    "integrations": {
+      "type": "object", "additionalProperties": false, "required": ["id", "status", "name", "purpose"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^INT-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/normal_status"}, "name": {"$ref": "#/$defs/text"}, "purpose": {"$ref": "#/$defs/text"},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
+    "acceptance_criteria": {
+      "type": "object", "additionalProperties": false, "required": ["id", "status", "requirement_refs", "assertion"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^AC-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/normal_status"},
+        "requirement_refs": {"$ref": "#/$defs/string_array"}, "assertion": {"$ref": "#/$defs/text"},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
+    "tasks": {
+      "type": "object", "additionalProperties": false, "required": ["id", "status", "implements", "acceptance_refs"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^TASK-[0-9]{3,}$"}, "status": {"$ref": "#/$defs/normal_status"},
+        "implements": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "minItems": 1},
+        "acceptance_refs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "minItems": 1},
+        "superseded_by": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1}, "retirement_reason": {"$ref": "#/$defs/text"}
+      }, "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    }
+  },
   "properties": {
     "schema_version": {"const": "0.2.0"},
     "project": {
-      "type": "object",
-      "additionalProperties": false,
+      "type": "object", "additionalProperties": false,
       "required": ["slug", "definition_status", "definition_revision", "closure_contract"],
       "properties": {
-        "slug": {"type": "string"},
-        "definition_status": {"enum": ["OPEN", "READY_FOR_REVIEW", "CLOSED", "BLOCKED"]},
+        "slug": {"type": "string"}, "definition_status": {"enum": ["OPEN", "READY_FOR_REVIEW", "CLOSED", "BLOCKED"]},
         "definition_revision": {"type": "integer", "minimum": 1},
-        "closure_contract": {
-          "type": "object",
-          "required": ["level"],
-          "properties": {"level": {"const": "SEMANTIC_CLOSURE"}}
-        }
+        "closure_contract": {"type": "object", "required": ["level"], "properties": {"level": {"const": "SEMANTIC_CLOSURE"}}}
       }
     },
-    "migration": {"type": "object"},
-    "evidence": {"type": "array"},
-    "surface_manifest": {"type": "object"},
+    "migration": {"type": "object"}, "evidence": {"type": "array"}, "surface_manifest": {"type": "object"},
     "contradictions": {"type": "array"},
     "objects": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "goals", "users", "requirements", "unknowns", "decisions", "rules",
-        "flows", "screens", "states", "data", "integrations",
-        "acceptance_criteria", "tasks"
-      ],
+      "type": "object", "additionalProperties": false,
+      "required": ["goals", "users", "requirements", "unknowns", "decisions", "rules", "flows", "screens", "states", "data", "integrations", "acceptance_criteria", "tasks"],
       "properties": {
-        "goals": {"type": "array", "items": {"type": "object"}},
-        "users": {"type": "array", "items": {"type": "object"}},
-        "requirements": {"type": "array", "items": {"type": "object"}},
-        "unknowns": {"type": "array", "items": {"type": "object"}},
-        "decisions": {"type": "array", "items": {"type": "object"}},
-        "rules": {"type": "array", "items": {"type": "object"}},
-        "flows": {"type": "array", "items": {"type": "object"}},
-        "screens": {"type": "array", "items": {"type": "object"}},
-        "states": {"type": "array", "items": {"type": "object"}},
-        "data": {"type": "array", "items": {"type": "object"}},
-        "integrations": {"type": "array", "items": {"type": "object"}},
-        "acceptance_criteria": {"type": "array", "items": {"type": "object"}},
-        "tasks": {"type": "array", "items": {"type": "object"}}
+        "goals": {"type": "array", "items": {"$ref": "#/$defs/goals"}},
+        "users": {"type": "array", "items": {"$ref": "#/$defs/users"}},
+        "requirements": {"type": "array", "items": {"$ref": "#/$defs/requirements"}},
+        "unknowns": {"type": "array", "items": {"$ref": "#/$defs/unknowns"}},
+        "decisions": {"type": "array", "items": {"$ref": "#/$defs/decisions"}},
+        "rules": {"type": "array", "items": {"$ref": "#/$defs/rules"}},
+        "flows": {"type": "array", "items": {"$ref": "#/$defs/flows"}},
+        "screens": {"type": "array", "items": {"$ref": "#/$defs/screens"}},
+        "states": {"type": "array", "items": {"$ref": "#/$defs/states"}},
+        "data": {"type": "array", "items": {"$ref": "#/$defs/data"}},
+        "integrations": {"type": "array", "items": {"$ref": "#/$defs/integrations"}},
+        "acceptance_criteria": {"type": "array", "items": {"$ref": "#/$defs/acceptance_criteria"}},
+        "tasks": {"type": "array", "items": {"$ref": "#/$defs/tasks"}}
       }
     },
-    "coverage": {"type": "array"},
-    "ux_coverage": {"type": "array"},
-    "discovery_baseline": {"type": "object"},
-    "approval": {"type": "object"},
-    "approval_history": {"type": "array"}
+    "coverage": {"type": "array"}, "ux_coverage": {"type": "array"}, "discovery_baseline": {"type": "object"},
+    "approval": {"type": "object"}, "approval_history": {"type": "array"}
   }
 }

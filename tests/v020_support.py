@@ -23,3 +23,18 @@ def foundation_state():
         "approval": {"status": "UNAPPROVED"},
         "approval_history": [],
     }
+
+
+def materiality(*, classification="NON_MATERIAL"):
+    return {
+        "outcome_divergence": "LOW",
+        "fan_out": "LOCAL",
+        "user_visible": False,
+        "reversibility": "TRIVIALLY_REVERSIBLE",
+        "risk_flags": {
+            "security": False, "privacy": False, "money": False,
+            "legal_or_policy": False, "destructive": False,
+            "data_loss": False, "external_commitment": False,
+        },
+        "classification": classification,
+    }
