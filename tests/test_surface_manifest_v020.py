@@ -65,7 +65,7 @@ def unknown_record(record_id="UNK-001", status="OPEN"):
         record_id,
         status=status,
         classification="NON_MATERIAL",
-        decision_authority="USER_CONFIRMATION",
+        decision_authority="AGENT_AUTONOMOUS",
     )
     record["question"] = "Which recipients receive feedback?"
     return record

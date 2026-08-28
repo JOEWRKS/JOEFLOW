@@ -34,7 +34,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 def unknown_record():
     record = canonical_unknown_record(
-        classification="NON_MATERIAL", decision_authority="USER_CONFIRMATION",
+        classification="NON_MATERIAL", decision_authority="AGENT_AUTONOMOUS",
     )
     record["question"] = "Which product intent should govern this observed behavior?"
     return record

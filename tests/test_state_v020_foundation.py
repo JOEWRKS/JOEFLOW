@@ -52,7 +52,7 @@ VALID_RECORDS = {
         "ui_required": True, "materiality": materiality(),
     },
     "unknowns": unknown_record(
-        classification="NON_MATERIAL", decision_authority="USER_CONFIRMATION",
+        classification="NON_MATERIAL", decision_authority="AGENT_AUTONOMOUS",
     ),
     "decisions": decision_record(
         source_unknown_refs=["UNK-002"], classification="NON_MATERIAL",

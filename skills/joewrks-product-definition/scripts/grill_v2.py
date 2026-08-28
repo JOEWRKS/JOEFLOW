@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from materiality_v2 import classify_materiality
+from materiality_v2 import classify_materiality, is_high_risk
 
 
 UNKNOWN_REQUIRED_FIELDS = {
@@ -269,6 +269,71 @@ def _recommendation_shape_is_valid(value: Any, options: Any) -> bool:
         and isinstance(value.get("confidence"), str)
         and value.get("confidence") in {"LOW", "MEDIUM", "HIGH"}
     )
+
+
+def recommendation_is_confirmation_ready(unknown: dict[str, object]) -> bool:
+    recommendation = unknown.get("recommendation")
+    options = unknown.get("options")
+    return (
+        unknown.get("response_mode") == "MUTUALLY_EXCLUSIVE"
+        and _is_valid_options(unknown.get("response_mode"), options)
+        and _recommendation_shape_is_valid(recommendation, options)
+        and recommendation.get("confidence") == "HIGH"
+    )
+
+
+def derive_decision_authority(
+    unknown: dict[str, object],
+    *,
+    evidence_index: dict[str, dict[str, object]],
+) -> str:
+    required_authority_class = unknown.get("required_authority_class")
+    if (
+        isinstance(required_authority_class, str)
+        and _has_qualifying_evidence(
+            unknown.get("evidence_refs"),
+            evidence_index,
+            required_authority_class,
+        )
+    ):
+        return "EVIDENCE_RESOLVABLE"
+    if required_authority_class in {"FACTUAL", "CONSTRAINT", "BEHAVIORAL"}:
+        return "EXTERNAL_AUTHORITY_REQUIRED"
+
+    materiality = unknown.get("materiality")
+    if isinstance(materiality, dict) and classify_materiality(materiality) == "NON_MATERIAL":
+        return "AGENT_AUTONOMOUS"
+    if isinstance(materiality, dict) and is_high_risk(materiality):
+        return "USER_DECISION_REQUIRED"
+    if recommendation_is_confirmation_ready(unknown):
+        return "USER_CONFIRMATION"
+    return "USER_DECISION_REQUIRED"
+
+
+def validate_decision_authority_policy(
+    state: dict[str, object],
+    *,
+    evidence_index: dict[str, dict[str, object]],
+) -> list[dict[str, str]]:
+    objects = state.get("objects")
+    unknowns = objects.get("unknowns") if isinstance(objects, dict) else None
+    if not isinstance(unknowns, list):
+        return []
+
+    errors: list[dict[str, str]] = []
+    for position, unknown in enumerate(unknowns):
+        if not isinstance(unknown, dict):
+            continue
+        if unknown.get("status") not in {"OPEN", "BLOCKED"}:
+            continue
+        derived = derive_decision_authority(unknown, evidence_index=evidence_index)
+        if unknown.get("decision_authority") != derived:
+            errors.append(_error(
+                "invalid_decision_authority_derivation",
+                f"decision_authority must equal deterministic derivation {derived}",
+                f"objects.unknowns[{position}].decision_authority",
+            ))
+    return errors
 
 
 def _recommendation_ref_is_current_and_permitted(
@@ -822,6 +887,9 @@ def grill_unknown_metrics(state: dict[str, object]) -> dict[str, int]:
     integrity_errors = validate_unknown_decision_integrity(
         state, id_index=id_index, evidence_index=evidence_index,
     )
+    integrity_errors.extend(validate_decision_authority_policy(
+        state, evidence_index=evidence_index,
+    ))
 
     def recomputed_material(record: object) -> bool:
         return (
@@ -852,7 +920,15 @@ def grill_unknown_metrics(state: dict[str, object]) -> dict[str, int]:
             for unknown in unknowns
         ),
         "unresolved_unknown_provenance": unique_error_records("unresolved_unknown_provenance"),
-        "invalid_resolution_authority": unique_error_records("invalid_unknown_resolution_authority"),
+        "invalid_resolution_authority": len({
+            error["path"].split(".", 2)[1]
+            for error in integrity_errors
+            if error["code"] in {
+                "invalid_unknown_resolution_authority",
+                "invalid_decision_authority_derivation",
+            }
+            and error["path"].startswith("objects.")
+        }),
         "unauthorized_agent_decisions": unique_error_records(
             "unauthorized_agent_decision", group="decisions",
         ),

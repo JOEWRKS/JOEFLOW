@@ -414,7 +414,7 @@ class UnknownResolutionV020Test(unittest.TestCase):
         )
 
     def test_recommendation_is_canonical_and_reasoning_refs_are_current_permitted_authority(self):
-        evidence_backed = unknown_record()
+        evidence_backed = unknown_record(decision_authority="USER_CONFIRMATION")
         evidence_backed["recommendation"] = recommendation()
         state = self.state_with_unknown(evidence_backed)
         state["evidence"] = [evidence_record(
@@ -422,7 +422,7 @@ class UnknownResolutionV020Test(unittest.TestCase):
         )]
         self.assertEqual(self.error_codes(state), set())
 
-        authority_backed = unknown_record()
+        authority_backed = unknown_record(decision_authority="USER_CONFIRMATION")
         authority_backed["recommendation"] = recommendation(reasoning_refs=["REQ-001"])
         authority_state = self.state_with_unknown(authority_backed)
         authority_state["objects"]["requirements"] = [{

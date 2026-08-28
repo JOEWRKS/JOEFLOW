@@ -3,7 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from discovery_v2 import validate_discovery_baseline
-from grill_v2 import grill_unknown_metrics, validate_unknown_decision_integrity
+from grill_v2 import (
+    grill_unknown_metrics,
+    validate_decision_authority_policy,
+    validate_unknown_decision_integrity,
+)
 from materiality_v2 import validate_materiality_classification
 
 
@@ -1075,6 +1079,9 @@ def _validate_state_v2(
     errors.extend(_validate_stale_consumed_evidence(state))
     errors.extend(validate_unknown_decision_integrity(
         state, id_index=index, evidence_index=evidence_index,
+    ))
+    errors.extend(validate_decision_authority_policy(
+        state, evidence_index=evidence_index,
     ))
     errors.extend(validate_discovery_baseline(
         state, check_freshness=check_discovery_baseline,
