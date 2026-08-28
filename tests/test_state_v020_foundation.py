@@ -15,6 +15,8 @@ except ModuleNotFoundError:
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "skills" / "joewrks-product-definition" / "scripts"
 SCHEMA = ROOT / "skills" / "joewrks-product-definition" / "schemas" / "state-v0.2.0.schema.json"
+REFERENCE = ROOT / "skills" / "joewrks-product-definition" / "references" / "state-contract-v0.2.0.md"
+TEMPLATE = ROOT / "skills" / "joewrks-product-definition" / "templates" / "state-v0.2.0.example.json"
 
 sys.path.insert(0, str(SCRIPTS))
 import state_validation_v2
@@ -78,6 +80,7 @@ class StateV020FoundationTest(unittest.TestCase):
     def test_schema_defines_the_v020_foundation_contract(self):
         schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
 
+        self.assertEqual(schema["properties"]["schema_version"]["const"], "0.2.0")
         self.assertEqual(
             set(schema["required"]),
             {
@@ -88,6 +91,31 @@ class StateV020FoundationTest(unittest.TestCase):
         )
         self.assertFalse(schema["additionalProperties"])
         self.assertFalse(schema["properties"]["project"]["additionalProperties"])
+
+    def test_v020_reference_and_native_example_define_the_m1_boundary(self):
+        reference = REFERENCE.read_text(encoding="utf-8")
+        template = json.loads(TEMPLATE.read_text(encoding="utf-8"))
+
+        self.assertEqual(template["schema_version"], "0.2.0")
+        self.assertEqual(template["project"]["definition_status"], "OPEN")
+        self.assertEqual(template["approval"]["status"], "UNAPPROVED")
+        self.assertEqual(template["migration"]["mode"], "NATIVE")
+        self.assertEqual(template["discovery_baseline"]["status"], "NOT_ESTABLISHED")
+        self.assertEqual(validate_state_v2(template), [])
+
+        closure = evaluate_closure_v2(template)
+        self.assertFalse(closure["closed"])
+        self.assertIsNone(closure["definition_digest"])
+        self.assertEqual(closure["metrics"]["semantic_closure_not_implemented"], 1)
+
+        for token in (
+            "LEGACY_CLOSURE",
+            "SEMANTIC_CLOSURE",
+            "FOUNDATION_PLAN_ONLY",
+            "SEMANTIC_CLOSURE_NOT_AVAILABLE_IN_M1",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token, reference)
 
     def test_foundation_state_passes_v2_validation(self):
         self.assertEqual(validate_state_v2(foundation_state()), [])
