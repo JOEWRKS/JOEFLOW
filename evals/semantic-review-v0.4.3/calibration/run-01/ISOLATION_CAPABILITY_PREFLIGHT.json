@@ -1,0 +1,27 @@
+{
+  "schema_version": "joewrks.semantic-review-isolation-preflight/1.0",
+  "reviewer_runs_at_preflight": 0,
+  "primary_probe": {
+    "mechanism": "codex_collaboration_fresh_fork",
+    "context_id": "/root/v043_manifest_isolation_probe",
+    "fresh_context": true,
+    "repository_history_accessible": true,
+    "forbidden_path_metadata_accessible": true,
+    "repository_wide_read_prevented": false,
+    "verdict": "REJECTED_FOR_REAL_CALIBRATION"
+  },
+  "fallback_probe": {
+    "mechanism": "projectless_codex_cli_ephemeral_read_only_sandbox",
+    "codex_cli_version": "0.146.0",
+    "runtime_context_id": "01a046c9-b122-78d1-8226-55ab07dac50a",
+    "fresh_context": true,
+    "repository_history_accessible": false,
+    "forbidden_path_metadata_accessible": false,
+    "repository_wide_read_prevented": true,
+    "outside_access_rejected_by_runtime_policy": true,
+    "verdict": "PASS"
+  },
+  "selected_execution_mechanism": "projectless_codex_cli_ephemeral_read_only_sandbox",
+  "capability_verdict": "PASS",
+  "weaker_execution_mechanism_forbidden": true
+}

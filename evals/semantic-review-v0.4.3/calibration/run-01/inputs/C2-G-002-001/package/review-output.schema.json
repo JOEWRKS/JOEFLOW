@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://joewrks.example/schemas/semantic-review-output-1.0.schema.json",
+  "title": "JOEWRKS Semantic Review Output 1.0",
+  "type": "object",
+  "required": ["review_schema_version", "review_run_id", "reviewer_context_id", "isolation_attestation_hash", "reviewer_brief_hash", "reviewer_input_manifest_hash", "reviewer_input_package_hash", "contract_hash", "responsibility_profile_hash", "semantic_obligation_index_hash", "review_identity_inventory_hash", "preflight_errors", "records", "summary"],
+  "properties": {
+    "review_schema_version": {"const": "joewrks.semantic-review/1.0"},
+    "review_run_id": {"type": "string", "pattern": ".*\\S.*"},
+    "reviewer_context_id": {"type": "string", "pattern": ".*\\S.*"},
+    "isolation_attestation_hash": {"$ref": "#/$defs/sha256"},
+    "reviewer_brief_hash": {"$ref": "#/$defs/sha256"},
+    "reviewer_input_manifest_hash": {"$ref": "#/$defs/sha256"},
+    "reviewer_input_package_hash": {"$ref": "#/$defs/sha256"},
+    "contract_hash": {"$ref": "#/$defs/sha256"},
+    "responsibility_profile_hash": {"$ref": "#/$defs/sha256"},
+    "semantic_obligation_index_hash": {"$ref": "#/$defs/sha256"},
+    "review_identity_inventory_hash": {"$ref": "#/$defs/sha256"},
+    "preflight_errors": {"type": "array", "items": {"$ref": "#/$defs/preflightError"}},
+    "records": {"type": "array", "items": {"$ref": "#/$defs/reviewRecord"}},
+    "summary": {"$ref": "#/$defs/summary"}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ownerKind": {"enum": ["action", "lifecycle"]},
+    "completenessMode": {"enum": ["LOCAL", "COMPOSITIONAL", "REFERENCE_ONLY"]},
+    "verdict": {"enum": ["APPROVED", "REJECTED_CANDIDATE", "RUBRIC_ERROR", "INPUT_PACKAGE_ERROR"]},
+    "errorVerdict": {"enum": ["RUBRIC_ERROR", "INPUT_PACKAGE_ERROR"]},
+    "rationaleCode": {"enum": ["SUPPORTED_EXACTLY", "MISSING_OWNED_SEMANTIC", "MISSING_REQUIRED_REFERENCE", "UNSUPPORTED_OVERREACH", "CONTRADICTS_OWNER", "INVALID_DUPLICATION", "INVALID_PROVENANCE", "ACTIVE_SUPERSEDED_SOURCE", "RESPONSIBILITY_UNDEFINED", "COMPLETENESS_UNDEFINED", "PACKAGE_HASH_MISMATCH", "BRIEF_HASH_MISMATCH", "CONTRACT_HASH_MISMATCH", "RESPONSIBILITY_PROFILE_HASH_MISMATCH", "OBLIGATION_INDEX_HASH_MISMATCH", "IDENTITY_SET_MISMATCH", "PREVIOUS_VERDICT_EXPOSURE", "OUTPUT_SCHEMA_VIOLATION"]},
+    "semanticField": {"enum": ["actor", "authentication", "relationship_predicate", "object_binding", "concurrency", "preconditions", "allowed_current_states", "forbidden_states", "input_invariants", "command", "expected_domain_mutation", "forbidden_mutations", "default_result", "result_expectations", "version_result", "history_result", "business_side_effects", "delivery_effects", "idempotency", "rejection", "recovery", "visible_success", "visible_error", "superseded_rules", "test_obligations", "trace", "current_states", "allowed_transitions", "forbidden_transitions", "boundary_conditions", "reversibility", "reversal_window", "object_outcome", "required_reason", "required_confirmation", "required_evidence", "authority", "history_preservation"]},
+    "responsibilityRule": {"enum": ["FR-A01", "FR-A02", "FR-A03", "FR-A04", "FR-A05", "FR-A06", "FR-A07", "FR-A08", "FR-A09", "FR-A10", "FR-A11", "FR-A12", "FR-A13", "FR-A14", "FR-A15", "FR-A16", "FR-A17", "FR-A18", "FR-A19", "FR-A20", "FR-A21", "FR-A22", "FR-A23", "FR-A24", "FR-A25", "FR-A26", "FR-L01", "FR-L02", "FR-L03", "FR-L04", "FR-L05", "FR-L06", "FR-L07", "FR-L08", "FR-L09", "FR-L10", "FR-L11", "FR-L12"]},
+    "canonicalEvidenceRef": {
+      "type": "object",
+      "required": ["object_id", "pointer", "value_sha256", "source_status", "active"],
+      "properties": {
+        "object_id": {"type": "string", "pattern": ".*\\S.*"},
+        "pointer": {"type": "string", "pattern": "^/"},
+        "value_sha256": {"$ref": "#/$defs/sha256"},
+        "source_status": {"enum": ["CURRENT", "SUPERSEDED"]},
+        "active": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "preflightError": {
+      "type": "object",
+      "required": ["verdict", "rationale_code", "scope", "canonical_evidence_refs", "reviewer_explanation"],
+      "properties": {
+        "verdict": {"$ref": "#/$defs/errorVerdict"},
+        "rationale_code": {"$ref": "#/$defs/rationaleCode"},
+        "scope": {"type": "string", "pattern": ".*\\S.*"},
+        "canonical_evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/canonicalEvidenceRef"}},
+        "reviewer_explanation": {"type": "string", "pattern": ".*\\S.*"}
+      },
+      "additionalProperties": false
+    },
+    "reviewRecord": {
+      "type": "object",
+      "required": ["review_schema_version", "reviewer_brief_hash", "reviewer_input_manifest_hash", "contract_hash", "review_identity", "owner_kind", "owner_id", "semantic_field", "semantic_value_hash", "provenance_hashes", "provenance_set_hash", "responsibility_rule_id", "completeness_mode", "sibling_review_identity_refs", "semantic_obligation_ids", "test_obligation_refs", "verdict", "rationale_code", "canonical_evidence_refs", "reviewer_explanation"],
+      "properties": {
+        "review_schema_version": {"const": "joewrks.semantic-review/1.0"},
+        "reviewer_brief_hash": {"$ref": "#/$defs/sha256"},
+        "reviewer_input_manifest_hash": {"$ref": "#/$defs/sha256"},
+        "contract_hash": {"$ref": "#/$defs/sha256"},
+        "review_identity": {"type": "string", "pattern": "^(action|lifecycle):[^:]+:[^:]+$"},
+        "owner_kind": {"$ref": "#/$defs/ownerKind"},
+        "owner_id": {"type": "string", "pattern": ".*\\S.*"},
+        "semantic_field": {"$ref": "#/$defs/semanticField"},
+        "semantic_value_hash": {"$ref": "#/$defs/sha256"},
+        "provenance_hashes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/sha256"}},
+        "provenance_set_hash": {"$ref": "#/$defs/sha256"},
+        "responsibility_rule_id": {"$ref": "#/$defs/responsibilityRule"},
+        "completeness_mode": {"$ref": "#/$defs/completenessMode"},
+        "sibling_review_identity_refs": {"type": "array", "items": {"type": "string", "pattern": "^(action|lifecycle):[^:]+:[^:]+$"}},
+        "semantic_obligation_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^OBL-[A-Z0-9-]+$"}},
+        "test_obligation_refs": {"type": "array", "items": {"type": "string", "pattern": ".*\\S.*"}},
+        "verdict": {"$ref": "#/$defs/verdict"},
+        "rationale_code": {"$ref": "#/$defs/rationaleCode"},
+        "canonical_evidence_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/canonicalEvidenceRef"}},
+        "reviewer_explanation": {"type": "string", "pattern": ".*\\S.*"}
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "required": ["expected_identity_count", "record_count", "unique_identity_count", "pending_count", "verdict_counts", "complete"],
+      "properties": {
+        "expected_identity_count": {"type": "integer", "minimum": 0},
+        "record_count": {"type": "integer", "minimum": 0},
+        "unique_identity_count": {"type": "integer", "minimum": 0},
+        "pending_count": {"const": 0},
+        "verdict_counts": {
+          "type": "object",
+          "required": ["APPROVED", "REJECTED_CANDIDATE", "RUBRIC_ERROR", "INPUT_PACKAGE_ERROR"],
+          "properties": {
+            "APPROVED": {"type": "integer", "minimum": 0},
+            "REJECTED_CANDIDATE": {"type": "integer", "minimum": 0},
+            "RUBRIC_ERROR": {"type": "integer", "minimum": 0},
+            "INPUT_PACKAGE_ERROR": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "complete": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,4 @@
+The package contains the complete normative reviewer instructions.
+Review only the supplied package under its reviewer brief.
+Return only the required semantic-review JSON output.
+Do not use outside information.
