@@ -1506,7 +1506,7 @@ def _coverage_analysis(
             active_gaps += 1
         axes = row.get("axes")
         expected_axes = set(PACK_AXIS_ORDER[pack_id])
-        if not isinstance(axes, dict) or set(axes) != expected_axes:
+        if not isinstance(axes, dict):
             errors.append(_error(
                 "grill_pack_axis_inventory_mismatch",
                 "specialist row axes must exactly equal the activated pack definition",
@@ -1514,11 +1514,20 @@ def _coverage_analysis(
             ))
             active_gaps += 1
             continue
+        if set(axes) != expected_axes:
+            errors.append(_error(
+                "grill_pack_axis_inventory_mismatch",
+                "specialist row axes must exactly equal the activated pack definition",
+                f"{path}.axes",
+            ))
+            active_gaps += 1
 
         pack_axis_defs = {
             axis["id"]: axis for axis in packs[pack_id]["axes"]
         }
         for axis_id in PACK_AXIS_ORDER[pack_id]:
+            if axis_id not in axes:
+                continue
             cell_path = f"{path}.axes.{axis_id}"
             cell = axes[axis_id]
             if not isinstance(cell, dict) or set(cell) != GRILL_AXIS_CELL_KEYS:
@@ -1639,7 +1648,7 @@ def _coverage_analysis(
             ))
         if axis_definition.get("materiality_floor") == "MATERIAL":
             material = False
-            if origin_unknown is not None:
+            if origin_valid and origin_unknown is not None:
                 materiality_value = origin_unknown.get("materiality")
                 try:
                     material = (

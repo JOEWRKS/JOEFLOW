@@ -526,6 +526,20 @@ class GrillPacksV020Test(unittest.TestCase):
             error["code"] for error in grill.validate_grill_coverage(duplicate)
         })
 
+    def test_inventory_gap_does_not_hide_present_open_axis_metric(self):
+        state = base_state()
+        state["surface_manifest"]["records"] = [current_surface()]
+        activate(state, "AUTH", "SURF-001")
+        row = specialist_row("GRILL-AUTH-1", "SURF-001")
+        axis_unknown(state, "SURF-001", "GRILL-AUTH-1", "registration")
+        open_axis(row, "registration", "UNK-901")
+        del row["axes"]["login"]
+        state["grill_coverage"] = [row]
+
+        metrics = grill.grill_pack_metrics(state)
+        self.assertEqual(metrics["active_grill_pack_gaps"], 1)
+        self.assertEqual(metrics["unresolved_pack_axes"], 1)
+
     def test_specialist_axis_status_payloads_require_current_authority_unknown_or_basis(self):
         state = base_state()
         state["surface_manifest"]["records"] = [current_surface()]
@@ -639,6 +653,26 @@ class GrillPacksV020Test(unittest.TestCase):
         )
         open_axis(inherited["grill_coverage"][0], "registration", "UNK-901")
         self.assertEqual(grill.grill_pack_metrics(inherited)["pack_materiality_floor_violations"], 0)
+
+    def test_material_floor_requires_exact_valid_axis_origin(self):
+        state = base_state()
+        state["surface_manifest"]["records"] = [current_surface()]
+        activate(state, "AUTH", "SURF-001")
+        row = specialist_row("GRILL-AUTH-1", "SURF-001")
+        unknown = axis_unknown(
+            state,
+            "SURF-001",
+            "GRILL-AUTH-1",
+            "account_recovery",
+            classification="MATERIAL",
+        )
+        unknown["origin"]["axis_id"] = "login"
+        open_axis(row, "account_recovery", "UNK-901")
+        state["grill_coverage"] = [row]
+
+        metrics = grill.grill_pack_metrics(state)
+        self.assertEqual(metrics["umbrella_unknown_compression"], 1)
+        self.assertEqual(metrics["pack_materiality_floor_violations"], 1)
 
     def test_frozen_metrics_overlap_but_axis_resolution_does_not_change_activation_completeness(self):
         state = base_state()

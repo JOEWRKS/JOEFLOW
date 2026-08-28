@@ -31,6 +31,7 @@ SCRIPTS = ROOT / "skills" / "joewrks-product-definition" / "scripts"
 SCHEMA = ROOT / "skills" / "joewrks-product-definition" / "schemas" / "state-v0.2.0.schema.json"
 sys.path.insert(0, str(SCRIPTS))
 
+from grill_v2 import CORE_GRILL_AXES
 from state_validation_v2 import evaluate_closure_v2, validate_state_v2
 
 
@@ -429,7 +430,11 @@ class UnknownResolutionV020Test(unittest.TestCase):
         authority_state = self.state_with_unknown(authority_backed)
         authority_state["objects"]["requirements"] = [{
             "id": "REQ-001", "status": "CURRENT", "statement": "Use the alternative behavior.",
-            "scope": "CORE", "ui_required": True, "materiality": materiality(),
+            "scope": "CORE", "ui_required": True, "materiality": materiality(classification="MATERIAL"),
+        }]
+        authority_state["coverage"] = [{
+            "feature_id": "REQ-001",
+            "cells": {axis: {"status": "COVERED"} for axis in CORE_GRILL_AXES},
         }]
         self.assertEqual(self.error_codes(authority_state), set())
 
