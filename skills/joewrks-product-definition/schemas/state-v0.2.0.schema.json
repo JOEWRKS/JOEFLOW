@@ -63,15 +63,10 @@
       }
     },
     "confirmation_ready_recommendation": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["recommended_option", "reasoning_refs", "tradeoffs", "confidence"],
-      "properties": {
-        "recommended_option": {"$ref": "#/$defs/text"},
-        "reasoning_refs": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "uniqueItems": true, "minItems": 1},
-        "tradeoffs": {"type": "array", "items": {"$ref": "#/$defs/text"}, "minItems": 1},
-        "confidence": {"const": "HIGH"}
-      }
+      "allOf": [
+        {"$ref": "#/$defs/unknown_recommendation"},
+        {"properties": {"confidence": {"const": "HIGH"}}}
+      ]
     },
     "unknown_deferral": {
       "type": "object",
@@ -294,7 +289,7 @@
         {"if": {"properties": {"status": {"const": "BLOCKED"}}, "required": ["status"]}, "then": {"properties": {"blocked_reason": {"$ref": "#/$defs/text"}}}, "else": {"properties": {"blocked_reason": {"type": "null"}}}},
         {"if": {"properties": {"response_mode": {"const": "MUTUALLY_EXCLUSIVE"}}, "required": ["response_mode"]}, "then": {"properties": {"options": {"minItems": 2}}}, "else": {"properties": {"options": {"maxItems": 0}}}},
         {"if": {"properties": {"resolution_mode": {"const": "USER_ACCEPTED_RECOMMENDATION"}}, "required": ["resolution_mode"]}, "then": {"properties": {"recommendation": {"$ref": "#/$defs/unknown_recommendation"}}}},
-        {"if": {"properties": {"decision_authority": {"const": "USER_CONFIRMATION"}}, "required": ["decision_authority"]}, "then": {"properties": {"response_mode": {"const": "MUTUALLY_EXCLUSIVE"}, "options": {"minItems": 2}, "recommendation": {"$ref": "#/$defs/confirmation_ready_recommendation"}}}}
+        {"if": {"properties": {"status": {"enum": ["OPEN", "BLOCKED"]}, "decision_authority": {"const": "USER_CONFIRMATION"}}, "required": ["status", "decision_authority"]}, "then": {"properties": {"response_mode": {"const": "MUTUALLY_EXCLUSIVE"}, "options": {"minItems": 2}, "recommendation": {"$ref": "#/$defs/confirmation_ready_recommendation"}}}}
       ]
     },
     "decisions": {

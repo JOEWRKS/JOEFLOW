@@ -193,21 +193,35 @@ class AutonomyPolicyV020Test(unittest.TestCase):
     def test_schema_requires_confirmation_ready_recommendation_for_user_confirmation(self):
         schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
         ready_schema = schema["$defs"].get("confirmation_ready_recommendation")
-        self.assertIsNotNone(ready_schema)
         self.assertEqual(
-            ready_schema["properties"]["confidence"],
-            {"const": "HIGH"},
+            ready_schema,
+            {
+                "allOf": [
+                    {"$ref": "#/$defs/unknown_recommendation"},
+                    {"properties": {"confidence": {"const": "HIGH"}}},
+                ]
+            },
         )
         authority_condition = next(
             (
                 condition
                 for condition in schema["$defs"]["unknowns"]["allOf"]
-                if condition.get("if", {}).get("properties", {}).get("decision_authority")
-                == {"const": "USER_CONFIRMATION"}
+                if condition.get("then", {}).get("properties", {}).get("recommendation")
+                == {"$ref": "#/$defs/confirmation_ready_recommendation"}
             ),
             None,
         )
         self.assertIsNotNone(authority_condition)
+        self.assertEqual(
+            authority_condition["if"],
+            {
+                "properties": {
+                    "status": {"enum": ["OPEN", "BLOCKED"]},
+                    "decision_authority": {"const": "USER_CONFIRMATION"},
+                },
+                "required": ["status", "decision_authority"],
+            },
+        )
         self.assertEqual(
             authority_condition["then"]["properties"],
             {
@@ -216,6 +230,50 @@ class AutonomyPolicyV020Test(unittest.TestCase):
                 "recommendation": {"$ref": "#/$defs/confirmation_ready_recommendation"},
             },
         )
+
+    def test_resolved_and_deferred_recommendations_follow_historical_runtime_contracts(self):
+        resolved = unknown_record(
+            status="RESOLVED",
+            decision_authority="USER_CONFIRMATION",
+        )
+        low_confidence_recommendation = recommendation(confidence="LOW")
+        resolved.update({
+            "recommendation": low_confidence_recommendation,
+            "resolved_by": ["DEC-001"],
+            "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+            "resolution_summary": "The user accepted the historical recommendation.",
+        })
+        decision = decision_record(
+            resolution_mode="USER_ACCEPTED_RECOMMENDATION",
+            decision_authority="USER_CONFIRMATION",
+            accepted_recommendation=accepted_recommendation(),
+        )
+        resolved_state = self.state_with_unknown(
+            resolved,
+            evidence=[intent_evidence()],
+            decision=decision,
+        )
+        self.assertEqual(self.error_codes(resolved_state), set())
+
+        deferred = unknown_record(
+            status="DEFERRED",
+            decision_authority="USER_CONFIRMATION",
+        )
+        deferred["deferral"] = {
+            "reason": "The user accepted deferral to a later product revision.",
+            "accepted_by": "user",
+            "impact_review": {
+                "scope": "No current scope impact.",
+                "rules": "No current rule impact.",
+                "flows": "No current flow impact.",
+                "states": "No current state impact.",
+                "privacy": "No current privacy impact.",
+                "money": "No current money impact.",
+                "security": "No current security impact.",
+                "acceptance": "No current acceptance impact.",
+            },
+        }
+        self.assertEqual(self.error_codes(self.state_with_unknown(deferred)), set())
 
     def test_rejects_malformed_or_unproven_recommendations(self):
         base = unknown_record(decision_authority="USER_CONFIRMATION")
@@ -430,6 +488,37 @@ class AutonomyPolicyV020Test(unittest.TestCase):
         material_state = self.state_with_unknown(material_unknown, decision=material_decision)
         codes = self.error_codes(material_state)
         self.assertIn("unauthorized_agent_decision", codes)
+
+    def test_resolution_authority_metric_counts_unauthorized_agent_conflicts_once_per_record(self):
+        unknown = unknown_record(
+            status="RESOLVED",
+            decision_authority="AGENT_AUTONOMOUS",
+        )
+        unknown.update({
+            "resolved_by": ["DEC-001"],
+            "resolution_mode": "AGENT_NON_MATERIAL_DEFAULT",
+            "resolution_summary": "The agent selected a product default.",
+        })
+        decision = decision_record(
+            resolution_mode="AGENT_NON_MATERIAL_DEFAULT",
+            decision_authority="AGENT_AUTONOMOUS",
+            decided_by="AGENT",
+        )
+        unauthorized_only = self.state_with_unknown(unknown, decision=decision)
+        metrics = evaluate_closure_v2(unauthorized_only)["metrics"]
+        self.assertEqual(metrics["invalid_resolution_authority"], 2)
+        self.assertEqual(metrics["unauthorized_agent_decisions"], 1)
+
+        overlapping_findings = copy.deepcopy(unauthorized_only)
+        overlapping_findings["objects"]["unknowns"][0]["decision_authority"] = (
+            "USER_DECISION_REQUIRED"
+        )
+        overlapping_findings["objects"]["decisions"][0]["decision_authority"] = (
+            "USER_DECISION_REQUIRED"
+        )
+        overlapping_metrics = evaluate_closure_v2(overlapping_findings)["metrics"]
+        self.assertEqual(overlapping_metrics["invalid_resolution_authority"], 2)
+        self.assertEqual(overlapping_metrics["unauthorized_agent_decisions"], 1)
 
 
 if __name__ == "__main__":

@@ -926,6 +926,7 @@ def grill_unknown_metrics(state: dict[str, object]) -> dict[str, int]:
             if error["code"] in {
                 "invalid_unknown_resolution_authority",
                 "invalid_decision_authority_derivation",
+                "unauthorized_agent_decision",
             }
             and error["path"].startswith("objects.")
         }),
