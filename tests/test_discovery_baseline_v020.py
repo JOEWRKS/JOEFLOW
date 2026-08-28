@@ -107,8 +107,13 @@ class DiscoveryBaselineV020Test(unittest.TestCase):
             "unresolved_material_contradiction_count": 0,
             "procedure_complete": True,
             "applicable_surface_classes_complete": True,
-            "active_grill_packs": [],
-            "active_grill_packs_complete": False,
+            "active_grill_packs": [{
+                "pack_id": "GRILL-CORE-1",
+                "version": "1.0",
+                "digest": first["active_grill_packs"][0]["digest"],
+                "target_refs": [],
+            }],
+            "active_grill_packs_complete": True,
             "unknown_unknown_exhaustiveness_claimed": False,
         })
 
@@ -130,13 +135,17 @@ class DiscoveryBaselineV020Test(unittest.TestCase):
         self.assertEqual(baseline["surface_manifest_digest"], evidence_baseline["surface_manifest_digest"])
         self.assertNotEqual(baseline["evidence_commitment_digest"], evidence_baseline["evidence_commitment_digest"])
 
-    def test_baseline_never_claims_m3_completeness_or_unknown_unknown_exhaustiveness(self):
+    def test_baseline_computes_pack_completeness_but_never_claims_unknown_exhaustiveness(self):
         baseline = build_discovery_baseline(
             foundation_state(),
             procedure_complete=True,
             applicable_surface_classes_complete=True,
         )
-        self.assertFalse(baseline["active_grill_packs_complete"])
+        self.assertTrue(baseline["active_grill_packs_complete"])
+        self.assertEqual(
+            [pack["pack_id"] for pack in baseline["active_grill_packs"]],
+            ["GRILL-CORE-1"],
+        )
         self.assertFalse(baseline["unknown_unknown_exhaustiveness_claimed"])
 
         invalid = copy.deepcopy(foundation_state())
@@ -245,14 +254,14 @@ class DiscoveryBaselineV020Test(unittest.TestCase):
     def test_cli_rejects_malformed_or_forbidden_stored_baseline(self):
         malformed = foundation_state()
         malformed["discovery_baseline"] = {"status": "CURRENT", "bogus": True}
-        forbidden = foundation_state()
-        forbidden["discovery_baseline"] = current_baseline(forbidden)
-        forbidden["discovery_baseline"]["active_grill_packs_complete"] = True
+        malformed_packs = foundation_state()
+        malformed_packs["discovery_baseline"] = current_baseline(malformed_packs)
+        malformed_packs["discovery_baseline"]["active_grill_packs"] = []
         forbidden_exhaustiveness = foundation_state()
         forbidden_exhaustiveness["discovery_baseline"] = current_baseline(forbidden_exhaustiveness)
         forbidden_exhaustiveness["discovery_baseline"]["unknown_unknown_exhaustiveness_claimed"] = True
 
-        for state in (malformed, forbidden, forbidden_exhaustiveness):
+        for state in (malformed, malformed_packs, forbidden_exhaustiveness):
             with self.subTest(baseline=state["discovery_baseline"]):
                 with tempfile.TemporaryDirectory() as directory:
                     path = Path(directory) / "state.json"

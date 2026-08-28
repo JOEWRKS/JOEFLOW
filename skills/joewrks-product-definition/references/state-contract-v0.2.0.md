@@ -20,3 +20,14 @@ M2 does not remove the M1 Closure guard. `SEMANTIC_CLOSURE_NOT_AVAILABLE_IN_M2`
 means `validate_closure` still reports `closed = false`, `definition_digest = null`,
 and `semantic_closure_not_implemented = 1` until the frozen V2 Closure gate is
 implemented and verified by a later milestone.
+
+## M3 Grill Engine boundary
+
+M3 adds deterministic Materiality, unknown-resolution authority, selective
+question projection, mandatory topology profiles, declarative Grill Packs, and
+Grill-aware discovery baselines. The authoritative M3 detail is the
+[M3 Grill Engine contract](grill-contract-v0.2.0.md).
+
+M3 preserves the M1/M2 Closure guard. `SEMANTIC_CLOSURE_NOT_AVAILABLE_IN_M3`
+means `validate_closure` still reports `closed = false`,
+`definition_digest = null`, and `semantic_closure_not_implemented = 1`.

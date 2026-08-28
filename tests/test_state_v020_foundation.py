@@ -22,6 +22,7 @@ SCRIPTS = ROOT / "skills" / "joewrks-product-definition" / "scripts"
 SCHEMA = ROOT / "skills" / "joewrks-product-definition" / "schemas" / "state-v0.2.0.schema.json"
 REFERENCE = ROOT / "skills" / "joewrks-product-definition" / "references" / "state-contract-v0.2.0.md"
 DISCOVERY_CONTRACT = ROOT / "skills" / "joewrks-product-definition" / "references" / "discovery-contract-v0.2.0.md"
+GRILL_CONTRACT = ROOT / "skills" / "joewrks-product-definition" / "references" / "grill-contract-v0.2.0.md"
 TEMPLATE = ROOT / "skills" / "joewrks-product-definition" / "templates" / "state-v0.2.0.example.json"
 
 sys.path.insert(0, str(SCRIPTS))
@@ -153,6 +154,32 @@ class StateV020FoundationTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, discovery_contract)
 
+        self.assertIn("historical for M2", discovery_contract)
+        self.assertIn("grill-contract-v0.2.0.md", discovery_contract)
+
+    def test_grill_contract_defines_the_exact_m3_boundary_and_policy(self):
+        self.assertTrue(GRILL_CONTRACT.is_file())
+        state_contract = REFERENCE.read_text(encoding="utf-8")
+        grill_contract = GRILL_CONTRACT.read_text(encoding="utf-8")
+
+        self.assertIn("[M3 Grill Engine contract](grill-contract-v0.2.0.md)", state_contract)
+        for marker in (
+            "GRILL_ENGINE_IMPLEMENTED_M3",
+            "INTERNALLY_EXHAUSTIVE_EXTERNALLY_SELECTIVE",
+            "MATERIALITY_CLASSIFICATION_ENFORCED",
+            "NO_SILENT_MATERIAL_AGENT_DECISIONS",
+            "ACTIVE_GRILL_PACKS_IMPLEMENTED_M3",
+            "UNKNOWN_UNKNOWN_EXHAUSTIVENESS_NOT_CLAIMED",
+            "SEMANTIC_CLOSURE_NOT_AVAILABLE_IN_M3",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, grill_contract)
+
+        self.assertIn("regardless of `user_visible`", grill_contract)
+        self.assertIn("`user_visible` is auditable metadata only", grill_contract)
+        self.assertIn("one highest-leverage user question", grill_contract)
+        self.assertIn("Pack identity, version, and digest", grill_contract)
+
     def test_foundation_state_passes_v2_validation(self):
         self.assertEqual(validate_state_v2(foundation_state()), [])
 
@@ -229,6 +256,67 @@ class StateV020FoundationTest(unittest.TestCase):
         self.assertIsNone(payload["definition_digest"])
         self.assertEqual(payload["metrics"]["semantic_closure_not_implemented"], 1)
 
+    def test_unassessed_materiality_counts_each_invalid_canonical_record_once(self):
+        state = foundation_state()
+        requirement = copy.deepcopy(VALID_RECORDS["requirements"])
+        requirement["materiality"] = None
+        unknown = unknown_record(
+            "UNK-010",
+            classification="NON_MATERIAL",
+            decision_authority="AGENT_AUTONOMOUS",
+        )
+        unknown["materiality"]["classification"] = "MATERIAL"
+        decision = decision_record(
+            "DEC-010",
+            status="STALE",
+            source_unknown_refs=[],
+            classification="NON_MATERIAL",
+        )
+        decision["materiality"] = {"classification": "NON_MATERIAL"}
+        surface = {
+            "id": "SURF-010",
+            "kind": "FEATURE_AREA",
+            "name": "Malformed materiality surface",
+            "status": "OPEN",
+            "materiality": "MATERIAL",
+            "evidence_refs": [],
+            "authority_refs": [],
+            "unknown_refs": [],
+            "decision_refs": [],
+            "contradiction_refs": [],
+            "rationale": None,
+            "intent_classification": None,
+        }
+        contradiction = {
+            "id": "CON-010",
+            "status": "OPEN",
+            "claim_a_refs": [],
+            "claim_b_refs": [],
+            "scope_refs": [],
+            "materiality": [],
+            "resolution": None,
+            "resolved_by": [],
+            "selected_authority_refs": [],
+        }
+        state["objects"]["requirements"] = [requirement]
+        state["objects"]["unknowns"] = [unknown]
+        state["objects"]["decisions"] = [decision]
+        state["surface_manifest"]["records"] = [surface]
+        state["contradictions"] = [contradiction]
+
+        result = evaluate_closure_v2(state)
+
+        self.assertIn("unassessed_materiality", result["metrics"])
+        self.assertEqual(result["metrics"]["unassessed_materiality"], 5)
+        materiality_errors = {
+            error["code"] for error in result["errors"]
+            if error["code"] in {"invalid_materiality", "materiality_classification_mismatch"}
+        }
+        self.assertEqual(
+            materiality_errors,
+            {"invalid_materiality", "materiality_classification_mismatch"},
+        )
+
     def test_every_typed_group_rejects_id_and_status_without_semantic_minimum(self):
         for group, record in VALID_RECORDS.items():
             with self.subTest(group=group):
@@ -270,7 +358,7 @@ class StateV020FoundationTest(unittest.TestCase):
                 state["objects"][group] = [invalid]
                 self.assertIn("invalid_status", {error["code"] for error in validate_state_v2(state)})
 
-    def test_materiality_shape_is_exact_but_classification_is_not_recomputed_in_m1(self):
+    def test_materiality_shape_is_exact_and_valid_classification_is_accepted(self):
         state = foundation_state()
         requirement = copy.deepcopy(VALID_RECORDS["requirements"])
         requirement["materiality"] = materiality(classification="MATERIAL")

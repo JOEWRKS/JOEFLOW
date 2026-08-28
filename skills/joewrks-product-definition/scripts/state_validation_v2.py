@@ -829,6 +829,30 @@ def _validate_materiality(value: Any, path: str) -> list[dict[str, str]]:
     return errors
 
 
+def _unassessed_materiality_count(state: dict[str, Any]) -> int:
+    records: list[Any] = []
+    objects = state.get("objects")
+    if isinstance(objects, dict):
+        for group in ("requirements", "unknowns", "decisions"):
+            group_records = objects.get(group)
+            if isinstance(group_records, list):
+                records.extend(group_records)
+    surface_manifest = state.get("surface_manifest")
+    surface_records = (
+        surface_manifest.get("records") if isinstance(surface_manifest, dict) else None
+    )
+    if isinstance(surface_records, list):
+        records.extend(surface_records)
+    contradictions = state.get("contradictions")
+    if isinstance(contradictions, list):
+        records.extend(contradictions)
+    return sum(
+        not isinstance(record, dict)
+        or bool(_validate_materiality(record.get("materiality"), "materiality"))
+        for record in records
+    )
+
+
 def _validate_typed_semantic_minima(state: dict[str, Any]) -> list[dict[str, str]]:
     errors: list[dict[str, str]] = []
     for group, position, record in _iter_records(state):
@@ -1104,6 +1128,7 @@ def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:
             "semantic_closure_not_implemented": 1,
             **_surface_metrics(state),
             **_contradiction_metrics(state),
+            "unassessed_materiality": _unassessed_materiality_count(state),
             **grill_unknown_metrics(state),
             **grill_pack_metrics(state),
             "stale_consumed_evidence": _stale_consumed_evidence_count(state),

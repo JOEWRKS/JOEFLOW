@@ -57,8 +57,11 @@ evidence of completion, not a claim that future discovery is impossible.
 `UNKNOWN_UNKNOWN_EXHAUSTIVENESS_NOT_CLAIMED`: M2 makes no universal
 unknown-unknown exhaustiveness claim.
 
-`ACTIVE_GRILL_PACKS_NOT_IMPLEMENTED_IN_M2`: M2 does not activate Grill Packs
-or claim active Grill Pack completeness.
+`ACTIVE_GRILL_PACKS_NOT_IMPLEMENTED_IN_M2`: this boundary is historical for M2.
+M2 does not activate Grill Packs or claim active Grill Pack completeness. When
+operating at M3, it is superseded by the
+[M3 Grill Engine contract](grill-contract-v0.2.0.md), which defines deterministic
+active pack instances and computed activation-inventory completeness.
 
 `SEMANTIC_CLOSURE_NOT_AVAILABLE_IN_M2`: M2 does not implement V2 Semantic
 Closure. The M1 Closure guard remains active: closure stays false, the

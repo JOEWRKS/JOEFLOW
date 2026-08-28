@@ -4,6 +4,8 @@ import hashlib
 import json
 from typing import Any
 
+from grill_v2 import compile_active_grill_packs, grill_pack_metrics
+
 
 DISCOVERY_BASELINE_STATUSES = {"NOT_ESTABLISHED", "CURRENT", "STALE"}
 _CURRENT_BASELINE_KEYS = {
@@ -55,6 +57,41 @@ def _contradiction_records(state: dict[str, Any]) -> list[Any]:
     return contradictions if isinstance(contradictions, list) else []
 
 
+def _is_lower_hex_digest(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
+def _valid_active_grill_packs(value: object) -> bool:
+    if not isinstance(value, list) or not value:
+        return False
+    pack_ids: list[str] = []
+    for pack in value:
+        if not isinstance(pack, dict) or set(pack) != {
+            "pack_id", "version", "digest", "target_refs",
+        }:
+            return False
+        pack_id = pack.get("pack_id")
+        version = pack.get("version")
+        target_refs = pack.get("target_refs")
+        if (
+            not isinstance(pack_id, str)
+            or not pack_id
+            or not isinstance(version, str)
+            or not version
+            or not _is_lower_hex_digest(pack.get("digest"))
+            or not isinstance(target_refs, list)
+            or any(not isinstance(reference, str) or not reference for reference in target_refs)
+            or target_refs != sorted(set(target_refs))
+        ):
+            return False
+        pack_ids.append(pack_id)
+    return pack_ids == sorted(set(pack_ids)) and "GRILL-CORE-1" in pack_ids
+
+
 def build_discovery_baseline(
     state: dict[str, Any], *, procedure_complete: bool,
     applicable_surface_classes_complete: bool,
@@ -64,6 +101,8 @@ def build_discovery_baseline(
     surfaces = _surface_records(state)
     evidence = _evidence_records(state)
     contradictions = _contradiction_records(state)
+    active_grill_packs = compile_active_grill_packs(state)
+    pack_metrics = grill_pack_metrics(state)
     return {
         "status": "CURRENT",
         "definition_revision": definition_revision,
@@ -75,8 +114,8 @@ def build_discovery_baseline(
         ),
         "procedure_complete": procedure_complete,
         "applicable_surface_classes_complete": applicable_surface_classes_complete,
-        "active_grill_packs": [],
-        "active_grill_packs_complete": False,
+        "active_grill_packs": active_grill_packs,
+        "active_grill_packs_complete": pack_metrics["active_grill_pack_gaps"] == 0,
         "unknown_unknown_exhaustiveness_claimed": False,
     }
 
@@ -125,9 +164,7 @@ def validate_discovery_baseline(
         and not isinstance(baseline["definition_revision"], bool)
         and baseline["definition_revision"] >= 1
         and all(
-            isinstance(baseline[field], str)
-            and len(baseline[field]) == 64
-            and all(character in "0123456789abcdef" for character in baseline[field])
+            _is_lower_hex_digest(baseline[field])
             for field in ("surface_manifest_digest", "evidence_commitment_digest")
         )
         and all(
@@ -141,8 +178,8 @@ def validate_discovery_baseline(
         )
         and isinstance(baseline["procedure_complete"], bool)
         and isinstance(baseline["applicable_surface_classes_complete"], bool)
-        and baseline["active_grill_packs"] == []
-        and baseline["active_grill_packs_complete"] is False
+        and _valid_active_grill_packs(baseline["active_grill_packs"])
+        and isinstance(baseline["active_grill_packs_complete"], bool)
         and baseline["unknown_unknown_exhaustiveness_claimed"] is False
     )
     if not shape_valid:
