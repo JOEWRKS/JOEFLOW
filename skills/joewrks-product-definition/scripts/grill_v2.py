@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Any
 
 from materiality_v2 import classify_materiality, is_high_risk
@@ -105,6 +106,20 @@ SOURCE_KIND_CAPABILITIES = {
     "INFERRED_INTENT": {"INTENT", "PREFERENCE"},
 }
 MEANINGLESS = {"none", "false", "n/a", "na", "later", "tbd"}
+_QUESTION_FAN_OUT_PRIORITY = {
+    "SYSTEMIC": 0,
+    "MULTI_FLOW": 1,
+    "MULTI_OBJECT": 2,
+    "LOCAL": 3,
+}
+_QUESTION_CATEGORY_PRIORITY = {
+    "CORE_FLOW": 0,
+    "SCOPE_BOUNDARY": 1,
+    "STATE_RECOVERY": 2,
+    "SECONDARY_BEHAVIOR": 3,
+    "PREFERENCE": 4,
+    "COSMETIC": 5,
+}
 
 
 def _error(code: str, message: str, path: str) -> dict[str, str]:
@@ -308,6 +323,47 @@ def derive_decision_authority(
     if recommendation_is_confirmation_ready(unknown):
         return "USER_CONFIRMATION"
     return "USER_DECISION_REQUIRED"
+
+
+def question_priority_key(unknown: dict[str, object]) -> tuple[object, ...]:
+    materiality = unknown["materiality"]
+    return (
+        -len(unknown["blocks_unknown_refs"]),
+        not is_high_risk(materiality),
+        _QUESTION_FAN_OUT_PRIORITY[materiality["fan_out"]],
+        _QUESTION_CATEGORY_PRIORITY[unknown["question_category"]],
+        unknown["id"],
+    )
+
+
+def project_user_question(unknown: dict[str, object]) -> dict[str, object]:
+    return deepcopy({
+        "unknown_id": unknown["id"],
+        "question": unknown["question"],
+        "why_it_matters": unknown["why_it_matters"],
+        "evidence_refs": unknown["evidence_refs"],
+        "affected_ids": unknown["affects"],
+        "response_mode": unknown["response_mode"],
+        "options": unknown["options"],
+        "recommendation": unknown["recommendation"],
+    })
+
+
+def select_next_user_question(state: dict[str, object]) -> dict[str, object] | None:
+    from state_validation_v2 import validate_state_v2
+
+    errors = validate_state_v2(state)
+    if errors:
+        raise ValueError(errors)
+
+    eligible = (
+        unknown
+        for unknown in state["objects"]["unknowns"]
+        if unknown["status"] == "OPEN"
+        and unknown["decision_authority"] in {"USER_CONFIRMATION", "USER_DECISION_REQUIRED"}
+    )
+    selected = min(eligible, key=question_priority_key, default=None)
+    return None if selected is None else project_user_question(selected)
 
 
 def validate_decision_authority_policy(
