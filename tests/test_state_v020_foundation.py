@@ -98,6 +98,7 @@ class StateV020FoundationTest(unittest.TestCase):
 
         self.assertEqual(template["schema_version"], "0.2.0")
         self.assertEqual(template["project"]["definition_status"], "OPEN")
+        self.assertEqual(template["project"]["bootstrap_mode"], "NEW_PRODUCT")
         self.assertEqual(template["approval"]["status"], "UNAPPROVED")
         self.assertEqual(template["migration"]["mode"], "NATIVE")
         self.assertEqual(template["discovery_baseline"]["status"], "NOT_ESTABLISHED")
@@ -154,6 +155,24 @@ class StateV020FoundationTest(unittest.TestCase):
                 state["project"]["definition_status"] = value
 
                 self.assertIn("invalid_status", {error["code"] for error in validate_state_v2(state)})
+
+    def test_bootstrap_mode_is_required_and_uses_the_v020_enum(self):
+        schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+        project = schema["properties"]["project"]
+
+        self.assertIn("bootstrap_mode", project["required"])
+        self.assertEqual(
+            project["properties"]["bootstrap_mode"]["enum"],
+            ["NEW_PRODUCT", "EXISTING_PRODUCT_RECONCILIATION"],
+        )
+
+        missing = foundation_state()
+        del missing["project"]["bootstrap_mode"]
+        self.assertIn("schema_error", {error["code"] for error in validate_state_v2(missing)})
+
+        invalid = foundation_state()
+        invalid["project"]["bootstrap_mode"] = "MIGRATED_PRODUCT"
+        self.assertIn("schema_error", {error["code"] for error in validate_state_v2(invalid)})
 
     def test_v2_is_dispatched_by_the_cli(self):
         code, payload = self.invoke("state", foundation_state())

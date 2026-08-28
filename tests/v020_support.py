@@ -5,6 +5,7 @@ def foundation_state():
             "slug": "v2-foundation",
             "definition_status": "OPEN",
             "definition_revision": 1,
+            "bootstrap_mode": "NEW_PRODUCT",
             "closure_contract": {"level": "SEMANTIC_CLOSURE"},
         },
         "migration": {"mode": "NATIVE"},

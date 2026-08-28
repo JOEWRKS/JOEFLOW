@@ -9,7 +9,7 @@ ROOT_KEYS = {
     "contradictions", "objects", "coverage", "ux_coverage",
     "discovery_baseline", "approval", "approval_history",
 }
-PROJECT_KEYS = {"slug", "definition_status", "definition_revision", "closure_contract"}
+PROJECT_KEYS = {"slug", "definition_status", "definition_revision", "bootstrap_mode", "closure_contract"}
 OBJECT_GROUPS = {
     "goals", "users", "requirements", "unknowns", "decisions", "rules",
     "flows", "screens", "states", "data", "integrations",
@@ -30,6 +30,9 @@ SURFACE_KINDS = {
 }
 SURFACE_STATUSES = {"IN_SCOPE", "OUT_OF_SCOPE", "OPEN", "SUPERSEDED", "RETIRED"}
 SURFACE_AUTHORITY_PREFIXES = {"REQ", "RULE", "FLOW", "DATA", "INT"}
+BOOTSTRAP_MODES = {"NEW_PRODUCT", "EXISTING_PRODUCT_RECONCILIATION"}
+INTENT_CLASSIFICATIONS = {"AUTHORITATIVE", "OBSERVED_ONLY", "CONFLICTING", "UNEXPLAINED"}
+OBSERVED_SOURCE_KINDS = {"OBSERVED_IMPLEMENTATION", "OBSERVED_RUNTIME", "TEST_ASSERTION"}
 SOURCE_KIND_CAPABILITIES = {
     "USER_CONFIRMED_INTENT": {"INTENT", "PREFERENCE"},
     "DOCUMENTED_INTENT": {"INTENT", "PREFERENCE"},
@@ -371,6 +374,7 @@ def _validate_surface_manifest(
 
     errors: list[dict[str, str]] = []
     surfaces = _collect_surfaces(state)
+    contradictions = _collect_contradictions(state)
     allowed_fields = {
         "id", "kind", "name", "status", "materiality", "evidence_refs",
         "authority_refs", "unknown_refs", "decision_refs", "contradiction_refs",
@@ -380,6 +384,7 @@ def _validate_surface_manifest(
     required_fields = allowed_fields - _LIFECYCLE_FIELDS
     project = state.get("project")
     project_revision = project.get("definition_revision") if isinstance(project, dict) else None
+    bootstrap_mode = project.get("bootstrap_mode") if isinstance(project, dict) else None
 
     for position, record in enumerate(records):
         path = f"surface_manifest.records[{position}]"
@@ -409,7 +414,13 @@ def _validate_surface_manifest(
                 )
             )
             and (record.get("rationale") is None or _meaningful_text(record.get("rationale")))
-            and (record.get("intent_classification") is None or isinstance(record.get("intent_classification"), str))
+            and (
+                record.get("intent_classification") is None
+                or (
+                    isinstance(record.get("intent_classification"), str)
+                    and record["intent_classification"] in INTENT_CLASSIFICATIONS
+                )
+            )
         )
         if not shape_valid:
             errors.append(_error("invalid_surface_shape", "invalid surface semantic shape", path))
@@ -448,31 +459,61 @@ def _validate_surface_manifest(
         status = record.get("status")
         materiality = record.get("materiality")
         is_material = isinstance(materiality, dict) and materiality.get("classification") == "MATERIAL"
+        intent_classification = record.get("intent_classification")
+        evidence_refs = record.get("evidence_refs")
+        has_open_unknown = isinstance(record.get("unknown_refs"), list) and any(
+            (entry := id_index.get(reference)) is not None
+            and entry[0] == "unknowns"
+            and entry[1].get("status") == "OPEN"
+            for reference in record["unknown_refs"]
+            if isinstance(reference, str)
+        )
+        has_closure_capable_intent_evidence = isinstance(evidence_refs, list) and any(
+            (evidence := evidence_index.get(reference)) is not None
+            and (
+                _evidence_can_support(evidence, "INTENT", for_closure=True)
+                or _evidence_can_support(evidence, "PREFERENCE", for_closure=True)
+            )
+            for reference in evidence_refs
+            if isinstance(reference, str)
+        )
+        has_observed_evidence = isinstance(evidence_refs, list) and any(
+            (evidence := evidence_index.get(reference)) is not None
+            and evidence.get("source_kind") in OBSERVED_SOURCE_KINDS
+            for reference in evidence_refs
+            if isinstance(reference, str)
+        )
+        has_contradiction = isinstance(record.get("contradiction_refs"), list) and any(
+            reference in contradictions
+            for reference in record["contradiction_refs"]
+            if isinstance(reference, str)
+        )
+        if bootstrap_mode == "NEW_PRODUCT" and intent_classification is not None:
+            errors.append(_error("invalid_surface_intent_classification", "NEW_PRODUCT surfaces require a null intent_classification", f"{path}.intent_classification"))
+        elif bootstrap_mode == "EXISTING_PRODUCT_RECONCILIATION":
+            if not isinstance(intent_classification, str) or intent_classification not in INTENT_CLASSIFICATIONS:
+                errors.append(_error("invalid_surface_intent_classification", "existing-product surfaces require an exact intent_classification", f"{path}.intent_classification"))
+            elif intent_classification == "AUTHORITATIVE" and (
+                not record.get("authority_refs") or not has_closure_capable_intent_evidence
+            ):
+                errors.append(_error("invalid_authoritative_surface", "AUTHORITATIVE requires an authority ref and current closure-capable intent or preference evidence", path))
+            elif intent_classification == "OBSERVED_ONLY" and (
+                not has_observed_evidence or (is_material and not has_open_unknown)
+            ):
+                errors.append(_error("invalid_observed_only_surface", "OBSERVED_ONLY requires observed evidence and an OPEN unknown when material", path))
+            elif intent_classification == "CONFLICTING" and not has_contradiction:
+                errors.append(_error("invalid_conflicting_surface", "CONFLICTING requires a CON-* contradiction ref", path))
+            elif intent_classification == "UNEXPLAINED" and (
+                (is_material and not has_open_unknown) or has_closure_capable_intent_evidence
+            ):
+                errors.append(_error("invalid_unexplained_surface", "UNEXPLAINED cannot have authoritative intent evidence and requires an OPEN unknown when material", path))
         if status == "IN_SCOPE" and is_material and not _surface_has_current_authority(record, id_index):
             errors.append(_error("UNBOUND_PRODUCT_SURFACE", "material IN_SCOPE surface requires a current typed authority reference", path))
         if status == "OPEN" and is_material:
-            unknown_refs = record.get("unknown_refs")
-            has_open_unknown = isinstance(unknown_refs, list) and any(
-                (entry := id_index.get(reference)) is not None
-                and entry[0] == "unknowns"
-                and entry[1].get("status") == "OPEN"
-                for reference in unknown_refs
-                if isinstance(reference, str)
-            )
             if not has_open_unknown:
                 errors.append(_error("OPEN_PRODUCT_SURFACE_WITHOUT_UNKNOWN", "material OPEN surface requires an OPEN UNK-* reference", path))
         if status == "OUT_OF_SCOPE":
-            evidence_refs = record.get("evidence_refs")
             decision_refs = record.get("decision_refs")
-            has_intent_evidence = isinstance(evidence_refs, list) and any(
-                (evidence := evidence_index.get(reference)) is not None
-                and (
-                    _evidence_can_support(evidence, "INTENT", for_closure=True)
-                    or _evidence_can_support(evidence, "PREFERENCE", for_closure=True)
-                )
-                for reference in evidence_refs
-                if isinstance(reference, str)
-            )
             has_current_decision = isinstance(decision_refs, list) and any(
                 (entry := id_index.get(reference)) is not None
                 and entry[0] == "decisions"
@@ -480,7 +521,7 @@ def _validate_surface_manifest(
                 for reference in decision_refs
                 if isinstance(reference, str)
             )
-            if not _meaningful_text(record.get("rationale")) or not (has_intent_evidence or has_current_decision):
+            if not _meaningful_text(record.get("rationale")) or not (has_closure_capable_intent_evidence or has_current_decision):
                 errors.append(_error("invalid_out_of_scope_surface", "OUT_OF_SCOPE requires rationale and closure-capable intent evidence or a current decision", path))
         if status == "SUPERSEDED":
             target = record.get("superseded_by")
@@ -921,6 +962,8 @@ def validate_state_v2(state: dict[str, Any]) -> list[dict[str, str]]:
             or project["definition_revision"] < 1
         ):
             errors.append(_error("schema_error", "project.definition_revision must be an integer at least 1", "project.definition_revision"))
+        if not isinstance(project["bootstrap_mode"], str) or project["bootstrap_mode"] not in BOOTSTRAP_MODES:
+            errors.append(_error("schema_error", "project.bootstrap_mode must be a supported bootstrap mode", "project.bootstrap_mode"))
         closure_contract = project["closure_contract"]
         if not isinstance(closure_contract, dict) or closure_contract.get("level") != "SEMANTIC_CLOSURE":
             errors.append(_error("schema_error", "project.closure_contract.level must equal SEMANTIC_CLOSURE", "project.closure_contract"))
