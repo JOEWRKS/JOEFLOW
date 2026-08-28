@@ -1051,8 +1051,9 @@ def _validate_state_v2(
     errors.extend(_validate_surface_manifest(state, index, evidence_index))
     errors.extend(_validate_contradictions(state, index, evidence_index))
     errors.extend(_validate_stale_consumed_evidence(state))
-    if check_discovery_baseline:
-        errors.extend(validate_discovery_baseline(state))
+    errors.extend(validate_discovery_baseline(
+        state, check_freshness=check_discovery_baseline,
+    ))
     return errors
 
 

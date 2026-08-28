@@ -81,7 +81,9 @@ def build_discovery_baseline(
     }
 
 
-def validate_discovery_baseline(state: dict[str, Any]) -> list[dict[str, str]]:
+def validate_discovery_baseline(
+    state: dict[str, Any], *, check_freshness: bool = True,
+) -> list[dict[str, str]]:
     baseline = state.get("discovery_baseline")
     if not isinstance(baseline, dict):
         return [{
@@ -147,7 +149,7 @@ def validate_discovery_baseline(state: dict[str, Any]) -> list[dict[str, str]]:
             "message": "CURRENT baseline has invalid values",
             "path": "discovery_baseline",
         })
-    elif baseline != expected:
+    elif check_freshness and baseline != expected:
         errors.append({
             "code": "stale_discovery_baseline",
             "message": "CURRENT baseline does not match deterministic recomputation",

@@ -14,7 +14,7 @@ def main(argv: list[str]) -> int:
         return 2
     try:
         state = json.loads(Path(argv[1]).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         print(json.dumps({"error": str(exc)}), file=sys.stderr)
         return 2
     if not isinstance(state, dict) or state.get("schema_version") != SCHEMA_VERSION:

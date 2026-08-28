@@ -180,6 +180,90 @@ class DiscoveryBaselineV020Test(unittest.TestCase):
             self.assertEqual(json.loads(result.stdout), current_baseline(state))
             self.assertEqual(path.read_text(encoding="utf-8"), original)
 
+    def test_cli_regenerates_a_valid_stale_current_commitment_only(self):
+        state = foundation_state()
+        state["discovery_baseline"] = current_baseline(state)
+        state["project"]["definition_revision"] = 2
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            path.write_text(json.dumps(state), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(SCRIPTS / "build_discovery_baseline.py"), str(path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout), current_baseline(state))
+
+    def test_cli_rejects_malformed_or_forbidden_stored_baseline(self):
+        malformed = foundation_state()
+        malformed["discovery_baseline"] = {"status": "CURRENT", "bogus": True}
+        forbidden = foundation_state()
+        forbidden["discovery_baseline"] = current_baseline(forbidden)
+        forbidden["discovery_baseline"]["active_grill_packs_complete"] = True
+        forbidden_exhaustiveness = foundation_state()
+        forbidden_exhaustiveness["discovery_baseline"] = current_baseline(forbidden_exhaustiveness)
+        forbidden_exhaustiveness["discovery_baseline"]["unknown_unknown_exhaustiveness_claimed"] = True
+
+        for state in (malformed, forbidden, forbidden_exhaustiveness):
+            with self.subTest(baseline=state["discovery_baseline"]):
+                with tempfile.TemporaryDirectory() as directory:
+                    path = Path(directory) / "state.json"
+                    path.write_text(json.dumps(state), encoding="utf-8")
+                    result = subprocess.run(
+                        [sys.executable, str(SCRIPTS / "build_discovery_baseline.py"), str(path)],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+
+                self.assertEqual(result.returncode, 1, result.stderr)
+                payload = json.loads(result.stdout)
+                self.assertFalse(payload["valid"])
+                self.assertIn("invalid_discovery_baseline", {error["code"] for error in payload["errors"]})
+
+    def test_cli_argument_and_read_errors_are_structured_exit_two(self):
+        usage = subprocess.run(
+            [sys.executable, str(SCRIPTS / "build_discovery_baseline.py")],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(usage.returncode, 2)
+        self.assertIn("error", json.loads(usage.stderr))
+
+        with tempfile.TemporaryDirectory() as directory:
+            missing = Path(directory) / "missing.json"
+            missing_result = subprocess.run(
+                [sys.executable, str(SCRIPTS / "build_discovery_baseline.py"), str(missing)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            malformed = Path(directory) / "malformed.json"
+            malformed.write_text("{not json", encoding="utf-8")
+            malformed_result = subprocess.run(
+                [sys.executable, str(SCRIPTS / "build_discovery_baseline.py"), str(malformed)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            invalid_utf8 = Path(directory) / "invalid-utf8.json"
+            invalid_utf8.write_bytes(b"\xff\xfe")
+            utf8_result = subprocess.run(
+                [sys.executable, str(SCRIPTS / "build_discovery_baseline.py"), str(invalid_utf8)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        for result in (missing_result, malformed_result, utf8_result):
+            with self.subTest(stderr=result.stderr):
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("error", json.loads(result.stderr))
+
 
 if __name__ == "__main__":
     unittest.main()
