@@ -63,3 +63,27 @@ def materiality(*, classification="NON_MATERIAL"):
         },
         "classification": classification,
     }
+
+
+def surface_record(
+    surface_id="SURF-001",
+    *,
+    kind="FEATURE_AREA",
+    status="IN_SCOPE",
+    name="Feedback submission",
+    classification="MATERIAL",
+):
+    return {
+        "id": surface_id,
+        "kind": kind,
+        "name": name,
+        "status": status,
+        "materiality": materiality(classification=classification),
+        "evidence_refs": [],
+        "authority_refs": [],
+        "unknown_refs": [],
+        "decision_refs": [],
+        "contradiction_refs": [],
+        "rationale": None,
+        "intent_classification": None,
+    }

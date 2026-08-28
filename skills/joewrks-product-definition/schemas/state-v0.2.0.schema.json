@@ -61,6 +61,30 @@
         {"if": {"properties": {"status": {"const": "UNAVAILABLE"}}, "required": ["status"]}, "then": {"required": ["unavailable_reason"]}}
       ]
     },
+    "surface_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "name", "status", "materiality", "evidence_refs", "authority_refs", "unknown_refs", "decision_refs", "contradiction_refs", "rationale", "intent_classification"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^SURF-[0-9]{3,}$"},
+        "kind": {"enum": ["ACTOR", "FEATURE_AREA", "ENTRY_POINT", "MAJOR_ACTION", "DOMAIN_ENTITY", "INTEGRATION", "ASYNC_PROCESS", "NOTIFICATION", "PERSISTENT_STATE", "SENSITIVE_DATA", "PERMISSION", "MONEY_FLOW", "DESTRUCTIVE_OPERATION", "LIFECYCLE_OBJECT"]},
+        "name": {"$ref": "#/$defs/text"},
+        "status": {"enum": ["IN_SCOPE", "OUT_OF_SCOPE", "OPEN", "SUPERSEDED", "RETIRED"]},
+        "materiality": {"$ref": "#/$defs/materiality"},
+        "evidence_refs": {"$ref": "#/$defs/string_array"},
+        "authority_refs": {"$ref": "#/$defs/string_array"},
+        "unknown_refs": {"$ref": "#/$defs/string_array"},
+        "decision_refs": {"$ref": "#/$defs/string_array"},
+        "contradiction_refs": {"$ref": "#/$defs/string_array"},
+        "rationale": {"oneOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]},
+        "intent_classification": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+        "superseded_by": {"type": "string", "pattern": "^SURF-[0-9]{3,}$"},
+        "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1},
+        "retirement_reason": {"$ref": "#/$defs/text"}
+      },
+      "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
+    },
     "goals": {
       "type": "object", "additionalProperties": false, "required": ["id", "status", "statement"],
       "properties": {
@@ -190,7 +214,11 @@
         "closure_contract": {"type": "object", "required": ["level"], "properties": {"level": {"const": "SEMANTIC_CLOSURE"}}}
       }
     },
-    "migration": {"type": "object"}, "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence_record"}}, "surface_manifest": {"type": "object"},
+    "migration": {"type": "object"}, "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence_record"}},
+    "surface_manifest": {
+      "type": "object", "required": ["records"], "additionalProperties": false,
+      "properties": {"records": {"type": "array", "items": {"$ref": "#/$defs/surface_record"}}}
+    },
     "contradictions": {"type": "array"},
     "objects": {
       "type": "object", "additionalProperties": false,

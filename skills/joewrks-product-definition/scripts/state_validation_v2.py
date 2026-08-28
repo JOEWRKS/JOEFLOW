@@ -21,6 +21,14 @@ UNKNOWN_STATUSES = {"OPEN", "RESOLVED", "DEFERRED", "BLOCKED", "SUPERSEDED", "RE
 EVIDENCE_STATUSES = {"CURRENT", "STALE", "SUPERSEDED", "UNAVAILABLE"}
 EVIDENCE_CONFIDENCE = {"DIRECT", "CORROBORATED", "INFERRED"}
 EVIDENCE_AUTHORITY_CLASSES = {"FACTUAL", "INTENT", "CONSTRAINT", "BEHAVIORAL", "PREFERENCE"}
+SURFACE_KINDS = {
+    "ACTOR", "FEATURE_AREA", "ENTRY_POINT", "MAJOR_ACTION", "DOMAIN_ENTITY",
+    "INTEGRATION", "ASYNC_PROCESS", "NOTIFICATION", "PERSISTENT_STATE",
+    "SENSITIVE_DATA", "PERMISSION", "MONEY_FLOW", "DESTRUCTIVE_OPERATION",
+    "LIFECYCLE_OBJECT",
+}
+SURFACE_STATUSES = {"IN_SCOPE", "OUT_OF_SCOPE", "OPEN", "SUPERSEDED", "RETIRED"}
+SURFACE_AUTHORITY_PREFIXES = {"REQ", "RULE", "FLOW", "DATA", "INT"}
 SOURCE_KIND_CAPABILITIES = {
     "USER_CONFIRMED_INTENT": {"INTENT", "PREFERENCE"},
     "DOCUMENTED_INTENT": {"INTENT", "PREFERENCE"},
@@ -175,6 +183,18 @@ def _collect_evidence(state: dict[str, Any]) -> dict[str, dict[str, Any]]:
     }
 
 
+def _collect_surfaces(state: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    surface_manifest = state.get("surface_manifest")
+    records = surface_manifest.get("records") if isinstance(surface_manifest, dict) else None
+    if not isinstance(records, list):
+        return {}
+    return {
+        record["id"]: record
+        for record in records
+        if isinstance(record, dict) and isinstance(record.get("id"), str)
+    }
+
+
 def _evidence_is_current_closure_eligible(record: dict[str, Any]) -> bool:
     authority_classes = record.get("authority_classes")
     return (
@@ -296,6 +316,216 @@ def _validate_evidence(state: dict[str, Any]) -> list[dict[str, str]]:
             current = graph[current]
         visited.update(trail)
     return errors
+
+
+def _surface_has_current_authority(
+    record: dict[str, Any], id_index: dict[str, tuple[str, dict[str, Any]]],
+) -> bool:
+    authority_refs = record.get("authority_refs")
+    if not isinstance(authority_refs, list):
+        return False
+    for authority_ref in authority_refs:
+        target_entry = id_index.get(authority_ref) if isinstance(authority_ref, str) else None
+        if target_entry is None:
+            continue
+        group, target = target_entry
+        prefix = authority_ref.split("-", 1)[0]
+        if (
+            group != "reserved"
+            and prefix in SURFACE_AUTHORITY_PREFIXES
+            and target.get("status") == "CURRENT"
+        ):
+            return True
+    return False
+
+
+def _validate_surface_manifest(
+    state: dict[str, Any],
+    id_index: dict[str, tuple[str, dict[str, Any]]],
+    evidence_index: dict[str, dict[str, Any]],
+) -> list[dict[str, str]]:
+    surface_manifest = state.get("surface_manifest")
+    records = surface_manifest.get("records") if isinstance(surface_manifest, dict) else None
+    if not isinstance(records, list):
+        return []
+
+    errors: list[dict[str, str]] = []
+    surfaces = _collect_surfaces(state)
+    allowed_fields = {
+        "id", "kind", "name", "status", "materiality", "evidence_refs",
+        "authority_refs", "unknown_refs", "decision_refs", "contradiction_refs",
+        "rationale", "intent_classification", "superseded_by", "retired_by",
+        "retired_at_revision", "retirement_reason",
+    }
+    required_fields = allowed_fields - _LIFECYCLE_FIELDS
+    project = state.get("project")
+    project_revision = project.get("definition_revision") if isinstance(project, dict) else None
+
+    for position, record in enumerate(records):
+        path = f"surface_manifest.records[{position}]"
+        if not isinstance(record, dict):
+            errors.append(_error("invalid_surface_shape", "surface record must be an object", path))
+            continue
+        if set(record) - allowed_fields or required_fields - set(record):
+            errors.append(_error("invalid_surface_shape", "surface fields do not match the 0.2.0 contract", path))
+
+        surface_id = record.get("id")
+        if not _is_stable_id(surface_id, expected_prefix="SURF"):
+            errors.append(_error("invalid_surface_id", "surface id must use SURF-NNN form", f"{path}.id"))
+
+        shape_valid = (
+            isinstance(record.get("kind"), str)
+            and record["kind"] in SURFACE_KINDS
+            and isinstance(record.get("status"), str)
+            and record["status"] in SURFACE_STATUSES
+            and _meaningful_text(record.get("name"))
+            and all(
+                isinstance(record.get(field), list)
+                and all(isinstance(value, str) for value in record[field])
+                and len(record[field]) == len(set(record[field]))
+                for field in (
+                    "evidence_refs", "authority_refs", "unknown_refs", "decision_refs",
+                    "contradiction_refs",
+                )
+            )
+            and (record.get("rationale") is None or _meaningful_text(record.get("rationale")))
+            and (record.get("intent_classification") is None or isinstance(record.get("intent_classification"), str))
+        )
+        if not shape_valid:
+            errors.append(_error("invalid_surface_shape", "invalid surface semantic shape", path))
+        if "materiality" in record:
+            errors.extend(_validate_materiality_shape(record["materiality"], f"{path}.materiality"))
+
+        reference_specs = (
+            ("evidence_refs", "EVD", lambda reference: reference in evidence_index),
+            ("authority_refs", None, lambda reference: (
+                reference in id_index
+                and id_index[reference][0] != "reserved"
+                and reference.split("-", 1)[0] in SURFACE_AUTHORITY_PREFIXES
+            )),
+            ("unknown_refs", "UNK", lambda reference: (
+                reference in id_index and id_index[reference][0] == "unknowns"
+            )),
+            ("decision_refs", "DEC", lambda reference: (
+                reference in id_index and id_index[reference][0] == "decisions"
+            )),
+            ("contradiction_refs", "CON", lambda reference: (
+                reference in id_index and id_index[reference][0] == "reserved"
+            )),
+        )
+        for field, expected_prefix, resolves in reference_specs:
+            values = record.get(field)
+            if not isinstance(values, list):
+                continue
+            for reference in values:
+                if (
+                    not _is_stable_id(reference, expected_prefix=expected_prefix)
+                    if expected_prefix is not None
+                    else not _is_stable_id(reference)
+                ) or not resolves(reference):
+                    errors.append(_error("invalid_surface_reference", f"{field} must resolve to its required record type", f"{path}.{field}"))
+
+        status = record.get("status")
+        materiality = record.get("materiality")
+        is_material = isinstance(materiality, dict) and materiality.get("classification") == "MATERIAL"
+        if status == "IN_SCOPE" and is_material and not _surface_has_current_authority(record, id_index):
+            errors.append(_error("UNBOUND_PRODUCT_SURFACE", "material IN_SCOPE surface requires a current typed authority reference", path))
+        if status == "OPEN" and is_material:
+            unknown_refs = record.get("unknown_refs")
+            has_open_unknown = isinstance(unknown_refs, list) and any(
+                (entry := id_index.get(reference)) is not None
+                and entry[0] == "unknowns"
+                and entry[1].get("status") == "OPEN"
+                for reference in unknown_refs
+                if isinstance(reference, str)
+            )
+            if not has_open_unknown:
+                errors.append(_error("OPEN_PRODUCT_SURFACE_WITHOUT_UNKNOWN", "material OPEN surface requires an OPEN UNK-* reference", path))
+        if status == "OUT_OF_SCOPE":
+            evidence_refs = record.get("evidence_refs")
+            decision_refs = record.get("decision_refs")
+            has_intent_evidence = isinstance(evidence_refs, list) and any(
+                (evidence := evidence_index.get(reference)) is not None
+                and (
+                    _evidence_can_support(evidence, "INTENT", for_closure=True)
+                    or _evidence_can_support(evidence, "PREFERENCE", for_closure=True)
+                )
+                for reference in evidence_refs
+                if isinstance(reference, str)
+            )
+            has_current_decision = isinstance(decision_refs, list) and any(
+                (entry := id_index.get(reference)) is not None
+                and entry[0] == "decisions"
+                and entry[1].get("status") == "CURRENT"
+                for reference in decision_refs
+                if isinstance(reference, str)
+            )
+            if not _meaningful_text(record.get("rationale")) or not (has_intent_evidence or has_current_decision):
+                errors.append(_error("invalid_out_of_scope_surface", "OUT_OF_SCOPE requires rationale and closure-capable intent evidence or a current decision", path))
+        if status == "SUPERSEDED":
+            target = record.get("superseded_by")
+            target_entry = surfaces.get(target) if isinstance(target, str) else None
+            if (
+                not _is_stable_id(target, expected_prefix="SURF")
+                or target == surface_id
+                or target_entry is None
+            ):
+                errors.append(_error("invalid_surface_supersession", "SUPERSEDED requires a different existing SURF-* superseded_by target", path))
+        if status == "RETIRED":
+            retired_by = record.get("retired_by")
+            target_entry = id_index.get(retired_by) if isinstance(retired_by, str) else None
+            retired_at_revision = record.get("retired_at_revision")
+            if (
+                not _is_stable_id(retired_by, expected_prefix="DEC")
+                or target_entry is None
+                or target_entry[0] != "decisions"
+                or not isinstance(retired_at_revision, int)
+                or isinstance(retired_at_revision, bool)
+                or retired_at_revision < 1
+                or not isinstance(project_revision, int)
+                or retired_at_revision > project_revision
+                or not _meaningful_text(record.get("retirement_reason"))
+            ):
+                errors.append(_error("invalid_surface_retirement", "RETIRED requires decision provenance, a valid revision, and a meaningful reason", path))
+
+    graph = {
+        record["id"]: record["superseded_by"]
+        for record in records
+        if isinstance(record, dict)
+        and record.get("status") == "SUPERSEDED"
+        and isinstance(record.get("id"), str)
+        and isinstance(record.get("superseded_by"), str)
+    }
+    visited: set[str] = set()
+    for start in graph:
+        trail: list[str] = []
+        current = start
+        while current in graph and current not in visited:
+            if current in trail:
+                cycle = trail[trail.index(current):] + [current]
+                errors.append(_error("surface_supersession_cycle", " -> ".join(cycle), "surface_manifest"))
+                break
+            trail.append(current)
+            current = graph[current]
+        visited.update(trail)
+    return errors
+
+
+def _surface_metrics(state: dict[str, Any]) -> dict[str, int]:
+    id_index, _ = _collect_ids(state)
+    records = _collect_surfaces(state).values()
+    material_surfaces = [
+        record for record in records
+        if isinstance(record.get("materiality"), dict)
+        and record["materiality"].get("classification") == "MATERIAL"
+    ]
+    return {
+        "open_material_surfaces": sum(record.get("status") == "OPEN" for record in material_surfaces),
+        "unbound_material_surfaces": sum(
+            record.get("status") == "IN_SCOPE" and not _surface_has_current_authority(record, id_index)
+            for record in material_surfaces
+        ),
+    }
 
 
 def _validate_materiality_shape(value: Any, path: str) -> list[dict[str, str]]:
@@ -513,17 +743,19 @@ def validate_state_v2(state: dict[str, Any]) -> list[dict[str, str]]:
             errors.append(_error("schema_error", f"{field} must be a {expected_type.__name__}", field))
     index, id_errors = _collect_ids(state)
     errors.extend(id_errors)
+    evidence_index = _collect_evidence(state)
     errors.extend(_validate_evidence(state))
     errors.extend(_validate_typed_semantic_minima(state))
     errors.extend(_validate_lifecycle(state, index))
     errors.extend(_validate_supersession_cycles(state))
+    errors.extend(_validate_surface_manifest(state, index, evidence_index))
     return errors
 
 
 def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:
     return {
         "errors": validate_state_v2(state),
-        "metrics": {"semantic_closure_not_implemented": 1},
+        "metrics": {"semantic_closure_not_implemented": 1, **_surface_metrics(state)},
         "closed": False,
         "definition_digest": None,
     }
