@@ -300,6 +300,19 @@ class StateV020FoundationTest(unittest.TestCase):
 
                 self.assertIn("duplicate_id", {error["code"] for error in validate_state_v2(state)})
 
+    def test_object_and_contradiction_ids_participate_in_global_collisions(self):
+        state = foundation_state()
+        state["objects"]["requirements"] = [copy.deepcopy(VALID_RECORDS["requirements"])]
+        state["contradictions"] = [{"id": "REQ-001"}]
+
+        self.assertIn("duplicate_id", {error["code"] for error in validate_state_v2(state)})
+
+    def test_contradiction_ids_are_unique_within_contradictions(self):
+        state = foundation_state()
+        state["contradictions"] = [{"id": "CON-001"}, {"id": "CON-001"}]
+
+        self.assertIn("duplicate_id", {error["code"] for error in validate_state_v2(state)})
+
     def test_superseded_requires_a_different_existing_same_prefix_target(self):
         valid = foundation_state()
         old = copy.deepcopy(VALID_RECORDS["requirements"])

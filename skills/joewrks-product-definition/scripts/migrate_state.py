@@ -6,10 +6,7 @@ import json
 import sys
 from pathlib import Path
 
-
-_migration = __import__("migration_v2")
-MigrationError = _migration.MigrationError
-build_migration_plan = _migration.build_migration_plan
+from migration_v2 import MigrationError, build_migration_plan
 
 
 def main(argv: list[str] | None = None) -> int:

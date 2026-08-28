@@ -134,6 +134,10 @@ def _collect_ids(
         else:
             index[object_id] = (group, record)
 
+    contradictions = state.get("contradictions")
+    if isinstance(contradictions, list):
+        for position, record in enumerate(contradictions):
+            add_reserved(record, f"contradictions[{position}]")
     evidence = state.get("evidence")
     if isinstance(evidence, list):
         for position, record in enumerate(evidence):

@@ -29,7 +29,7 @@ class SkillPackageTest(unittest.TestCase):
         self.assertEqual(missing, [])
 
     def test_validator_scripts_only_import_standard_library_or_sibling_module(self):
-        allowed = {"__future__", "copy", "hashlib", "json", "pathlib", "sys", "typing", "state_contract_dispatch", "state_validation", "state_validation_v2"}
+        allowed = {"__future__", "copy", "hashlib", "json", "pathlib", "sys", "typing", "migration_v2", "state_contract_dispatch", "state_validation", "state_validation_v2"}
         imports = set()
         for script in (SKILL / "scripts").glob("*.py"):
             tree = ast.parse(script.read_text(encoding="utf-8"))
@@ -39,6 +39,19 @@ class SkillPackageTest(unittest.TestCase):
                 elif isinstance(node, ast.ImportFrom) and node.module:
                     imports.add(node.module.split(".")[0])
         self.assertEqual(imports - allowed, set())
+
+    def test_validator_scripts_do_not_hide_dependencies_from_ast_policy(self):
+        hidden_imports = []
+        for script in (SKILL / "scripts").glob("*.py"):
+            tree = ast.parse(script.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id == "__import__"
+                ):
+                    hidden_imports.append(f"{script.name}:{node.lineno}")
+        self.assertEqual(hidden_imports, [])
 
     def test_openai_metadata_is_discoverable_by_default(self):
         path = SKILL / "agents" / "openai.yaml"
