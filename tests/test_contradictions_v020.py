@@ -5,9 +5,21 @@ import unittest
 from pathlib import Path
 
 try:
-    from tests.v020_support import evidence_record, foundation_state, materiality
+    from tests.v020_support import (
+        decision_record as canonical_decision_record,
+        evidence_record,
+        foundation_state,
+        materiality,
+        unknown_record as canonical_unknown_record,
+    )
 except ModuleNotFoundError:
-    from v020_support import evidence_record, foundation_state, materiality
+    from v020_support import (
+        decision_record as canonical_decision_record,
+        evidence_record,
+        foundation_state,
+        materiality,
+        unknown_record as canonical_unknown_record,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,18 +31,28 @@ from state_validation_v2 import evaluate_closure_v2, validate_state_v2
 
 
 def decision_record(decision_id="DEC-001", *, status="CURRENT"):
-    return {
-        "id": decision_id,
-        "status": status,
-        "statement": "Choose the documented product behavior.",
-        "decision_type": "PRODUCT_POLICY",
+    record = canonical_decision_record(
+        decision_id,
+        status=status,
+        source_unknown_refs=["UNK-001"],
+        classification="NON_MATERIAL",
+    )
+    record["statement"] = "Choose the documented product behavior."
+    return record
+
+
+def decision_source_unknown():
+    record = canonical_unknown_record(
+        status="RESOLVED",
+        classification="NON_MATERIAL",
+        decision_authority="USER_DECISION_REQUIRED",
+    )
+    record.update({
+        "resolved_by": ["DEC-001"],
         "resolution_mode": "USER_DECISION",
-        "decision_authority": "USER_CONFIRMATION",
-        "source_unknown_refs": [],
-        "evidence_refs": [],
-        "materiality": materiality(),
-        "affects": [],
-    }
+        "resolution_summary": "The user selected the documented behavior.",
+    })
+    return record
 
 
 def contradiction_record(contradiction_id="CON-001", *, status="OPEN", classification="MATERIAL"):
@@ -54,6 +76,7 @@ class ContradictionsV020Test(unittest.TestCase):
     def state_with(self, contradiction, *evidence):
         state = foundation_state()
         state["evidence"] = [copy.deepcopy(record) for record in evidence]
+        state["objects"]["unknowns"] = [decision_source_unknown()]
         state["objects"]["decisions"] = [decision_record()]
         state["contradictions"] = [copy.deepcopy(contradiction)]
         return state

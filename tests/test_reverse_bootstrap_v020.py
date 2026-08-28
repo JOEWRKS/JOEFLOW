@@ -7,9 +7,23 @@ import unittest
 from pathlib import Path
 
 try:
-    from tests.v020_support import evidence_record, foundation_state, materiality, surface_record
+    from tests.v020_support import (
+        decision_record as canonical_decision_record,
+        evidence_record,
+        foundation_state,
+        materiality,
+        surface_record,
+        unknown_record as canonical_unknown_record,
+    )
 except ModuleNotFoundError:
-    from v020_support import evidence_record, foundation_state, materiality, surface_record
+    from v020_support import (
+        decision_record as canonical_decision_record,
+        evidence_record,
+        foundation_state,
+        materiality,
+        surface_record,
+        unknown_record as canonical_unknown_record,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,13 +33,11 @@ sys.path.insert(0, str(SCRIPTS))
 
 
 def unknown_record():
-    return {
-        "id": "UNK-001",
-        "status": "OPEN",
-        "question": "Which product intent should govern this observed behavior?",
-        "materiality": materiality(),
-        "decision_authority": "USER_CONFIRMATION",
-    }
+    record = canonical_unknown_record(
+        classification="NON_MATERIAL", decision_authority="USER_CONFIRMATION",
+    )
+    record["question"] = "Which product intent should govern this observed behavior?"
+    return record
 
 
 def requirement_record():
@@ -40,18 +52,33 @@ def requirement_record():
 
 
 def decision_record(*, status="CURRENT"):
-    return {
-        "id": "DEC-001",
-        "status": status,
-        "statement": "Keep feedback as an explicitly approved product behavior.",
-        "decision_type": "PRODUCT_POLICY",
+    record = canonical_decision_record(
+        status=status,
+        source_unknown_refs=["UNK-002"],
+        classification="NON_MATERIAL",
+    )
+    record["statement"] = "Keep feedback as an explicitly approved product behavior."
+    return record
+
+
+def decision_source_unknown():
+    record = canonical_unknown_record(
+        "UNK-002",
+        status="RESOLVED",
+        classification="NON_MATERIAL",
+        decision_authority="USER_DECISION_REQUIRED",
+    )
+    record.update({
+        "resolved_by": ["DEC-001"],
         "resolution_mode": "USER_DECISION",
-        "decision_authority": "USER_CONFIRMATION",
-        "source_unknown_refs": [],
-        "evidence_refs": [],
-        "materiality": materiality(),
-        "affects": [],
-    }
+        "resolution_summary": "The user approved this product behavior.",
+    })
+    return record
+
+
+def add_decision(state, *, status="CURRENT"):
+    state["objects"]["decisions"] = [decision_record(status=status)]
+    state["objects"]["unknowns"].append(decision_source_unknown())
 
 
 def contradiction_record():
@@ -159,7 +186,7 @@ class ReverseBootstrapV020Test(unittest.TestCase):
         })
         state = self.existing_state(surface)
         state["objects"]["requirements"] = [requirement_record()]
-        state["objects"]["decisions"] = [decision_record()]
+        add_decision(state)
         self.assertEqual(self.errors(state), set())
 
         state["objects"]["decisions"][0]["status"] = "STALE"

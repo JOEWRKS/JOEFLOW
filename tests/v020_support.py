@@ -103,3 +103,89 @@ def surface_record(
         "rationale": None,
         "intent_classification": None,
     }
+
+
+def unknown_record(
+    unknown_id="UNK-001",
+    *,
+    status="OPEN",
+    classification="MATERIAL",
+    decision_authority="USER_DECISION_REQUIRED",
+    required_authority_class="INTENT",
+    question_category="CORE_FLOW",
+    response_mode="MUTUALLY_EXCLUSIVE",
+    origin=None,
+):
+    if origin is None:
+        origin = {
+            "kind": "MANUAL",
+            "surface_ref": None,
+            "pack_id": None,
+            "axis_id": None,
+            "source_path": None,
+        }
+    options = [
+        {
+            "id": "OPT-A",
+            "statement": "Keep the current product behavior.",
+            "consequences": ["The current behavior remains authoritative."],
+        },
+        {
+            "id": "OPT-B",
+            "statement": "Adopt the alternative product behavior.",
+            "consequences": ["The alternative behavior becomes authoritative."],
+        },
+    ]
+    if response_mode == "OPEN_RESPONSE_REQUIRED":
+        options = []
+    return {
+        "id": unknown_id,
+        "status": status,
+        "question": "Which product behavior should be authoritative?",
+        "why_it_matters": "The answer changes the product behavior users receive.",
+        "required_authority_class": required_authority_class,
+        "question_category": question_category,
+        "materiality": materiality(classification=classification),
+        "decision_authority": decision_authority,
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": origin,
+        "response_mode": response_mode,
+        "options": options,
+        "recommendation": None,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": None,
+        "resolution_summary": None,
+        "deferral": None,
+        "blocked_reason": None,
+    }
+
+
+def decision_record(
+    decision_id="DEC-001",
+    *,
+    status="CURRENT",
+    source_unknown_refs=None,
+    resolution_mode="USER_DECISION",
+    decision_authority="USER_DECISION_REQUIRED",
+    decided_by="USER",
+    classification="MATERIAL",
+    accepted_recommendation=None,
+):
+    if source_unknown_refs is None:
+        source_unknown_refs = ["UNK-001"]
+    return {
+        "id": decision_id,
+        "status": status,
+        "statement": "Use the selected product behavior.",
+        "decision_type": "PRODUCT_POLICY",
+        "resolution_mode": resolution_mode,
+        "decision_authority": decision_authority,
+        "source_unknown_refs": list(source_unknown_refs),
+        "evidence_refs": [],
+        "materiality": materiality(classification=classification),
+        "affects": [],
+        "decided_by": decided_by,
+        "accepted_recommendation": accepted_recommendation,
+    }

@@ -7,9 +7,14 @@ import unittest
 from pathlib import Path
 
 try:
-    from tests.v020_support import foundation_state, materiality
+    from tests.v020_support import (
+        decision_record,
+        foundation_state,
+        materiality,
+        unknown_record,
+    )
 except ModuleNotFoundError:
-    from v020_support import foundation_state, materiality
+    from v020_support import decision_record, foundation_state, materiality, unknown_record
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +29,21 @@ import state_validation_v2
 from state_validation_v2 import evaluate_closure_v2, validate_state_v2
 
 
+def resolved_decision_source():
+    record = unknown_record(
+        "UNK-002",
+        status="RESOLVED",
+        classification="NON_MATERIAL",
+        decision_authority="USER_DECISION_REQUIRED",
+    )
+    record.update({
+        "resolved_by": ["DEC-001"],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "The user selected the canonical format.",
+    })
+    return record
+
+
 VALID_RECORDS = {
     "goals": {"id": "GOAL-001", "status": "CURRENT", "statement": "Ship the product"},
     "users": {"id": "USR-001", "status": "CURRENT", "description": "Primary user", "actor_kind": "PERSON"},
@@ -31,16 +51,12 @@ VALID_RECORDS = {
         "id": "REQ-001", "status": "CURRENT", "statement": "Save work", "scope": "CORE",
         "ui_required": True, "materiality": materiality(),
     },
-    "unknowns": {
-        "id": "UNK-001", "status": "OPEN", "question": "Which format?",
-        "materiality": materiality(), "decision_authority": "USER_CONFIRMATION",
-    },
-    "decisions": {
-        "id": "DEC-001", "status": "CURRENT", "statement": "Use JSON", "decision_type": "FORMAT",
-        "resolution_mode": "USER_DECISION", "decision_authority": "USER_DECISION_REQUIRED",
-        "source_unknown_refs": ["UNK-001"], "evidence_refs": [], "materiality": materiality(),
-        "affects": ["REQ-001"],
-    },
+    "unknowns": unknown_record(
+        classification="NON_MATERIAL", decision_authority="USER_CONFIRMATION",
+    ),
+    "decisions": decision_record(
+        source_unknown_refs=["UNK-002"], classification="NON_MATERIAL",
+    ),
     "rules": {"id": "RULE-001", "status": "CURRENT", "statement": "Persist changes", "applies_to": ["REQ-001"]},
     "flows": {
         "id": "FLOW-001", "status": "CURRENT", "goal_refs": ["GOAL-001"], "entry": "Open editor",
@@ -225,6 +241,8 @@ class StateV020FoundationTest(unittest.TestCase):
             with self.subTest(group=group):
                 state = foundation_state()
                 state["objects"][group] = [copy.deepcopy(record)]
+                if group == "decisions":
+                    state["objects"]["unknowns"] = [resolved_decision_source()]
 
                 self.assertEqual(validate_state_v2(state), [])
 
@@ -397,6 +415,7 @@ class StateV020FoundationTest(unittest.TestCase):
             "retirement_reason": "Requirement removed from scope",
         })
         state["objects"]["decisions"] = [decision]
+        state["objects"]["unknowns"] = [resolved_decision_source()]
         state["objects"]["requirements"] = [retired]
         self.assertNotIn("invalid_retirement", {error["code"] for error in validate_state_v2(state)})
 
@@ -421,6 +440,7 @@ class StateV020FoundationTest(unittest.TestCase):
     def test_validation_does_not_auto_retire_dependents(self):
         state = foundation_state()
         state["objects"]["decisions"] = [copy.deepcopy(VALID_RECORDS["decisions"])]
+        state["objects"]["unknowns"] = [resolved_decision_source()]
         retired = copy.deepcopy(VALID_RECORDS["requirements"])
         retired.update({
             "status": "RETIRED", "retired_by": "DEC-001", "retired_at_revision": 1,

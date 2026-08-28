@@ -5,9 +5,23 @@ import unittest
 from pathlib import Path
 
 try:
-    from tests.v020_support import evidence_record, foundation_state, materiality, surface_record
+    from tests.v020_support import (
+        decision_record as canonical_decision_record,
+        evidence_record,
+        foundation_state,
+        materiality,
+        surface_record,
+        unknown_record as canonical_unknown_record,
+    )
 except ModuleNotFoundError:
-    from v020_support import evidence_record, foundation_state, materiality, surface_record
+    from v020_support import (
+        decision_record as canonical_decision_record,
+        evidence_record,
+        foundation_state,
+        materiality,
+        surface_record,
+        unknown_record as canonical_unknown_record,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,19 +61,45 @@ def authority_record(prefix="REQ", record_id="REQ-001", status="CURRENT"):
 
 
 def unknown_record(record_id="UNK-001", status="OPEN"):
-    return {
-        "id": record_id, "status": status, "question": "Which recipients receive feedback?",
-        "materiality": materiality(), "decision_authority": "USER_CONFIRMATION",
-    }
+    record = canonical_unknown_record(
+        record_id,
+        status=status,
+        classification="NON_MATERIAL",
+        decision_authority="USER_CONFIRMATION",
+    )
+    record["question"] = "Which recipients receive feedback?"
+    return record
 
 
 def decision_record(record_id="DEC-001", status="CURRENT"):
-    return {
-        "id": record_id, "status": status, "statement": "Exclude legacy feedback import",
-        "decision_type": "SCOPE", "resolution_mode": "USER_DECISION",
-        "decision_authority": "USER_DECISION_REQUIRED", "source_unknown_refs": [],
-        "evidence_refs": [], "materiality": materiality(), "affects": [],
-    }
+    record = canonical_decision_record(
+        record_id,
+        status=status,
+        source_unknown_refs=["UNK-002"],
+        classification="NON_MATERIAL",
+    )
+    record.update({"statement": "Exclude legacy feedback import", "decision_type": "SCOPE"})
+    return record
+
+
+def decision_source_unknown():
+    record = canonical_unknown_record(
+        "UNK-002",
+        status="RESOLVED",
+        classification="NON_MATERIAL",
+        decision_authority="USER_DECISION_REQUIRED",
+    )
+    record.update({
+        "resolved_by": ["DEC-001"],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "The user approved this scope decision.",
+    })
+    return record
+
+
+def add_decision(state, *, status="CURRENT"):
+    state["objects"]["decisions"] = [decision_record(status=status)]
+    state["objects"]["unknowns"].append(decision_source_unknown())
 
 
 class SurfaceManifestV020Test(unittest.TestCase):
@@ -143,7 +183,7 @@ class SurfaceManifestV020Test(unittest.TestCase):
                     state["surface_manifest"]["records"][0]["superseded_by"] = "SURF-002"
                     state["surface_manifest"]["records"].append(replacement)
                 elif status == "RETIRED":
-                    state["objects"]["decisions"] = [decision_record()]
+                    add_decision(state)
                     state["surface_manifest"]["records"][0].update({
                         "retired_by": "DEC-001", "retired_at_revision": 1,
                         "retirement_reason": "This surface was removed by a scope decision.",
@@ -156,7 +196,7 @@ class SurfaceManifestV020Test(unittest.TestCase):
                         "rationale": "A current scope decision excludes this surface.",
                         "decision_refs": ["DEC-001"],
                     })
-                    state["objects"]["decisions"] = [decision_record()]
+                    add_decision(state)
                 self.assertEqual(self.error_codes(state), set())
 
     def test_surface_references_resolve_to_their_required_record_types(self):
@@ -168,7 +208,7 @@ class SurfaceManifestV020Test(unittest.TestCase):
         state = self.state_with(surface)
         state["evidence"] = [evidence_record(), evidence_record("EVD-002")]
         state["objects"]["unknowns"] = [unknown_record()]
-        state["objects"]["decisions"] = [decision_record()]
+        add_decision(state)
         state["contradictions"] = [{
             "id": "CON-001", "status": "OPEN",
             "claim_a_refs": ["EVD-001"], "claim_b_refs": ["EVD-002"],
@@ -235,7 +275,7 @@ class SurfaceManifestV020Test(unittest.TestCase):
         decision_based = surface_record(status="OUT_OF_SCOPE", classification="NON_MATERIAL")
         decision_based.update({"rationale": "A scope decision removed this form.", "decision_refs": ["DEC-001"]})
         decision_state = self.state_with(decision_based)
-        decision_state["objects"]["decisions"] = [decision_record()]
+        add_decision(decision_state)
         self.assertEqual(self.error_codes(decision_state), set())
 
     def test_observed_implementation_cannot_justify_out_of_scope(self):
@@ -270,7 +310,7 @@ class SurfaceManifestV020Test(unittest.TestCase):
             "retirement_reason": "This form was retired by a scope decision.",
         })
         valid = self.state_with(retired)
-        valid["objects"]["decisions"] = [decision_record()]
+        add_decision(valid)
         self.assertEqual(self.error_codes(valid), set())
 
         for field, value in (

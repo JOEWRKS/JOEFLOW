@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from discovery_v2 import validate_discovery_baseline
+from grill_v2 import grill_unknown_metrics, validate_unknown_decision_integrity
 from materiality_v2 import validate_materiality_classification
 
 
@@ -60,8 +61,17 @@ TYPE_MINIMA = {
     "goals": frozenset({"statement"}),
     "users": frozenset({"description", "actor_kind"}),
     "requirements": frozenset({"statement", "scope", "ui_required", "materiality"}),
-    "unknowns": frozenset({"question", "materiality", "decision_authority"}),
-    "decisions": frozenset({"statement", "decision_type", "resolution_mode", "decision_authority", "source_unknown_refs", "evidence_refs", "materiality", "affects"}),
+    "unknowns": frozenset({
+        "question", "why_it_matters", "required_authority_class", "question_category",
+        "materiality", "decision_authority", "affects", "blocks_unknown_refs",
+        "origin", "response_mode", "options", "recommendation", "evidence_refs",
+        "resolved_by", "resolution_mode", "resolution_summary", "deferral", "blocked_reason",
+    }),
+    "decisions": frozenset({
+        "statement", "decision_type", "resolution_mode", "decision_authority",
+        "source_unknown_refs", "evidence_refs", "materiality", "affects",
+        "decided_by", "accepted_recommendation",
+    }),
     "rules": frozenset({"statement", "applies_to"}),
     "flows": frozenset({"goal_refs", "entry", "preconditions", "paths", "outcomes"}),
     "screens": frozenset({"purpose", "requirement_refs", "interaction_mode", "major_actions"}),
@@ -75,7 +85,7 @@ TYPE_MINIMA = {
 _LIFECYCLE_FIELDS = {"superseded_by", "retired_by", "retired_at_revision", "retirement_reason"}
 _TEXT_FIELDS = {
     "statement", "description", "actor_kind", "scope", "question",
-    "decision_authority", "decision_type", "resolution_mode", "entry",
+    "decision_authority", "decision_type", "entry",
     "purpose", "interaction_mode", "state_name", "name", "ownership", "assertion",
 }
 _ARRAY_FIELDS = {
@@ -853,7 +863,7 @@ def _validate_typed_semantic_minima(state: dict[str, Any]) -> list[dict[str, str
             or record["decision_authority"] not in _DECISION_AUTHORITIES
         ):
             errors.append(_error("schema_error", "invalid decision_authority", f"{path}.decision_authority"))
-        if "resolution_mode" in record and (
+        if "resolution_mode" in record and record["resolution_mode"] is not None and (
             not isinstance(record["resolution_mode"], str)
             or record["resolution_mode"] not in _RESOLUTION_MODES
         ):
@@ -1063,6 +1073,9 @@ def _validate_state_v2(
     errors.extend(_validate_surface_manifest(state, index, evidence_index))
     errors.extend(_validate_contradictions(state, index, evidence_index))
     errors.extend(_validate_stale_consumed_evidence(state))
+    errors.extend(validate_unknown_decision_integrity(
+        state, id_index=index, evidence_index=evidence_index,
+    ))
     errors.extend(validate_discovery_baseline(
         state, check_freshness=check_discovery_baseline,
     ))
@@ -1080,6 +1093,7 @@ def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:
             "semantic_closure_not_implemented": 1,
             **_surface_metrics(state),
             **_contradiction_metrics(state),
+            **grill_unknown_metrics(state),
             "stale_consumed_evidence": _stale_consumed_evidence_count(state),
             "discovery_baseline_gaps": int(
                 isinstance(state.get("discovery_baseline"), dict)

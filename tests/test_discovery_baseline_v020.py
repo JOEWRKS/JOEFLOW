@@ -8,9 +8,23 @@ import unittest
 from pathlib import Path
 
 try:
-    from tests.v020_support import evidence_record, foundation_state, materiality, surface_record
+    from tests.v020_support import (
+        decision_record as canonical_decision_record,
+        evidence_record,
+        foundation_state,
+        materiality,
+        surface_record,
+        unknown_record as canonical_unknown_record,
+    )
 except ModuleNotFoundError:
-    from v020_support import evidence_record, foundation_state, materiality, surface_record
+    from v020_support import (
+        decision_record as canonical_decision_record,
+        evidence_record,
+        foundation_state,
+        materiality,
+        surface_record,
+        unknown_record as canonical_unknown_record,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,18 +37,24 @@ from state_validation_v2 import _validate_state_v2, evaluate_closure_v2, validat
 
 
 def decision_record(*, evidence_refs=None):
-    return {
-        "id": "DEC-001",
-        "status": "CURRENT",
-        "statement": "Keep the explicitly approved behavior.",
-        "decision_type": "PRODUCT_POLICY",
+    record = canonical_decision_record(classification="NON_MATERIAL")
+    record["statement"] = "Keep the explicitly approved behavior."
+    record["evidence_refs"] = list(evidence_refs or [])
+    return record
+
+
+def decision_source_unknown():
+    record = canonical_unknown_record(
+        status="RESOLVED",
+        classification="NON_MATERIAL",
+        decision_authority="USER_DECISION_REQUIRED",
+    )
+    record.update({
+        "resolved_by": ["DEC-001"],
         "resolution_mode": "USER_DECISION",
-        "decision_authority": "USER_CONFIRMATION",
-        "source_unknown_refs": [],
-        "evidence_refs": list(evidence_refs or []),
-        "materiality": materiality(),
-        "affects": [],
-    }
+        "resolution_summary": "The user approved the current product behavior.",
+    })
+    return record
 
 
 def current_baseline(state):
@@ -145,6 +165,7 @@ class DiscoveryBaselineV020Test(unittest.TestCase):
     def test_stale_consumed_evidence_is_counted_and_rejected_as_current_authority(self):
         state = foundation_state()
         state["evidence"] = [evidence_record(status="STALE")]
+        state["objects"]["unknowns"] = [decision_source_unknown()]
         state["objects"]["decisions"] = [decision_record(evidence_refs=["EVD-001"])]
 
         self.assertIn("stale_consumed_evidence", self.error_codes(state))

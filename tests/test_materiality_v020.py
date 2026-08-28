@@ -3,9 +3,23 @@ import unittest
 from pathlib import Path
 
 try:
-    from tests.v020_support import evidence_record, foundation_state, materiality, surface_record
+    from tests.v020_support import (
+        decision_record as canonical_decision_record,
+        evidence_record,
+        foundation_state,
+        materiality,
+        surface_record,
+        unknown_record as canonical_unknown_record,
+    )
 except ModuleNotFoundError:
-    from v020_support import evidence_record, foundation_state, materiality, surface_record
+    from v020_support import (
+        decision_record as canonical_decision_record,
+        evidence_record,
+        foundation_state,
+        materiality,
+        surface_record,
+        unknown_record as canonical_unknown_record,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,12 +56,23 @@ def low_local_trivial_materiality(*, outcome="LOW", user_visible=False):
 
 
 def decision_record():
-    return {
-        "id": "DEC-001", "status": "CURRENT", "statement": "Record the product decision.",
-        "decision_type": "SCOPE", "resolution_mode": "USER_DECISION",
-        "decision_authority": "USER_DECISION_REQUIRED", "source_unknown_refs": [],
-        "evidence_refs": [], "materiality": materiality(), "affects": [],
-    }
+    record = canonical_decision_record(classification="NON_MATERIAL")
+    record.update({"statement": "Record the product decision.", "decision_type": "SCOPE"})
+    return record
+
+
+def resolved_unknown_record():
+    record = canonical_unknown_record(
+        status="RESOLVED",
+        classification="NON_MATERIAL",
+        decision_authority="USER_DECISION_REQUIRED",
+    )
+    record.update({
+        "resolved_by": ["DEC-001"],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "The user recorded the product decision.",
+    })
+    return record
 
 
 def contradiction_record():
@@ -122,10 +147,7 @@ class MaterialityV020Test(unittest.TestCase):
             "id": "REQ-001", "status": "CURRENT", "statement": "Save feedback.",
             "scope": "CORE", "ui_required": True, "materiality": materiality(),
         }]
-        state["objects"]["unknowns"] = [{
-            "id": "UNK-001", "status": "OPEN", "question": "Which format?",
-            "materiality": materiality(), "decision_authority": "USER_CONFIRMATION",
-        }]
+        state["objects"]["unknowns"] = [resolved_unknown_record()]
         state["objects"]["decisions"] = [decision_record()]
         state["surface_manifest"]["records"] = [surface_record(classification="NON_MATERIAL")]
         state["evidence"] = [evidence_record("EVD-001"), evidence_record("EVD-002")]
