@@ -2,12 +2,23 @@ import copy
 import hashlib
 import importlib.util
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SKILL_ROOT = ROOT / "skills" / "joewrks-product-definition"
+sys.path.insert(0, str(SKILL_ROOT))
+
+from downstream.semantic_review.goldens import verify_golden_packages
+from downstream.semantic_review.package import (
+    load_and_verify_package,
+    verify_run_envelope,
+)
+
+
 CALIBRATION_ROOT = (
     ROOT / "evals" / "semantic-review-v0.4.3" / "calibration"
 )
@@ -18,10 +29,24 @@ GOLDEN_OUTPUTS_PATH = (
 GOLDEN_ANSWERS_PATH = (
     ROOT / "tests" / "fixtures" / "semantic-review-v1" / "golden-answers.json"
 )
+GOLDEN_CASES_PATH = (
+    ROOT / "tests" / "fixtures" / "semantic-review-v1" / "golden-cases.json"
+)
+FULL_PACKAGE_ROOT = (
+    CALIBRATION_ROOT / "semantic-review-calibration-v1" / "reviewer-package"
+)
 
 PACKAGE_HASH = "ccc2c5af60c74cde1b281ec7026bd8d42cac9717faf210c31fb3e8a719f59603"
 BRIEF_HASH = "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c"
 DRIFT_HASH = "0" * 64
+EXPECTED_RUN_ENVELOPE_KEYS = {
+    "review_run_id",
+    "reviewer_context_id",
+    "reviewer_input_package_hash",
+    "reviewer_brief_hash",
+    "isolation_attestation",
+    "isolation_attestation_hash",
+}
 
 
 def canonical_sha256(value):
@@ -105,21 +130,25 @@ def build_evidence():
     for cohort_id in ("C1", "C2", "C3"):
         full_context = f"TEST-ONLY-{cohort_id}-FULL"
         full_run_id = f"TEST-ONLY-RUN-{cohort_id}-FULL"
+        full_attestation = {
+            "fresh_context": True,
+            "previous_verdict_access": False,
+            "manifest_only_evidence": True,
+        }
+        full_attestation_hash = canonical_sha256(full_attestation)
         full_review = {
             "run_envelope": {
                 "review_run_id": full_run_id,
                 "reviewer_context_id": full_context,
                 "reviewer_input_package_hash": PACKAGE_HASH,
                 "reviewer_brief_hash": BRIEF_HASH,
-                "isolation_attestation": {
-                    "fresh_context": True,
-                    "previous_verdict_access": False,
-                    "manifest_only_evidence": True,
-                },
+                "isolation_attestation": full_attestation,
+                "isolation_attestation_hash": full_attestation_hash,
             },
             "review_output": {
                 "review_run_id": full_run_id,
                 "reviewer_context_id": full_context,
+                "isolation_attestation_hash": full_attestation_hash,
                 "reviewer_input_package_hash": PACKAGE_HASH,
                 "reviewer_brief_hash": BRIEF_HASH,
                 "records": [],
@@ -173,6 +202,47 @@ class OfficialCalibrationControllerNegativeTest(unittest.TestCase):
                 evidence, real_mode=real_mode
             )
         self.assertEqual(caught.exception.code, code)
+
+    def test_full_and_golden_envelopes_share_production_six_field_contract(self):
+        evidence = build_evidence()
+        full = evidence["cohorts"][0]["full_review"]["run_envelope"]
+        golden = evidence["cohorts"][0]["golden_reviews"][0]["raw_output"][
+            "run_envelope"
+        ]
+        self.assertEqual(set(full), EXPECTED_RUN_ENVELOPE_KEYS)
+        self.assertEqual(set(golden), EXPECTED_RUN_ENVELOPE_KEYS)
+        self.assertEqual(set(full), set(golden))
+
+        full_package = load_and_verify_package(FULL_PACKAGE_ROOT)
+        cases = json.loads(GOLDEN_CASES_PATH.read_text(encoding="utf-8"))
+        golden_packages = verify_golden_packages(cases)
+        self.assertIs(verify_run_envelope(full, full_package), full)
+        self.assertIs(verify_run_envelope(golden, golden_packages["G-001"]), golden)
+
+    def test_invalid_full_envelope_is_rejected_before_calibration_scoring(self):
+        evidence = build_evidence()
+        full_review = evidence["cohorts"][0]["full_review"]
+        full_review["run_envelope"].pop("isolation_attestation_hash")
+        rehash_full_wrapper(full_review)
+        self.assertNotIn(
+            "isolation_attestation_hash",
+            full_review["run_envelope"],
+        )
+        golden_envelope = evidence["cohorts"][0]["golden_reviews"][0][
+            "raw_output"
+        ]["run_envelope"]
+        self.assertNotEqual(set(full_review["run_envelope"]), set(golden_envelope))
+        self.assert_rejected(evidence, "FULL_REVIEW_OUTPUT_INVALID")
+
+    def test_production_invalid_six_field_full_envelope_stops_before_scoring(self):
+        evidence = build_evidence()
+        full_review = evidence["cohorts"][0]["full_review"]
+        full_review["run_envelope"]["isolation_attestation_hash"] = DRIFT_HASH
+        rehash_full_wrapper(full_review)
+        self.assertEqual(
+            set(full_review["run_envelope"]), EXPECTED_RUN_ENVELOPE_KEYS
+        )
+        self.assert_rejected(evidence, "FULL_REVIEW_OUTPUT_INVALID")
 
     def test_rejects_scalar_fabricated_golden_report_without_raw_outputs(self):
         evidence = {

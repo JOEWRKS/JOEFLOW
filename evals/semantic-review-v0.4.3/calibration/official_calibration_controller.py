@@ -17,7 +17,11 @@ if str(SKILL_ROOT) not in sys.path:
 
 from downstream.semantic_review.gate import evaluate_reliability_gate
 from downstream.semantic_review.goldens import evaluate_goldens, verify_golden_packages
-from downstream.semantic_review.package import load_and_verify_package
+from downstream.semantic_review.package import (
+    PackageError,
+    load_and_verify_package,
+    verify_run_envelope,
+)
 
 
 PACKAGE_HASH = "ccc2c5af60c74cde1b281ec7026bd8d42cac9717faf210c31fb3e8a719f59603"
@@ -52,14 +56,14 @@ FORBIDDEN_VISIBILITY_KEYS = VISIBILITY_KEYS - {
     "manifest_only_isolation_attested",
     "visible_inputs",
 }
-FULL_ENVELOPE_KEYS = {
+RUN_ENVELOPE_KEYS = {
     "review_run_id",
     "reviewer_context_id",
     "reviewer_input_package_hash",
     "reviewer_brief_hash",
     "isolation_attestation",
+    "isolation_attestation_hash",
 }
-GOLDEN_ENVELOPE_KEYS = FULL_ENVELOPE_KEYS | {"isolation_attestation_hash"}
 FULL_PACKAGE_IDENTITY_KEYS = {
     "reviewer_input_package_hash",
     "reviewer_brief_hash",
@@ -499,7 +503,7 @@ def evaluate_official_calibration(
         _scan_reviewer_visible_content(
             envelope, oracle_text, oracle_pairs, "full reviewer context"
         )
-        if set(envelope) != FULL_ENVELOPE_KEYS:
+        if set(envelope) != RUN_ENVELOPE_KEYS:
             _reject("FULL_REVIEW_OUTPUT_INVALID", "full envelope fields")
     for raw_set in raw_golden_sets:
         for raw in raw_set:
@@ -507,7 +511,7 @@ def evaluate_official_calibration(
             _scan_reviewer_visible_content(
                 envelope, oracle_text, oracle_pairs, "golden reviewer context"
             )
-            if set(envelope) != GOLDEN_ENVELOPE_KEYS:
+            if set(envelope) != RUN_ENVELOPE_KEYS:
                 _reject("RAW_GOLDEN_OUTPUT_INVALID", "golden envelope fields")
     for case in cases:
         _scan_reviewer_visible_content(
@@ -517,6 +521,21 @@ def evaluate_official_calibration(
             f"golden reviewer package:{case['case_id']}",
         )
     verified_package = _trusted_full_reviewer_package(oracle_text, oracle_pairs)
+    try:
+        for envelope in full_envelopes:
+            verify_run_envelope(envelope, verified_package)
+    except PackageError as error:
+        _reject("FULL_REVIEW_OUTPUT_INVALID", str(error))
+    verified_golden_packages = verify_golden_packages(cases)
+    try:
+        for raw_set in raw_golden_sets:
+            for raw in raw_set:
+                verify_run_envelope(
+                    raw["run_envelope"],
+                    verified_golden_packages[raw["case_id"]],
+                )
+    except (KeyError, PackageError) as error:
+        _reject("RAW_GOLDEN_OUTPUT_INVALID", str(error))
     cohort_reports = [
         evaluate_goldens(raw_outputs, answers, cases)
         for raw_outputs in raw_golden_sets

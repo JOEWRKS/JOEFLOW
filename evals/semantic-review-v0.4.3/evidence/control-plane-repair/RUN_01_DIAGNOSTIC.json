@@ -1,0 +1,250 @@
+{
+  "authority_commits": {
+    "frozen_calibration_input": "96b2b6e7c5435ccdbab5f7371073ec34c2d04078",
+    "run_01_final_evidence": "6f78bb610aeb52e6c475601b4327ce96f0fc509d",
+    "run_01_final_evidence_tree": "5c348672b8efe41a8a14222efb4ec9c97e0dd342",
+    "run_01_pre_run_lock": "f08eb78428b6f43ef76c2eed94f10be56f46cf9a",
+    "run_01_raw_output_freeze": "a4b641929f071e34eae922096ee7b21f3294b7ef",
+    "run_01_raw_output_freeze_tree": "f324e4070f5eeb1cbe5a2c659da05d6275673fa0"
+  },
+  "classification": {
+    "official_semantic_reliability_result": "NOT MEASURED",
+    "real_calibration_attempts": 1,
+    "root_cause_family": "CALIBRATION_CONTROL_PLANE_DEFECT",
+    "valid_real_calibration_runs": 0
+  },
+  "frozen_inputs": {
+    "full_reviewer_package_hash": "ccc2c5af60c74cde1b281ec7026bd8d42cac9717faf210c31fb3e8a719f59603",
+    "golden_answer_pairs_sha256": "7ddc257c085f8e9de4722b01f09646c25891418fbc92d60e7a15425657acc4aa",
+    "golden_answers_file_sha256": "4126bb8d316291d8362f04fe1160f53ad86adc73ec358effad7a84d104d7a173",
+    "golden_cases_file_sha256": "812d99c153c736fdd6eacdb0937ba924a83c642bc78f74674b6ad708154c84f3",
+    "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+    "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c"
+  },
+  "full_review_diagnostic": {
+    "historical_envelopes_modified": false,
+    "label": "NON_OFFICIAL_DIAGNOSTIC",
+    "official_gate_evidence": false,
+    "per_cohort": {
+      "C1": {
+        "classification": "invalid full input",
+        "production_verify_run_envelope": {
+          "error": "PACKAGE_HASH_MISMATCH: invalid run-envelope fields",
+          "error_code": "PACKAGE_HASH_MISMATCH",
+          "status": "INVALID"
+        },
+        "raw_output_sha256": "44f7a5fe08bc9f52598fb3bf332b80ba4627a0ad94f55e9710321e8717302312",
+        "record_count": 0,
+        "run_envelope_fields": [
+          "isolation_attestation",
+          "review_run_id",
+          "reviewer_brief_hash",
+          "reviewer_context_id",
+          "reviewer_input_package_hash"
+        ],
+        "run_envelope_sha256": "318a2ba2850f6e2bf486c6c1df7839181f0a0686fa9b18282c765acbe18c7cee"
+      },
+      "C2": {
+        "classification": "invalid full input",
+        "production_verify_run_envelope": {
+          "error": "PACKAGE_HASH_MISMATCH: invalid run-envelope fields",
+          "error_code": "PACKAGE_HASH_MISMATCH",
+          "status": "INVALID"
+        },
+        "raw_output_sha256": "99c52a16219cd88365cdb6cfdd6ad0d8a04e3eb4f306a688039e244d16db06e7",
+        "record_count": 0,
+        "run_envelope_fields": [
+          "isolation_attestation",
+          "review_run_id",
+          "reviewer_brief_hash",
+          "reviewer_context_id",
+          "reviewer_input_package_hash"
+        ],
+        "run_envelope_sha256": "4c60d3ebd27cdd5f314fba0e29564f2f223b19b8d5e5170e4f97109d87c544e3"
+      },
+      "C3": {
+        "classification": "invalid full input",
+        "production_verify_run_envelope": {
+          "error": "PACKAGE_HASH_MISMATCH: invalid run-envelope fields",
+          "error_code": "PACKAGE_HASH_MISMATCH",
+          "status": "INVALID"
+        },
+        "raw_output_sha256": "cb73ce22684671ad9dee418ac6f0f6a4d632b264f6ee674b68df09ffa6674011",
+        "record_count": 114,
+        "run_envelope_fields": [
+          "isolation_attestation",
+          "review_run_id",
+          "reviewer_brief_hash",
+          "reviewer_context_id",
+          "reviewer_input_package_hash"
+        ],
+        "run_envelope_sha256": "f262dae665d42beee6b1330246d915bd088347bf2d05c7391ad3568ddf5f1dcd"
+      }
+    }
+  },
+  "golden_diagnostic": {
+    "controller_owned_metadata_added_in_memory": [
+      "case_manifest_hash"
+    ],
+    "frozen_raw_output_count": 45,
+    "label": "RUN_01_GOLDEN_DIAGNOSTIC_ONLY",
+    "official_gate_evidence": false,
+    "per_cohort": {
+      "C1": {
+        "decision_pair_diagnostic_only": {
+          "case_count": 15,
+          "rationale_code_accuracy": {
+            "denominator": 15,
+            "numerator": 13
+          },
+          "rationale_code_hits": 13,
+          "verdict_accuracy": {
+            "denominator": 15,
+            "numerator": 14
+          },
+          "verdict_hits": 14
+        },
+        "invalid_raw_outputs": [
+          {
+            "case_id": "G-007",
+            "error": "INVALID_REFERENCE_SET: action:ACT-G-007:test_obligations:tests",
+            "error_code": "INVALID_REFERENCE_SET"
+          },
+          {
+            "case_id": "G-008",
+            "error": "INVALID_REFERENCE_SET: action:ACT-G-008:test_obligations:tests",
+            "error_code": "INVALID_REFERENCE_SET"
+          },
+          {
+            "case_id": "G-009",
+            "error": "INVALID_REFERENCE_SET: action:ACT-G-009:test_obligations:tests",
+            "error_code": "INVALID_REFERENCE_SET"
+          },
+          {
+            "case_id": "G-012",
+            "error": "PREFLIGHT_BINDING_MISMATCH: preflight verdict, rationale, scope, and evidence must match package diagnostics",
+            "error_code": "PREFLIGHT_BINDING_MISMATCH"
+          },
+          {
+            "case_id": "G-013",
+            "error": "PREFLIGHT_BINDING_MISMATCH: preflight verdict, rationale, scope, and evidence must match package diagnostics",
+            "error_code": "PREFLIGHT_BINDING_MISMATCH"
+          },
+          {
+            "case_id": "G-015",
+            "error": "PREFLIGHT_BINDING_MISMATCH: preflight verdict, rationale, scope, and evidence must match package diagnostics",
+            "error_code": "PREFLIGHT_BINDING_MISMATCH"
+          }
+        ],
+        "production_evaluate_goldens": {
+          "error": "GOLDEN_OUTPUT_INVALID: G-007: INVALID_REFERENCE_SET: action:ACT-G-007:test_obligations:tests",
+          "error_code": "GOLDEN_OUTPUT_INVALID",
+          "status": "INVALID_RAW_OUTPUT"
+        }
+      },
+      "C2": {
+        "decision_pair_diagnostic_only": {
+          "case_count": 15,
+          "rationale_code_accuracy": {
+            "denominator": 15,
+            "numerator": 12
+          },
+          "rationale_code_hits": 12,
+          "verdict_accuracy": {
+            "denominator": 15,
+            "numerator": 13
+          },
+          "verdict_hits": 13
+        },
+        "invalid_raw_outputs": [
+          {
+            "case_id": "G-007",
+            "error": "INVALID_REFERENCE_SET: action:ACT-G-007:test_obligations:tests",
+            "error_code": "INVALID_REFERENCE_SET"
+          },
+          {
+            "case_id": "G-008",
+            "error": "INVALID_REFERENCE_SET: action:ACT-G-008:test_obligations:tests",
+            "error_code": "INVALID_REFERENCE_SET"
+          },
+          {
+            "case_id": "G-012",
+            "error": "PREFLIGHT_BINDING_MISMATCH: preflight verdict, rationale, scope, and evidence must match package diagnostics",
+            "error_code": "PREFLIGHT_BINDING_MISMATCH"
+          },
+          {
+            "case_id": "G-013",
+            "error": "PREFLIGHT_BINDING_MISMATCH: preflight verdict, rationale, scope, and evidence must match package diagnostics",
+            "error_code": "PREFLIGHT_BINDING_MISMATCH"
+          },
+          {
+            "case_id": "G-015",
+            "error": "PREFLIGHT_BINDING_MISMATCH: preflight verdict, rationale, scope, and evidence must match package diagnostics",
+            "error_code": "PREFLIGHT_BINDING_MISMATCH"
+          }
+        ],
+        "production_evaluate_goldens": {
+          "error": "GOLDEN_OUTPUT_INVALID: G-007: INVALID_REFERENCE_SET: action:ACT-G-007:test_obligations:tests",
+          "error_code": "GOLDEN_OUTPUT_INVALID",
+          "status": "INVALID_RAW_OUTPUT"
+        }
+      },
+      "C3": {
+        "decision_pair_diagnostic_only": {
+          "case_count": 15,
+          "rationale_code_accuracy": {
+            "denominator": 15,
+            "numerator": 11
+          },
+          "rationale_code_hits": 11,
+          "verdict_accuracy": {
+            "denominator": 15,
+            "numerator": 12
+          },
+          "verdict_hits": 12
+        },
+        "invalid_raw_outputs": [
+          {
+            "case_id": "G-007",
+            "error": "INVALID_REFERENCE_SET: action:ACT-G-007:test_obligations:tests",
+            "error_code": "INVALID_REFERENCE_SET"
+          },
+          {
+            "case_id": "G-008",
+            "error": "INVALID_REFERENCE_SET: action:ACT-G-008:test_obligations:tests",
+            "error_code": "INVALID_REFERENCE_SET"
+          },
+          {
+            "case_id": "G-012",
+            "error": "PREFLIGHT_BINDING_MISMATCH: preflight verdict, rationale, scope, and evidence must match package diagnostics",
+            "error_code": "PREFLIGHT_BINDING_MISMATCH"
+          },
+          {
+            "case_id": "G-013",
+            "error": "PREFLIGHT_BINDING_MISMATCH: preflight verdict, rationale, scope, and evidence must match package diagnostics",
+            "error_code": "PREFLIGHT_BINDING_MISMATCH"
+          },
+          {
+            "case_id": "G-015",
+            "error": "PREFLIGHT_BINDING_MISMATCH: preflight verdict, rationale, scope, and evidence must match package diagnostics",
+            "error_code": "PREFLIGHT_BINDING_MISMATCH"
+          }
+        ],
+        "production_evaluate_goldens": {
+          "error": "GOLDEN_OUTPUT_INVALID: G-007: INVALID_REFERENCE_SET: action:ACT-G-007:test_obligations:tests",
+          "error_code": "GOLDEN_OUTPUT_INVALID",
+          "status": "INVALID_RAW_OUTPUT"
+        }
+      }
+    },
+    "raw_binding_manifest_sha256": "b55093f4f9386a0b1282241818478d31254ede1f2fc79a47056fb4fd4494ee6a",
+    "raw_outputs_modified": false
+  },
+  "new_reviewer_contexts": 0,
+  "optional_c3_seed_diagnostic": {
+    "matching_seed_paths": [],
+    "reason": "No hidden 114-identity seed-oracle plaintext artifact exists in the frozen run-01 final tree.",
+    "status": "NOT_AVAILABLE"
+  },
+  "schema_version": "joewrks.semantic-review-run-01-diagnostic/1.0"
+}

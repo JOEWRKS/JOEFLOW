@@ -11,10 +11,20 @@ This calibration-only layer is product-neutral. It records no reviewer execution
 - Frozen normative oracle: `PM_APPROVED_NORMATIVE_ORACLE`, SHA-256 `4126bb8d316291d8362f04fe1160f53ad86adc73ec358effad7a84d104d7a173`, 1648 bytes, exact canonical 15-pair tuple-set SHA-256 `7ddc257c085f8e9de4722b01f09646c25891418fbc92d60e7a15425657acc4aa`
 - Cohorts: exactly `C1`, `C2`, and `C3`
 - Planned contexts: 3 full-review plus 45 one-case golden contexts, 48 unique total
-- `REAL_CALIBRATION_RUNS = 0`
+- `REAL_CALIBRATION_ATTEMPTS = 1`
+- `VALID_REAL_CALIBRATION_RUNS = 0`
+- Run-01 official semantic reliability result: `NOT MEASURED`
+- Run-01 root cause family: `CALIBRATION_CONTROL_PLANE_DEFECT`
+- `NEW_REVIEWER_CONTEXTS_AFTER_RUN_01 = 0`
 
 The official API is `evaluate_official_calibration(evidence, *, real_mode)` in `official_calibration_controller.py`. It accepts only raw, hash-bound output wrappers for all cohorts. Each wrapper carries the raw run envelope and output plus their exact SHA-256 values; each golden cohort also binds an output-set SHA-256. Scalar golden summaries are forbidden inputs.
 
 The controller freezes and hash-binds every raw output wrapper before loading the trusted oracle. It then validates the exact PM-approved oracle status, file hash and bytes, ordered 15 case IDs, and exact canonical verdict/rationale tuple-set hash. Caller-supplied oracle bytes, expected pairs, and golden summaries are forbidden. The controller additionally binds the full reviewer package to its trusted controller-side package hash and declared file inventory, and binds the golden-package bank to its exact controller-side file SHA-256/byte commitment and each case's verified package hash. It scans every actual reviewer-visible package file and every hash-bound run-envelope context for oracle bytes, frozen answer pairs, prior reviewer results, or structured correction hints; visibility flags alone are never proof of this firewall. The controller validates the exact package and brief identities, every context's manifest-only visibility, all 48 unique context IDs, full output/package identity, and the 15-case set in each cohort. It calls production `evaluate_goldens(...)` separately three times. Only a 15/15 verdict, 15/15 rationale, zero-unexpected-error result in every cohort is converted to the low-level all-pass summary passed to `evaluate_reliability_gate(...)`.
 
 A future execution must stop as `BLOCKED — MANIFEST_ONLY_ISOLATION_UNAVAILABLE` if the declared isolation cannot be attested. Reviewer packages and contexts must never receive oracle bytes, expected pairs, prior results, or correction hints. The frozen oracle precedes every reviewer run and cannot be changed by any reviewer result; a normative change requires a new rubric calibration revision, a new oracle hash, and a complete calibration rerun. No cohort envelopes, outputs, reports, or aggregate evidence are materialized by this freeze.
+
+## Repaired run-envelope and assembly boundary
+
+Every future full and golden context uses one identical six-field run-envelope contract: `review_run_id`, `reviewer_context_id`, `reviewer_input_package_hash`, `reviewer_brief_hash`, `isolation_attestation`, and `isolation_attestation_hash`. The hash is the SHA-256 of the canonical isolation-attestation JSON. `control_plane.materialize_run_envelope(...)` calls production `verify_run_envelope(...)` before returning an envelope, and the official controller requires the same exact field set for both context kinds.
+
+The controller-owned golden raw wrapper contains exactly `case_id`, `case_manifest_hash`, `run_envelope`, and `review_output`. `case_manifest_hash` is copied from the already frozen case metadata and the assembled raw item is passed to production `evaluate_goldens(...)`; it is never reviewer-generated. The actual-path regression writes semantic outputs as `raw-output.txt`, materializes and verifies run envelopes, assembles full and golden wrappers, and invokes the official controller for all 48 contexts. Scalar summaries and prebuilt wrapper shortcuts remain rejected.
