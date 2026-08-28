@@ -461,6 +461,7 @@ def _validate_surface_manifest(
         is_material = isinstance(materiality, dict) and materiality.get("classification") == "MATERIAL"
         intent_classification = record.get("intent_classification")
         evidence_refs = record.get("evidence_refs")
+        decision_refs = record.get("decision_refs")
         has_open_unknown = isinstance(record.get("unknown_refs"), list) and any(
             (entry := id_index.get(reference)) is not None
             and entry[0] == "unknowns"
@@ -483,6 +484,13 @@ def _validate_surface_manifest(
             for reference in evidence_refs
             if isinstance(reference, str)
         )
+        has_current_decision = isinstance(decision_refs, list) and any(
+            (entry := id_index.get(reference)) is not None
+            and entry[0] == "decisions"
+            and entry[1].get("status") == "CURRENT"
+            for reference in decision_refs
+            if isinstance(reference, str)
+        )
         has_contradiction = isinstance(record.get("contradiction_refs"), list) and any(
             reference in contradictions
             for reference in record["contradiction_refs"]
@@ -494,9 +502,10 @@ def _validate_surface_manifest(
             if not isinstance(intent_classification, str) or intent_classification not in INTENT_CLASSIFICATIONS:
                 errors.append(_error("invalid_surface_intent_classification", "existing-product surfaces require an exact intent_classification", f"{path}.intent_classification"))
             elif intent_classification == "AUTHORITATIVE" and (
-                not record.get("authority_refs") or not has_closure_capable_intent_evidence
+                not record.get("authority_refs")
+                or not (has_closure_capable_intent_evidence or has_current_decision)
             ):
-                errors.append(_error("invalid_authoritative_surface", "AUTHORITATIVE requires an authority ref and current closure-capable intent or preference evidence", path))
+                errors.append(_error("invalid_authoritative_surface", "AUTHORITATIVE requires an authority ref and current closure-capable intent or preference evidence or a current decision", path))
             elif intent_classification == "OBSERVED_ONLY" and (
                 not has_observed_evidence or (is_material and not has_open_unknown)
             ):
@@ -513,14 +522,6 @@ def _validate_surface_manifest(
             if not has_open_unknown:
                 errors.append(_error("OPEN_PRODUCT_SURFACE_WITHOUT_UNKNOWN", "material OPEN surface requires an OPEN UNK-* reference", path))
         if status == "OUT_OF_SCOPE":
-            decision_refs = record.get("decision_refs")
-            has_current_decision = isinstance(decision_refs, list) and any(
-                (entry := id_index.get(reference)) is not None
-                and entry[0] == "decisions"
-                and entry[1].get("status") == "CURRENT"
-                for reference in decision_refs
-                if isinstance(reference, str)
-            )
             if not _meaningful_text(record.get("rationale")) or not (has_closure_capable_intent_evidence or has_current_decision):
                 errors.append(_error("invalid_out_of_scope_surface", "OUT_OF_SCOPE requires rationale and closure-capable intent evidence or a current decision", path))
         if status == "SUPERSEDED":

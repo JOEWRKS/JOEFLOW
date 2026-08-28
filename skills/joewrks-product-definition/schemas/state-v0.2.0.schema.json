@@ -266,5 +266,57 @@
     },
     "coverage": {"type": "array"}, "ux_coverage": {"type": "array"}, "discovery_baseline": {"type": "object"},
     "approval": {"type": "object"}, "approval_history": {"type": "array"}
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["project"],
+        "properties": {
+          "project": {
+            "required": ["bootstrap_mode"],
+            "properties": {"bootstrap_mode": {"const": "NEW_PRODUCT"}}
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "surface_manifest": {
+            "properties": {
+              "records": {
+                "items": {"properties": {"intent_classification": {"type": "null"}}}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["project"],
+        "properties": {
+          "project": {
+            "required": ["bootstrap_mode"],
+            "properties": {"bootstrap_mode": {"const": "EXISTING_PRODUCT_RECONCILIATION"}}
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "surface_manifest": {
+            "properties": {
+              "records": {
+                "items": {
+                  "properties": {
+                    "intent_classification": {
+                      "enum": ["AUTHORITATIVE", "OBSERVED_ONLY", "CONFLICTING", "UNEXPLAINED"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

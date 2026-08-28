@@ -1,4 +1,7 @@
 import copy
+import base64
+import json
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -11,6 +14,7 @@ except ModuleNotFoundError:
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "skills" / "joewrks-product-definition" / "scripts"
+SCHEMA = ROOT / "skills" / "joewrks-product-definition" / "schemas" / "state-v0.2.0.schema.json"
 sys.path.insert(0, str(SCRIPTS))
 
 
@@ -35,6 +39,21 @@ def requirement_record():
     }
 
 
+def decision_record(*, status="CURRENT"):
+    return {
+        "id": "DEC-001",
+        "status": status,
+        "statement": "Keep feedback as an explicitly approved product behavior.",
+        "decision_type": "PRODUCT_POLICY",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_CONFIRMATION",
+        "source_unknown_refs": [],
+        "evidence_refs": [],
+        "materiality": materiality(),
+        "affects": [],
+    }
+
+
 def contradiction_record():
     return {
         "id": "CON-001",
@@ -54,6 +73,25 @@ class ReverseBootstrapV020Test(unittest.TestCase):
         from state_validation_v2 import validate_state_v2
 
         return {error["code"] for error in validate_state_v2(state)}
+
+    def schema_valid(self, state):
+        encoded_state = base64.b64encode(json.dumps(state).encode("utf-8")).decode("ascii")
+        command = (
+            "$json = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String("
+            f"'{encoded_state}')); "
+            f"Test-Json -Json $json -SchemaFile '{SCHEMA}'"
+        )
+        result = subprocess.run(
+            ["pwsh.exe", "-NoProfile", "-Command", command],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 1:
+            self.assertIn("The JSON is not valid with the schema:", result.stderr)
+            return False
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "True")
+        return True
 
     def existing_state(self, surface=None):
         state = foundation_state()
@@ -76,6 +114,17 @@ class ReverseBootstrapV020Test(unittest.TestCase):
 
         state["surface_manifest"]["records"][0]["intent_classification"] = "OBSERVED_ONLY"
         self.assertIn("invalid_surface_intent_classification", self.errors(state))
+
+    def test_schema_and_runtime_reject_bootstrap_mode_classification_mismatches(self):
+        existing_null = self.existing_state()
+        new_non_null = foundation_state()
+        new_non_null["surface_manifest"]["records"] = [surface_record(classification="NON_MATERIAL")]
+        new_non_null["surface_manifest"]["records"][0]["intent_classification"] = "OBSERVED_ONLY"
+
+        for state in (existing_null, new_non_null):
+            with self.subTest(bootstrap_mode=state["project"]["bootstrap_mode"]):
+                self.assertFalse(self.schema_valid(state))
+                self.assertIn("invalid_surface_intent_classification", self.errors(state))
 
     def test_authoritative_requires_product_authority_and_qualified_intent_evidence(self):
         surface = surface_record(classification="NON_MATERIAL")
@@ -100,6 +149,21 @@ class ReverseBootstrapV020Test(unittest.TestCase):
         ))
         state["surface_manifest"]["records"][0]["evidence_refs"].append("EVD-003")
         self.assertEqual(self.errors(state), set())
+
+    def test_authoritative_allows_a_current_explicit_decision_instead_of_intent_evidence(self):
+        surface = surface_record(classification="NON_MATERIAL")
+        surface.update({
+            "intent_classification": "AUTHORITATIVE",
+            "authority_refs": ["REQ-001"],
+            "decision_refs": ["DEC-001"],
+        })
+        state = self.existing_state(surface)
+        state["objects"]["requirements"] = [requirement_record()]
+        state["objects"]["decisions"] = [decision_record()]
+        self.assertEqual(self.errors(state), set())
+
+        state["objects"]["decisions"][0]["status"] = "STALE"
+        self.assertIn("invalid_authoritative_surface", self.errors(state))
 
     def test_observed_only_requires_observed_evidence_but_no_authority_ref(self):
         surface = surface_record(classification="NON_MATERIAL")
