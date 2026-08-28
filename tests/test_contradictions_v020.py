@@ -159,7 +159,20 @@ class ContradictionsV020Test(unittest.TestCase):
                 state["evidence"][0] = evidence_record(
                     "EVD-001", source_kind=source_kind, authority_classes=["INTENT"],
                 )
-                self.assertIn("invalid_selected_authority", self.error_codes(state))
+                self.assertIn("unresolved_contradiction_authority", self.error_codes(state))
+
+    def test_selected_authority_allows_current_candidate_evidence_when_current_authority_is_also_selected(self):
+        resolved = contradiction_record(status="RESOLVED")
+        resolved.update({
+            "resolution": "The current implementation authority resolves the conflict.",
+            "selected_authority_refs": ["EVD-001", "EVD-003"],
+        })
+        state = self.canonical_state(resolved)
+        state["evidence"].append(evidence_record(
+            "EVD-003", source_kind="INFERRED_INTENT", authority_classes=["INTENT"],
+        ))
+
+        self.assertEqual(self.error_codes(state), set())
 
     def test_bare_resolution_acknowledgement_fails_without_authority(self):
         acknowledged = contradiction_record(status="RESOLVED")

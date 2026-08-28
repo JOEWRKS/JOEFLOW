@@ -624,6 +624,10 @@ def _validate_contradictions(
                 evidence = evidence_index.get(reference) if isinstance(reference, str) else None
                 if not _is_stable_id(reference, expected_prefix="EVD") or evidence is None:
                     errors.append(_error("invalid_contradiction_reference", "selected_authority_refs must resolve to EVD-* evidence", f"{path}.selected_authority_refs"))
+                elif evidence.get("status") != "CURRENT":
+                    errors.append(_error("invalid_selected_authority", "selected authority must be current evidence", f"{path}.selected_authority_refs"))
+                elif evidence.get("source_kind") in CANDIDATE_ONLY_SOURCE_KINDS:
+                    continue
                 elif _evidence_is_current_closure_eligible(evidence):
                     selected_authorities.append(reference)
                 else:
