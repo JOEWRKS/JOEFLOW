@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JOEWRKS Product Definition State 0.2.0 Foundation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "project",
+    "migration",
+    "evidence",
+    "surface_manifest",
+    "contradictions",
+    "objects",
+    "coverage",
+    "ux_coverage",
+    "discovery_baseline",
+    "approval",
+    "approval_history"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.2.0"},
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug", "definition_status", "definition_revision", "closure_contract"],
+      "properties": {
+        "slug": {"type": "string"},
+        "definition_status": {"enum": ["OPEN", "READY_FOR_REVIEW", "CLOSED", "BLOCKED"]},
+        "definition_revision": {"type": "integer", "minimum": 1},
+        "closure_contract": {
+          "type": "object",
+          "required": ["level"],
+          "properties": {"level": {"const": "SEMANTIC_CLOSURE"}}
+        }
+      }
+    },
+    "migration": {"type": "object"},
+    "evidence": {"type": "array"},
+    "surface_manifest": {"type": "object"},
+    "contradictions": {"type": "array"},
+    "objects": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "goals", "users", "requirements", "unknowns", "decisions", "rules",
+        "flows", "screens", "states", "data", "integrations",
+        "acceptance_criteria", "tasks"
+      ],
+      "properties": {
+        "goals": {"type": "array", "items": {"type": "object"}},
+        "users": {"type": "array", "items": {"type": "object"}},
+        "requirements": {"type": "array", "items": {"type": "object"}},
+        "unknowns": {"type": "array", "items": {"type": "object"}},
+        "decisions": {"type": "array", "items": {"type": "object"}},
+        "rules": {"type": "array", "items": {"type": "object"}},
+        "flows": {"type": "array", "items": {"type": "object"}},
+        "screens": {"type": "array", "items": {"type": "object"}},
+        "states": {"type": "array", "items": {"type": "object"}},
+        "data": {"type": "array", "items": {"type": "object"}},
+        "integrations": {"type": "array", "items": {"type": "object"}},
+        "acceptance_criteria": {"type": "array", "items": {"type": "object"}},
+        "tasks": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "coverage": {"type": "array"},
+    "ux_coverage": {"type": "array"},
+    "discovery_baseline": {"type": "object"},
+    "approval": {"type": "object"},
+    "approval_history": {"type": "array"}
+  }
+}
