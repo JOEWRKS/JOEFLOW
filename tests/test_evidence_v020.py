@@ -19,6 +19,22 @@ import state_validation_v2
 from state_validation_v2 import validate_state_v2
 
 
+SOURCE_KIND_CAPABILITIES = {
+    "USER_CONFIRMED_INTENT": {"INTENT", "PREFERENCE"},
+    "DOCUMENTED_INTENT": {"INTENT", "PREFERENCE"},
+    "HISTORICAL_DECISION": {"INTENT", "PREFERENCE"},
+    "EXTERNAL_CONSTRAINT": {"FACTUAL", "CONSTRAINT"},
+    "OBSERVED_IMPLEMENTATION": {"FACTUAL", "BEHAVIORAL"},
+    "OBSERVED_RUNTIME": {"FACTUAL", "BEHAVIORAL"},
+    "TEST_ASSERTION": {"FACTUAL", "BEHAVIORAL"},
+    "DESIGN_ARTIFACT": {"INTENT", "PREFERENCE"},
+    "INFERRED_INTENT": {"INTENT", "PREFERENCE"},
+}
+AUTHORITY_CLASSES = ("FACTUAL", "INTENT", "CONSTRAINT", "BEHAVIORAL", "PREFERENCE")
+CONFIDENCE_VALUES = ("DIRECT", "CORROBORATED", "INFERRED")
+EVIDENCE_STATUSES = ("CURRENT", "STALE", "SUPERSEDED", "UNAVAILABLE")
+
+
 class EvidenceV020Test(unittest.TestCase):
     def error_codes(self, state):
         return {error["code"] for error in validate_state_v2(state)}
@@ -27,6 +43,15 @@ class EvidenceV020Test(unittest.TestCase):
         state = foundation_state()
         state["evidence"] = [copy.deepcopy(record) for record in records]
         return state
+
+    def valid_state_for_status(self, status):
+        record = evidence_record(status=status)
+        if status == "SUPERSEDED":
+            record["superseded_by"] = "EVD-002"
+            return self.state_with(record, evidence_record("EVD-002"))
+        if status == "UNAVAILABLE":
+            record["unavailable_reason"] = "The original source is no longer available."
+        return self.state_with(record)
 
     def test_schema_defines_the_exact_evidence_record_contract(self):
         schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
@@ -86,6 +111,34 @@ class EvidenceV020Test(unittest.TestCase):
         state = self.state_with(evidence_record(authority_classes=["INTENT"]))
 
         self.assertIn("invalid_evidence_authority_class", self.error_codes(state))
+
+    def test_frozen_source_kind_capability_matrix_validates_every_permitted_and_forbidden_class(self):
+        self.assertEqual(state_validation_v2.SOURCE_KIND_CAPABILITIES, SOURCE_KIND_CAPABILITIES)
+        for source_kind, permitted in SOURCE_KIND_CAPABILITIES.items():
+            for authority_class in AUTHORITY_CLASSES:
+                with self.subTest(source_kind=source_kind, authority_class=authority_class):
+                    state = self.state_with(evidence_record(
+                        source_kind=source_kind,
+                        authority_classes=[authority_class],
+                    ))
+                    if authority_class in permitted:
+                        self.assertEqual(self.error_codes(state), set())
+                    else:
+                        self.assertIn(
+                            "invalid_evidence_authority_class",
+                            self.error_codes(state),
+                        )
+
+    def test_every_required_confidence_and_status_value_is_valid(self):
+        for confidence in CONFIDENCE_VALUES:
+            with self.subTest(confidence=confidence):
+                self.assertEqual(
+                    self.error_codes(self.state_with(evidence_record(confidence=confidence))),
+                    set(),
+                )
+        for status in EVIDENCE_STATUSES:
+            with self.subTest(status=status):
+                self.assertEqual(self.error_codes(self.valid_state_for_status(status)), set())
 
     def test_candidate_evidence_is_structurally_valid_but_cannot_close_intent_authority(self):
         for source_kind in ("INFERRED_INTENT", "DESIGN_ARTIFACT"):
