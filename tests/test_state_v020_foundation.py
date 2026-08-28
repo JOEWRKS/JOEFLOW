@@ -76,6 +76,14 @@ class StateV020FoundationTest(unittest.TestCase):
                 state["project"][legacy_field] = "CLOSED"
                 self.assertIn("schema_error", {error["code"] for error in validate_state_v2(state)})
 
+    def test_definition_status_rejects_non_string_json_values(self):
+        for value in ([], {}):
+            with self.subTest(value=value):
+                state = foundation_state()
+                state["project"]["definition_status"] = value
+
+                self.assertIn("invalid_status", {error["code"] for error in validate_state_v2(state)})
+
     def test_v2_is_dispatched_by_the_cli(self):
         code, payload = self.invoke("state", foundation_state())
 

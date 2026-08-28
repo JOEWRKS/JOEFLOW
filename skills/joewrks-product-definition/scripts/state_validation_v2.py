@@ -35,7 +35,10 @@ def validate_state_v2(state: dict[str, Any]) -> list[dict[str, str]]:
     else:
         if not isinstance(project["slug"], str):
             errors.append(_error("schema_error", "project.slug must be a string", "project.slug"))
-        if project["definition_status"] not in DEFINITION_STATUSES:
+        if (
+            not isinstance(project["definition_status"], str)
+            or project["definition_status"] not in DEFINITION_STATUSES
+        ):
             errors.append(_error("invalid_status", "invalid definition_status", "project.definition_status"))
         if (
             not isinstance(project["definition_revision"], int)
