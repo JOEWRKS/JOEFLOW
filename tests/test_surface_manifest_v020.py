@@ -90,6 +90,13 @@ class SurfaceManifestV020Test(unittest.TestCase):
         self.assertEqual(manifest["properties"]["records"]["items"], {"$ref": "#/$defs/surface_record"})
         self.assertFalse(record["additionalProperties"])
 
+    def test_surface_manifest_requires_only_a_records_array_at_runtime(self):
+        for manifest in ({}, {"records": {}}, {"records": [], "unexpected": True}):
+            with self.subTest(manifest=manifest):
+                state = foundation_state()
+                state["surface_manifest"] = manifest
+                self.assertIn("invalid_surface_manifest", self.error_codes(state))
+
     def test_surface_ids_use_surf_prefix_and_are_global_unique(self):
         self.assertIn("invalid_surface_id", self.error_codes(self.state_with(surface_record("REQ-001"))))
 

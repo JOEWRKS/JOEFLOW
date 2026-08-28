@@ -345,9 +345,17 @@ def _validate_surface_manifest(
     evidence_index: dict[str, dict[str, Any]],
 ) -> list[dict[str, str]]:
     surface_manifest = state.get("surface_manifest")
-    records = surface_manifest.get("records") if isinstance(surface_manifest, dict) else None
-    if not isinstance(records, list):
-        return []
+    if (
+        not isinstance(surface_manifest, dict)
+        or set(surface_manifest) != {"records"}
+        or not isinstance(surface_manifest.get("records"), list)
+    ):
+        return [_error(
+            "invalid_surface_manifest",
+            "surface_manifest must contain only a records array",
+            "surface_manifest",
+        )]
+    records = surface_manifest["records"]
 
     errors: list[dict[str, str]] = []
     surfaces = _collect_surfaces(state)
