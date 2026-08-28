@@ -1,131 +1,144 @@
 # JOEWRKS Product Definition System
 
-> **Define the product before AI implements it — then verify the implementation still matches the definition.**
+> **AI가 중요한 걸 빠뜨리거나 제멋대로 결정하지 않게 해주는 제품 기획·검증 도구입니다.**
+>
+> **A product planning and verification tool that keeps AI from guessing important decisions.**
 
-**JOEWRKS Product Definition System** is a runtime-independent product-definition and downstream-verification system for AI-assisted product development.
+만들고 싶은 것을 AI에게 바로 구현시키기 전에, 먼저 **빠진 것과 애매한 것을 찾아 확실하게 정리**합니다.
 
-It helps an agent inspect evidence, close product and UX ambiguity before implementation, preserve approved decisions as canonical authority, compile implementation obligations, and detect downstream drift after code or design work begins.
+자료를 보고 확인할 수 있는 것은 AI가 먼저 조사하고, **사람의 판단이 꼭 필요한 중요한 결정만 질문**합니다. 한번 정한 내용은 프로젝트의 기준으로 기록하고, 이후 Codex 같은 구현 AI가 그 기준대로 만들게 합니다. 마지막에는 실제 결과물이 처음 정한 내용과 달라지지 않았는지도 확인합니다.
 
-The existing runtime skill/package identifier remains **`joewrks-product-definition`**.
+핵심 원칙은 간단합니다.
 
-See [`PROGRAM_ARCHITECTURE.md`](PROGRAM_ARCHITECTURE.md) for the detailed four-layer architecture, authority flow, repository mapping, version progression, and the current v0.4.3 boundary.
+> **AI가 알아서 만들게 하되, 중요한 건 멋대로 정하지 못하게 한다.**
 
----
-
-## What this system is for
-
-Use this system when an AI agent is expected to build or modify a product, website, app, workflow, or redesign and the request still contains material ambiguity.
-
-Instead of allowing the implementation agent to silently decide missing product behavior, the system makes those decisions explicit first and records them in a canonical Product Definition state.
-
-Typical use cases include:
-
-- new websites and web apps;
-- redesigns and information-architecture changes;
-- existing products whose current code contains undocumented product decisions;
-- multi-screen UX flows;
-- products with permissions, failure states, validation, recovery, or state transitions;
-- Figma / Figma Make handoff preparation;
-- implementation drift checks after Codex or another implementation agent changes the product.
-
-The system is not merely a PRD generator. It is an **authority + handoff + verification workflow**.
+런타임 skill/package ID는 **`joewrks-product-definition`**입니다.
 
 ---
 
-## Responsibility boundary
+## 이 도구가 하는 일
 
-### What JOEWRKS Product Definition System owns
+전체 흐름은 네 단계로 이해하면 됩니다.
 
-The system can own or govern:
+### 1. 빠진 걸 찾습니다
 
-- product goal and success criteria;
-- target users and usage context;
-- scope / non-scope;
-- information architecture and route structure;
-- requirements and business rules;
-- content and data requirements;
-- user flows;
-- screen definitions;
-- UI / UX states;
-- loading, empty, validation, error, permission, and recovery behavior;
-- responsive behavior requirements;
-- accessibility requirements;
-- acceptance criteria;
-- stable requirement / flow / screen / state identifiers;
-- dependency and stale-state propagation after product decisions change;
-- Product Definition Closure;
-- implementation handoff obligations;
-- deterministic downstream-conformance checks;
-- implementation / Figma drift evidence;
-- semantic-review inputs and reliability evaluation infrastructure.
+요청에 적혀 있지 않은 중요한 조건, 예외, 상태, 권한, 실패 상황, 복구 방법 등을 찾습니다.
 
-### What it does not replace
+예를 들어 사용자가 단순히 “회원가입 기능이 필요해”라고 말해도 내부적으로는 다음 같은 회색지대를 확인할 수 있습니다.
 
-The system does **not** replace:
+- 이메일 인증이 필요한가?
+- 인증 전 로그인은 가능한가?
+- 같은 이메일로 다시 가입할 수 있는가?
+- 인증 메일이 실패하면 어떻게 복구하는가?
+- 계정 삭제 후 데이터는 어떻게 처리하는가?
 
-- the implementation agent that writes production code;
-- a designer's final art-direction judgment;
-- visual taste decisions such as exact composition quality, image crop taste, or whether one font size simply looks better than another;
-- deployment infrastructure and production operations;
-- security review, legal review, or domain-specific professional approval.
+중요한 점은 **이 질문을 전부 사용자에게 한꺼번에 던지지 않는다는 것**입니다.
 
-In an AI-assisted workflow, the intended split is:
+### 2. 애매한 걸 확실하게 합니다
+
+AI가 먼저 코드, 문서, 테스트, API, 디자인, 기존 동작 같은 자료를 조사합니다.
+
+- 자료에서 답을 확인할 수 있으면 사용자에게 묻지 않습니다.
+- 사소하고 쉽게 되돌릴 수 있는 구현 세부사항은 허용된 범위 안에서 AI가 처리합니다.
+- 제품 결과가 달라지는 중요한 결정만 사용자에게 가져옵니다.
+- 한 번에 가장 중요한 질문 하나씩만 묻습니다.
+
+즉 **내부적으로는 꼼꼼하게 파고들고, 사용자에게는 필요한 것만 보여주는 방식**입니다.
+
+### 3. 정한 대로 만들게 합니다
+
+결정된 내용은 채팅 기억이 아니라 다음 파일에 프로젝트 기준으로 저장합니다.
+
+```text
+product-definition/<project-slug>/state.json
+```
+
+이 파일이 Product Definition의 기준입니다.
+
+Codex 같은 구현 AI는 이 기준을 따라 구현합니다. 구현 중 새로운 중요한 애매함을 발견하면 임의로 정하지 않고 Product Definition으로 다시 돌아옵니다.
+
+### 4. 제대로 만들었는지 확인합니다
+
+구현이 끝난 뒤에는 처음 정한 요구사항과 실제 결과를 비교합니다.
+
+- 요구사항이 빠졌는가?
+- 화면 상태가 빠졌는가?
+- 권한이나 실패 처리가 달라졌는가?
+- 구현 과정에서 제품 의미가 바뀌었는가?
+- 승인한 디자인이나 동작과 실제 결과가 다른가?
+
+필요한 부분은 downstream conformance와 drift audit으로 더 강하게 검증할 수 있습니다.
+
+---
+
+## 이 도구가 대신하지 않는 것
+
+이 시스템은 모든 일을 혼자 하는 올인원 제작 도구가 아닙니다.
+
+직접 대신하지 않는 영역:
+
+- 실제 production 코드를 작성하는 구현 AI의 역할
+- 디자이너의 최종 미감·아트디렉션 판단
+- 배포 인프라 운영
+- 법률·보안·회계 등 전문적인 최종 승인
+
+역할을 단순하게 나누면:
 
 ```text
 JOEWRKS Product Definition System
         ↓
-defines product + UX authority
+무엇을 만들어야 하는지 확실하게 정함
         ↓
-Codex / implementation agent
+Codex / 구현 AI
         ↓
-implements the approved definition
+정해진 내용을 실제로 만듦
         ↓
-JOEWRKS downstream verification
+JOEWRKS 검증
         ↓
-checks for drift and conformance
+처음 정한 내용과 달라지지 않았는지 확인
 ```
 
-If implementation exposes a material ambiguity, the decision should return to Product Definition instead of being silently invented inside the code task.
+---
+
+## 언제 쓰면 좋은가
+
+다음과 같은 작업에 특히 적합합니다.
+
+- 새 웹사이트나 웹앱 기획
+- 기존 사이트 리뉴얼
+- Codex가 이미 어느 정도 만든 프로젝트 정리
+- 여러 화면과 상태가 연결되는 UX
+- 로그인, 권한, 저장, 삭제, 제출 같은 상태 변화가 있는 기능
+- 결제, 예약, 외부 API 같은 실수 비용이 큰 흐름
+- Figma / Figma Make로 넘기기 전 제품 정의
+- 구현 이후 요구사항과 실제 결과의 차이 확인
 
 ---
 
-## System layers
+## 설치
 
-1. **Product Definition Core** — evidence-first interrogation, unknown/decision ledgers, canonical `state.json`, Product/UX compilation, stale/ripple propagation, deterministic Closure Gate.
-2. **Downstream Conformance** — executable `joewrks.action-conformance/1.0`, provenance/derivation binding, implementation/Figma handoff obligations, runtime sequence verification, drift evidence.
-3. **Semantic Review** — `joewrks.semantic-review/1.0`, responsibility profile, semantic obligations, reviewer packages, deterministic goldens, reliability gate.
-4. **Evaluation & Calibration Harness** — behavioral/dogfood evaluation, official calibration controller, calibration control plane, frozen raw evidence, reliability metrics, isolated-reviewer boundary.
+현재 전용 installer, package manager 명령, 공개 plugin package는 없습니다.
 
-Detailed architecture: [`PROGRAM_ARCHITECTURE.md`](PROGRAM_ARCHITECTURE.md)
+저장소 안의 skill 디렉터리를 **통째로** 설치해서 사용합니다.
 
----
-
-## Installation
-
-There is currently **no dedicated installer, package manager command, or published plugin package** for this repository. Do not assume an installer exists.
-
-The supported repository form is a standard Agent Skill directory with its supporting references, templates, schemas, scripts, and downstream modules.
-
-### 1. Clone or download the repository
+### 1. 저장소 받기
 
 ```bash
 git clone https://github.com/JOEWRKS/joewrks-product-definition.git
 cd joewrks-product-definition
 ```
 
-If you use a specific branch or frozen commit, check it out explicitly before installing the skill.
+특정 branch나 commit을 사용할 경우 먼저 checkout 합니다.
 
-### 2. Install the entire skill directory
+### 2. Skill 디렉터리 전체 설치
 
-Install or copy this directory as one unit into the Skills location supported by your Codex / agent environment:
+아래 디렉터리를 사용하는 Codex / Agent Skills 환경의 Skills 위치에 그대로 복사하거나 설치합니다.
 
 ```text
 skills/joewrks-product-definition/
 ```
 
-Do **not** copy only `SKILL.md`.
-
-The skill depends on relative supporting files under:
+`SKILL.md`만 따로 복사하면 안 됩니다.
 
 ```text
 skills/joewrks-product-definition/
@@ -137,49 +150,115 @@ skills/joewrks-product-definition/
 └─ downstream/
 ```
 
-The exact Skills installation path depends on the host environment. Use that environment's supported Skills installation/import mechanism and preserve the directory structure above.
+정확한 설치 경로는 사용하는 Codex/Agent 환경의 Skills 설치 방식에 맞춥니다.
 
-The runtime skill ID is:
-
-```text
-joewrks-product-definition
-```
-
-### 3. Confirm the skill entrypoint
-
-The entrypoint is:
+Skill entrypoint:
 
 ```text
 skills/joewrks-product-definition/SKILL.md
 ```
 
-The agent should be able to load the skill by its name or automatically select it when the task matches its description.
+Skill ID:
 
-### 4. Optional repository validation
-
-From the repository root:
-
-```bash
-python -m unittest discover -s tests -v
+```text
+joewrks-product-definition
 ```
-
-The Product Definition validators themselves use only the Python standard library.
 
 ---
 
-## Canonical project authority
+## 빠른 시작 — 새 프로젝트
 
-Every project managed by the system should have one canonical state file:
+구현 전에 다음처럼 요청합니다.
+
+```text
+Use joewrks-product-definition for this project.
+
+이 프로젝트를 구현하기 전에 Product Definition부터 진행해.
+먼저 현재 사용할 수 있는 자료를 조사해.
+빠지거나 애매한 중요한 부분은 unknown으로 등록하고,
+자료로 해결할 수 있는 것은 먼저 직접 확인해.
+사람의 결정이 필요한 중요한 문제만 한 번에 하나씩 물어봐.
+
+product-definition/<project-slug>/state.json을 기준으로 만들고,
+Product Definition Closure와 내 승인이 끝나기 전에는 구현을 시작하지 마.
+```
+
+흐름:
+
+```text
+아이디어
+→ 자료 조사
+→ 빠진 것 찾기
+→ 중요한 결정 정리
+→ 요구사항 / 흐름 / 화면 / 상태 확정
+→ Closure
+→ 사용자 승인
+→ 구현 handoff
+→ Codex 구현
+→ 결과 검증
+```
+
+---
+
+## 빠른 시작 — 이미 만들어진 사이트나 앱
+
+기존 코드가 있다고 해서 현재 동작을 곧바로 “원래 의도”라고 간주하면 안 됩니다.
+
+먼저 **reverse Product Definition**을 진행합니다.
+
+```text
+Use joewrks-product-definition for this existing project.
+
+아직 코드는 수정하지 마.
+현재 repository, 문서, 테스트, 화면, 동작을 evidence로 조사해.
+
+현재 구현에서 발견한 내용을 다음처럼 구분해:
+1. 원래 의도였다고 확인되는 것
+2. 구현에는 있지만 의도인지 확인되지 않은 것
+3. 문서/의도와 구현이 충돌하는 것
+4. 이유를 알 수 없는 것
+
+현재 구현이 존재한다는 이유만으로 Product Definition의 정답으로 만들지 마.
+애매한 중요한 부분을 먼저 정리한 뒤 구현 작업으로 넘어가.
+```
+
+이 방식은 AI가 이전 구현 과정에서 임의로 추가한 결정을 찾아낼 때 특히 유용합니다.
+
+---
+
+## 중요한 회색지대를 다루는 방식
+
+이 시스템의 핵심은 **질문을 많이 하는 것**이 아닙니다.
+
+목표는:
+
+> **중요한 회색지대를 최대한 찾아내되, 사용자가 직접 결정해야 하는 것만 물어보는 것.**
+
+현재 Product Definition Core는 다음 원칙을 사용합니다.
+
+- evidence를 먼저 조사합니다.
+- independently answerable한 중요한 결정을 각각 별도 unknown으로 관리합니다.
+- 여러 정책을 하나의 애매한 질문으로 뭉개지 않습니다.
+- security / money / privacy / irreversible decision처럼 위험도가 큰 것을 우선합니다.
+- 영향 범위가 큰 질문을 먼저 해결합니다.
+- 답을 받으면 관련 항목을 다시 확인하고 새로운 unknown이 생겼는지 재탐색합니다.
+- 하나의 중요한 질문만 사용자에게 보여줍니다.
+
+---
+
+## Canonical Product Definition
+
+프로젝트의 Product Definition 기준은 항상:
 
 ```text
 product-definition/<project-slug>/state.json
 ```
 
-That file is the source of truth for Product Definition.
+입니다.
 
-Generated Markdown PRDs, plans, wireflows, handoffs, summaries, or implementation notes are projections of that state. They do not replace `state.json` as authority.
+Markdown PRD, wireflow, handoff, summary는 사람이 보기 쉬운 출력물일 뿐 `state.json`을 대체하지 않습니다.
 
-Example:
+예:
 
 ```text
 my-site/
@@ -193,209 +272,82 @@ my-site/
 
 ---
 
-## Quick start — new product or website
+## 더 강한 동작 검증이 필요한 경우
 
-Use the skill before implementation starts.
+Product Definition Closure 이후 중요한 상태 변화나 business behavior는 Downstream Conformance로 검증할 수 있습니다.
 
-Example instruction to Codex:
-
-```text
-Use joewrks-product-definition for this project.
-
-Define this website before implementation.
-Inspect all available evidence first.
-Create product-definition/<project-slug>/state.json as canonical authority.
-Register material unknowns instead of inventing decisions.
-Resolve the highest-impact unknowns with me one at a time.
-Do not begin implementation until Product Definition Closure passes and I approve the current definition revision.
-```
-
-Expected workflow:
-
-```text
-Idea / request
-→ evidence discovery
-→ bootstrap state.json
-→ unknown discovery
-→ explicit decisions
-→ requirements / flows / screens / states
-→ dependency propagation
-→ Closure Gate
-→ explicit approval
-→ implementation handoff
-```
-
----
-
-## Quick start — existing site or app
-
-For an already-implemented product, use **reverse Product Definition** first.
-
-Do not immediately rewrite the site.
-
-Example instruction:
-
-```text
-Use joewrks-product-definition for this existing site.
-
-Do not modify implementation yet.
-Inspect the current repository as evidence.
-Reverse-bootstrap Product Definition from the existing routes, components, behavior, content, docs, tests, schemas, and current UX.
-
-Separate:
-1. explicit product decisions,
-2. implementation assumptions,
-3. contradictions,
-4. unresolved material decisions.
-
-Create product-definition/<project-slug>/state.json.
-Register unresolved material decisions as unknowns.
-Do not treat a behavior as intentional product authority merely because it already exists in code.
-```
-
-This is useful when Codex or another agent has already created a site and you need to determine which parts were intentional versus silently invented during implementation.
-
----
-
-## Typical end-to-end workflow with Codex
-
-```text
-1. Inspect evidence
-2. Bootstrap canonical Product Definition
-3. Register unknowns
-4. Resolve product decisions
-5. Compile requirements / flows / screens / states
-6. Run Closure Gate
-7. Human approves the current definition revision
-8. Generate implementation handoff
-9. Codex implements
-10. Material ambiguity discovered? → return to Product Definition
-11. Implementation completes
-12. Compare Definition / Design / Code
-13. Record and fix drift
-14. Validate acceptance criteria
-15. Final completion decision
-```
-
-A typical authority flow is:
-
-```text
-Evidence
-   ↓
-Product Definition Core
-   ↓
-canonical state.json
-   ↓
-Closure Gate
-   ↓
-implementation / Figma handoff
-   ↓
-Codex implementation
-   ↓
-downstream conformance + drift audit
-   ↓
-acceptance
-```
-
----
-
-## Product Definition Core
-
-The Product Definition Core converts incomplete product requests into explicit, reviewable authority.
-
-Its key rules are:
-
-- inspect available evidence before asking the user;
-- never silently invent a material product decision;
-- create one independently answerable unknown per material unresolved decision;
-- keep stable IDs permanently;
-- propagate every material change to affected downstream objects;
-- mark affected projections stale before recompilation;
-- require deterministic validation plus explicit approval for Closure.
-
-The skill entrypoint is [`skills/joewrks-product-definition/SKILL.md`](skills/joewrks-product-definition/SKILL.md).
-
----
-
-## Downstream Conformance
-
-After Product Definition Closure, approved canonical clauses can be compiled into executable implementation obligations.
-
-The production downstream contract is:
+현재 production contract:
 
 ```text
 joewrks.action-conformance/1.0
 ```
 
-This layer is useful for product behavior where correctness matters beyond static page structure, for example:
+특히 다음 같은 영역에 적합합니다.
 
-- account and permission flows;
-- forms and validation;
-- state-changing actions;
-- save / delete / submit behavior;
-- checkout or booking flows;
-- external API effects;
-- retries and failure recovery;
-- authoritative business-state transitions.
+- 로그인 / 계정 / 권한
+- 폼 제출과 validation
+- 저장 / 삭제 / 상태 변경
+- 결제 / 예약
+- retry / failure recovery
+- 외부 API side effect
+- business state transition
 
-For ordinary presentational sections such as a hero, image gallery, editorial section, or footer, full action-conformance may be unnecessary. Use it where semantic state and behavior justify the additional verification cost.
+단순한 hero, 이미지 갤러리, footer 같은 표현 중심 영역까지 무조건 적용할 필요는 없습니다.
 
-See [`skills/joewrks-product-definition/downstream/README.md`](skills/joewrks-product-definition/downstream/README.md).
+자세한 내용:
+
+[`skills/joewrks-product-definition/downstream/README.md`](skills/joewrks-product-definition/downstream/README.md)
 
 ---
 
-## Design and Figma boundary
+## 디자인과 Figma
 
-The system can define and freeze design requirements such as:
+이 시스템은 다음 같은 디자인 요구사항을 정의하고 고정할 수 있습니다.
 
-- screen purpose;
-- visual hierarchy;
-- information priority;
-- responsive composition requirements;
-- component states;
-- interaction behavior;
-- accessibility constraints;
-- stable screen IDs and implementation mappings.
+- 화면의 목적
+- 정보 우선순위
+- visual hierarchy
+- responsive 동작
+- component state
+- interaction behavior
+- accessibility requirement
+- stable screen ID와 구현 mapping
 
-It does not claim deterministic proof of pure visual taste.
+다만 “어느 구도가 더 예쁜가”, “어떤 크롭이 더 감각적인가” 같은 순수 미감 판단을 deterministic하게 증명하는 도구는 아닙니다.
 
-When a design is explicitly approved, that approved design can become downstream visual authority and implementation drift can then be checked against it.
-
-If Figma is unavailable, the skill can still produce Markdown / Mermaid handoff artifacts and mark visualization as not verified.
+승인된 디자인이 있다면 그 디자인을 구현 기준으로 사용하고 이후 drift를 확인할 수 있습니다.
 
 ---
 
 ## Validation
 
-Validate canonical Product Definition state:
+Canonical state 검증:
 
 ```bash
 python /absolute/path/to/joewrks-product-definition/scripts/validate_state.py path/to/state.json
 ```
 
-Validate Closure readiness:
+Closure 검증:
 
 ```bash
 python /absolute/path/to/joewrks-product-definition/scripts/validate_closure.py path/to/state.json
 ```
 
-Run repository tests:
+저장소 전체 테스트:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-Resolve script paths from the installed skill directory, not from the consumer project's current working directory.
+Script 경로는 consumer project가 아니라 **설치된 skill 디렉터리**를 기준으로 잡습니다.
 
 ---
 
-## Current v0.4.3 boundary
+## 현재 v0.4.3 상태
 
-Current integrated development line: **v0.4.3**.
+현재 통합 개발선은 **v0.4.3**입니다.
 
-Current frozen status:
-
-| Boundary | Status |
+| 항목 | 상태 |
 | --- | --- |
 | v0.4.3 specification | `VERIFIED` |
 | semantic-review implementation | `VERIFIED` |
@@ -408,49 +360,57 @@ Current frozen status:
 | current blocker | `MANIFEST_ONLY_ISOLATION_UNAVAILABLE` |
 | v0.4.4 | `BLOCKED_ON_VALID_V043_RELIABILITY_CALIBRATION` |
 
-The current protected `main` baseline remains:
+따라서 현재 deterministic Product Definition / Closure / handoff / downstream-conformance / drift-audit 계층은 각 검증된 계약 범위에서 사용할 수 있습니다.
+
+반면 real semantic-review reliability는 유효한 isolated calibration이 완료되기 전까지 production-calibrated evidence라고 주장하지 않습니다.
+
+현재 protected `main` baseline:
 
 ```text
 efd96410f6401cbf9624328e94b795c315164b7f
 ```
 
-The repaired v0.4.3 calibration input is:
+Repaired calibration input:
 
 ```text
 748254d6def81080a2fd2736115a3ab5e0bde5a3
 ```
 
-The environment-blocked calibration disposition is:
+Environment-blocked disposition:
 
 ```text
 6a0674c5d00a40790afef78cfa19494314b894e3
 ```
 
-A valid real v0.4.3 semantic-review reliability calibration remains intentionally unclaimed until each reviewer can be isolated by the execution environment so that it can access only its assigned package, run envelope, and invocation wrapper.
+---
 
-Therefore the deterministic Product Definition, Closure, handoff, downstream-conformance, and drift-audit layers may be used according to their validated contracts, while real semantic-review reliability must not be represented as calibrated production evidence yet.
+## 다음 Core 설계 — Semantic Closure V2
+
+현재 Product Definition Core의 남아 있는 구조적 회색지대를 보완하기 위한 차세대 설계가 진행 중입니다.
+
+목표는 단순합니다.
+
+- `COVERED`라고 적는 것만으로는 완료되지 않게 만들기
+- 어떤 제품 영역을 검토했는지 자체를 기록하기
+- 코드에 존재한다는 사실과 원래 제품 의도를 구분하기
+- AI가 결정해도 되는 것과 반드시 사람이 결정해야 하는 것을 명확히 나누기
+- 승인할 때 실제 무엇이 바뀌었는지 보여주기
+- downstream review로 넘기기 전에 upstream에서 닫을 수 있는 의미는 최대한 닫기
+
+정식 설계 명세:
+
+[`docs/superpowers/specs/2026-08-28-core-semantic-closure-v2-design.md`](docs/superpowers/specs/2026-08-28-core-semantic-closure-v2-design.md)
+
+현재 문서 상태는 `WRITTEN_SPEC_PENDING_FINAL_USER_REVIEW`이며, 구현 코드는 아직 이 설계를 기준으로 변경하지 않았습니다.
 
 ---
 
-## Repository structure
+## 상세 아키텍처
 
-```text
-skills/joewrks-product-definition/
-├─ SKILL.md
-├─ references/
-├─ schemas/
-├─ templates/
-├─ scripts/
-└─ downstream/
-   └─ semantic_review/
+기술적인 내부 구조, authority flow, repository mapping, version history가 필요하면 다음 문서를 봅니다.
 
-evals/
-├─ behavioral-v0.2/
-├─ downstream-conformance-v0.4*/
-└─ semantic-review-v0.4.3/
+[`PROGRAM_ARCHITECTURE.md`](PROGRAM_ARCHITECTURE.md)
 
-tests/
-└─ fixtures/semantic-review-v1/
-```
+내부적으로는 Product Definition Core, Downstream Conformance, Semantic Review, Evaluation & Calibration 계층으로 나뉘지만, 처음 사용하는 사람은 다음 네 단계만 기억하면 됩니다.
 
-For the full architecture and version history, read [`PROGRAM_ARCHITECTURE.md`](PROGRAM_ARCHITECTURE.md).
+> **빠진 걸 찾고 → 애매한 걸 정하고 → 정한 대로 만들게 하고 → 제대로 만들었는지 확인한다.**
