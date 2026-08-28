@@ -29,7 +29,7 @@ class SkillPackageTest(unittest.TestCase):
         self.assertEqual(missing, [])
 
     def test_validator_scripts_only_import_standard_library_or_sibling_module(self):
-        allowed = {"__future__", "copy", "hashlib", "json", "pathlib", "sys", "typing", "state_validation"}
+        allowed = {"__future__", "copy", "hashlib", "json", "pathlib", "sys", "typing", "state_contract_dispatch", "state_validation", "state_validation_v2"}
         imports = set()
         for script in (SKILL / "scripts").glob("*.py"):
             tree = ast.parse(script.read_text(encoding="utf-8"))

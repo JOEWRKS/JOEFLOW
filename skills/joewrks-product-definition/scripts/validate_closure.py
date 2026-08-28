@@ -4,7 +4,8 @@
 import json
 import sys
 
-from state_validation import closure_metrics, definition_digest, load_state, validate_state
+from state_contract_dispatch import evaluate_closure_for_version
+from state_validation import load_state
 
 
 def main(argv):
@@ -16,11 +17,9 @@ def main(argv):
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(json.dumps({"validator": "closure", "closed": False, "errors": [{"code": "read_error", "message": str(exc), "path": argv[1]}], "metrics": {}}, sort_keys=True))
         return 2
-    errors = validate_state(state)
-    metrics = closure_metrics(state)
-    closed = not errors and all(value == 0 for value in metrics.values())
-    print(json.dumps({"validator": "closure", "closed": closed, "definition_digest": definition_digest(state), "errors": errors, "metrics": metrics}, indent=2, sort_keys=True))
-    return 0 if closed else 1
+    result = evaluate_closure_for_version(state)
+    print(json.dumps({"validator": "closure", **result}, indent=2, sort_keys=True))
+    return 0 if result["closed"] else 1
 
 
 if __name__ == "__main__":

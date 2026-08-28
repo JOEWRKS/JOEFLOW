@@ -4,7 +4,8 @@
 import json
 import sys
 
-from state_validation import load_state, validate_state
+from state_contract_dispatch import validate_state_for_version
+from state_validation import load_state
 
 
 def main(argv):
@@ -16,7 +17,7 @@ def main(argv):
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(json.dumps({"validator": "state", "valid": False, "errors": [{"code": "read_error", "message": str(exc), "path": argv[1]}]}, sort_keys=True))
         return 2
-    errors = validate_state(state)
+    errors = validate_state_for_version(state)
     print(json.dumps({"validator": "state", "valid": not errors, "errors": errors}, indent=2, sort_keys=True))
     return 1 if errors else 0
 

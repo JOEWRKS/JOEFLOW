@@ -225,7 +225,7 @@ class ValidatorCLITest(unittest.TestCase):
         state["schema_version"] = "0.1"
         code, payload = self.run_validator(STATE_VALIDATOR, state)
         self.assertEqual(code, 1)
-        self.assertIn("schema_error", {item["code"] for item in payload["errors"]})
+        self.assertIn("unsupported_schema_version", {item["code"] for item in payload["errors"]})
 
     def test_closure_requires_coverage_row_for_every_requirement(self):
         state = closed_state()

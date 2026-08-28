@@ -147,8 +147,11 @@ class SemanticV012Test(unittest.TestCase):
         action=schema["$defs"]["screenCoverage"]["properties"]["actions"]
         self.assertEqual(schema["properties"]["schema_version"]["const"], "0.1.2.1")
         self.assertEqual(action["type"],"array"); self.assertEqual(set(action["items"]["required"]),{"key","cells"})
-        for path in (ROOT/"README.md",ROOT/"skills/joewrks-product-definition/SKILL.md",ROOT/"skills/joewrks-product-definition/references/state-contract.md"):
+        for path in (ROOT/"skills/joewrks-product-definition/SKILL.md",ROOT/"skills/joewrks-product-definition/references/state-contract.md"):
             self.assertIn("schemas/state.schema.json",path.read_text(encoding="utf-8"))
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("validate_state.py", readme)
+        self.assertIn("validate_closure.py", readme)
 
 
 if __name__ == "__main__": unittest.main()
