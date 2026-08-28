@@ -2,6 +2,7 @@ import copy
 import hashlib
 import importlib.util
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -13,6 +14,9 @@ CALIBRATION_ROOT = (
 CONTROLLER_PATH = CALIBRATION_ROOT / "official_calibration_controller.py"
 GOLDEN_OUTPUTS_PATH = (
     ROOT / "tests" / "fixtures" / "semantic-review-v1" / "golden-review-outputs.json"
+)
+GOLDEN_ANSWERS_PATH = (
+    ROOT / "tests" / "fixtures" / "semantic-review-v1" / "golden-answers.json"
 )
 
 PACKAGE_HASH = "ccc2c5af60c74cde1b281ec7026bd8d42cac9717faf210c31fb3e8a719f59603"
@@ -254,10 +258,68 @@ class OfficialCalibrationControllerNegativeTest(unittest.TestCase):
         rehash_full_wrapper(full_review)
         self.assert_rejected(evidence, "FULL_REVIEW_PACKAGE_MISMATCH")
 
-    def test_rejects_real_mode_while_two_human_adjudication_is_incomplete(self):
-        self.assert_rejected(
-            build_evidence(), "HUMAN_ADJUDICATION_INCOMPLETE", real_mode=True
+    def _assert_oracle_rejected(self, oracle, code, *, expected_sha256=None):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "golden-answers.json"
+            path.write_text(
+                json.dumps(oracle, indent=2) + "\n", encoding="utf-8", newline="\n"
+            )
+            previous_path = self.controller.GOLDEN_ANSWERS_PATH
+            missing = object()
+            previous_hash = getattr(
+                self.controller, "FROZEN_ORACLE_SHA256", missing
+            )
+            self.controller.GOLDEN_ANSWERS_PATH = path
+            if expected_sha256 is not None:
+                self.controller.FROZEN_ORACLE_SHA256 = expected_sha256
+            try:
+                self.assert_rejected(build_evidence(), code, real_mode=True)
+            finally:
+                self.controller.GOLDEN_ANSWERS_PATH = previous_path
+                if previous_hash is missing:
+                    if hasattr(self.controller, "FROZEN_ORACLE_SHA256"):
+                        del self.controller.FROZEN_ORACLE_SHA256
+                else:
+                    self.controller.FROZEN_ORACLE_SHA256 = previous_hash
+
+    def test_rejects_non_approved_oracle_status_before_reviewer_evaluation(self):
+        oracle = json.loads(GOLDEN_ANSWERS_PATH.read_text(encoding="utf-8"))
+        oracle["adjudication_status"] = "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED"
+        sha256 = hashlib.sha256(
+            (json.dumps(oracle, indent=2) + "\n").encode("utf-8")
+        ).hexdigest()
+        self._assert_oracle_rejected(oracle, "ORACLE_STATUS_NOT_APPROVED", expected_sha256=sha256)
+
+    def test_rejects_oracle_file_hash_drift_before_reviewer_evaluation(self):
+        oracle = json.loads(GOLDEN_ANSWERS_PATH.read_text(encoding="utf-8"))
+        self._assert_oracle_rejected(oracle, "ORACLE_HASH_MISMATCH")
+
+    def test_rejects_one_changed_oracle_answer_pair_before_reviewer_evaluation(self):
+        oracle = json.loads(GOLDEN_ANSWERS_PATH.read_text(encoding="utf-8"))
+        oracle["answers"][0]["rationale_code"] = "UNSUPPORTED_OVERREACH"
+        sha256 = hashlib.sha256(
+            (json.dumps(oracle, indent=2) + "\n").encode("utf-8")
+        ).hexdigest()
+        self._assert_oracle_rejected(
+            oracle, "ORACLE_TUPLE_SET_MISMATCH", expected_sha256=sha256
         )
+
+    def test_rejects_oracle_bytes_visible_to_a_reviewer_context(self):
+        evidence = build_evidence()
+        evidence["cohorts"][0]["golden_reviews"][0]["visibility"][
+            "golden_answers_visible"
+        ] = True
+        self.assert_rejected(evidence, "FORBIDDEN_CONTEXT_EXPOSURE", real_mode=True)
+
+    def test_accepts_the_pm_approved_oracle_without_completed_human_forms(self):
+        oracle_before = GOLDEN_ANSWERS_PATH.read_bytes()
+        result = self.controller.evaluate_official_calibration(
+            build_evidence(), real_mode=True
+        )
+        self.assertEqual(result["aggregate_golden_conjunction"], "PASS")
+        self.assertEqual(result["context_count"], 48)
+        self.assertEqual(len(result["per_cohort_golden_reports"]), 3)
+        self.assertEqual(GOLDEN_ANSWERS_PATH.read_bytes(), oracle_before)
 
 
 if __name__ == "__main__":

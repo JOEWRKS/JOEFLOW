@@ -409,6 +409,12 @@ class SemanticReviewHumanPacketTest(unittest.TestCase):
         )
         self.assertEqual(manifest["HUMAN_ADJUDICATION_COMPLETE"], "NO")
         self.assertEqual(manifest["required_independent_human_responses"], 2)
+        self.assertEqual(manifest["completed_independent_human_responses"], 0)
+        self.assertEqual(
+            manifest["external_validation_status"],
+            "OPTIONAL_EXTERNAL_VALIDATION_NOT_REQUIRED_FOR_V043_CALIBRATION",
+        )
+        self.assertEqual(manifest["HUMAN_ADJUDICATION_REQUIRED"], "NO")
 
     def test_two_forms_share_payload_and_keep_all_responses_empty(self):
         forms = [read_json(FORM_A_PATH), read_json(FORM_B_PATH)]
@@ -422,6 +428,11 @@ class SemanticReviewHumanPacketTest(unittest.TestCase):
             copy.pop("non_normative_form_identity")
             comparable.append(copy)
             self.assertEqual(form["HUMAN_ADJUDICATION_COMPLETE"], "NO")
+            self.assertEqual(
+                form["external_validation_status"],
+                "OPTIONAL_EXTERNAL_VALIDATION_NOT_REQUIRED_FOR_V043_CALIBRATION",
+            )
+            self.assertEqual(form["HUMAN_ADJUDICATION_REQUIRED"], "NO")
             self.assertEqual(
                 [item["case_id"] for item in form["responses"]],
                 [f"G-{index:03d}" for index in range(1, 16)],
@@ -445,6 +456,22 @@ class SemanticReviewHumanPacketTest(unittest.TestCase):
         protocol = read_json(PROTOCOL_PATH)
         self.assertEqual(protocol["cohort_ids"], ["C1", "C2", "C3"])
         self.assertEqual(protocol["REAL_CALIBRATION_RUNS"], 0)
+        self.assertEqual(protocol["HUMAN_ADJUDICATION_REQUIRED"], "NO")
+        self.assertEqual(
+            protocol["external_validation_status"],
+            "OPTIONAL_EXTERNAL_VALIDATION_NOT_REQUIRED_FOR_V043_CALIBRATION",
+        )
+        self.assertEqual(
+            protocol["frozen_normative_oracle"],
+            {
+                "status": "PM_APPROVED_NORMATIVE_ORACLE",
+                "sha256": "4126bb8d316291d8362f04fe1160f53ad86adc73ec358effad7a84d104d7a173",
+                "bytes": 1648,
+                "tuple_set_sha256": "7ddc257c085f8e9de4722b01f09646c25891418fbc92d60e7a15425657acc4aa",
+                "frozen_before_reviewer_run": True,
+                "post_result_mutation": "NEW_RUBRIC_CALIBRATION_REVISION_AND_COMPLETE_RERUN_REQUIRED",
+            },
+        )
         self.assertEqual(
             protocol["future_blocker"],
             "BLOCKED — MANIFEST_ONLY_ISOLATION_UNAVAILABLE",

@@ -9,6 +9,16 @@
   "planned_golden_context_count": 45,
   "planned_total_unique_context_count": 48,
   "context_reuse_allowed": false,
+  "frozen_normative_oracle": {
+    "status": "PM_APPROVED_NORMATIVE_ORACLE",
+    "sha256": "4126bb8d316291d8362f04fe1160f53ad86adc73ec358effad7a84d104d7a173",
+    "bytes": 1648,
+    "tuple_set_sha256": "7ddc257c085f8e9de4722b01f09646c25891418fbc92d60e7a15425657acc4aa",
+    "frozen_before_reviewer_run": true,
+    "post_result_mutation": "NEW_RUBRIC_CALIBRATION_REVISION_AND_COMPLETE_RERUN_REQUIRED"
+  },
+  "external_validation_status": "OPTIONAL_EXTERNAL_VALIDATION_NOT_REQUIRED_FOR_V043_CALIBRATION",
+  "HUMAN_ADJUDICATION_REQUIRED": "NO",
   "cohorts": [
     {
       "cohort_id": "C1",

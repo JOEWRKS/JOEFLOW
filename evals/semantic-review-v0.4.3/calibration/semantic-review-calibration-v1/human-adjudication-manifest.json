@@ -17,5 +17,7 @@
   ],
   "required_independent_human_responses": 2,
   "completed_independent_human_responses": 0,
-  "HUMAN_ADJUDICATION_COMPLETE": "NO"
+  "HUMAN_ADJUDICATION_COMPLETE": "NO",
+  "external_validation_status": "OPTIONAL_EXTERNAL_VALIDATION_NOT_REQUIRED_FOR_V043_CALIBRATION",
+  "HUMAN_ADJUDICATION_REQUIRED": "NO"
 }

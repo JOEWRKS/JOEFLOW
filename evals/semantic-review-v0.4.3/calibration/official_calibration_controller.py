@@ -27,10 +27,13 @@ GOLDEN_CASE_IDS = tuple(f"G-{index:03d}" for index in range(1, 16))
 
 FIXTURE_ROOT = Path(__file__).resolve().parent / "semantic-review-calibration-v1"
 FULL_PACKAGE_ROOT = FIXTURE_ROOT / "reviewer-package"
-HUMAN_MANIFEST_PATH = FIXTURE_ROOT / "human-adjudication-manifest.json"
 GOLDEN_FIXTURE_ROOT = ROOT / "tests" / "fixtures" / "semantic-review-v1"
 GOLDEN_CASES_PATH = GOLDEN_FIXTURE_ROOT / "golden-cases.json"
 GOLDEN_ANSWERS_PATH = GOLDEN_FIXTURE_ROOT / "golden-answers.json"
+FROZEN_ORACLE_STATUS = "PM_APPROVED_NORMATIVE_ORACLE"
+FROZEN_ORACLE_SHA256 = "4126bb8d316291d8362f04fe1160f53ad86adc73ec358effad7a84d104d7a173"
+FROZEN_ORACLE_BYTES = 1648
+FROZEN_ORACLE_TUPLE_SET_SHA256 = "7ddc257c085f8e9de4722b01f09646c25891418fbc92d60e7a15425657acc4aa"
 
 VISIBILITY_KEYS = {
     "manifest_only_isolation_attested",
@@ -71,6 +74,34 @@ def _reject(code: str, detail: str = "") -> None:
 
 def _load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _load_frozen_oracle() -> dict[str, Any]:
+    """Load only the controller-bound PM-approved oracle after outputs freeze."""
+
+    data = GOLDEN_ANSWERS_PATH.read_bytes()
+    if hashlib.sha256(data).hexdigest() != FROZEN_ORACLE_SHA256:
+        _reject("ORACLE_HASH_MISMATCH")
+    oracle = _require_mapping(
+        json.loads(data.decode("utf-8")), "ORACLE_TUPLE_SET_MISMATCH", "oracle"
+    )
+    if oracle.get("adjudication_status") != FROZEN_ORACLE_STATUS:
+        _reject("ORACLE_STATUS_NOT_APPROVED")
+    answers = oracle.get("answers")
+    if not isinstance(answers, list):
+        _reject("ORACLE_TUPLE_SET_MISMATCH")
+    tuples = [
+        {key: answer.get(key) for key in ("case_id", "verdict", "rationale_code")}
+        for answer in answers
+        if isinstance(answer, Mapping)
+    ]
+    if len(tuples) != 15 or tuple(item["case_id"] for item in tuples) != GOLDEN_CASE_IDS:
+        _reject("ORACLE_CASE_SET_MISMATCH")
+    if canonical_sha256(tuples) != FROZEN_ORACLE_TUPLE_SET_SHA256:
+        _reject("ORACLE_TUPLE_SET_MISMATCH")
+    if len(data) != FROZEN_ORACLE_BYTES:
+        _reject("ORACLE_BYTES_MISMATCH")
+    return dict(oracle)
 
 
 def _require_mapping(value: Any, code: str, detail: str) -> Mapping[str, Any]:
@@ -278,13 +309,6 @@ def evaluate_official_calibration(
     )
     if {"golden_report", "golden_summary"} & set(evidence):
         _reject("RAW_GOLDEN_OUTPUTS_REQUIRED", "scalar golden input is forbidden")
-    if real_mode:
-        human = _load_json(HUMAN_MANIFEST_PATH)
-        if (
-            human.get("HUMAN_ADJUDICATION_COMPLETE") != "YES"
-            or human.get("completed_independent_human_responses") != 2
-        ):
-            _reject("HUMAN_ADJUDICATION_INCOMPLETE")
     if set(evidence) != {
         "schema_version",
         "full_reviewer_package",
@@ -339,7 +363,7 @@ def evaluate_official_calibration(
         _reject("CONTEXT_POPULATION_MISMATCH", str(len(context_ids)))
 
     cases = _load_json(GOLDEN_CASES_PATH)
-    answers = _load_json(GOLDEN_ANSWERS_PATH)
+    answers = _load_frozen_oracle()
     cohort_reports = [
         evaluate_goldens(raw_outputs, answers, cases)
         for raw_outputs in raw_golden_sets

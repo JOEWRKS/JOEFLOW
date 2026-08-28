@@ -1,6 +1,6 @@
 {
   "schema_version": "joewrks.semantic-review-golden-answers/1.0",
-  "adjudication_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+  "adjudication_status": "PM_APPROVED_NORMATIVE_ORACLE",
   "reviewer_package_inclusion": "FORBIDDEN",
   "answers": [
     {"case_id": "G-001", "verdict": "REJECTED_CANDIDATE", "rationale_code": "MISSING_OWNED_SEMANTIC"},

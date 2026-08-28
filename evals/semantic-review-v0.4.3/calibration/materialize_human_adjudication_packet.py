@@ -22,6 +22,7 @@ FORM_PATHS = (
     PACKET_ROOT / "human-adjudicator-b-response-form.json",
 )
 PROTOCOL_DOC_PATH = CALIBRATION_ROOT / "CALIBRATION_CONTROLLER_PROTOCOL.md"
+EXTERNAL_VALIDATION_STATUS = "OPTIONAL_EXTERNAL_VALIDATION_NOT_REQUIRED_FOR_V043_CALIBRATION"
 
 ALLOWED_VERDICTS = [
     "APPROVED",
@@ -307,6 +308,8 @@ def materialize() -> tuple[str, int]:
         "required_independent_human_responses": 2,
         "completed_independent_human_responses": 0,
         "HUMAN_ADJUDICATION_COMPLETE": "NO",
+        "external_validation_status": EXTERNAL_VALIDATION_STATUS,
+        "HUMAN_ADJUDICATION_REQUIRED": "NO",
     }
     write_json(MANIFEST_PATH, manifest)
 
@@ -324,6 +327,8 @@ def materialize() -> tuple[str, int]:
                 "non_normative_form_identity": identity,
                 "common_evidence_payload": payload_reference,
                 "HUMAN_ADJUDICATION_COMPLETE": "NO",
+                "external_validation_status": EXTERNAL_VALIDATION_STATUS,
+                "HUMAN_ADJUDICATION_REQUIRED": "NO",
                 "responses": responses,
             },
         )

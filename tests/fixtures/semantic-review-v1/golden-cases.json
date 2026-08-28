@@ -2,7 +2,7 @@
   {
     "case_id": "G-001",
     "category": "input invariants",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "identity",
     "scenario": "Canonical authority requires a non-empty reason input; the candidate omits the predicate from input_invariants.",
     "canonical_fixture": {
@@ -145,12 +145,12 @@
         }
       }
     },
-    "case_manifest_hash": "4ad0a4028b8818fd0e5ff8d23f7633d0e3aa2831e8c91f84f5fe01a983ce96f9"
+    "case_manifest_hash": "8e625e90fe73b4f4f7611b60829233280b122a4495ebc582bd4c219ee815481a"
   },
   {
     "case_id": "G-002",
     "category": "input invariants",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "identity",
     "scenario": "Required reason predicate is represented in input_invariants with exact current provenance.",
     "canonical_fixture": {
@@ -296,12 +296,12 @@
         }
       }
     },
-    "case_manifest_hash": "9c2b43783ea25f6ed73248241e6d5dff25286c484279ab95de16c9e01cf35329"
+    "case_manifest_hash": "d059369c036ab8cfeb22598fc26ba901c816fa62342da1caef079ffcc3b73d09"
   },
   {
     "case_id": "G-003",
     "category": "input invariants",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "identity",
     "scenario": "An authority relationship is absent from input_invariants but correctly owned by relationship_predicate and linked through the obligation index.",
     "canonical_fixture": {
@@ -446,12 +446,12 @@
         }
       }
     },
-    "case_manifest_hash": "12f6d29d570e1c3a2539346a681331a321fd8e309201ea10cbfb511b00205142"
+    "case_manifest_hash": "093c313c6b8ae423f8c87ebf4bc4f7cfaf7e70e38e018cb41281b77348ba13a2"
   },
   {
     "case_id": "G-004",
     "category": "visible error",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "identity",
     "scenario": "Canonical failure UX requires preserving submitted input; visible_error omits preservation.",
     "canonical_fixture": {
@@ -596,12 +596,12 @@
         }
       }
     },
-    "case_manifest_hash": "e4b9040418aee1578ee238ebbbe2754766a28efea6321a55f1164bf9eadcc777"
+    "case_manifest_hash": "237bdbc37648bb316ed52d1d4adbcfe5b0573649d1e74cf2beba5127f4b4922d"
   },
   {
     "case_id": "G-005",
     "category": "visible error",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "identity",
     "scenario": "The triggering input guard is not duplicated; visible_error references rejection and input obligations and owns presentation and recovery.",
     "canonical_fixture": {
@@ -751,12 +751,12 @@
         }
       }
     },
-    "case_manifest_hash": "faf0105de6916103bcfe324a9a583cdf3bfcc1a1d623e6815b11ebed93dc1938"
+    "case_manifest_hash": "2a84222a93a7393e02cc22d86db6c232f09e635005499ff7ce0efce89f042f3e"
   },
   {
     "case_id": "G-006",
     "category": "visible error",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "identity",
     "scenario": "Candidate adds a retry or recovery affordance that canonical authority does not allow.",
     "canonical_fixture": {
@@ -902,12 +902,12 @@
         }
       }
     },
-    "case_manifest_hash": "ef0037db1221cb316e6925a89c461ba2e5c370f7a2888b677f2bba4dfafb255d"
+    "case_manifest_hash": "7d4e7bf268ff84d1fd0c4e7348279e29ebc3ede8abb0c02f6f5f0545349769fc"
   },
   {
     "case_id": "G-007",
     "category": "test obligations",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "identity",
     "scenario": "One material semantic obligation has no stable test reference.",
     "canonical_fixture": {
@@ -1050,12 +1050,12 @@
         }
       }
     },
-    "case_manifest_hash": "d3721a22d53ded09f9659ce87e5a3688da71d3897be783677ce3cc1a0f86c9a8"
+    "case_manifest_hash": "d8259792665795b8e2e0e139dabf1647bbc15fb654daf367202cde1e046619a6"
   },
   {
     "case_id": "G-008",
     "category": "test obligations",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "identity",
     "scenario": "All material obligations are covered by stable obligation IDs without duplicated semantic prose.",
     "canonical_fixture": {
@@ -1201,12 +1201,12 @@
         }
       }
     },
-    "case_manifest_hash": "65d13ee0581831ff5b2491522906a89781dcc0f4ba6d9c5faeb24a1cf2d621e2"
+    "case_manifest_hash": "5144e5c838d4afe25acc2207570bc72dd2f624ec9e9a0aad119976369a2e667d"
   },
   {
     "case_id": "G-009",
     "category": "test obligations",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "identity",
     "scenario": "Copied semantic prose in a test obligation contradicts its owning field.",
     "canonical_fixture": {
@@ -1352,12 +1352,12 @@
         }
       }
     },
-    "case_manifest_hash": "7b7b0f7f3c6043858b5154e0c075364709377b84bf2384473d3b61d2a90e099e"
+    "case_manifest_hash": "3de84eb002d55ac116ed6e41e0f22dc5dd390ef7549c56b03bba1a8d748bfb5a"
   },
   {
     "case_id": "G-010",
     "category": "cross-cutting",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "identity",
     "scenario": "A field adds an extra constraint with valid-looking structure but no canonical support.",
     "canonical_fixture": {
@@ -1503,12 +1503,12 @@
         }
       }
     },
-    "case_manifest_hash": "816071b43b289d8e1237adcbdb5b3a431de581d95b038477b77de69e1ec84f47"
+    "case_manifest_hash": "1614edc027ec330bb77ced5166b380a7809217b9aab38a17fdc112439754f4dd"
   },
   {
     "case_id": "G-011",
     "category": "cross-cutting",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "identity",
     "scenario": "One canonical clause is correctly projected across distinct owning fields with declared sibling references and no uncontrolled duplication.",
     "canonical_fixture": {
@@ -1655,12 +1655,12 @@
         }
       }
     },
-    "case_manifest_hash": "fb9d16595f0562733a60ae529a3ff5e592f2c522fef24183b7b45238fb9e3d17"
+    "case_manifest_hash": "2be2933a707d2b44a2df8fa9115f08f60af88a6bb944ada30a2d611e191a0d3e"
   },
   {
     "case_id": "G-012",
     "category": "package/provenance",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "preflight",
     "scenario": "A lifecycle superseded_sentinels raw source record is both active and SUPERSEDED; no semantic identity is created for the array.",
     "canonical_fixture": {
@@ -1803,12 +1803,12 @@
         }
       }
     },
-    "case_manifest_hash": "bff4be8e3a229b4fe0faa17eff04efe709426b1122d2f4c07f99cce9e18bb013"
+    "case_manifest_hash": "3c505ca3b6ae806774501725c6c67193564eb6dedc470c3c08c9b34d11373664"
   },
   {
     "case_id": "G-013",
     "category": "package/provenance",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "preflight",
     "scenario": "A review identity has missing provenance and an empty provenance set.",
     "canonical_fixture": {
@@ -1952,12 +1952,12 @@
         }
       }
     },
-    "case_manifest_hash": "81cbc068a41f6710ffa3c4078e7f02f5a838a25834e86270938f96687c970997"
+    "case_manifest_hash": "1c1b2867db8e87f5602fd2968fca33e9cf4bbbecb1f50fa2fd6b089d75c8f32f"
   },
   {
     "case_id": "G-014",
     "category": "interpretation",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "identity",
     "scenario": "Exact provenance is valid, but the emitted interpretation is not supported by the canonical value.",
     "canonical_fixture": {
@@ -2101,12 +2101,12 @@
         }
       }
     },
-    "case_manifest_hash": "d8aa7fea5c06b2d3abb8b10aa0fa77066c0fd87dad0a709412e934134698651b"
+    "case_manifest_hash": "503e26a4ba4b7621cc3d5f339bf6de2d0c3df3cbd0b97703f1021ca2e91e3322"
   },
   {
     "case_id": "G-015",
     "category": "rubric meta-case",
-    "fixture_status": "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED",
+    "fixture_status": "PM_APPROVED_NORMATIVE_ORACLE",
     "review_phase": "preflight",
     "scenario": "A deliberately incomplete responsibility profile cannot determine which field owns an obligation.",
     "canonical_fixture": {
@@ -2248,6 +2248,6 @@
         }
       }
     },
-    "case_manifest_hash": "0a269e793b59ab710354748ddafa04258aa1e30e4a62c33cae6a783bf51f3d1a"
+    "case_manifest_hash": "bd6d86791f6079867270a1f9d829cf6ae5a8ce8fd561762428367735c75af172"
   }
 ]

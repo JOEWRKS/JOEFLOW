@@ -7,6 +7,8 @@
     "bytes": 62532
   },
   "HUMAN_ADJUDICATION_COMPLETE": "NO",
+  "external_validation_status": "OPTIONAL_EXTERNAL_VALIDATION_NOT_REQUIRED_FOR_V043_CALIBRATION",
+  "HUMAN_ADJUDICATION_REQUIRED": "NO",
   "responses": [
     {
       "case_id": "G-001",

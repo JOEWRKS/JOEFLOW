@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import json
 import sys
 import tempfile
@@ -25,6 +26,26 @@ FIXTURE_ROOT = ROOT / "tests" / "fixtures" / "semantic-review-v1"
 GOLDEN_CASES = FIXTURE_ROOT / "golden-cases.json"
 GOLDEN_ANSWERS = FIXTURE_ROOT / "golden-answers.json"
 GOLDEN_OUTPUTS = FIXTURE_ROOT / "golden-review-outputs.json"
+FROZEN_ORACLE_SHA256 = "4126bb8d316291d8362f04fe1160f53ad86adc73ec358effad7a84d104d7a173"
+FROZEN_ORACLE_BYTES = 1648
+FROZEN_TUPLE_SET_SHA256 = "7ddc257c085f8e9de4722b01f09646c25891418fbc92d60e7a15425657acc4aa"
+FROZEN_PAIRS = {
+    "G-001": ("REJECTED_CANDIDATE", "MISSING_OWNED_SEMANTIC"),
+    "G-002": ("APPROVED", "SUPPORTED_EXACTLY"),
+    "G-003": ("APPROVED", "SUPPORTED_EXACTLY"),
+    "G-004": ("REJECTED_CANDIDATE", "MISSING_OWNED_SEMANTIC"),
+    "G-005": ("APPROVED", "SUPPORTED_EXACTLY"),
+    "G-006": ("REJECTED_CANDIDATE", "UNSUPPORTED_OVERREACH"),
+    "G-007": ("REJECTED_CANDIDATE", "MISSING_OWNED_SEMANTIC"),
+    "G-008": ("APPROVED", "SUPPORTED_EXACTLY"),
+    "G-009": ("REJECTED_CANDIDATE", "CONTRADICTS_OWNER"),
+    "G-010": ("REJECTED_CANDIDATE", "UNSUPPORTED_OVERREACH"),
+    "G-011": ("APPROVED", "SUPPORTED_EXACTLY"),
+    "G-012": ("INPUT_PACKAGE_ERROR", "ACTIVE_SUPERSEDED_SOURCE"),
+    "G-013": ("INPUT_PACKAGE_ERROR", "INVALID_PROVENANCE"),
+    "G-014": ("REJECTED_CANDIDATE", "UNSUPPORTED_OVERREACH"),
+    "G-015": ("RUBRIC_ERROR", "RESPONSIBILITY_UNDEFINED"),
+}
 BRIEF = (
     SKILL_ROOT
     / "downstream"
@@ -55,6 +76,10 @@ class SemanticReviewGoldenTest(unittest.TestCase):
             self.assertNotIn("verdict", case)
             self.assertNotIn("rationale_code", case)
         self.assertEqual(len(hashes), 15)
+        self.assertEqual(
+            {case["fixture_status"] for case in self.cases},
+            {"PM_APPROVED_NORMATIVE_ORACLE"},
+        )
 
     def test_each_golden_is_a_self_contained_hash_bound_package(self):
         verified = verify_golden_packages(self.cases)
@@ -102,19 +127,28 @@ class SemanticReviewGoldenTest(unittest.TestCase):
             ],
         )
 
-    def test_answer_bank_is_separate_and_uses_exact_frozen_pairs(self):
+    def test_pm_approved_answer_bank_has_the_exact_frozen_pair_commitment(self):
         answers = {item["case_id"]: item for item in self.answers["answers"]}
-        self.assertEqual(len(answers), 15)
         self.assertEqual(
-            (answers["G-012"]["verdict"], answers["G-012"]["rationale_code"]),
-            ("INPUT_PACKAGE_ERROR", "ACTIVE_SUPERSEDED_SOURCE"),
+            self.answers["adjudication_status"], "PM_APPROVED_NORMATIVE_ORACLE"
         )
         self.assertEqual(
-            (answers["G-015"]["verdict"], answers["G-015"]["rationale_code"]),
-            ("RUBRIC_ERROR", "RESPONSIBILITY_UNDEFINED"),
+            {case_id: (item["verdict"], item["rationale_code"])
+             for case_id, item in answers.items()},
+            FROZEN_PAIRS,
         )
         self.assertEqual(
-            self.answers["adjudication_status"], "PM_SPEC_ORACLE_NOT_HUMAN_ADJUDICATED"
+            hashlib.sha256(GOLDEN_ANSWERS.read_bytes()).hexdigest(),
+            FROZEN_ORACLE_SHA256,
+        )
+        self.assertEqual(len(GOLDEN_ANSWERS.read_bytes()), FROZEN_ORACLE_BYTES)
+        tuples = [
+            {key: answer[key] for key in ("case_id", "verdict", "rationale_code")}
+            for answer in self.answers["answers"]
+        ]
+        self.assertEqual(
+            hashlib.sha256(canonical_json_bytes(tuples)).hexdigest(),
+            FROZEN_TUPLE_SET_SHA256,
         )
 
     def test_golden_accuracy_requires_verdict_and_rationale_code(self):
