@@ -10,7 +10,8 @@ _RISK_FLAG_KEYS = (
 def classify_materiality(materiality: dict[str, object]) -> str:
     risk_flags = materiality.get("risk_flags")
     is_non_material = (
-        materiality.get("outcome_divergence") in {"NONE", "LOW"}
+        isinstance(materiality.get("outcome_divergence"), str)
+        and materiality.get("outcome_divergence") in {"NONE", "LOW"}
         and materiality.get("fan_out") == "LOCAL"
         and materiality.get("reversibility") == "TRIVIALLY_REVERSIBLE"
         and isinstance(risk_flags, dict)
@@ -23,7 +24,8 @@ def classify_materiality(materiality: dict[str, object]) -> str:
 def is_high_risk(materiality: dict[str, object]) -> bool:
     risk_flags = materiality.get("risk_flags")
     return (
-        materiality.get("reversibility") in {"COSTLY_TO_REVERSE", "IRREVERSIBLE"}
+        isinstance(materiality.get("reversibility"), str)
+        and materiality.get("reversibility") in {"COSTLY_TO_REVERSE", "IRREVERSIBLE"}
         or (
             isinstance(risk_flags, dict)
             and any(risk_flags.get(flag) is True for flag in _RISK_FLAG_KEYS)

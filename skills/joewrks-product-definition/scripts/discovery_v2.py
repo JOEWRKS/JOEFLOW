@@ -65,6 +65,47 @@ def _is_lower_hex_digest(value: object) -> bool:
     )
 
 
+def _is_pack_id(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    parts = value.split("-")
+    return (
+        len(parts) >= 3
+        and parts[0] == "GRILL"
+        and all(
+            part
+            and part.isascii()
+            and part.isalnum()
+            and part.upper() == part
+            for part in parts[1:-1]
+        )
+        and parts[-1].isascii()
+        and parts[-1].isdigit()
+    )
+
+
+def _is_pack_version(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    parts = value.split(".")
+    return (
+        len(parts) == 2
+        and all(part and part.isascii() and part.isdigit() for part in parts)
+    )
+
+
+def _is_target_ref(value: object) -> bool:
+    if not isinstance(value, str) or "-" not in value:
+        return False
+    prefix, number = value.split("-", 1)
+    return (
+        prefix in {"REQ", "SURF"}
+        and len(number) >= 3
+        and number.isascii()
+        and number.isdigit()
+    )
+
+
 def _valid_active_grill_packs(value: object) -> bool:
     if not isinstance(value, list) or not value:
         return False
@@ -78,13 +119,11 @@ def _valid_active_grill_packs(value: object) -> bool:
         version = pack.get("version")
         target_refs = pack.get("target_refs")
         if (
-            not isinstance(pack_id, str)
-            or not pack_id
-            or not isinstance(version, str)
-            or not version
+            not _is_pack_id(pack_id)
+            or not _is_pack_version(version)
             or not _is_lower_hex_digest(pack.get("digest"))
             or not isinstance(target_refs, list)
-            or any(not isinstance(reference, str) or not reference for reference in target_refs)
+            or any(not _is_target_ref(reference) for reference in target_refs)
             or target_refs != sorted(set(target_refs))
         ):
             return False
@@ -131,7 +170,7 @@ def validate_discovery_baseline(
             "path": "discovery_baseline",
         }]
     status = baseline.get("status")
-    if status not in DISCOVERY_BASELINE_STATUSES:
+    if not isinstance(status, str) or status not in DISCOVERY_BASELINE_STATUSES:
         return [{
             "code": "invalid_discovery_baseline",
             "message": "discovery_baseline.status must be a supported status",

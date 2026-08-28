@@ -143,8 +143,27 @@
             "unresolved_material_contradiction_count": {"type": "integer", "minimum": 0},
             "procedure_complete": {"type": "boolean"},
             "applicable_surface_classes_complete": {"type": "boolean"},
-            "active_grill_packs": {"type": "array", "maxItems": 0},
-            "active_grill_packs_complete": {"const": false},
+            "active_grill_packs": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["pack_id", "version", "digest", "target_refs"],
+                "properties": {
+                  "pack_id": {"type": "string", "pattern": "^GRILL-[A-Z0-9]+(?:-[A-Z0-9]+)*-[0-9]+$"},
+                  "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"},
+                  "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                  "target_refs": {
+                    "type": "array",
+                    "items": {"type": "string", "pattern": "^(REQ|SURF)-[0-9]{3,}$"},
+                    "uniqueItems": true
+                  }
+                }
+              }
+            },
+            "active_grill_packs_complete": {"type": "boolean"},
             "unknown_unknown_exhaustiveness_claimed": {"const": false}
           }
         }

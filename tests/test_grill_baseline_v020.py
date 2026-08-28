@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILL_ROOT = ROOT / "skills" / "joewrks-product-definition"
 SCRIPTS = SKILL_ROOT / "scripts"
 PACKS = SKILL_ROOT / "references" / "grill-packs"
+STATE_SCHEMA = SKILL_ROOT / "schemas" / "state-v0.2.0.schema.json"
 sys.path.insert(0, str(SCRIPTS))
 
 import grill_v2 as grill  # noqa: E402
@@ -137,6 +138,117 @@ class GrillBaselineV020Test(unittest.TestCase):
             [pack["pack_id"] for pack in first["active_grill_packs"]],
             ["GRILL-AUTH-1", "GRILL-CORE-1"],
         )
+
+    def test_current_m3_baseline_satisfies_the_canonical_state_schema_contract(self):
+        state = self.active_auth_state("SURF-001")
+        state["discovery_baseline"] = current_baseline(state)
+        schema = json.loads(STATE_SCHEMA.read_text(encoding="utf-8"))
+        current_schema = next(
+            branch for branch in schema["$defs"]["discovery_baseline"]["oneOf"]
+            if branch.get("properties", {}).get("status", {}).get("const") == "CURRENT"
+        )
+        expected_pack_schema = {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": True,
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["pack_id", "version", "digest", "target_refs"],
+                "properties": {
+                    "pack_id": {
+                        "type": "string",
+                        "pattern": "^GRILL-[A-Z0-9]+(?:-[A-Z0-9]+)*-[0-9]+$",
+                    },
+                    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"},
+                    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                    "target_refs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^(REQ|SURF)-[0-9]{3,}$",
+                        },
+                        "uniqueItems": True,
+                    },
+                },
+            },
+        }
+
+        self.assertEqual(
+            current_schema["properties"]["active_grill_packs"],
+            expected_pack_schema,
+        )
+        self.assertEqual(
+            current_schema["properties"]["active_grill_packs_complete"],
+            {"type": "boolean"},
+        )
+        self.assertEqual(
+            current_schema["properties"]["unknown_unknown_exhaustiveness_claimed"],
+            {"const": False},
+        )
+        self.assertEqual(validate_state_v2(state), [])
+        packs = state["discovery_baseline"]["active_grill_packs"]
+        self.assertGreaterEqual(len(packs), expected_pack_schema["minItems"])
+        self.assertEqual(len(packs), len({canonical_json_bytes(pack) for pack in packs}))
+        for pack in packs:
+            with self.subTest(pack=pack["pack_id"]):
+                self.assertEqual(set(pack), set(expected_pack_schema["items"]["required"]))
+                for field in ("pack_id", "version", "digest"):
+                    field_schema = expected_pack_schema["items"]["properties"][field]
+                    self.assertIsInstance(pack[field], str)
+                    self.assertRegex(pack[field], field_schema["pattern"])
+                targets = pack["target_refs"]
+                self.assertEqual(len(targets), len(set(targets)))
+                for target in targets:
+                    self.assertRegex(
+                        target,
+                        expected_pack_schema["items"]["properties"]["target_refs"][
+                            "items"
+                        ]["pattern"],
+                    )
+
+    def test_schema_and_runtime_reject_old_or_malformed_pack_instances(self):
+        state = self.active_auth_state("SURF-001")
+        state["discovery_baseline"] = current_baseline(state)
+        malformed = []
+
+        old_empty = copy.deepcopy(state)
+        old_empty["discovery_baseline"]["active_grill_packs"] = []
+        malformed.append(old_empty)
+
+        extra_field = copy.deepcopy(state)
+        extra_field["discovery_baseline"]["active_grill_packs"][0]["extra"] = True
+        malformed.append(extra_field)
+
+        bad_pack_id = copy.deepcopy(state)
+        bad_pack_id["discovery_baseline"]["active_grill_packs"][0]["pack_id"] = (
+            "GRILL-auth-1"
+        )
+        malformed.append(bad_pack_id)
+
+        bad_version = copy.deepcopy(state)
+        bad_version["discovery_baseline"]["active_grill_packs"][0]["version"] = "v1"
+        malformed.append(bad_version)
+
+        bad_target = copy.deepcopy(state)
+        bad_target["discovery_baseline"]["active_grill_packs"][0]["target_refs"] = [
+            "not-a-ref"
+        ]
+        malformed.append(bad_target)
+
+        duplicate_target = copy.deepcopy(state)
+        duplicate_target["discovery_baseline"]["active_grill_packs"][0][
+            "target_refs"
+        ] = ["SURF-001", "SURF-001"]
+        malformed.append(duplicate_target)
+
+        for invalid in malformed:
+            with self.subTest(packs=invalid["discovery_baseline"]["active_grill_packs"]):
+                errors = validate_discovery_baseline(invalid, check_freshness=False)
+                self.assertEqual(
+                    {error["code"] for error in errors},
+                    {"invalid_discovery_baseline"},
+                )
 
     def test_complete_profile_activation_and_exact_target_set_change_baseline_bytes(self):
         inactive = foundation_state()

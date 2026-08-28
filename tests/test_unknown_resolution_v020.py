@@ -602,15 +602,79 @@ class UnknownResolutionV020Test(unittest.TestCase):
             1,
         )
 
+    def test_agent_decision_requires_exact_non_material_agent_authority_and_reciprocity(self):
+        valid = self.state_with_linked_decision(
+            mode="AGENT_NON_MATERIAL_DEFAULT",
+            authority="AGENT_AUTONOMOUS",
+            decided_by="AGENT",
+            classification="NON_MATERIAL",
+        )
+        self.assertEqual(
+            evaluate_closure_v2(valid)["metrics"]["unauthorized_agent_decisions"],
+            0,
+        )
+
+        user_mode_agent = self.state_with_linked_decision(decided_by="AGENT")
+        wrong_decision_authority = copy.deepcopy(valid)
+        wrong_decision_authority["objects"]["decisions"][0][
+            "decision_authority"
+        ] = "USER_DECISION_REQUIRED"
+        wrong_source_authority = copy.deepcopy(valid)
+        wrong_source_authority["objects"]["unknowns"][0][
+            "decision_authority"
+        ] = "USER_DECISION_REQUIRED"
+        duplicate_resolution_link = copy.deepcopy(valid)
+        duplicate_resolution_link["objects"]["unknowns"][0]["resolved_by"] = [
+            "DEC-001", "DEC-001",
+        ]
+        noncurrent_agent_decision = copy.deepcopy(valid)
+        noncurrent_agent_decision["objects"]["decisions"][0]["status"] = "STALE"
+
+        cases = (
+            (user_mode_agent, 1),
+            (wrong_decision_authority, 1),
+            (wrong_source_authority, 2),
+            (duplicate_resolution_link, 1),
+            (noncurrent_agent_decision, 1),
+        )
+        for state, invalid_authority_count in cases:
+            with self.subTest(state=state):
+                result = evaluate_closure_v2(state)
+                decision_errors = [
+                    error for error in result["errors"]
+                    if error["code"] == "unauthorized_agent_decision"
+                    and error["path"] == "objects.decisions[0]"
+                ]
+                self.assertEqual(len(decision_errors), 1)
+                self.assertEqual(result["metrics"]["unauthorized_agent_decisions"], 1)
+                self.assertEqual(
+                    result["metrics"]["invalid_resolution_authority"],
+                    invalid_authority_count,
+                )
+
     def test_migration_reconciliation_is_not_a_completed_resolution_mode(self):
         unknown = self.resolved_unknown(
             mode="MIGRATION_RECONCILIATION",
             authority="USER_DECISION_REQUIRED",
         )
-        self.assertIn(
-            "unresolved_unknown_provenance",
-            self.error_codes(self.state_with_unknown(unknown)),
-        )
+        result = evaluate_closure_v2(self.state_with_unknown(unknown))
+        codes = {error["code"] for error in result["errors"]}
+        self.assertIn("unresolved_unknown_provenance", codes)
+        self.assertIn("invalid_unknown_resolution_authority", codes)
+        self.assertEqual(result["metrics"]["unresolved_unknown_provenance"], 1)
+        self.assertEqual(result["metrics"]["invalid_resolution_authority"], 1)
+
+    def test_summary_only_resolution_prose_gap_is_not_an_authority_conflict(self):
+        state = self.state_with_linked_decision()
+        state["objects"]["unknowns"][0]["resolution_summary"] = "TBD"
+
+        result = evaluate_closure_v2(state)
+
+        codes = {error["code"] for error in result["errors"]}
+        self.assertIn("unresolved_unknown_provenance", codes)
+        self.assertNotIn("invalid_unknown_resolution_authority", codes)
+        self.assertEqual(result["metrics"]["unresolved_unknown_provenance"], 1)
+        self.assertEqual(result["metrics"]["invalid_resolution_authority"], 0)
 
     def test_deferred_unknown_requires_user_accepted_full_eight_axis_impact_review(self):
         unknown = unknown_record(status="DEFERRED")

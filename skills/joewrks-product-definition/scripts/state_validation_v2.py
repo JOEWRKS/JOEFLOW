@@ -232,9 +232,11 @@ def _collect_contradictions(state: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 def _evidence_is_current_closure_eligible(record: dict[str, Any]) -> bool:
     authority_classes = record.get("authority_classes")
+    source_kind = record.get("source_kind")
     return (
         record.get("status") == "CURRENT"
-        and record.get("source_kind") not in CANDIDATE_ONLY_SOURCE_KINDS
+        and isinstance(source_kind, str)
+        and source_kind not in CANDIDATE_ONLY_SOURCE_KINDS
         and isinstance(authority_classes, list)
         and bool(authority_classes)
         and all(isinstance(authority_class, str) for authority_class in authority_classes)
@@ -500,6 +502,7 @@ def _validate_surface_manifest(
         )
         has_observed_evidence = isinstance(evidence_refs, list) and any(
             (evidence := evidence_index.get(reference)) is not None
+            and isinstance(evidence.get("source_kind"), str)
             and evidence.get("source_kind") in OBSERVED_SOURCE_KINDS
             for reference in evidence_refs
             if isinstance(reference, str)
@@ -688,7 +691,10 @@ def _validate_contradictions(
                     errors.append(_error("invalid_contradiction_reference", "selected_authority_refs must resolve to EVD-* evidence", f"{path}.selected_authority_refs"))
                 elif evidence.get("status") != "CURRENT":
                     errors.append(_error("invalid_selected_authority", "selected authority must be current evidence", f"{path}.selected_authority_refs"))
-                elif evidence.get("source_kind") in CANDIDATE_ONLY_SOURCE_KINDS:
+                elif (
+                    isinstance(evidence.get("source_kind"), str)
+                    and evidence.get("source_kind") in CANDIDATE_ONLY_SOURCE_KINDS
+                ):
                     continue
                 elif _evidence_is_current_closure_eligible(evidence):
                     selected_authorities.append(reference)
@@ -1003,7 +1009,12 @@ def _validate_stale_consumed_evidence(state: dict[str, Any]) -> list[dict[str, s
             return
         for reference in refs:
             evidence = evidence_index.get(reference) if isinstance(reference, str) else None
-            if evidence is not None and evidence.get("status") in STALE_CONSUMED_EVIDENCE_STATUSES:
+            evidence_status = evidence.get("status") if evidence is not None else None
+            if (
+                evidence is not None
+                and isinstance(evidence_status, str)
+                and evidence_status in STALE_CONSUMED_EVIDENCE_STATUSES
+            ):
                 errors.append(_error(
                     "stale_consumed_evidence",
                     "current authority cannot consume stale, superseded, or unavailable evidence",
@@ -1017,7 +1028,12 @@ def _validate_stale_consumed_evidence(state: dict[str, Any]) -> list[dict[str, s
     records = surface_manifest.get("records") if isinstance(surface_manifest, dict) else None
     if isinstance(records, list):
         for position, record in enumerate(records):
-            if isinstance(record, dict) and record.get("status") not in {"SUPERSEDED", "RETIRED"}:
+            status = record.get("status") if isinstance(record, dict) else None
+            if (
+                isinstance(record, dict)
+                and isinstance(status, str)
+                and status not in {"SUPERSEDED", "RETIRED"}
+            ):
                 validate_refs(record.get("evidence_refs"), f"surface_manifest.records[{position}].evidence_refs")
     return errors
 
@@ -1032,11 +1048,17 @@ def _stale_consumed_evidence_count(state: dict[str, Any]) -> int:
     records = surface_manifest.get("records") if isinstance(surface_manifest, dict) else None
     if isinstance(records, list):
         for record in records:
-            if isinstance(record, dict) and record.get("status") not in {"SUPERSEDED", "RETIRED"}:
+            status = record.get("status") if isinstance(record, dict) else None
+            if (
+                isinstance(record, dict)
+                and isinstance(status, str)
+                and status not in {"SUPERSEDED", "RETIRED"}
+            ):
                 consumed.extend(record.get("evidence_refs", []) if isinstance(record.get("evidence_refs"), list) else [])
     return sum(
         isinstance(reference, str)
         and (evidence := evidence_index.get(reference)) is not None
+        and isinstance(evidence.get("status"), str)
         and evidence.get("status") in STALE_CONSUMED_EVIDENCE_STATUSES
         for reference in consumed
     )

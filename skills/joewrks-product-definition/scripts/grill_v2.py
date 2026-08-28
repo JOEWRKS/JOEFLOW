@@ -238,7 +238,12 @@ def _is_current_surface(
     if not isinstance(reference, str) or not reference.startswith("SURF-"):
         return False
     entry = id_index.get(reference)
-    return entry is not None and entry[1].get("status") not in {"SUPERSEDED", "RETIRED"}
+    status = entry[1].get("status") if entry is not None else None
+    return (
+        entry is not None
+        and isinstance(status, str)
+        and status not in {"SUPERSEDED", "RETIRED"}
+    )
 
 
 def _is_valid_origin(
@@ -317,6 +322,7 @@ def _evidence_can_support(
     return (
         record.get("status") == "CURRENT"
         and isinstance(source_kind, str)
+        and isinstance(authority_class, str)
         and source_kind in SOURCE_KIND_CAPABILITIES
         and source_kind not in CANDIDATE_ONLY_SOURCE_KINDS
         and (not external_constraint or source_kind == "EXTERNAL_CONSTRAINT")
@@ -404,7 +410,10 @@ def derive_decision_authority(
         )
     ):
         return "EVIDENCE_RESOLVABLE"
-    if required_authority_class in {"FACTUAL", "CONSTRAINT", "BEHAVIORAL"}:
+    if (
+        isinstance(required_authority_class, str)
+        and required_authority_class in {"FACTUAL", "CONSTRAINT", "BEHAVIORAL"}
+    ):
         return "EXTERNAL_AUTHORITY_REQUIRED"
 
     materiality = unknown.get("materiality")
@@ -472,7 +481,8 @@ def validate_decision_authority_policy(
     for position, unknown in enumerate(unknowns):
         if not isinstance(unknown, dict):
             continue
-        if unknown.get("status") not in {"OPEN", "BLOCKED"}:
+        status = unknown.get("status")
+        if not isinstance(status, str) or status not in {"OPEN", "BLOCKED"}:
             continue
         derived = derive_decision_authority(unknown, evidence_index=evidence_index)
         if unknown.get("decision_authority") != derived:
@@ -694,7 +704,14 @@ def _validate_unknown_resolution(
     errors: list[dict[str, str]] = []
     mode = unknown.get("resolution_mode")
     authority = unknown.get("decision_authority")
-    expected_authority = MODE_AUTHORITIES.get(mode) if isinstance(mode, str) else None
+    if not isinstance(mode, str) or mode not in RESOLUTION_MODES:
+        errors.append(_error(
+            "invalid_unknown_resolution_authority",
+            "resolution mode is not supported by deterministic authority policy",
+            path,
+        ))
+        return errors
+    expected_authority = MODE_AUTHORITIES.get(mode)
     if expected_authority is not None and authority != expected_authority:
         errors.append(_error(
             "invalid_unknown_resolution_authority",
@@ -702,6 +719,11 @@ def _validate_unknown_resolution(
             path,
         ))
     if mode == "MIGRATION_RECONCILIATION":
+        errors.append(_error(
+            "invalid_unknown_resolution_authority",
+            "migration reconciliation is not a completed authority mode",
+            path,
+        ))
         errors.append(_error(
             "unresolved_unknown_provenance",
             "migration reconciliation is a gap, not a completed resolution",
@@ -875,10 +897,46 @@ def _validate_decision(
             path,
         ))
 
+    authority = decision.get("decision_authority")
+    decision_id = decision.get("id")
+    reciprocal_provenance_valid = (
+        bool(source_unknowns)
+        and _unique_strings(source_refs, nonempty=True)
+        and len(source_unknowns) == len(source_refs)
+        and all(
+            unknown.get("status") == "RESOLVED"
+            and unknown.get("resolution_mode") == mode
+            and unknown.get("decision_authority") == authority
+            and unknown.get("resolved_by") == [decision_id]
+            for unknown in source_unknowns
+        )
+    )
+    decision_materiality = decision.get("materiality")
+    authorized_agent_decision = (
+        decision.get("decided_by") == "AGENT"
+        and decision.get("status") == "CURRENT"
+        and mode == "AGENT_NON_MATERIAL_DEFAULT"
+        and authority == "AGENT_AUTONOMOUS"
+        and reciprocal_provenance_valid
+        and isinstance(decision_materiality, dict)
+        and classify_materiality(decision_materiality) == "NON_MATERIAL"
+        and all(
+            unknown.get("decision_authority") == "AGENT_AUTONOMOUS"
+            and isinstance(unknown.get("materiality"), dict)
+            and classify_materiality(unknown["materiality"]) == "NON_MATERIAL"
+            for unknown in source_unknowns
+        )
+    )
+    if decision.get("decided_by") == "AGENT" and not authorized_agent_decision:
+        errors.append(_error(
+            "unauthorized_agent_decision",
+            "agent decisions require exact non-material authority and reciprocal provenance",
+            path,
+        ))
+
     if decision.get("status") != "CURRENT":
         return errors
 
-    authority = decision.get("decision_authority")
     if not isinstance(mode, str) or mode not in DECISION_RESOLUTION_MODES:
         errors.append(_error(
             "invalid_decision_provenance",
@@ -892,7 +950,6 @@ def _validate_decision(
             "decision mode and authority do not match",
             path,
         ))
-    decision_id = decision.get("id")
     for unknown in source_unknowns:
         if (
             unknown.get("status") != "RESOLVED"
@@ -911,24 +968,6 @@ def _validate_decision(
         errors.append(_error(
             "invalid_decision_provenance", "decided_by does not match resolution mode", path,
         ))
-
-    if mode == "AGENT_NON_MATERIAL_DEFAULT":
-        decision_materiality = decision.get("materiality")
-        material_decision = (
-            not isinstance(decision_materiality, dict)
-            or classify_materiality(decision_materiality) != "NON_MATERIAL"
-            or any(
-                not isinstance(unknown.get("materiality"), dict)
-                or classify_materiality(unknown["materiality"]) != "NON_MATERIAL"
-                for unknown in source_unknowns
-            )
-        )
-        if material_decision:
-            errors.append(_error(
-                "unauthorized_agent_decision",
-                "material decisions may not use AGENT_NON_MATERIAL_DEFAULT",
-                path,
-            ))
 
     if mode == "EXTERNAL_CONSTRAINT" and not _has_qualifying_evidence(
         evidence_refs, evidence_index, "CONSTRAINT", external_constraint=True,
@@ -1133,7 +1172,10 @@ def _grill_indexes(
 
 
 def _surface_is_current(record: object) -> bool:
-    return isinstance(record, dict) and record.get("status") not in {"SUPERSEDED", "RETIRED"}
+    if not isinstance(record, dict):
+        return False
+    status = record.get("status")
+    return isinstance(status, str) and status not in {"SUPERSEDED", "RETIRED"}
 
 
 def _basis_ref_is_current(
@@ -1146,9 +1188,11 @@ def _basis_ref_is_current(
         return False
     group, record = index[reference]
     if group == "evidence":
+        source_kind = record.get("source_kind")
         return (
             record.get("status") == "CURRENT"
-            and record.get("source_kind") not in CANDIDATE_ONLY_SOURCE_KINDS
+            and isinstance(source_kind, str)
+            and source_kind not in CANDIDATE_ONLY_SOURCE_KINDS
         )
     if group == "surfaces":
         return _surface_is_current(record)
@@ -1170,7 +1214,12 @@ def _profile_analysis(
     for surface_id, surface in surfaces.items():
         if not _surface_is_current(surface):
             continue
-        domain = FORCED_SURFACE_KIND_DOMAINS.get(surface.get("kind"))
+        surface_kind = surface.get("kind")
+        domain = (
+            FORCED_SURFACE_KIND_DOMAINS.get(surface_kind)
+            if isinstance(surface_kind, str)
+            else None
+        )
         if domain is not None:
             forced_refs[domain].add(surface_id)
     if not isinstance(profile, dict):
@@ -1231,7 +1280,8 @@ def _profile_analysis(
         unknown_refs = cell.get("unknown_refs")
         basis_refs = cell.get("basis_refs")
         if (
-            status not in {"ACTIVE", "N/A", "OPEN"}
+            not isinstance(status, str)
+            or status not in {"ACTIVE", "N/A", "OPEN"}
             or not _unique_strings(surface_refs)
             or not _unique_strings(unknown_refs)
             or not _unique_strings(basis_refs)
@@ -1291,7 +1341,7 @@ def _profile_analysis(
         forced = forced_refs[domain]
         forced_contradiction = bool(forced) and (
             status != "ACTIVE"
-            or not isinstance(surface_refs, list)
+            or not _unique_strings(surface_refs)
             or not forced.issubset(set(surface_refs))
         )
         if forced_contradiction:
@@ -1545,7 +1595,11 @@ def _coverage_analysis(
                 _unique_strings(value)
                 for value in (authority_refs, unknown_refs, basis_refs)
             )
-            if status not in {"ADDRESSED", "OPEN", "N/A"} or not lists_valid:
+            if (
+                not isinstance(status, str)
+                or status not in {"ADDRESSED", "OPEN", "N/A"}
+                or not lists_valid
+            ):
                 errors.append(_error(
                     "invalid_grill_axis_coverage",
                     "invalid specialist axis status or reference arrays",

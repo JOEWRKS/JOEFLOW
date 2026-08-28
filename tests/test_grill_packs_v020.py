@@ -1,6 +1,7 @@
 import copy
 import json
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -13,6 +14,7 @@ SCRIPTS = SKILL_ROOT / "scripts"
 PACKS = SKILL_ROOT / "references" / "grill-packs"
 STATE_SCHEMA = SKILL_ROOT / "schemas" / "state-v0.2.0.schema.json"
 TEMPLATE = SKILL_ROOT / "templates" / "state-v0.2.0.example.json"
+QUESTION_CLI = SCRIPTS / "next_product_question.py"
 sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(SKILL_ROOT))
 
@@ -236,6 +238,37 @@ def open_axis(row, axis_id, unknown_id):
     }
 
 
+def malformed_enum_states():
+    malformed_unknown_status = base_state()
+    malformed_unknown_status["objects"]["unknowns"] = [unknown_record()]
+    malformed_unknown_status["objects"]["unknowns"][0]["status"] = []
+
+    malformed_authority_class = base_state()
+    malformed_authority_class["objects"]["unknowns"] = [unknown_record()]
+    malformed_authority_class["objects"]["unknowns"][0][
+        "required_authority_class"
+    ] = {}
+
+    malformed_profile_status = base_state()
+    malformed_profile_status["surface_manifest"]["grill_profile"]["AUTH"][
+        "status"
+    ] = []
+
+    malformed_axis_status = base_state()
+    malformed_axis_status["surface_manifest"]["records"] = [current_surface()]
+    activate(malformed_axis_status, "AUTH", "SURF-001")
+    row = specialist_row("GRILL-AUTH-1", "SURF-001")
+    row["axes"]["registration"]["status"] = []
+    malformed_axis_status["grill_coverage"] = [row]
+
+    return (
+        ("unknown_status", malformed_unknown_status),
+        ("required_authority_class", malformed_authority_class),
+        ("profile_status", malformed_profile_status),
+        ("axis_status", malformed_axis_status),
+    )
+
+
 class GrillPacksV020Test(unittest.TestCase):
     def setUp(self):
         for interface in INTERFACES:
@@ -244,6 +277,54 @@ class GrillPacksV020Test(unittest.TestCase):
 
     def error_codes(self, state):
         return {error["code"] for error in validate_state_v2(state)}
+
+    def test_unhashable_enum_values_return_structured_validator_errors(self):
+        for label, state in malformed_enum_states():
+            with self.subTest(label=label):
+                try:
+                    errors = validate_state_v2(state)
+                except Exception as exception:
+                    self.fail(f"validation raised {type(exception).__name__}: {exception}")
+                self.assertTrue(errors)
+                self.assertTrue(
+                    all(set(error) == {"code", "message", "path"} for error in errors),
+                    errors,
+                )
+
+    def test_unhashable_enum_values_return_closure_payload_without_crash(self):
+        for label, state in malformed_enum_states():
+            with self.subTest(label=label):
+                try:
+                    result = evaluate_closure_v2(state)
+                except Exception as exception:
+                    self.fail(f"closure raised {type(exception).__name__}: {exception}")
+                self.assertFalse(result["closed"])
+                self.assertTrue(result["errors"])
+                self.assertTrue(all(
+                    set(error) == {"code", "message", "path"}
+                    for error in result["errors"]
+                ))
+
+    def test_unhashable_enum_values_make_question_cli_return_json_errors(self):
+        for label, state in malformed_enum_states():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                state_path = Path(directory) / "invalid.json"
+                state_path.write_text(json.dumps(state), encoding="utf-8")
+                result = subprocess.run(
+                    [sys.executable, str(QUESTION_CLI), str(state_path)],
+                    cwd=ROOT,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode, 1, result.stderr.decode())
+                self.assertEqual(result.stderr, b"")
+                payload = json.loads(result.stdout)
+                self.assertIsNone(payload["next_question"])
+                self.assertTrue(payload["errors"])
+                self.assertTrue(all(
+                    set(error) == {"code", "message", "path"}
+                    for error in payload["errors"]
+                ))
 
     def test_all_seven_declarative_pack_files_validate_and_freeze_identity_axes_and_floors(self):
         schema_path = PACKS / "grill-pack.schema.json"
