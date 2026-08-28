@@ -21,6 +21,7 @@ UNKNOWN_STATUSES = {"OPEN", "RESOLVED", "DEFERRED", "BLOCKED", "SUPERSEDED", "RE
 EVIDENCE_STATUSES = {"CURRENT", "STALE", "SUPERSEDED", "UNAVAILABLE"}
 EVIDENCE_CONFIDENCE = {"DIRECT", "CORROBORATED", "INFERRED"}
 EVIDENCE_AUTHORITY_CLASSES = {"FACTUAL", "INTENT", "CONSTRAINT", "BEHAVIORAL", "PREFERENCE"}
+CONTRADICTION_STATUSES = {"OPEN", "RESOLVED", "SUPERSEDED", "RETIRED"}
 SURFACE_KINDS = {
     "ACTOR", "FEATURE_AREA", "ENTRY_POINT", "MAJOR_ACTION", "DOMAIN_ENTITY",
     "INTEGRATION", "ASYNC_PROCESS", "NOTIFICATION", "PERSISTENT_STATE",
@@ -191,6 +192,17 @@ def _collect_surfaces(state: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {
         record["id"]: record
         for record in records
+        if isinstance(record, dict) and isinstance(record.get("id"), str)
+    }
+
+
+def _collect_contradictions(state: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    contradictions = state.get("contradictions")
+    if not isinstance(contradictions, list):
+        return {}
+    return {
+        record["id"]: record
+        for record in contradictions
         if isinstance(record, dict) and isinstance(record.get("id"), str)
     }
 
@@ -519,6 +531,185 @@ def _validate_surface_manifest(
     return errors
 
 
+def _validate_contradictions(
+    state: dict[str, Any],
+    id_index: dict[str, tuple[str, dict[str, Any]]],
+    evidence_index: dict[str, dict[str, Any]],
+) -> list[dict[str, str]]:
+    contradictions = state.get("contradictions")
+    if not isinstance(contradictions, list):
+        return []
+
+    errors: list[dict[str, str]] = []
+    contradiction_index = _collect_contradictions(state)
+    allowed_fields = {
+        "id", "status", "claim_a_refs", "claim_b_refs", "scope_refs",
+        "materiality", "resolution", "resolved_by", "selected_authority_refs",
+        "superseded_by", "retired_by", "retired_at_revision", "retirement_reason",
+    }
+    required_fields = allowed_fields - _LIFECYCLE_FIELDS
+    project = state.get("project")
+    project_revision = project.get("definition_revision") if isinstance(project, dict) else None
+
+    for position, record in enumerate(contradictions):
+        path = f"contradictions[{position}]"
+        if not isinstance(record, dict):
+            errors.append(_error("invalid_contradiction_shape", "contradiction record must be an object", path))
+            continue
+        if set(record) - allowed_fields or required_fields - set(record):
+            errors.append(_error("invalid_contradiction_shape", "contradiction fields do not match the 0.2.0 contract", path))
+
+        contradiction_id = record.get("id")
+        if not _is_stable_id(contradiction_id, expected_prefix="CON"):
+            errors.append(_error("invalid_contradiction_id", "contradiction id must use CON-NNN form", f"{path}.id"))
+
+        shape_valid = (
+            isinstance(record.get("status"), str)
+            and record["status"] in CONTRADICTION_STATUSES
+            and all(
+                isinstance(record.get(field), list)
+                and all(isinstance(value, str) for value in record[field])
+                and len(record[field]) == len(set(record[field]))
+                and (field not in {"claim_a_refs", "claim_b_refs", "scope_refs"} or bool(record[field]))
+                for field in (
+                    "claim_a_refs", "claim_b_refs", "scope_refs", "resolved_by",
+                    "selected_authority_refs",
+                )
+            )
+            and (
+                record.get("resolution") is None
+                or (isinstance(record.get("resolution"), str) and bool(record["resolution"]))
+            )
+        )
+        if not shape_valid:
+            errors.append(_error("invalid_contradiction_shape", "invalid contradiction semantic shape", path))
+        if "materiality" in record:
+            errors.extend(_validate_materiality_shape(record["materiality"], f"{path}.materiality"))
+
+        for field in ("claim_a_refs", "claim_b_refs"):
+            values = record.get(field)
+            if not isinstance(values, list):
+                continue
+            for reference in values:
+                if (
+                    not _is_stable_id(reference, expected_prefix="EVD")
+                    or reference not in evidence_index
+                ):
+                    errors.append(_error("invalid_contradiction_reference", f"{field} must resolve to EVD-* evidence", f"{path}.{field}"))
+
+        scope_refs = record.get("scope_refs")
+        if isinstance(scope_refs, list):
+            for reference in scope_refs:
+                if not _is_stable_id(reference) or reference not in id_index:
+                    errors.append(_error("invalid_contradiction_reference", "scope_refs must resolve to existing stable ids", f"{path}.scope_refs"))
+
+        resolved_by = record.get("resolved_by")
+        current_decisions = []
+        if isinstance(resolved_by, list):
+            for reference in resolved_by:
+                target_entry = id_index.get(reference) if isinstance(reference, str) else None
+                if (
+                    not _is_stable_id(reference, expected_prefix="DEC")
+                    or target_entry is None
+                    or target_entry[0] != "decisions"
+                ):
+                    errors.append(_error("invalid_contradiction_reference", "resolved_by must resolve to DEC-* decisions", f"{path}.resolved_by"))
+                elif target_entry[1].get("status") == "CURRENT":
+                    current_decisions.append(reference)
+
+        selected_authority_refs = record.get("selected_authority_refs")
+        selected_authorities = []
+        if isinstance(selected_authority_refs, list):
+            for reference in selected_authority_refs:
+                evidence = evidence_index.get(reference) if isinstance(reference, str) else None
+                if not _is_stable_id(reference, expected_prefix="EVD") or evidence is None:
+                    errors.append(_error("invalid_contradiction_reference", "selected_authority_refs must resolve to EVD-* evidence", f"{path}.selected_authority_refs"))
+                elif _evidence_is_current_closure_eligible(evidence):
+                    selected_authorities.append(reference)
+                else:
+                    errors.append(_error("invalid_selected_authority", "selected authority must be current closure-eligible evidence", f"{path}.selected_authority_refs"))
+
+        if record.get("status") == "RESOLVED":
+            if not _meaningful_text(record.get("resolution")):
+                errors.append(_error("invalid_contradiction_resolution", "RESOLVED requires a meaningful resolution", f"{path}.resolution"))
+            if not current_decisions and not selected_authorities:
+                errors.append(_error("unresolved_contradiction_authority", "RESOLVED requires a current decision or selected authority", path))
+
+        if record.get("status") == "SUPERSEDED":
+            target = record.get("superseded_by")
+            if (
+                not _is_stable_id(target, expected_prefix="CON")
+                or target == contradiction_id
+                or target not in contradiction_index
+            ):
+                errors.append(_error("invalid_contradiction_supersession", "SUPERSEDED requires a different existing CON-* target", path))
+        if record.get("status") == "RETIRED":
+            retired_by = record.get("retired_by")
+            target_entry = id_index.get(retired_by) if isinstance(retired_by, str) else None
+            retired_at_revision = record.get("retired_at_revision")
+            if (
+                not _is_stable_id(retired_by, expected_prefix="DEC")
+                or target_entry is None
+                or target_entry[0] != "decisions"
+                or not isinstance(retired_at_revision, int)
+                or isinstance(retired_at_revision, bool)
+                or retired_at_revision < 1
+                or not isinstance(project_revision, int)
+                or retired_at_revision > project_revision
+                or not _meaningful_text(record.get("retirement_reason"))
+            ):
+                errors.append(_error("invalid_contradiction_retirement", "RETIRED requires decision provenance, a valid revision, and a meaningful reason", path))
+
+    graph = {
+        record["id"]: record["superseded_by"]
+        for record in contradictions
+        if isinstance(record, dict)
+        and record.get("status") == "SUPERSEDED"
+        and isinstance(record.get("id"), str)
+        and isinstance(record.get("superseded_by"), str)
+    }
+    visited: set[str] = set()
+    for start in graph:
+        trail: list[str] = []
+        current = start
+        while current in graph and current not in visited:
+            if current in trail:
+                cycle = trail[trail.index(current):] + [current]
+                errors.append(_error("contradiction_supersession_cycle", " -> ".join(cycle), "contradictions"))
+                break
+            trail.append(current)
+            current = graph[current]
+        visited.update(trail)
+    return errors
+
+
+def _contradiction_metrics(state: dict[str, Any]) -> dict[str, int]:
+    evidence_index = _collect_evidence(state)
+    contradictions = state.get("contradictions")
+    if not isinstance(contradictions, list):
+        return {"unresolved_material_contradictions": 0, "stale_selected_authority": 0}
+    records = [record for record in contradictions if isinstance(record, dict)]
+    return {
+        "unresolved_material_contradictions": sum(
+            record.get("status") == "OPEN"
+            and isinstance(record.get("materiality"), dict)
+            and record["materiality"].get("classification") == "MATERIAL"
+            for record in records
+        ),
+        "stale_selected_authority": sum(
+            isinstance(reference, str)
+            and (evidence := evidence_index.get(reference)) is not None
+            and evidence.get("status") != "CURRENT"
+            for record in records
+            for reference in (
+                record["selected_authority_refs"]
+                if isinstance(record.get("selected_authority_refs"), list)
+                else []
+            )
+        ),
+    }
+
+
 def _surface_metrics(state: dict[str, Any]) -> dict[str, int]:
     id_index, _ = _collect_ids(state)
     records = _collect_surfaces(state).values()
@@ -757,13 +948,18 @@ def validate_state_v2(state: dict[str, Any]) -> list[dict[str, str]]:
     errors.extend(_validate_lifecycle(state, index))
     errors.extend(_validate_supersession_cycles(state))
     errors.extend(_validate_surface_manifest(state, index, evidence_index))
+    errors.extend(_validate_contradictions(state, index, evidence_index))
     return errors
 
 
 def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:
     return {
         "errors": validate_state_v2(state),
-        "metrics": {"semantic_closure_not_implemented": 1, **_surface_metrics(state)},
+        "metrics": {
+            "semantic_closure_not_implemented": 1,
+            **_surface_metrics(state),
+            **_contradiction_metrics(state),
+        },
         "closed": False,
         "definition_digest": None,
     }

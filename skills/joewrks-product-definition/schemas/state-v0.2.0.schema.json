@@ -85,6 +85,30 @@
       },
       "allOf": [{"$ref": "#/$defs/lifecycle_requirements"}]
     },
+    "contradiction_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "claim_a_refs", "claim_b_refs", "scope_refs", "materiality", "resolution", "resolved_by", "selected_authority_refs"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^CON-[0-9]{3,}$"},
+        "status": {"enum": ["OPEN", "RESOLVED", "SUPERSEDED", "RETIRED"]},
+        "claim_a_refs": {"type": "array", "items": {"type": "string", "pattern": "^EVD-[0-9]{3,}$"}, "uniqueItems": true, "minItems": 1},
+        "claim_b_refs": {"type": "array", "items": {"type": "string", "pattern": "^EVD-[0-9]{3,}$"}, "uniqueItems": true, "minItems": 1},
+        "scope_refs": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "uniqueItems": true, "minItems": 1},
+        "materiality": {"$ref": "#/$defs/materiality"},
+        "resolution": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+        "resolved_by": {"type": "array", "items": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"}, "uniqueItems": true},
+        "selected_authority_refs": {"type": "array", "items": {"type": "string", "pattern": "^EVD-[0-9]{3,}$"}, "uniqueItems": true},
+        "superseded_by": {"type": "string", "pattern": "^CON-[0-9]{3,}$"},
+        "retired_by": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"},
+        "retired_at_revision": {"type": "integer", "minimum": 1},
+        "retirement_reason": {"$ref": "#/$defs/text"}
+      },
+      "allOf": [
+        {"$ref": "#/$defs/lifecycle_requirements"},
+        {"if": {"properties": {"status": {"const": "RESOLVED"}}, "required": ["status"]}, "then": {"properties": {"resolution": {"$ref": "#/$defs/text"}}, "required": ["resolution"]}}
+      ]
+    },
     "goals": {
       "type": "object", "additionalProperties": false, "required": ["id", "status", "statement"],
       "properties": {
@@ -219,7 +243,7 @@
       "type": "object", "required": ["records"], "additionalProperties": false,
       "properties": {"records": {"type": "array", "items": {"$ref": "#/$defs/surface_record"}}}
     },
-    "contradictions": {"type": "array"},
+    "contradictions": {"type": "array", "items": {"$ref": "#/$defs/contradiction_record"}},
     "objects": {
       "type": "object", "additionalProperties": false,
       "required": ["goals", "users", "requirements", "unknowns", "decisions", "rules", "flows", "screens", "states", "data", "integrations", "acceptance_criteria", "tasks"],

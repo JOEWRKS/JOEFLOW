@@ -166,10 +166,16 @@ class SurfaceManifestV020Test(unittest.TestCase):
             "decision_refs": ["DEC-001"], "contradiction_refs": ["CON-001"],
         })
         state = self.state_with(surface)
-        state["evidence"] = [evidence_record()]
+        state["evidence"] = [evidence_record(), evidence_record("EVD-002")]
         state["objects"]["unknowns"] = [unknown_record()]
         state["objects"]["decisions"] = [decision_record()]
-        state["contradictions"] = [{"id": "CON-001"}]
+        state["contradictions"] = [{
+            "id": "CON-001", "status": "OPEN",
+            "claim_a_refs": ["EVD-001"], "claim_b_refs": ["EVD-002"],
+            "scope_refs": ["SURF-001"],
+            "materiality": materiality(classification="NON_MATERIAL"),
+            "resolution": None, "resolved_by": [], "selected_authority_refs": [],
+        }]
         self.assertEqual(self.error_codes(state), set())
 
         invalid_refs = (
