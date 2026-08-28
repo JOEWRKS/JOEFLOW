@@ -16,7 +16,7 @@ if str(SKILL_ROOT) not in sys.path:
     sys.path.insert(0, str(SKILL_ROOT))
 
 from downstream.semantic_review.gate import evaluate_reliability_gate
-from downstream.semantic_review.goldens import evaluate_goldens
+from downstream.semantic_review.goldens import evaluate_goldens, verify_golden_packages
 from downstream.semantic_review.package import load_and_verify_package
 
 
@@ -30,6 +30,8 @@ FULL_PACKAGE_ROOT = FIXTURE_ROOT / "reviewer-package"
 GOLDEN_FIXTURE_ROOT = ROOT / "tests" / "fixtures" / "semantic-review-v1"
 GOLDEN_CASES_PATH = GOLDEN_FIXTURE_ROOT / "golden-cases.json"
 GOLDEN_ANSWERS_PATH = GOLDEN_FIXTURE_ROOT / "golden-answers.json"
+FROZEN_GOLDEN_CASES_SHA256 = "812d99c153c736fdd6eacdb0937ba924a83c642bc78f74674b6ad708154c84f3"
+FROZEN_GOLDEN_CASES_BYTES = 918685
 FROZEN_ORACLE_STATUS = "PM_APPROVED_NORMATIVE_ORACLE"
 FROZEN_ORACLE_SHA256 = "4126bb8d316291d8362f04fe1160f53ad86adc73ec358effad7a84d104d7a173"
 FROZEN_ORACLE_BYTES = 1648
@@ -49,6 +51,30 @@ VISIBILITY_KEYS = {
 FORBIDDEN_VISIBILITY_KEYS = VISIBILITY_KEYS - {
     "manifest_only_isolation_attested",
     "visible_inputs",
+}
+FULL_ENVELOPE_KEYS = {
+    "review_run_id",
+    "reviewer_context_id",
+    "reviewer_input_package_hash",
+    "reviewer_brief_hash",
+    "isolation_attestation",
+}
+GOLDEN_ENVELOPE_KEYS = FULL_ENVELOPE_KEYS | {"isolation_attestation_hash"}
+FULL_PACKAGE_IDENTITY_KEYS = {
+    "reviewer_input_package_hash",
+    "reviewer_brief_hash",
+}
+FORBIDDEN_REVIEWER_CONTENT_KEYS = {
+    "correction_hint",
+    "correction_hints",
+    "expected_rationale_code",
+    "expected_verdict",
+    "golden_answer",
+    "golden_answers",
+    "oracle_bytes",
+    "prior_reviewer_results",
+    "prior_verdicts",
+    "reviewer_results",
 }
 
 
@@ -76,7 +102,7 @@ def _load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _load_frozen_oracle() -> dict[str, Any]:
+def _load_frozen_oracle() -> tuple[dict[str, Any], str]:
     """Load only the controller-bound PM-approved oracle after outputs freeze."""
 
     data = GOLDEN_ANSWERS_PATH.read_bytes()
@@ -89,19 +115,100 @@ def _load_frozen_oracle() -> dict[str, Any]:
         _reject("ORACLE_STATUS_NOT_APPROVED")
     answers = oracle.get("answers")
     if not isinstance(answers, list):
-        _reject("ORACLE_TUPLE_SET_MISMATCH")
+        _reject("GOLDEN_ORACLE_SPEC_MISMATCH")
     tuples = [
         {key: answer.get(key) for key in ("case_id", "verdict", "rationale_code")}
         for answer in answers
         if isinstance(answer, Mapping)
     ]
     if len(tuples) != 15 or tuple(item["case_id"] for item in tuples) != GOLDEN_CASE_IDS:
-        _reject("ORACLE_CASE_SET_MISMATCH")
+        _reject("GOLDEN_ORACLE_SPEC_MISMATCH")
     if canonical_sha256(tuples) != FROZEN_ORACLE_TUPLE_SET_SHA256:
-        _reject("ORACLE_TUPLE_SET_MISMATCH")
+        _reject("GOLDEN_ORACLE_SPEC_MISMATCH")
     if len(data) != FROZEN_ORACLE_BYTES:
         _reject("ORACLE_BYTES_MISMATCH")
-    return dict(oracle)
+    return dict(oracle), data.decode("utf-8")
+
+
+def _load_frozen_golden_cases() -> list[dict[str, Any]]:
+    data = GOLDEN_CASES_PATH.read_bytes()
+    if (
+        hashlib.sha256(data).hexdigest() != FROZEN_GOLDEN_CASES_SHA256
+        or len(data) != FROZEN_GOLDEN_CASES_BYTES
+    ):
+        _reject("GOLDEN_CASES_COMMITMENT_MISMATCH")
+    cases = _load_json(GOLDEN_CASES_PATH)
+    if not isinstance(cases, list):
+        _reject("GOLDEN_CASES_COMMITMENT_MISMATCH")
+    try:
+        verify_golden_packages(cases)
+    except ValueError as error:
+        _reject("GOLDEN_CASES_COMMITMENT_MISMATCH", str(error))
+    return cases
+
+
+def _scan_reviewer_visible_content(
+    value: Any, oracle_text: str, oracle_pairs: set[tuple[str, str, str]], detail: str
+) -> None:
+    """Reject answer-bearing or correction-bearing material visible to a reviewer."""
+
+    def scan(item: Any) -> None:
+        if isinstance(item, bytes):
+            try:
+                item = item.decode("utf-8")
+            except UnicodeDecodeError:
+                _reject("FORBIDDEN_CONTEXT_EXPOSURE", detail)
+        if isinstance(item, str):
+            if oracle_text in item:
+                _reject("FORBIDDEN_CONTEXT_EXPOSURE", detail)
+            try:
+                parsed = json.loads(item)
+            except json.JSONDecodeError:
+                return
+            if isinstance(parsed, (Mapping, list)):
+                scan(parsed)
+            return
+        if isinstance(item, Mapping):
+            keys = {str(key).lower() for key in item}
+            if keys & FORBIDDEN_REVIEWER_CONTENT_KEYS:
+                _reject("FORBIDDEN_CONTEXT_EXPOSURE", detail)
+            pair = tuple(item.get(key) for key in ("case_id", "verdict", "rationale_code"))
+            if all(isinstance(part, str) for part in pair) and pair in oracle_pairs:
+                _reject("FORBIDDEN_CONTEXT_EXPOSURE", detail)
+            for child in item.values():
+                scan(child)
+            return
+        if isinstance(item, list):
+            for child in item:
+                scan(child)
+
+    scan(value)
+
+
+def _trusted_full_reviewer_package(
+    oracle_text: str, oracle_pairs: set[tuple[str, str, str]]
+) -> dict[str, Any]:
+    verified = load_and_verify_package(FULL_PACKAGE_ROOT)
+    if verified.get("reviewer_input_package_hash") != PACKAGE_HASH:
+        _reject("PACKAGE_HASH_MISMATCH", "controller full package")
+    declared_paths = {"manifest.json"}
+    for item in verified["manifest"]["files"]:
+        declared_paths.add(item["path"])
+    actual_paths = {
+        path.relative_to(FULL_PACKAGE_ROOT).as_posix()
+        for path in FULL_PACKAGE_ROOT.rglob("*")
+        if path.is_file()
+    }
+    if actual_paths != declared_paths:
+        _reject("PACKAGE_HASH_MISMATCH", "controller full package files")
+    for relative in sorted(actual_paths):
+        _scan_reviewer_visible_content(
+            (FULL_PACKAGE_ROOT / relative).read_bytes(),
+            oracle_text,
+            oracle_pairs,
+            f"controller full package:{relative}",
+        )
+    return verified
 
 
 def _require_mapping(value: Any, code: str, detail: str) -> Mapping[str, Any]:
@@ -201,7 +308,11 @@ def _validate_full_review(
 
 
 def _validate_golden_reviews(
-    wrappers: Any, cohort_id: str, output_set_sha256: Any, context_ids: set[str]
+    wrappers: Any,
+    cohort_id: str,
+    output_set_sha256: Any,
+    context_ids: set[str],
+    trusted_package_hashes: Mapping[str, str],
 ) -> list[dict[str, Any]]:
     if not isinstance(wrappers, list):
         _reject("RAW_GOLDEN_OUTPUTS_REQUIRED", cohort_id)
@@ -266,7 +377,12 @@ def _validate_golden_reviews(
             "reviewer_input_package_hash"
         ):
             _reject("RAW_GOLDEN_OUTPUT_INVALID", f"{cohort_id} package binding")
-        case_ids.append(raw.get("case_id"))
+        case_id = raw.get("case_id")
+        if envelope.get("reviewer_input_package_hash") != trusted_package_hashes.get(
+            case_id
+        ):
+            _reject("GOLDEN_REVIEW_PACKAGE_MISMATCH", f"{cohort_id}:{case_id}")
+        case_ids.append(case_id)
         raw_hashes.append(item["raw_output_sha256"])
         raw_outputs.append(dict(raw))
     if tuple(sorted(case_ids)) != GOLDEN_CASE_IDS or len(set(case_ids)) != 15:
@@ -325,6 +441,12 @@ def evaluate_official_calibration(
     if package_identity.get("reviewer_brief_hash") != BRIEF_HASH:
         _reject("BRIEF_HASH_MISMATCH", "official package")
 
+    cases = _load_frozen_golden_cases()
+    trusted_golden_package_hashes = {
+        case["case_id"]: case["reviewer_package"]["reviewer_input_package_hash"]
+        for case in cases
+    }
+
     cohorts = evidence["cohorts"]
     if not isinstance(cohorts, list):
         _reject("COHORT_SET_MISMATCH")
@@ -356,14 +478,45 @@ def evaluate_official_calibration(
                 cohort["cohort_id"],
                 cohort["golden_output_set_sha256"],
                 context_ids,
+                trusted_golden_package_hashes,
             )
         )
         golden_output_set_hashes.append(cohort["golden_output_set_sha256"])
     if len(context_ids) != 48:
         _reject("CONTEXT_POPULATION_MISMATCH", str(len(context_ids)))
 
-    cases = _load_json(GOLDEN_CASES_PATH)
-    answers = _load_frozen_oracle()
+    answers, oracle_text = _load_frozen_oracle()
+    oracle_pairs = {
+        (item["case_id"], item["verdict"], item["rationale_code"])
+        for item in answers["answers"]
+    }
+    _scan_reviewer_visible_content(
+        package_identity, oracle_text, oracle_pairs, "official package identity"
+    )
+    if set(package_identity) != FULL_PACKAGE_IDENTITY_KEYS:
+        _reject("PACKAGE_HASH_MISMATCH", "official package fields")
+    for envelope in full_envelopes:
+        _scan_reviewer_visible_content(
+            envelope, oracle_text, oracle_pairs, "full reviewer context"
+        )
+        if set(envelope) != FULL_ENVELOPE_KEYS:
+            _reject("FULL_REVIEW_OUTPUT_INVALID", "full envelope fields")
+    for raw_set in raw_golden_sets:
+        for raw in raw_set:
+            envelope = raw["run_envelope"]
+            _scan_reviewer_visible_content(
+                envelope, oracle_text, oracle_pairs, "golden reviewer context"
+            )
+            if set(envelope) != GOLDEN_ENVELOPE_KEYS:
+                _reject("RAW_GOLDEN_OUTPUT_INVALID", "golden envelope fields")
+    for case in cases:
+        _scan_reviewer_visible_content(
+            case["reviewer_package"],
+            oracle_text,
+            oracle_pairs,
+            f"golden reviewer package:{case['case_id']}",
+        )
+    verified_package = _trusted_full_reviewer_package(oracle_text, oracle_pairs)
     cohort_reports = [
         evaluate_goldens(raw_outputs, answers, cases)
         for raw_outputs in raw_golden_sets
@@ -380,7 +533,6 @@ def evaluate_official_calibration(
         "unexpected_rubric_error_count": 0,
         "unexpected_input_package_error_count": 0,
     }
-    verified_package = load_and_verify_package(FULL_PACKAGE_ROOT)
     gate_report = evaluate_reliability_gate(
         [verified_package, verified_package, verified_package],
         full_envelopes,

@@ -301,8 +301,24 @@ class OfficialCalibrationControllerNegativeTest(unittest.TestCase):
             (json.dumps(oracle, indent=2) + "\n").encode("utf-8")
         ).hexdigest()
         self._assert_oracle_rejected(
-            oracle, "ORACLE_TUPLE_SET_MISMATCH", expected_sha256=sha256
+            oracle, "GOLDEN_ORACLE_SPEC_MISMATCH", expected_sha256=sha256
         )
+
+    def test_rejects_oracle_bytes_in_reviewer_visible_context_content(self):
+        evidence = build_evidence()
+        full_review = evidence["cohorts"][0]["full_review"]
+        full_review["run_envelope"]["reviewer_visible_context_content"] = (
+            GOLDEN_ANSWERS_PATH.read_text(encoding="utf-8")
+        )
+        rehash_full_wrapper(full_review)
+        self.assert_rejected(evidence, "FORBIDDEN_CONTEXT_EXPOSURE", real_mode=True)
+
+    def test_rejects_oracle_bytes_in_reviewer_visible_package_content(self):
+        evidence = build_evidence()
+        evidence["full_reviewer_package"]["reviewer_visible_package_content"] = (
+            GOLDEN_ANSWERS_PATH.read_text(encoding="utf-8")
+        )
+        self.assert_rejected(evidence, "FORBIDDEN_CONTEXT_EXPOSURE", real_mode=True)
 
     def test_rejects_oracle_bytes_visible_to_a_reviewer_context(self):
         evidence = build_evidence()
