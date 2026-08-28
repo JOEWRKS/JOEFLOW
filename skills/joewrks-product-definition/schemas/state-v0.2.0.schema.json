@@ -26,7 +26,17 @@
       "oneOf": [
         {"properties": {"kind": {"const": "PRODUCT_SURFACE"}, "surface_ref": {"type": "string", "pattern": "^SURF-[0-9]{3,}$"}, "pack_id": {"type": "null"}, "axis_id": {"type": "null"}, "source_path": {"type": "null"}}},
         {"properties": {"kind": {"const": "GRILL_TOPOLOGY"}, "surface_ref": {"type": "null"}, "pack_id": {"enum": ["GRILL-AUTH-1", "GRILL-MONEY-1", "GRILL-FILE-UPLOAD-1", "GRILL-ASYNC-1", "GRILL-PERMISSION-1", "GRILL-DESTRUCTIVE-ACTION-1"]}, "axis_id": {"type": "null"}, "source_path": {"type": "null"}}},
-        {"properties": {"kind": {"const": "GRILL_PACK_AXIS"}, "surface_ref": {"type": "string", "pattern": "^SURF-[0-9]{3,}$"}, "pack_id": {"enum": ["GRILL-AUTH-1", "GRILL-MONEY-1", "GRILL-FILE-UPLOAD-1", "GRILL-ASYNC-1", "GRILL-PERMISSION-1", "GRILL-DESTRUCTIVE-ACTION-1"]}, "axis_id": {"$ref": "#/$defs/text"}, "source_path": {"type": "null"}}},
+        {
+          "properties": {"kind": {"const": "GRILL_PACK_AXIS"}, "surface_ref": {"type": "string", "pattern": "^SURF-[0-9]{3,}$"}, "source_path": {"type": "null"}},
+          "oneOf": [
+            {"properties": {"pack_id": {"const": "GRILL-AUTH-1"}, "axis_id": {"enum": ["registration", "verification", "login", "logout", "session_expiry", "session_renewal", "password_reset", "account_recovery", "revocation", "role_change", "provider_failure", "duplicate_identity", "account_linking"]}}},
+            {"properties": {"pack_id": {"const": "GRILL-MONEY-1"}, "axis_id": {"enum": ["currency", "price_authority", "tax", "discount", "payment_failure", "duplicate_payment", "refund", "partial_refund", "cancellation", "chargeback", "settlement", "receipt"]}}},
+            {"properties": {"pack_id": {"const": "GRILL-FILE-UPLOAD-1"}, "axis_id": {"enum": ["type", "size", "quota", "malware", "processing", "partial_failure", "resume", "retention", "deletion", "ownership", "download_permission"]}}},
+            {"properties": {"pack_id": {"const": "GRILL-ASYNC-1"}, "axis_id": {"enum": ["pending", "polling", "timeout", "retry", "idempotency", "duplicate_execution", "late_completion", "partial_completion", "cancel", "reconciliation"]}}},
+            {"properties": {"pack_id": {"const": "GRILL-PERMISSION-1"}, "axis_id": {"enum": ["role", "resource_ownership", "read", "write", "delete", "delegation", "revocation", "role_change_mid_flow", "stale_permission", "audit"]}}},
+            {"properties": {"pack_id": {"const": "GRILL-DESTRUCTIVE-ACTION-1"}, "axis_id": {"enum": ["confirmation", "reason", "undo", "grace_period", "dependency_effects", "irreversible_boundary", "audit", "notification"]}}}
+          ]
+        },
         {"properties": {"kind": {"const": "MIGRATION_RECONCILIATION"}, "surface_ref": {"type": "null"}, "pack_id": {"type": "null"}, "axis_id": {"type": "null"}, "source_path": {"$ref": "#/$defs/text"}}},
         {"properties": {"kind": {"const": "MANUAL"}, "surface_ref": {"type": "null"}, "pack_id": {"type": "null"}, "axis_id": {"type": "null"}, "source_path": {"type": "null"}}}
       ]
@@ -39,6 +49,17 @@
         "id": {"$ref": "#/$defs/text"},
         "statement": {"$ref": "#/$defs/text"},
         "consequences": {"type": "array", "items": {"$ref": "#/$defs/text"}, "minItems": 1}
+      }
+    },
+    "unknown_recommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recommended_option", "reasoning_refs", "tradeoffs", "confidence"],
+      "properties": {
+        "recommended_option": {"$ref": "#/$defs/text"},
+        "reasoning_refs": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "uniqueItems": true, "minItems": 1},
+        "tradeoffs": {"type": "array", "items": {"$ref": "#/$defs/text"}, "minItems": 1},
+        "confidence": {"enum": ["LOW", "MEDIUM", "HIGH"]}
       }
     },
     "unknown_deferral": {
@@ -242,7 +263,7 @@
         "origin": {"$ref": "#/$defs/unknown_origin"},
         "response_mode": {"enum": ["MUTUALLY_EXCLUSIVE", "OPEN_RESPONSE_REQUIRED"]},
         "options": {"type": "array", "items": {"$ref": "#/$defs/unknown_option"}},
-        "recommendation": {"oneOf": [{"type": "object"}, {"type": "null"}]},
+        "recommendation": {"oneOf": [{"$ref": "#/$defs/unknown_recommendation"}, {"type": "null"}]},
         "evidence_refs": {"type": "array", "items": {"type": "string", "pattern": "^EVD-[0-9]{3,}$"}, "uniqueItems": true},
         "resolved_by": {"type": "array", "items": {"type": "string", "pattern": "^DEC-[0-9]{3,}$"}, "uniqueItems": true},
         "resolution_mode": {"$ref": "#/$defs/nullable_resolution_mode"},
@@ -260,7 +281,8 @@
         {"if": {"properties": {"status": {"enum": ["OPEN", "DEFERRED", "BLOCKED", "SUPERSEDED", "RETIRED"]}}, "required": ["status"]}, "then": {"properties": {"resolution_mode": {"type": "null"}, "resolution_summary": {"type": "null"}, "resolved_by": {"maxItems": 0}}}},
         {"if": {"properties": {"status": {"const": "DEFERRED"}}, "required": ["status"]}, "then": {"properties": {"deferral": {"$ref": "#/$defs/unknown_deferral"}}}, "else": {"properties": {"deferral": {"type": "null"}}}},
         {"if": {"properties": {"status": {"const": "BLOCKED"}}, "required": ["status"]}, "then": {"properties": {"blocked_reason": {"$ref": "#/$defs/text"}}}, "else": {"properties": {"blocked_reason": {"type": "null"}}}},
-        {"if": {"properties": {"response_mode": {"const": "MUTUALLY_EXCLUSIVE"}}, "required": ["response_mode"]}, "then": {"properties": {"options": {"minItems": 2}}}, "else": {"properties": {"options": {"maxItems": 0}}}}
+        {"if": {"properties": {"response_mode": {"const": "MUTUALLY_EXCLUSIVE"}}, "required": ["response_mode"]}, "then": {"properties": {"options": {"minItems": 2}}}, "else": {"properties": {"options": {"maxItems": 0}}}},
+        {"if": {"properties": {"resolution_mode": {"const": "USER_ACCEPTED_RECOMMENDATION"}}, "required": ["resolution_mode"]}, "then": {"properties": {"recommendation": {"$ref": "#/$defs/unknown_recommendation"}}}}
       ]
     },
     "decisions": {
@@ -279,6 +301,7 @@
       },
       "allOf": [
         {"$ref": "#/$defs/lifecycle_requirements"},
+        {"if": {"properties": {"status": {"const": "CURRENT"}}, "required": ["status"]}, "then": {"properties": {"source_unknown_refs": {"minItems": 1}}}},
         {"if": {"properties": {"resolution_mode": {"const": "USER_ACCEPTED_RECOMMENDATION"}}, "required": ["resolution_mode"]}, "then": {"properties": {"accepted_recommendation": {"$ref": "#/$defs/accepted_recommendation"}}}, "else": {"properties": {"accepted_recommendation": {"type": "null"}}}}
       ]
     },

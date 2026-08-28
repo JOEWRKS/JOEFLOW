@@ -57,6 +57,17 @@ def accepted_recommendation():
     }
 
 
+def recommendation(*, reasoning_refs=None):
+    if reasoning_refs is None:
+        reasoning_refs = ["EVD-001"]
+    return {
+        "recommended_option": "OPT-B",
+        "reasoning_refs": list(reasoning_refs),
+        "tradeoffs": ["The alternative changes the product behavior."],
+        "confidence": "HIGH",
+    }
+
+
 class UnknownResolutionV020Test(unittest.TestCase):
     def errors(self, state):
         return validate_state_v2(state)
@@ -201,6 +212,146 @@ class UnknownResolutionV020Test(unittest.TestCase):
                     self.error_codes(state),
                 )
 
+    def test_schema_and_runtime_use_the_same_specialist_pack_axis_inventory(self):
+        expected_axes = {
+            "GRILL-AUTH-1": {
+                "registration", "verification", "login", "logout", "session_expiry",
+                "session_renewal", "password_reset", "account_recovery", "revocation",
+                "role_change", "provider_failure", "duplicate_identity", "account_linking",
+            },
+            "GRILL-MONEY-1": {
+                "currency", "price_authority", "tax", "discount", "payment_failure",
+                "duplicate_payment", "refund", "partial_refund", "cancellation",
+                "chargeback", "settlement", "receipt",
+            },
+            "GRILL-FILE-UPLOAD-1": {
+                "type", "size", "quota", "malware", "processing", "partial_failure",
+                "resume", "retention", "deletion", "ownership", "download_permission",
+            },
+            "GRILL-ASYNC-1": {
+                "pending", "polling", "timeout", "retry", "idempotency",
+                "duplicate_execution", "late_completion", "partial_completion", "cancel",
+                "reconciliation",
+            },
+            "GRILL-PERMISSION-1": {
+                "role", "resource_ownership", "read", "write", "delete", "delegation",
+                "revocation", "role_change_mid_flow", "stale_permission", "audit",
+            },
+            "GRILL-DESTRUCTIVE-ACTION-1": {
+                "confirmation", "reason", "undo", "grace_period", "dependency_effects",
+                "irreversible_boundary", "audit", "notification",
+            },
+        }
+        surface = surface_record(classification="NON_MATERIAL")
+        for pack_id, axes in expected_axes.items():
+            with self.subTest(layer="runtime", pack_id=pack_id):
+                origin = {
+                    "kind": "GRILL_PACK_AXIS", "surface_ref": "SURF-001",
+                    "pack_id": pack_id, "axis_id": sorted(axes)[0], "source_path": None,
+                }
+                state = self.state_with_unknown(unknown_record(origin=origin))
+                state["surface_manifest"]["records"] = [surface]
+                self.assertNotIn("invalid_unknown_contract", self.error_codes(state))
+
+                invalid = copy.deepcopy(state)
+                invalid_axis = "currency" if pack_id != "GRILL-MONEY-1" else "login"
+                invalid["objects"]["unknowns"][0]["origin"]["axis_id"] = invalid_axis
+                self.assertIn("invalid_unknown_contract", self.error_codes(invalid))
+
+        schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+        origin_cases = schema["$defs"]["unknown_origin"]["oneOf"]
+        axis_case = next(
+            (
+                case for case in origin_cases
+                if case.get("properties", {}).get("kind", {}).get("const") == "GRILL_PACK_AXIS"
+            ),
+            {},
+        )
+        schema_axes = {
+            case["properties"]["pack_id"]["const"]: set(case["properties"]["axis_id"]["enum"])
+            for case in axis_case.get("oneOf", [])
+        }
+        self.assertEqual(schema_axes, expected_axes)
+
+    def test_schema_and_runtime_require_sources_for_current_decisions(self):
+        state = self.state_with_linked_decision()
+        state["objects"]["decisions"][0]["source_unknown_refs"] = []
+        self.assertIn("invalid_decision_provenance", self.error_codes(state))
+
+        schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+        current_condition = next(
+            (
+                condition for condition in schema["$defs"]["decisions"]["allOf"]
+                if condition.get("if", {}).get("properties", {}).get("status", {}).get("const") == "CURRENT"
+            ),
+            {},
+        )
+        min_items = (
+            current_condition.get("then", {})
+            .get("properties", {})
+            .get("source_unknown_refs", {})
+            .get("minItems")
+        )
+        self.assertEqual(min_items, 1)
+
+    def test_schema_and_runtime_align_recommendation_and_acceptance_mode_conditions(self):
+        stale_non_accepting = self.state_with_linked_decision()
+        stale_non_accepting["objects"]["decisions"][0]["status"] = "STALE"
+        stale_non_accepting["objects"]["decisions"][0]["accepted_recommendation"] = accepted_recommendation()
+        self.assertIn("invalid_recommendation_acceptance", self.error_codes(stale_non_accepting))
+
+        stale_accepting = self.state_with_linked_decision(
+            mode="USER_ACCEPTED_RECOMMENDATION",
+            authority="USER_CONFIRMATION",
+            acceptance=None,
+        )
+        stale_accepting["objects"]["decisions"][0]["status"] = "STALE"
+        stale_accepting["objects"]["unknowns"][0]["recommendation"] = recommendation()
+        stale_accepting["evidence"] = [evidence_record(
+            source_kind="USER_CONFIRMED_INTENT", authority_classes=["INTENT"],
+        )]
+        self.assertIn("invalid_recommendation_acceptance", self.error_codes(stale_accepting))
+
+        stale_accepting["objects"]["decisions"][0]["accepted_recommendation"] = accepted_recommendation()
+        self.assertNotIn("invalid_recommendation_acceptance", self.error_codes(stale_accepting))
+
+        schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+        recommendation_schema = schema["$defs"].get("unknown_recommendation")
+        self.assertIsNotNone(recommendation_schema)
+        self.assertEqual(
+            set(recommendation_schema.get("required", [])),
+            {"recommended_option", "reasoning_refs", "tradeoffs", "confidence"},
+        )
+        self.assertEqual(
+            schema["$defs"]["unknowns"]["properties"]["recommendation"],
+            {"oneOf": [{"$ref": "#/$defs/unknown_recommendation"}, {"type": "null"}]},
+        )
+        unknown_acceptance_condition = next(
+            (
+                condition for condition in schema["$defs"]["unknowns"]["allOf"]
+                if condition.get("if", {}).get("properties", {}).get("resolution_mode", {}).get("const")
+                == "USER_ACCEPTED_RECOMMENDATION"
+            ),
+            {},
+        )
+        self.assertEqual(
+            unknown_acceptance_condition.get("then", {}).get("properties", {}).get("recommendation"),
+            {"$ref": "#/$defs/unknown_recommendation"},
+        )
+        acceptance_condition = next(
+            condition for condition in schema["$defs"]["decisions"]["allOf"]
+            if condition.get("if", {}).get("properties", {}).get("resolution_mode", {}).get("const")
+            == "USER_ACCEPTED_RECOMMENDATION"
+        )
+        self.assertEqual(
+            acceptance_condition["then"]["properties"]["accepted_recommendation"],
+            {"$ref": "#/$defs/accepted_recommendation"},
+        )
+        self.assertEqual(
+            acceptance_condition["else"]["properties"]["accepted_recommendation"],
+            {"type": "null"},
+        )
+
     def test_response_options_are_exact_unique_and_match_response_mode(self):
         invalid_unknowns = []
         one_option = unknown_record()
@@ -224,6 +375,42 @@ class UnknownResolutionV020Test(unittest.TestCase):
             self.error_codes(self.state_with_unknown(unknown_record(response_mode="OPEN_RESPONSE_REQUIRED"))),
             set(),
         )
+
+    def test_recommendation_is_canonical_and_reasoning_refs_are_current_permitted_authority(self):
+        evidence_backed = unknown_record()
+        evidence_backed["recommendation"] = recommendation()
+        state = self.state_with_unknown(evidence_backed)
+        state["evidence"] = [evidence_record(
+            source_kind="USER_CONFIRMED_INTENT", authority_classes=["INTENT"],
+        )]
+        self.assertEqual(self.error_codes(state), set())
+
+        authority_backed = unknown_record()
+        authority_backed["recommendation"] = recommendation(reasoning_refs=["REQ-001"])
+        authority_state = self.state_with_unknown(authority_backed)
+        authority_state["objects"]["requirements"] = [{
+            "id": "REQ-001", "status": "CURRENT", "statement": "Use the alternative behavior.",
+            "scope": "CORE", "ui_required": True, "materiality": materiality(classification="MATERIAL"),
+        }]
+        self.assertEqual(self.error_codes(authority_state), set())
+
+        invalid_states = []
+        missing = copy.deepcopy(state)
+        missing["objects"]["unknowns"][0]["recommendation"]["reasoning_refs"] = ["EVD-999"]
+        invalid_states.append(missing)
+        stale = copy.deepcopy(state)
+        stale["evidence"][0]["status"] = "STALE"
+        invalid_states.append(stale)
+        candidate_only = copy.deepcopy(state)
+        candidate_only["evidence"][0]["source_kind"] = "DESIGN_ARTIFACT"
+        invalid_states.append(candidate_only)
+        stale_authority = copy.deepcopy(authority_state)
+        stale_authority["objects"]["requirements"][0]["status"] = "STALE"
+        invalid_states.append(stale_authority)
+
+        for invalid in invalid_states:
+            with self.subTest(invalid=invalid):
+                self.assertIn("invalid_recommendation_reference", self.error_codes(invalid))
 
     def test_open_unknown_cannot_carry_resolution_fields(self):
         unknown = unknown_record()
@@ -305,7 +492,18 @@ class UnknownResolutionV020Test(unittest.TestCase):
             authority="USER_CONFIRMATION",
             acceptance=accepted_recommendation(),
         )
+        state["objects"]["unknowns"][0]["recommendation"] = recommendation()
+        state["evidence"] = [evidence_record(
+            source_kind="USER_CONFIRMED_INTENT", authority_classes=["INTENT"],
+        )]
         self.assertEqual(self.error_codes(state), set())
+
+        phantom = self.state_with_linked_decision(
+            mode="USER_ACCEPTED_RECOMMENDATION",
+            authority="USER_CONFIRMATION",
+            acceptance=accepted_recommendation(),
+        )
+        self.assertIn("invalid_recommendation_acceptance", self.error_codes(phantom))
 
         for value in (
             None,
@@ -318,6 +516,22 @@ class UnknownResolutionV020Test(unittest.TestCase):
                 candidate = copy.deepcopy(state)
                 candidate["objects"]["decisions"][0]["accepted_recommendation"] = value
                 self.assertIn("invalid_recommendation_acceptance", self.error_codes(candidate))
+
+        mismatched_recommendation = copy.deepcopy(state)
+        mismatched_recommendation["objects"]["unknowns"][0]["recommendation"]["recommended_option"] = "OPT-A"
+        self.assertIn(
+            "invalid_recommendation_acceptance",
+            self.error_codes(mismatched_recommendation),
+        )
+
+        mismatched_tradeoffs = copy.deepcopy(state)
+        mismatched_tradeoffs["objects"]["unknowns"][0]["recommendation"]["tradeoffs"] = [
+            "A different tradeoff was presented."
+        ]
+        self.assertIn(
+            "invalid_recommendation_acceptance",
+            self.error_codes(mismatched_tradeoffs),
+        )
 
     def test_agent_non_material_resolution_requires_agent_and_non_material_source(self):
         valid = self.state_with_linked_decision(
@@ -439,6 +653,40 @@ class UnknownResolutionV020Test(unittest.TestCase):
             with self.subTest(code=code, state=state):
                 self.assertIn(code, self.error_codes(state))
 
+    def test_malformed_cross_link_containers_return_findings_instead_of_crashing(self):
+        valid = self.state_with_linked_decision()
+        cases = []
+        missing_sources = copy.deepcopy(valid)
+        missing_sources["objects"]["decisions"][0]["source_unknown_refs"] = None
+        cases.append(missing_sources)
+        missing_resolution_links = copy.deepcopy(valid)
+        missing_resolution_links["objects"]["unknowns"][0]["resolved_by"] = None
+        cases.append(missing_resolution_links)
+        malformed_response_mode = self.state_with_unknown(unknown_record())
+        malformed_response_mode["objects"]["unknowns"][0]["response_mode"] = []
+        cases.append(malformed_response_mode)
+        malformed_resolution_mode = self.state_with_unknown(self.resolved_unknown(
+            mode="USER_DECISION", authority="USER_DECISION_REQUIRED",
+        ))
+        malformed_resolution_mode["objects"]["unknowns"][0]["resolution_mode"] = {}
+        cases.append(malformed_resolution_mode)
+        malformed_recommendation = self.state_with_unknown(unknown_record())
+        malformed_recommendation["objects"]["unknowns"][0]["recommendation"] = recommendation()
+        malformed_recommendation["objects"]["unknowns"][0]["recommendation"]["confidence"] = []
+        cases.append(malformed_recommendation)
+
+        for state in cases:
+            with self.subTest(state=state):
+                try:
+                    errors = self.errors(state)
+                except Exception as exception:
+                    self.fail(f"validation raised {type(exception).__name__}: {exception}")
+                self.assertTrue(errors)
+                self.assertTrue(
+                    all(set(error) == {"code", "message", "path"} for error in errors),
+                    errors,
+                )
+
     def test_external_constraint_decision_requires_external_actor_and_constraint_evidence(self):
         unknown = self.resolved_unknown(
             mode="EXTERNAL_CONSTRAINT",
@@ -460,14 +708,22 @@ class UnknownResolutionV020Test(unittest.TestCase):
         )]
         self.assertEqual(self.error_codes(state), set())
 
-        for mutate in ("actor", "evidence"):
+        for mutate in ("stale", "source", "mode", "authority", "actor", "evidence"):
             with self.subTest(mutate=mutate):
                 candidate = copy.deepcopy(state)
-                if mutate == "actor":
+                if mutate == "stale":
+                    candidate["objects"]["decisions"][0]["status"] = "STALE"
+                elif mutate == "source":
+                    candidate["objects"]["decisions"][0]["source_unknown_refs"] = ["UNK-999"]
+                elif mutate == "mode":
+                    candidate["objects"]["decisions"][0]["resolution_mode"] = "USER_DECISION"
+                elif mutate == "authority":
+                    candidate["objects"]["decisions"][0]["decision_authority"] = "USER_DECISION_REQUIRED"
+                elif mutate == "actor":
                     candidate["objects"]["decisions"][0]["decided_by"] = "USER"
                 else:
                     candidate["objects"]["decisions"][0]["evidence_refs"] = []
-                self.assertIn("invalid_decision_provenance", self.error_codes(candidate))
+                self.assertIn("unresolved_unknown_provenance", self.error_codes(candidate))
 
     def test_evidence_and_migration_modes_are_invalid_for_current_decisions(self):
         for mode in ("EVIDENCE", "MIGRATION_RECONCILIATION"):

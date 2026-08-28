@@ -88,6 +88,7 @@ SPECIALIST_PACK_AXES = {
         "irreversible_boundary", "audit", "notification",
     },
 }
+PRODUCT_AUTHORITY_GROUPS = {"requirements", "rules", "flows", "data", "integrations"}
 IMPACT_REVIEW_KEYS = {
     "scope", "rules", "flows", "states", "privacy", "money", "security", "acceptance",
 }
@@ -172,7 +173,10 @@ def _is_valid_origin(
 
 
 def _is_valid_options(response_mode: Any, options: Any) -> bool:
-    if response_mode not in {"MUTUALLY_EXCLUSIVE", "OPEN_RESPONSE_REQUIRED"}:
+    if (
+        not isinstance(response_mode, str)
+        or response_mode not in {"MUTUALLY_EXCLUSIVE", "OPEN_RESPONSE_REQUIRED"}
+    ):
         return False
     if not isinstance(options, list):
         return False
@@ -245,6 +249,51 @@ def _valid_deferral(value: Any) -> bool:
     )
 
 
+def _recommendation_shape_is_valid(value: Any, options: Any) -> bool:
+    if (
+        not isinstance(value, dict)
+        or set(value) != {"recommended_option", "reasoning_refs", "tradeoffs", "confidence"}
+        or not isinstance(options, list)
+    ):
+        return False
+    option_ids = [option.get("id") for option in options if isinstance(option, dict)]
+    reasoning_refs = value.get("reasoning_refs")
+    tradeoffs = value.get("tradeoffs")
+    return (
+        _meaningful_text(value.get("recommended_option"))
+        and value.get("recommended_option") in option_ids
+        and _unique_strings(reasoning_refs, nonempty=True)
+        and isinstance(tradeoffs, list)
+        and bool(tradeoffs)
+        and all(_meaningful_text(item) for item in tradeoffs)
+        and isinstance(value.get("confidence"), str)
+        and value.get("confidence") in {"LOW", "MEDIUM", "HIGH"}
+    )
+
+
+def _recommendation_ref_is_current_and_permitted(
+    reference: Any,
+    *,
+    required_authority_class: Any,
+    id_index: dict[str, tuple[str, dict[str, object]]],
+    evidence_index: dict[str, dict[str, object]],
+) -> bool:
+    if not isinstance(reference, str):
+        return False
+    evidence = evidence_index.get(reference)
+    if evidence is not None:
+        return (
+            isinstance(required_authority_class, str)
+            and _evidence_can_support(evidence, required_authority_class)
+        )
+    entry = id_index.get(reference)
+    return (
+        entry is not None
+        and entry[0] in PRODUCT_AUTHORITY_GROUPS
+        and entry[1].get("status") == "CURRENT"
+    )
+
+
 def _accepted_recommendation_is_valid(value: Any, unknowns: list[dict[str, object]]) -> bool:
     required = {
         "recommended_option", "alternatives_presented", "tradeoffs_presented",
@@ -266,12 +315,14 @@ def _accepted_recommendation_is_valid(value: Any, unknowns: list[dict[str, objec
         return False
     for unknown in unknowns:
         options = unknown.get("options")
-        if not isinstance(options, list):
+        recommendation = unknown.get("recommendation")
+        if not _recommendation_shape_is_valid(recommendation, options):
             return False
         option_ids = [option.get("id") for option in options if isinstance(option, dict)]
         if (
-            value["recommended_option"] not in option_ids
+            value["recommended_option"] != recommendation["recommended_option"]
             or alternatives != option_ids
+            or tradeoffs != recommendation["tradeoffs"]
         ):
             return False
     return True
@@ -313,12 +364,34 @@ def _validate_unknown_shape(
         or not _unique_strings(unknown.get("blocks_unknown_refs"))
         or not _unique_strings(unknown.get("evidence_refs"))
         or not _unique_strings(unknown.get("resolved_by"))
-        or not (
-            unknown.get("recommendation") is None
-            or isinstance(unknown.get("recommendation"), dict)
-        )
+        or not (unknown.get("recommendation") is None or isinstance(unknown.get("recommendation"), dict))
     ):
         errors.append(_error("invalid_unknown_contract", "invalid unknown semantic shape", path))
+
+    recommendation = unknown.get("recommendation")
+    if recommendation is not None:
+        if not _recommendation_shape_is_valid(recommendation, unknown.get("options")):
+            errors.append(_error(
+                "invalid_unknown_contract",
+                "recommendation must match the canonical M3 structure",
+                f"{path}.recommendation",
+            ))
+        else:
+            reasoning_refs = recommendation["reasoning_refs"]
+            if any(
+                not _recommendation_ref_is_current_and_permitted(
+                    reference,
+                    required_authority_class=unknown.get("required_authority_class"),
+                    id_index=id_index,
+                    evidence_index=evidence_index,
+                )
+                for reference in reasoning_refs
+            ):
+                errors.append(_error(
+                    "invalid_recommendation_reference",
+                    "reasoning_refs must resolve to permitted current evidence or product authority",
+                    f"{path}.recommendation.reasoning_refs",
+                ))
 
     unknown_id = unknown.get("id")
     for field, expected_group in (("blocks_unknown_refs", "unknowns"), ("resolved_by", "decisions")):
@@ -359,7 +432,11 @@ def _validate_unknown_shape(
     summary = unknown.get("resolution_summary")
     resolved_by = unknown.get("resolved_by")
     if status == "RESOLVED":
-        if mode not in RESOLUTION_MODES or not _meaningful_text(summary):
+        if (
+            not isinstance(mode, str)
+            or mode not in RESOLUTION_MODES
+            or not _meaningful_text(summary)
+        ):
             errors.append(_error(
                 "unresolved_unknown_provenance",
                 "RESOLVED requires a supported mode and meaningful summary",
@@ -439,12 +516,36 @@ def _validate_unknown_resolution(
                 "EXTERNAL_CONSTRAINT requires current qualifying constraint evidence",
                 path,
             ))
-        if isinstance(resolved_by, list) and len(resolved_by) > 1:
-            errors.append(_error(
-                "unresolved_unknown_provenance",
-                "EXTERNAL_CONSTRAINT may reference at most one matching decision",
-                path,
-            ))
+        if isinstance(resolved_by, list) and resolved_by:
+            linked_decision = None
+            if len(resolved_by) == 1 and isinstance(resolved_by[0], str):
+                entry = id_index.get(resolved_by[0])
+                if (
+                    entry is not None
+                    and entry[0] == "decisions"
+                    and entry[1].get("status") == "CURRENT"
+                ):
+                    linked_decision = entry[1]
+            source_refs = linked_decision.get("source_unknown_refs") if linked_decision else None
+            if (
+                linked_decision is None
+                or not isinstance(source_refs, list)
+                or unknown.get("id") not in source_refs
+                or linked_decision.get("resolution_mode") != "EXTERNAL_CONSTRAINT"
+                or linked_decision.get("decision_authority") != "EXTERNAL_AUTHORITY_REQUIRED"
+                or linked_decision.get("decided_by") != "EXTERNAL_AUTHORITY"
+                or not _has_qualifying_evidence(
+                    linked_decision.get("evidence_refs"),
+                    evidence_index,
+                    "CONSTRAINT",
+                    external_constraint=True,
+                )
+            ):
+                errors.append(_error(
+                    "unresolved_unknown_provenance",
+                    "EXTERNAL_CONSTRAINT decision link must be one matching current externally-authorized decision",
+                    path,
+                ))
     elif isinstance(mode, str) and mode in {
         "USER_DECISION", "USER_ACCEPTED_RECOMMENDATION", "AGENT_NON_MATERIAL_DEFAULT",
     }:
@@ -456,7 +557,8 @@ def _validate_unknown_resolution(
                     decisions.append(entry[1])
         if (
             len(decisions) != 1
-            or unknown.get("id") not in decisions[0].get("source_unknown_refs", [])
+            or not isinstance(decisions[0].get("source_unknown_refs"), list)
+            or unknown.get("id") not in decisions[0]["source_unknown_refs"]
             or decisions[0].get("resolution_mode") != mode
             or decisions[0].get("decision_authority") != authority
         ):
@@ -533,6 +635,22 @@ def _validate_decision(
             "invalid_decision_provenance", "affects refs must resolve to canonical IDs", f"{path}.affects",
         ))
 
+    mode = decision.get("resolution_mode")
+    acceptance = decision.get("accepted_recommendation")
+    if mode == "USER_ACCEPTED_RECOMMENDATION":
+        if not _accepted_recommendation_is_valid(acceptance, source_unknowns):
+            errors.append(_error(
+                "invalid_recommendation_acceptance",
+                "accepted recommendation must reproduce the presented option provenance",
+                path,
+            ))
+    elif acceptance is not None:
+        errors.append(_error(
+            "invalid_recommendation_acceptance",
+            "accepted_recommendation is only valid for USER_ACCEPTED_RECOMMENDATION",
+            path,
+        ))
+
     if decision.get("status") != "CURRENT":
         return errors
     if not source_refs:
@@ -540,7 +658,6 @@ def _validate_decision(
             "invalid_decision_provenance", "current decisions require a source unknown", path,
         ))
 
-    mode = decision.get("resolution_mode")
     authority = decision.get("decision_authority")
     if not isinstance(mode, str) or mode not in DECISION_RESOLUTION_MODES:
         errors.append(_error(
@@ -561,7 +678,8 @@ def _validate_decision(
             unknown.get("status") != "RESOLVED"
             or unknown.get("resolution_mode") != mode
             or unknown.get("decision_authority") != authority
-            or decision_id not in unknown.get("resolved_by", [])
+            or not isinstance(unknown.get("resolved_by"), list)
+            or decision_id not in unknown["resolved_by"]
         ):
             errors.append(_error(
                 "invalid_unknown_resolution_authority",
@@ -572,21 +690,6 @@ def _validate_decision(
     if isinstance(mode, str) and mode in MODE_DECIDERS and decision.get("decided_by") != MODE_DECIDERS[mode]:
         errors.append(_error(
             "invalid_decision_provenance", "decided_by does not match resolution mode", path,
-        ))
-
-    acceptance = decision.get("accepted_recommendation")
-    if mode == "USER_ACCEPTED_RECOMMENDATION":
-        if not _accepted_recommendation_is_valid(acceptance, source_unknowns):
-            errors.append(_error(
-                "invalid_recommendation_acceptance",
-                "accepted recommendation must reproduce the presented option provenance",
-                path,
-            ))
-    elif acceptance is not None:
-        errors.append(_error(
-            "invalid_recommendation_acceptance",
-            "accepted_recommendation is only valid for USER_ACCEPTED_RECOMMENDATION",
-            path,
         ))
 
     if mode == "AGENT_NON_MATERIAL_DEFAULT":
