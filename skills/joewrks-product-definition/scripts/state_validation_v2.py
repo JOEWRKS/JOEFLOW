@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from discovery_v2 import validate_discovery_baseline
+
 
 SCHEMA_VERSION = "0.2.0"
 ROOT_KEYS = {
@@ -19,6 +21,7 @@ DEFINITION_STATUSES = {"OPEN", "READY_FOR_REVIEW", "CLOSED", "BLOCKED"}
 NORMAL_AUTHORITY_STATUSES = {"CURRENT", "STALE", "SUPERSEDED", "RETIRED"}
 UNKNOWN_STATUSES = {"OPEN", "RESOLVED", "DEFERRED", "BLOCKED", "SUPERSEDED", "RETIRED"}
 EVIDENCE_STATUSES = {"CURRENT", "STALE", "SUPERSEDED", "UNAVAILABLE"}
+STALE_CONSUMED_EVIDENCE_STATUSES = {"STALE", "SUPERSEDED", "UNAVAILABLE"}
 EVIDENCE_CONFIDENCE = {"DIRECT", "CORROBORATED", "INFERRED"}
 EVIDENCE_AUTHORITY_CLASSES = {"FACTUAL", "INTENT", "CONSTRAINT", "BEHAVIORAL", "PREFERENCE"}
 CONTRADICTION_STATUSES = {"OPEN", "RESOLVED", "SUPERSEDED", "RETIRED"}
@@ -939,7 +942,57 @@ def _validate_supersession_cycles(state: dict[str, Any]) -> list[dict[str, str]]
     return errors
 
 
-def validate_state_v2(state: dict[str, Any]) -> list[dict[str, str]]:
+def _validate_stale_consumed_evidence(state: dict[str, Any]) -> list[dict[str, str]]:
+    evidence_index = _collect_evidence(state)
+    errors: list[dict[str, str]] = []
+
+    def validate_refs(refs: Any, path: str) -> None:
+        if not isinstance(refs, list):
+            return
+        for reference in refs:
+            evidence = evidence_index.get(reference) if isinstance(reference, str) else None
+            if evidence is not None and evidence.get("status") in STALE_CONSUMED_EVIDENCE_STATUSES:
+                errors.append(_error(
+                    "stale_consumed_evidence",
+                    "current authority cannot consume stale, superseded, or unavailable evidence",
+                    path,
+                ))
+
+    for group, position, record in _iter_records(state):
+        if group == "decisions" and isinstance(record, dict) and record.get("status") == "CURRENT":
+            validate_refs(record.get("evidence_refs"), f"objects.decisions[{position}].evidence_refs")
+    surface_manifest = state.get("surface_manifest")
+    records = surface_manifest.get("records") if isinstance(surface_manifest, dict) else None
+    if isinstance(records, list):
+        for position, record in enumerate(records):
+            if isinstance(record, dict) and record.get("status") not in {"SUPERSEDED", "RETIRED"}:
+                validate_refs(record.get("evidence_refs"), f"surface_manifest.records[{position}].evidence_refs")
+    return errors
+
+
+def _stale_consumed_evidence_count(state: dict[str, Any]) -> int:
+    evidence_index = _collect_evidence(state)
+    consumed: list[Any] = []
+    for group, _, record in _iter_records(state):
+        if group == "decisions" and isinstance(record, dict) and record.get("status") == "CURRENT":
+            consumed.extend(record.get("evidence_refs", []) if isinstance(record.get("evidence_refs"), list) else [])
+    surface_manifest = state.get("surface_manifest")
+    records = surface_manifest.get("records") if isinstance(surface_manifest, dict) else None
+    if isinstance(records, list):
+        for record in records:
+            if isinstance(record, dict) and record.get("status") not in {"SUPERSEDED", "RETIRED"}:
+                consumed.extend(record.get("evidence_refs", []) if isinstance(record.get("evidence_refs"), list) else [])
+    return sum(
+        isinstance(reference, str)
+        and (evidence := evidence_index.get(reference)) is not None
+        and evidence.get("status") in STALE_CONSUMED_EVIDENCE_STATUSES
+        for reference in consumed
+    )
+
+
+def _validate_state_v2(
+    state: dict[str, Any], *, check_discovery_baseline: bool,
+) -> list[dict[str, str]]:
     errors: list[dict[str, str]] = []
     if state.get("schema_version") != SCHEMA_VERSION:
         errors.append(_error("schema_error", "schema_version must equal 0.2.0", "schema_version"))
@@ -997,7 +1050,14 @@ def validate_state_v2(state: dict[str, Any]) -> list[dict[str, str]]:
     errors.extend(_validate_supersession_cycles(state))
     errors.extend(_validate_surface_manifest(state, index, evidence_index))
     errors.extend(_validate_contradictions(state, index, evidence_index))
+    errors.extend(_validate_stale_consumed_evidence(state))
+    if check_discovery_baseline:
+        errors.extend(validate_discovery_baseline(state))
     return errors
+
+
+def validate_state_v2(state: dict[str, Any]) -> list[dict[str, str]]:
+    return _validate_state_v2(state, check_discovery_baseline=True)
 
 
 def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:
@@ -1007,6 +1067,11 @@ def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:
             "semantic_closure_not_implemented": 1,
             **_surface_metrics(state),
             **_contradiction_metrics(state),
+            "stale_consumed_evidence": _stale_consumed_evidence_count(state),
+            "discovery_baseline_gaps": int(
+                isinstance(state.get("discovery_baseline"), dict)
+                and state["discovery_baseline"].get("status") != "CURRENT"
+            ),
         },
         "closed": False,
         "definition_digest": None,

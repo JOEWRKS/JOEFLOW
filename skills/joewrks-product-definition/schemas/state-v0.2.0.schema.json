@@ -33,6 +33,34 @@
       },
       "additionalProperties": false
     },
+    "discovery_baseline": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status"],
+          "properties": {"status": {"enum": ["NOT_ESTABLISHED", "STALE"]}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "definition_revision", "surface_manifest_digest", "evidence_commitment_digest", "open_material_surface_count", "unresolved_material_contradiction_count", "procedure_complete", "applicable_surface_classes_complete", "active_grill_packs", "active_grill_packs_complete", "unknown_unknown_exhaustiveness_claimed"],
+          "properties": {
+            "status": {"const": "CURRENT"},
+            "definition_revision": {"type": "integer", "minimum": 1},
+            "surface_manifest_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "evidence_commitment_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "open_material_surface_count": {"type": "integer", "minimum": 0},
+            "unresolved_material_contradiction_count": {"type": "integer", "minimum": 0},
+            "procedure_complete": {"type": "boolean"},
+            "applicable_surface_classes_complete": {"type": "boolean"},
+            "active_grill_packs": {"type": "array", "maxItems": 0},
+            "active_grill_packs_complete": {"const": false},
+            "unknown_unknown_exhaustiveness_claimed": {"const": false}
+          }
+        }
+      ]
+    },
     "lifecycle_requirements": {
       "allOf": [
         {"if": {"properties": {"status": {"const": "SUPERSEDED"}}, "required": ["status"]}, "then": {"required": ["superseded_by"]}},
@@ -264,7 +292,7 @@
         "tasks": {"type": "array", "items": {"$ref": "#/$defs/tasks"}}
       }
     },
-    "coverage": {"type": "array"}, "ux_coverage": {"type": "array"}, "discovery_baseline": {"type": "object"},
+    "coverage": {"type": "array"}, "ux_coverage": {"type": "array"}, "discovery_baseline": {"$ref": "#/$defs/discovery_baseline"},
     "approval": {"type": "object"}, "approval_history": {"type": "array"}
   },
   "allOf": [
