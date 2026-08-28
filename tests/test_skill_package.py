@@ -19,7 +19,8 @@ class SkillPackageTest(unittest.TestCase):
             "references/requirement-taxonomy.md", "references/product-coverage-matrix.md",
             "references/ux-state-taxonomy.md", "references/failure-recovery-taxonomy.md",
             "references/artifact-dependency-graph.md", "references/closure-gate.md",
-            "references/figma-make-handoff.md",
+            "references/figma-make-handoff.md", "references/discovery-contract-v0.2.0.md",
+            "scripts/discovery_v2.py", "scripts/build_discovery_baseline.py",
             "templates/product-definition.md", "templates/unknown-ledger.md",
             "templates/decision-ledger.md", "templates/user-flows.md",
             "templates/screen-spec.md", "templates/implementation-plan.md",
@@ -29,7 +30,7 @@ class SkillPackageTest(unittest.TestCase):
         self.assertEqual(missing, [])
 
     def test_validator_scripts_only_import_standard_library_or_sibling_module(self):
-        allowed = {"__future__", "copy", "hashlib", "json", "pathlib", "sys", "typing", "migration_v2", "state_contract_dispatch", "state_validation", "state_validation_v2"}
+        allowed = {"__future__", "copy", "hashlib", "json", "pathlib", "sys", "typing", "migration_v2", "state_contract_dispatch", "state_validation", "state_validation_v2", "discovery_v2"}
         imports = set()
         for script in (SKILL / "scripts").glob("*.py"):
             tree = ast.parse(script.read_text(encoding="utf-8"))

@@ -9,3 +9,14 @@ M1 does not claim V2 Semantic Closure. `SEMANTIC_CLOSURE_NOT_AVAILABLE_IN_M1` is
 
 `migrate_state.py --plan` emits `FOUNDATION_PLAN_ONLY` and never manufactures V2 authority.
 The M1 closure guard may be removed only by a later milestone that implements and verifies its frozen gate.
+
+## M2 discovery authority boundary
+
+M2 adds evidence, discovered surface, contradiction, reverse-bootstrap, and
+deterministic discovery-baseline authority rules. The authoritative M2 detail
+is the [M2 discovery authority contract](discovery-contract-v0.2.0.md).
+
+M2 does not remove the M1 Closure guard. `SEMANTIC_CLOSURE_NOT_AVAILABLE_IN_M2`
+means `validate_closure` still reports `closed = false`, `definition_digest = null`,
+and `semantic_closure_not_implemented = 1` until the frozen V2 Closure gate is
+implemented and verified by a later milestone.

@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "skills" / "joewrks-product-definition" / "scripts"
 SCHEMA = ROOT / "skills" / "joewrks-product-definition" / "schemas" / "state-v0.2.0.schema.json"
 REFERENCE = ROOT / "skills" / "joewrks-product-definition" / "references" / "state-contract-v0.2.0.md"
+DISCOVERY_CONTRACT = ROOT / "skills" / "joewrks-product-definition" / "references" / "discovery-contract-v0.2.0.md"
 TEMPLATE = ROOT / "skills" / "joewrks-product-definition" / "templates" / "state-v0.2.0.example.json"
 
 sys.path.insert(0, str(SCRIPTS))
@@ -117,6 +118,23 @@ class StateV020FoundationTest(unittest.TestCase):
         ):
             with self.subTest(token=token):
                 self.assertIn(token, reference)
+
+    def test_discovery_contract_defines_the_m2_authority_boundary(self):
+        self.assertTrue(DISCOVERY_CONTRACT.is_file())
+
+        state_contract = REFERENCE.read_text(encoding="utf-8")
+        discovery_contract = DISCOVERY_CONTRACT.read_text(encoding="utf-8")
+
+        self.assertIn("[M2 discovery authority contract](discovery-contract-v0.2.0.md)", state_contract)
+        for marker in (
+            "DISCOVER_AUTHORITY_IMPLEMENTED_M2",
+            "OBSERVED_IMPLEMENTATION_IS_NOT_INTENT",
+            "UNKNOWN_UNKNOWN_EXHAUSTIVENESS_NOT_CLAIMED",
+            "ACTIVE_GRILL_PACKS_NOT_IMPLEMENTED_IN_M2",
+            "SEMANTIC_CLOSURE_NOT_AVAILABLE_IN_M2",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, discovery_contract)
 
     def test_foundation_state_passes_v2_validation(self):
         self.assertEqual(validate_state_v2(foundation_state()), [])
