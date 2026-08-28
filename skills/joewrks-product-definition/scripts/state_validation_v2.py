@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from discovery_v2 import validate_discovery_baseline
+from materiality_v2 import validate_materiality_classification
 
 
 SCHEMA_VERSION = "0.2.0"
@@ -428,7 +429,7 @@ def _validate_surface_manifest(
         if not shape_valid:
             errors.append(_error("invalid_surface_shape", "invalid surface semantic shape", path))
         if "materiality" in record:
-            errors.extend(_validate_materiality_shape(record["materiality"], f"{path}.materiality"))
+            errors.extend(_validate_materiality(record["materiality"], f"{path}.materiality"))
 
         reference_specs = (
             ("evidence_refs", "EVD", lambda reference: reference in evidence_index),
@@ -629,7 +630,7 @@ def _validate_contradictions(
         if not shape_valid:
             errors.append(_error("invalid_contradiction_shape", "invalid contradiction semantic shape", path))
         if "materiality" in record:
-            errors.extend(_validate_materiality_shape(record["materiality"], f"{path}.materiality"))
+            errors.extend(_validate_materiality(record["materiality"], f"{path}.materiality"))
 
         for field in ("claim_a_refs", "claim_b_refs"):
             values = record.get(field)
@@ -801,6 +802,17 @@ def _validate_materiality_shape(value: Any, path: str) -> list[dict[str, str]]:
     return [] if valid else [_error("invalid_materiality", "invalid materiality shape", path)]
 
 
+def _validate_materiality(value: Any, path: str) -> list[dict[str, str]]:
+    errors = _validate_materiality_shape(value, path)
+    if not errors and not validate_materiality_classification(value):
+        errors.append(_error(
+            "materiality_classification_mismatch",
+            "materiality classification must match its deterministic inputs",
+            path,
+        ))
+    return errors
+
+
 def _validate_typed_semantic_minima(state: dict[str, Any]) -> list[dict[str, str]]:
     errors: list[dict[str, str]] = []
     for group, position, record in _iter_records(state):
@@ -866,7 +878,7 @@ def _validate_typed_semantic_minima(state: dict[str, Any]) -> list[dict[str, str
         ):
             errors.append(_error("schema_error", "retirement_reason must be a non-empty string", f"{path}.retirement_reason"))
         if "materiality" in record:
-            errors.extend(_validate_materiality_shape(record["materiality"], f"{path}.materiality"))
+            errors.extend(_validate_materiality(record["materiality"], f"{path}.materiality"))
     return errors
 
 

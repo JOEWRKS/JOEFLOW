@@ -51,19 +51,34 @@ def evidence_record(
     }
 
 
-def materiality(*, classification="NON_MATERIAL"):
-    return {
-        "outcome_divergence": "LOW",
-        "fan_out": "LOCAL",
-        "user_visible": False,
-        "reversibility": "TRIVIALLY_REVERSIBLE",
-        "risk_flags": {
-            "security": False, "privacy": False, "money": False,
-            "legal_or_policy": False, "destructive": False,
-            "data_loss": False, "external_commitment": False,
-        },
-        "classification": classification,
-    }
+def materiality(*, classification="NON_MATERIAL", user_visible=False):
+    if classification == "NON_MATERIAL":
+        return {
+            "outcome_divergence": "LOW",
+            "fan_out": "LOCAL",
+            "user_visible": user_visible,
+            "reversibility": "TRIVIALLY_REVERSIBLE",
+            "risk_flags": {
+                "security": False, "privacy": False, "money": False,
+                "legal_or_policy": False, "destructive": False,
+                "data_loss": False, "external_commitment": False,
+            },
+            "classification": "NON_MATERIAL",
+        }
+    if classification == "MATERIAL":
+        return {
+            "outcome_divergence": "MEDIUM",
+            "fan_out": "MULTI_OBJECT",
+            "user_visible": True,
+            "reversibility": "REVERSIBLE",
+            "risk_flags": {
+                "security": False, "privacy": False, "money": False,
+                "legal_or_policy": False, "destructive": False,
+                "data_loss": False, "external_commitment": False,
+            },
+            "classification": "MATERIAL",
+        }
+    raise ValueError(classification)
 
 
 def surface_record(
