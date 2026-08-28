@@ -119,11 +119,21 @@ def _reconciliation_paths(state: dict[str, object]) -> dict[str, str]:
     return sites
 
 
+def _legacy_validation_errors(state: dict[str, object]) -> list[dict[str, str]]:
+    try:
+        return legacy.validate_state(state)
+    except Exception as exc:
+        raise MigrationError(
+            "MIGRATION_SOURCE_INVALID",
+            {"validator_exception": {"type": type(exc).__name__}},
+        ) from None
+
+
 def build_migration_plan(state: dict[str, object]) -> dict[str, object]:
     if state.get("schema_version") != FROM_SCHEMA:
-        raise MigrationError("MIGRATION_SOURCE_INVALID", legacy.validate_state(state))
+        raise MigrationError("MIGRATION_SOURCE_INVALID", _legacy_validation_errors(state))
 
-    errors = legacy.validate_state(state)
+    errors = _legacy_validation_errors(state)
     if errors:
         raise MigrationError("MIGRATION_SOURCE_INVALID", errors)
 

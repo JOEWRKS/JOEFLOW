@@ -48,6 +48,23 @@ class MigrationFoundationTest(unittest.TestCase):
         self.assertIsInstance(caught.exception.detail, list)
         self.assertIn("broken_reference", {item["code"] for item in caught.exception.detail})
 
+    def test_frozen_validator_exception_becomes_serializable_source_invalid(self):
+        state = closed_state()
+        state["coverage"][0]["feature_id"] = []
+
+        with self.assertRaises(MigrationError) as caught:
+            build_migration_plan(state)
+
+        self.assertEqual(caught.exception.code, "MIGRATION_SOURCE_INVALID")
+        self.assertEqual(
+            caught.exception.detail,
+            {
+                "validator_exception": {
+                    "type": "TypeError",
+                }
+            },
+        )
+
     def test_v020_source_is_rejected_as_invalid_migration_source(self):
         state = closed_state()
         state["schema_version"] = "0.2.0"
@@ -200,6 +217,41 @@ class MigrationFoundationTest(unittest.TestCase):
             )
             + "\n",
         )
+
+    def test_cli_contains_validator_exception_as_repeatable_canonical_json(self):
+        state = closed_state()
+        state["coverage"][0]["feature_id"] = []
+        expected_payload = {
+            "error": {
+                "code": "MIGRATION_SOURCE_INVALID",
+                "detail": {
+                    "validator_exception": {
+                        "type": "TypeError",
+                    }
+                },
+            }
+        }
+        expected_stdout = (
+            json.dumps(
+                expected_payload,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "malformed-legacy-state.json"
+            source.write_text(json.dumps(state), encoding="utf-8")
+            command = [sys.executable, str(MIGRATION_CLI), "--plan", str(source)]
+
+            first = subprocess.run(command, capture_output=True, text=True, check=False)
+            second = subprocess.run(command, capture_output=True, text=True, check=False)
+
+        self.assertEqual((first.returncode, second.returncode), (1, 1))
+        self.assertEqual((first.stderr, second.stderr), ("", ""))
+        self.assertEqual(first.stdout, expected_stdout)
+        self.assertEqual(second.stdout, expected_stdout)
 
     def test_cli_usage_and_read_errors_return_two(self):
         missing_argument = subprocess.run(
