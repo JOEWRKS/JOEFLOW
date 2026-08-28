@@ -1,0 +1,18 @@
+{
+  "schema_version": "joewrks.semantic-review-execution-transport-preflight/1.0",
+  "reviewer_runs_at_preflight": 0,
+  "codex_cli_version": "0.146.0",
+  "output_capture": {
+    "output_last_message": "PASS",
+    "json_event_stream": "PASS",
+    "probe_runtime_context_id": "01a046d2-bb0a-7c91-9b81-b1844a8e86b1"
+  },
+  "response_format_schema": {
+    "frozen_package_schema_unchanged": true,
+    "api_response_format_binding": "NOT_USED",
+    "reason": "The frozen Draft 2020-12 reviewer schema is reviewer authority but is not an OpenAI response_format schema; passing equivalent const-only nodes to response_format was rejected before model execution.",
+    "reviewer_reads_schema_from_exact_package": true
+  },
+  "selected_output_transport": "RAW_OUTPUT_LAST_MESSAGE_WITH_JSON_EVENT_RECEIPT",
+  "retry_policy": "NO_REVIEWER_RETRY"
+}

@@ -85,7 +85,6 @@ def _execute_one(
     capture = capture_root / context_id
     capture.mkdir(parents=True, exist_ok=False)
     raw_output_path = capture / "raw-output.txt"
-    schema_path = context_root / context["output_schema_path"]
     stdout_path = capture / "codex-events.jsonl"
     stderr_path = capture / "codex-stderr.txt"
     command = [
@@ -103,8 +102,6 @@ def _execute_one(
         f'model_reasoning_effort="{reasoning_effort}"',
         "--cd",
         str(context_root),
-        "--output-schema",
-        str(schema_path),
         "--output-last-message",
         str(raw_output_path),
         "--json",
