@@ -1,10 +1,10 @@
 # Core Semantic Closure V2 — Self-Review Clarifications
 
-**Status:** `NORMATIVE_CLARIFICATION_PENDING_FINAL_USER_REVIEW`
+**Status:** `APPROVED_NORMATIVE_CLARIFICATION`
 
 **Applies to:** [`2026-08-28-core-semantic-closure-v2-design.md`](2026-08-28-core-semantic-closure-v2-design.md)
 
-This file records two architectural clarifications found during the required post-spec self-review. They do not change the approved design direction; they close edge conditions that must be carried into the implementation plan and final merged specification.
+These two architectural clarifications were found during the required post-spec self-review and were accepted with the Core Semantic Closure V2 design on 2026-08-28. They are part of the frozen normative specification set and must be carried into implementation.
 
 ## 1. Approved semantic digest vs whole-file hash
 
@@ -60,4 +60,4 @@ For identical source bytes and migrator version, the same canonical paths must r
 
 ## Self-review result
 
-No other unresolved architectural contradiction was found in the written design during this pass. These clarifications must be folded into the implementation plans and, before final design freeze/merge, into the normative design text or an explicitly versioned normative specification set.
+No other unresolved architectural contradiction was found in the written design during this pass. The two clarifications above are normative and are referenced by the design-freeze manifest and implementation plans.
