@@ -1,0 +1,32 @@
+{
+  "schema_version": "joewrks.semantic-review-calibration-run-lock/1.0",
+  "run_id": "v0.4.3-semantic-review-calibration-run-01",
+  "execution_mode": "REAL_CALIBRATION",
+  "calibration_input_commit": "96b2b6e7c5435ccdbab5f7371073ec34c2d04078",
+  "implementation_commit": "75df4655c86ecf710dcfda1d1a1d265d07a68560",
+  "frozen_bindings": {
+    "reviewer_package_sha256": "ccc2c5af60c74cde1b281ec7026bd8d42cac9717faf210c31fb3e8a719f59603",
+    "reviewer_brief_sha256": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+    "oracle_file_sha256": "4126bb8d316291d8362f04fe1160f53ad86adc73ec358effad7a84d104d7a173",
+    "oracle_pair_sha256": "7ddc257c085f8e9de4722b01f09646c25891418fbc92d60e7a15425657acc4aa",
+    "golden_cases_file_sha256": "812d99c153c736fdd6eacdb0937ba924a83c642bc78f74674b6ad708154c84f3",
+    "cohort_protocol_file_sha256": "ffa40e8d4bdd6db9cae4d082253903b72669dba5765783ccbad84b8292122298",
+    "official_controller_file_sha256": "7946492a0463ddfb0bde403a9cdbe21e2ecdab046bb9157a0575568511d123bd"
+  },
+  "cohort_ids": [
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "planned_contexts": {
+    "full": 3,
+    "golden": 45,
+    "total": 48
+  },
+  "oracle_material": "HASHES_ONLY",
+  "oracle_pairs_included": false,
+  "REAL_CALIBRATION_RUNS": 0,
+  "reviewer_outputs": "ABSENT",
+  "reviewer_execution_started": false,
+  "frozen_input_mutation_after_lock": "FORBIDDEN"
+}
