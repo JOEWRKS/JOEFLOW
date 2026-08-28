@@ -1,0 +1,46 @@
+Reading additional input from stdin...
+2026-08-28T05:49:54.824103Z ERROR codex_models_manager::cache: failed to load models cache: missing field `base_instructions` at line 97 column 5
+2026-08-28T05:49:55.202161Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-08-28T05:50:51.621372Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$j=Get-Content -Raw '"'package\\canonical-authority.json'|ConvertFrom-Json; [pscustomobject]@{keys=("'$j.psobject.Properties.Name -join '"','); objects_count="'$j.objects.Count; first=($j.objects|Select-Object -First 2|ConvertTo-Json -Depth 20 -Compress)}|ConvertTo-Json -Compress'` rejected: blocked by policy
+2026-08-28T05:50:51.621585Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$j=Get-Content -Raw '"'package\\semantic-obligation-index.json'|ConvertFrom-Json; [pscustomobject]@{keys=("'$j.psobject.Properties.Name -join '"','); count="'$j.obligations.Count; first=($j.obligations|Select-Object -First 3|ConvertTo-Json -Depth 30 -Compress)}|ConvertTo-Json -Compress'` rejected: blocked by policy
+2026-08-28T05:50:51.621845Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$j=Get-Content -Raw '"'package\\review-identity-inventory.json'|ConvertFrom-Json; [pscustomobject]@{keys=("'$j.psobject.Properties.Name -join '"','); count="'$j.identities.Count; first=($j.identities|Select-Object -First 3|ConvertTo-Json -Depth 30 -Compress)}|ConvertTo-Json -Compress'` rejected: blocked by policy
+2026-08-28T05:50:51.622501Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$j=Get-Content -Raw '"'package\\responsibility-profile-v1.json'|ConvertFrom-Json; [pscustomobject]@{keys=("'$j.psobject.Properties.Name -join '"','); count="'$j.rules.Count; first=($j.rules|Select-Object -First 3|ConvertTo-Json -Depth 30 -Compress)}|ConvertTo-Json -Compress'` rejected: blocked by policy
+2026-08-28T05:50:51.629792Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$j=Get-Content -Raw '"'package\\action-contract.json'|ConvertFrom-Json; [pscustomobject]@{keys=("'$j.psobject.Properties.Name -join '"','); actions="'$j.actions.Count; lifecycles=$j.lifecycles.Count; first_action=($j.actions|Select-Object -First 1|ConvertTo-Json -Depth 30 -Compress); first_lifecycle=($j.lifecycles|Select-Object -First 1|ConvertTo-Json -Depth 30 -Compress)}|ConvertTo-Json -Compress'` rejected: blocked by policy
+2026-08-28T05:50:56.625531Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command 'jq --version'` rejected: blocked by policy
+2026-08-28T05:51:01.669177Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-FileHash -Algorithm SHA256 'package\\manifest.json'"` rejected: blocked by policy
+2026-08-28T05:51:10.786221Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-Content -Raw package\\review-identity-inventory.json | ConvertFrom-Json | Select-Object -ExpandProperty identities | Select-Object -First 1 | ConvertTo-Json -Depth 20"` rejected: blocked by policy
+2026-08-28T05:51:11.672305Z  WARN codex_analytics::client: failed to send events request: error sending request for url (https://chatgpt.com/backend-api/codex/analytics-events/events)
+2026-08-28T05:51:31.964613Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "certutil -hashfile package\\manifest.json SHA256"` rejected: blocked by policy
+2026-08-28T05:51:44.155570Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command 'python --version'` rejected: blocked by policy
+2026-08-28T05:52:09.193592Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 0.9 seconds
+Output:
+fatal: not a git repository (or any of the parent directories): .git
+
+2026-08-28T05:52:14.590504Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "git hash-object package\\manifest.json"` rejected: blocked by policy
+2026-08-28T05:52:29.721441Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T05:52:35.092470Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$content = Get-Content -Raw '"'package\\manifest.json'; "'$content.Length'` rejected: blocked by policy
+2026-08-28T05:52:35.293586Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T05:52:39.933748Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T05:52:45.504982Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-Content -Raw 'run-envelope.json' | ConvertFrom-Json"` rejected: blocked by policy
+2026-08-28T05:52:45.692532Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T05:52:50.794193Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-Item 'package\\manifest.json' | Get-FileHash -Algorithm SHA256"` rejected: blocked by policy
+2026-08-28T05:52:50.934237Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T05:53:07.824169Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "@'
+import hashlib
+print(hashlib.sha256(open(r'package\\manifest.json','rb').read()).hexdigest())
+'@ | python -"` rejected: blocked by policy
+2026-08-28T05:55:17.409551Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T05:55:28.530809Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T05:55:39.140516Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T05:57:50.306823Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 0.8 seconds
+Output:
+
+2026-08-28T05:58:43.130648Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 0.6 seconds
+Output:
+
+2026-08-28T05:58:43.280549Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:01:24.116670Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:01:45.115255Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5

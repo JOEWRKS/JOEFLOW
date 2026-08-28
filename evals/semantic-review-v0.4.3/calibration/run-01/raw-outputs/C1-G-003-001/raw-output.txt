@@ -1,0 +1,65 @@
+{
+  "review_schema_version": "joewrks.semantic-review/1.0",
+  "review_run_id": "V043-RUN-01-C1-G-003-001",
+  "reviewer_context_id": "C1-G-003-001",
+  "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+  "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+  "reviewer_input_manifest_hash": "a58c26b6229202c60c2bb24dea094e806ee7a1f35251dec12145257bcfd0dbcb",
+  "reviewer_input_package_hash": "0350f17c8e9c2c333f3a611a6dc7b3adb587a525135a313204c9fc6d7eeb295e",
+  "contract_hash": "96a980c45eae15d11aff18a1773f5e37561c156e2b1359688074593419d1ec21",
+  "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+  "semantic_obligation_index_hash": "8c45816504b20370093fe0c9bb67e652cecd40d120c1d2f5d0db7f0aadb7638b",
+  "review_identity_inventory_hash": "1ea11c5f410dbc2080c3e7640142e5568a0091b28f7231464ed8def8b477d7e5",
+  "preflight_errors": [],
+  "records": [
+    {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "a58c26b6229202c60c2bb24dea094e806ee7a1f35251dec12145257bcfd0dbcb",
+      "contract_hash": "96a980c45eae15d11aff18a1773f5e37561c156e2b1359688074593419d1ec21",
+      "review_identity": "action:ACT-G-003:input_invariants",
+      "owner_kind": "action",
+      "owner_id": "ACT-G-003",
+      "semantic_field": "input_invariants",
+      "semantic_value_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "provenance_hashes": [
+        "0cc8115e7d6d2b9c909c3f6236ddef4b1d0542af814d36b70c63fd8e172e0146"
+      ],
+      "provenance_set_hash": "5c82b173957711ee02d076dda4e8f29df3d381429cde98e9ca286b651ea47f3c",
+      "responsibility_rule_id": "FR-A09",
+      "completeness_mode": "LOCAL",
+      "sibling_review_identity_refs": [],
+      "semantic_obligation_ids": [
+        "OBL-G-003-FOCUS"
+      ],
+      "test_obligation_refs": [
+        "TEST-G-003-FOCUS"
+      ],
+      "verdict": "APPROVED",
+      "rationale_code": "SUPPORTED_EXACTLY",
+      "canonical_evidence_refs": [
+        {
+          "object_id": "RULE-G-003",
+          "pointer": "/objects/rules/0/text",
+          "value_sha256": "f3fe250acf6f2e041392249cd647f96f19fe96448a46aa1334efd6a0918f34aa",
+          "source_status": "CURRENT",
+          "active": true
+        }
+      ],
+      "reviewer_explanation": "The canonical rule defines a current-owner authority relationship, not a command-input predicate. Under FR-A09, the empty input_invariants value is therefore complete and does not improperly duplicate the relationship_predicate-owned semantic."
+    }
+  ],
+  "summary": {
+    "expected_identity_count": 1,
+    "record_count": 1,
+    "unique_identity_count": 1,
+    "pending_count": 0,
+    "verdict_counts": {
+      "APPROVED": 1,
+      "REJECTED_CANDIDATE": 0,
+      "RUBRIC_ERROR": 0,
+      "INPUT_PACKAGE_ERROR": 0
+    },
+    "complete": true
+  }
+}

@@ -1,0 +1,17 @@
+Reading additional input from stdin...
+2026-08-28T06:02:01.512051Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-08-28T06:02:43.540033Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$files = Get-ChildItem -LiteralPath '"'package' -File; "'$files | Sort-Object Name | ForEach-Object { $h=(Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLower(); [pscustomobject]@{Name=$_.Name;Bytes=$_.Length;SHA256=$h} } | ConvertTo-Json -Depth 3; $raw=Get-Content -Raw -LiteralPath '"'package\\responsibility.json' | ConvertFrom-Json; "'$raw.PSObject.Properties.Name | ConvertTo-Json; $raw.schema_version; $raw.responsibility_profile_hash'` rejected: blocked by policy
+2026-08-28T06:02:50.686601Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command 'Get-ChildItem -LiteralPath package -File | Get-FileHash -Algorithm SHA256 | Format-Table -AutoSize'` rejected: blocked by policy
+2026-08-28T06:02:57.567490Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-Item -LiteralPath package\\authority.json | Select-Object Name,Length"` rejected: blocked by policy
+2026-08-28T06:03:02.432047Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "certutil -hashfile package\\authority.json SHA256"` rejected: blocked by policy
+2026-08-28T06:03:11.416609Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "openssl dgst -sha256 package\\authority.json"` rejected: blocked by policy
+2026-08-28T06:03:33.636768Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-Content -AsByteStream -Raw -LiteralPath package\\authority.json | ForEach-Object { [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData("'$_)).ToLower() }'` rejected: blocked by policy
+2026-08-28T06:03:43.554504Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-Content -Raw -LiteralPath package\\responsibility.json | ConvertFrom-Json | Select-Object schema_version,responsibility_profile_hash | ConvertTo-Json"` rejected: blocked by policy
+2026-08-28T06:03:52.800069Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 1.1 seconds
+Output:
+
+2026-08-28T06:03:58.697123Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 1 seconds
+Output:
+

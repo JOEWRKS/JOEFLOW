@@ -1,0 +1,65 @@
+{
+  "review_schema_version": "joewrks.semantic-review/1.0",
+  "review_run_id": "V043-RUN-01-C2-G-004-001",
+  "reviewer_context_id": "C2-G-004-001",
+  "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+  "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+  "reviewer_input_manifest_hash": "85e9d215c0b55063a2dc3edf54ee16f11600e6f1cc71c6af29d4680ec24f3080",
+  "reviewer_input_package_hash": "ef6fa674458c1ca9a825d710ed88405a8a09c8317aac7f83dc4fe294bb4c5391",
+  "contract_hash": "461c41086e95f9ed609662b9d4006de4b266b0e6fff62fa4703fe82aefdbc961",
+  "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+  "semantic_obligation_index_hash": "93f722704e1c2bd445af3a31ba5f2c15c4d9b9d95a00fee39316f37e4a60766c",
+  "review_identity_inventory_hash": "0011fe5750a479c1f205ebdab52a814df0b07a3a7300a2c5c8ee23da0e331064",
+  "preflight_errors": [],
+  "records": [
+    {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "85e9d215c0b55063a2dc3edf54ee16f11600e6f1cc71c6af29d4680ec24f3080",
+      "contract_hash": "461c41086e95f9ed609662b9d4006de4b266b0e6fff62fa4703fe82aefdbc961",
+      "review_identity": "action:ACT-G-004:visible_error",
+      "owner_kind": "action",
+      "owner_id": "ACT-G-004",
+      "semantic_field": "visible_error",
+      "semantic_value_hash": "c96cd2373f10e62c17e381efe7ca24bbc730a7dd50a3e2b1073e3ca53ef2af17",
+      "provenance_hashes": [
+        "219a912d59f0ee2767dd9bdeca6700a911346fad324da78fba02c97b312f08f7"
+      ],
+      "provenance_set_hash": "fd4b44d2033e82de7b26669792173abfb40963d3a333a8805507c0b038cfa71a",
+      "responsibility_rule_id": "FR-A23",
+      "completeness_mode": "COMPOSITIONAL",
+      "sibling_review_identity_refs": [],
+      "semantic_obligation_ids": [
+        "OBL-G-004-FOCUS"
+      ],
+      "test_obligation_refs": [
+        "TEST-G-004-FOCUS"
+      ],
+      "verdict": "REJECTED_CANDIDATE",
+      "rationale_code": "MISSING_OWNED_SEMANTIC",
+      "canonical_evidence_refs": [
+        {
+          "object_id": "RULE-G-004",
+          "pointer": "/objects/rules/0/text",
+          "value_sha256": "6e26349bf8e852681bd4b5b1d1d32b3c6d5016f8fab965cba70ee09feb2e4c27",
+          "source_status": "CURRENT",
+          "active": true
+        }
+      ],
+      "reviewer_explanation": "The visible_error candidate shows a validation category but omits the canonically required preservation of submitted input after failure. No permitted sibling reference supplies that owned visible-error behavior."
+    }
+  ],
+  "summary": {
+    "expected_identity_count": 1,
+    "record_count": 1,
+    "unique_identity_count": 1,
+    "pending_count": 0,
+    "verdict_counts": {
+      "APPROVED": 0,
+      "REJECTED_CANDIDATE": 1,
+      "RUBRIC_ERROR": 0,
+      "INPUT_PACKAGE_ERROR": 0
+    },
+    "complete": true
+  }
+}

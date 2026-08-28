@@ -1,0 +1,65 @@
+{
+  "review_schema_version": "joewrks.semantic-review/1.0",
+  "review_run_id": "V043-RUN-01-C1-G-002-001",
+  "reviewer_context_id": "C1-G-002-001",
+  "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+  "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+  "reviewer_input_manifest_hash": "ce880cfc11e2e25582cc773317bc24b79168a5d07a341f87f5822395e60b1ac1",
+  "reviewer_input_package_hash": "8b11c2985055d45306931178d856d8a368f581489cde9c68dea6d33dcd03e583",
+  "contract_hash": "1cc1cca43c44787f78e0d45b55591c2c21228999d2cc0682f8900d14fc37f1c8",
+  "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+  "semantic_obligation_index_hash": "2552088d15d99599a0f438dc24bfd4f39b7d876d1556012a1347a73c58d286c8",
+  "review_identity_inventory_hash": "58984f5c5a40972500d6505a66c70fbe1836dfcd163f48fc4c6fb744f176cbf5",
+  "preflight_errors": [],
+  "records": [
+    {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "ce880cfc11e2e25582cc773317bc24b79168a5d07a341f87f5822395e60b1ac1",
+      "contract_hash": "1cc1cca43c44787f78e0d45b55591c2c21228999d2cc0682f8900d14fc37f1c8",
+      "review_identity": "action:ACT-G-002:input_invariants",
+      "owner_kind": "action",
+      "owner_id": "ACT-G-002",
+      "semantic_field": "input_invariants",
+      "semantic_value_hash": "0fdeefbd2bf4547e79f801f8a016dee4740c6111f76214eb883156dc79c92298",
+      "provenance_hashes": [
+        "35010612393c61489f0a1cc97b34582c948220fd44c3977a30d91d4757eb0065"
+      ],
+      "provenance_set_hash": "9ac31e86f70a1aa247b20a37872cc3aa2fee74403fd6741c6b74fb29801fa4ed",
+      "responsibility_rule_id": "FR-A09",
+      "completeness_mode": "LOCAL",
+      "sibling_review_identity_refs": [],
+      "semantic_obligation_ids": [
+        "OBL-G-002-FOCUS"
+      ],
+      "test_obligation_refs": [
+        "TEST-G-002-FOCUS"
+      ],
+      "verdict": "APPROVED",
+      "rationale_code": "SUPPORTED_EXACTLY",
+      "canonical_evidence_refs": [
+        {
+          "object_id": "RULE-G-002",
+          "pointer": "/objects/rules/0/text",
+          "value_sha256": "b20f50a7a10e909f337a65500039194360e3562b6f6b9dfbff2ff69be26f1ee5",
+          "source_status": "CURRENT",
+          "active": true
+        }
+      ],
+      "reviewer_explanation": "The candidate requires the reason input to be non-empty, matching the current canonical rule exactly in meaning and remaining within FR-A09's command-input predicate responsibility."
+    }
+  ],
+  "summary": {
+    "expected_identity_count": 1,
+    "record_count": 1,
+    "unique_identity_count": 1,
+    "pending_count": 0,
+    "verdict_counts": {
+      "APPROVED": 1,
+      "REJECTED_CANDIDATE": 0,
+      "RUBRIC_ERROR": 0,
+      "INPUT_PACKAGE_ERROR": 0
+    },
+    "complete": true
+  }
+}

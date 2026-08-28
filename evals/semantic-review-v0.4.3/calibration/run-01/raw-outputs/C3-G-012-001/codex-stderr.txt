@@ -1,0 +1,23 @@
+Reading additional input from stdin...
+2026-08-28T06:36:39.597113Z ERROR codex_models_manager::cache: failed to load models cache: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:36:40.533567Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-08-28T06:37:32.504977Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command 'Get-ChildItem -File package | Sort-Object Name | ForEach-Object { $h=(Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLower(); [pscustomobject]@{Name=$_.Name;Bytes=$_.Length;SHA256=$h} } | ConvertTo-Json -Compress'` rejected: blocked by policy
+2026-08-28T06:37:32.668287Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:37:39.649213Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "@'
+import hashlib, json, pathlib
+root=pathlib.Path('package')
+for p in sorted(root.iterdir()):
+    if p.is_file():
+        b=p.read_bytes()
+        print(json.dumps({'name':p.name,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()}))
+'@ | python -"` rejected: blocked by policy
+2026-08-28T06:37:39.817612Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:37:44.737867Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-FileHash -Algorithm SHA256 -LiteralPath 'package\\authority.json'"` rejected: blocked by policy
+2026-08-28T06:37:44.896081Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:37:48.640481Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "certutil -hashfile package\\authority.json SHA256"` rejected: blocked by policy
+2026-08-28T06:37:48.788611Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:37:58.250037Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:38:27.773111Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:38:47.777129Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:40:35.132926Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:40:40.872711Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5

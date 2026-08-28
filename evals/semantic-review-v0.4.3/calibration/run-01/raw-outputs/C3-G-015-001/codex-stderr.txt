@@ -1,0 +1,39 @@
+Reading additional input from stdin...
+2026-08-28T06:41:06.109223Z ERROR codex_models_manager::cache: failed to load models cache: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:41:07.146668Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-08-28T06:41:26.391898Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-Content -Raw 'C:\\Users\\tjdwo\\.codex\\plugins\\cache\\openai-curated-remote\\superpowers\\6.3.0\\skills\\using-superpowers\\references\\codex-tools.md'; Get-ChildItem -Path '.\\package' -File | Sort-Object Name | ForEach-Object { \""'`n===== $($_.Name) =====`n"; Get-Content -Raw -LiteralPath $_.FullName }'` rejected: blocked by policy
+2026-08-28T06:42:08.044810Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "@'
+import json, hashlib, pathlib
+root=pathlib.Path('.')
+pkg=root/'package'
+for p in sorted(pkg.iterdir()):
+    if p.is_file():
+        b=p.read_bytes(); print(p.name,len(b),hashlib.sha256(b).hexdigest())
+print('run-envelope.json',len((root/'run-envelope.json').read_bytes()),hashlib.sha256((root/'run-envelope.json').read_bytes()).hexdigest())
+
+def canon(x): return json.dumps(x,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()
+def h(x): return hashlib.sha256(canon(x)).hexdigest()
+for fn,field in [('manifest.json','reviewer_input_manifest_hash'),('contract.json','contract_hash')]:
+    x=json.loads((pkg/fn).read_text())
+    y=dict(x); y.pop(field,None)
+    z=dict(x); z[field]=''
+    print(fn,'omit',h(y),'blank',h(z),'fullcanon',h(x))
+run=json.loads((root/'run-envelope.json').read_text())
+print('attestation canon',h(run['isolation_attestation']))
+auth=json.loads((pkg/'authority.json').read_text())
+v=auth['objects']['rules'][0]['text']
+print('authority text',v,hashlib.sha256(canon(v)).hexdigest(),hashlib.sha256(v.encode()).hexdigest())
+con=json.loads((pkg/'contract.json').read_text())
+v=con['actions'][0]['preconditions']['value']
+print('semantic value canon',h(v))
+prov=con['actions'][0]['sources'][0]
+print('prov record canon',h(prov))
+ids=json.loads((pkg/'identities.json').read_text())['identities'][0]
+print('prov hashes set list canon',h(ids['provenance_hashes']))
+'@ | python -"` rejected: blocked by policy
+2026-08-28T06:42:16.149674Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-FileHash -Algorithm SHA256 .\\package\\authority.json, .\\package\\contract.json, .\\package\\provenance.json, .\\package\\responsibility.json, .\\package\\obligations.json, .\\package\\reviewer-brief.md, .\\package\\review-output.schema.json, .\\package\\identities.json, .\\package\\exclusions.json, .\\package\\manifest.json, .\\run-envelope.json | Format-Table -AutoSize; Get-Item .\\package\\authority.json, .\\package\\contract.json, .\\package\\provenance.json, .\\package\\responsibility.json, .\\package\\obligations.json, .\\package\\reviewer-brief.md, .\\package\\review-output.schema.json, .\\package\\identities.json, .\\package\\exclusions.json | Select-Object Name,Length | Format-Table -AutoSize"` rejected: blocked by policy
+2026-08-28T06:42:20.288064Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-FileHash -Algorithm SHA256 '.\\package\\authority.json'"` rejected: blocked by policy
+2026-08-28T06:42:26.528279Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "python -c \"import hashlib,pathlib; p=pathlib.Path(r'package/authority.json'); b=p.read_bytes(); print(len(b),hashlib.sha256(b).hexdigest())\""` rejected: blocked by policy
+2026-08-28T06:42:32.401965Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-Item '.\\package\\authority.json' | Select-Object Name,Length"` rejected: blocked by policy
+2026-08-28T06:42:36.573916Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "certutil -hashfile .\\package\\authority.json SHA256"` rejected: blocked by policy
+2026-08-28T06:43:04.845849Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "(Get-Content -Raw '.\\package\\authority.json').Length"` rejected: blocked by policy

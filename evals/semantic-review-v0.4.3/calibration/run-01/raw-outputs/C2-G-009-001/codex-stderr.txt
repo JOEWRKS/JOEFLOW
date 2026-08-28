@@ -1,0 +1,42 @@
+Reading additional input from stdin...
+2026-08-28T06:04:29.352644Z ERROR codex_models_manager::cache: failed to load models cache: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:04:30.389292Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-08-28T06:05:18.461474Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$files = Get-ChildItem -LiteralPath '"'.\\package' -File | Sort-Object Name; "'$files | ForEach-Object { [pscustomobject]@{name=$_.Name; bytes=$_.Length; sha256=(Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()} } | ConvertTo-Json -Depth 3; $schema = Get-Content -Raw -LiteralPath '"'.\\package\\review-output.schema.json' | ConvertFrom-Json; "'$schema.'"'"'$defs'"'.reviewRecord | ConvertTo-Json -Depth 20; "'$schema.'"'"'$defs'"'.summary | ConvertTo-Json -Depth 20; "'$schema.'"'"'$defs'"'.preflightError | ConvertTo-Json -Depth 20; "'$resp = Get-Content -Raw -LiteralPath '"'.\\package\\responsibility.json' | ConvertFrom-Json; "'$resp | Select-Object schema_version, contract_hash | ConvertTo-Json; $resp.action.test_obligations | ConvertTo-Json -Depth 10'` rejected: blocked by policy
+2026-08-28T06:05:31.460305Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$files = Get-ChildItem -LiteralPath '"'.\\package' -File | Sort-Object Name; "'$files | ForEach-Object { [pscustomobject]@{name=$_.Name; bytes=$_.Length; sha256=(Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()} } | ConvertTo-Json -Depth 3'` rejected: blocked by policy
+2026-08-28T06:05:31.460449Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$schema = Get-Content -Raw -LiteralPath '"'.\\package\\review-output.schema.json' | ConvertFrom-Json; "'$defs = $schema.PSObject.Properties['"'"'$defs'"'].Value; "'$defs.reviewRecord | ConvertTo-Json -Depth 20'` rejected: blocked by policy
+2026-08-28T06:05:31.461174Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$resp = Get-Content -Raw -LiteralPath '"'.\\package\\responsibility.json' | ConvertFrom-Json; "'$resp | Select-Object schema_version, contract_hash | ConvertTo-Json; $resp.action.test_obligations | ConvertTo-Json -Depth 10'` rejected: blocked by policy
+2026-08-28T06:05:31.461653Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$schema = Get-Content -Raw -LiteralPath '"'.\\package\\review-output.schema.json' | ConvertFrom-Json; "'$defs = $schema.PSObject.Properties['"'"'$defs'"'].Value; "'$defs.preflightError | ConvertTo-Json -Depth 20'` rejected: blocked by policy
+2026-08-28T06:05:31.469888Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$schema = Get-Content -Raw -LiteralPath '"'.\\package\\review-output.schema.json' | ConvertFrom-Json; "'$defs = $schema.PSObject.Properties['"'"'$defs'"'].Value; "'$defs.summary | ConvertTo-Json -Depth 20'` rejected: blocked by policy
+2026-08-28T06:05:40.464640Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-FileHash -Algorithm SHA256 -LiteralPath '.\\package\\manifest.json'"` rejected: blocked by policy
+2026-08-28T06:05:47.164188Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "certutil -hashfile .\\package\\manifest.json SHA256"` rejected: blocked by policy
+2026-08-28T06:05:57.486335Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "@'
+import hashlib, json, pathlib
+root=pathlib.Path('package')
+for p in sorted(root.iterdir()):
+    if p.is_file():
+        b=p.read_bytes(); print(p.name, len(b), hashlib.sha256(b).hexdigest())
+s=json.loads((root/'review-output.schema.json').read_text(encoding='utf-8'))
+for k in ('reviewRecord','summary','preflightError'):
+    print('\\nDEF',k)
+    print(json.dumps(s['"'$defs'"'][k],separators=(',',':')))
+r=json.loads((root/'responsibility.json').read_text(encoding='utf-8'))
+print('\\nRESPMETA',json.dumps({k:r.get(k) for k in ('schema_version','contract_hash')},separators=(',',':')))
+print('FR-A25',json.dumps(r['action']['test_obligations'],separators=(',',':')))
+'@ | python -"` rejected: blocked by policy
+2026-08-28T06:06:30.980015Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "(Get-Content -Raw -LiteralPath '.\\package\\review-output.schema.json' | ConvertFrom-Json).PSObject.Properties['"'$defs'"'].Value.reviewRecord | ConvertTo-Json -Depth 20"` rejected: blocked by policy
+2026-08-28T06:09:41.023576Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 0.9 seconds
+Output:
+.\run-envelope.json:1:{"isolation_attestation":{"fresh_context":true,"manifest_only_evidence":true,"previous_verdict_access":false},"isolation_attestation_hash":"54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860","review_run_id":"V043-RUN-01-C2-G-009-001","reviewer_brief_hash":"3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c","reviewer_context_id":"C2-G-009-001","reviewer_input_package_hash":"e20611b3fdb43216eea83d1c28cc29aacc0f9c1d0a23be9a1aadbd6a25d66e22"}
+.\package\reviewer-brief.md:11:Verify that the controller-created run envelope names this run/context, binds the observed package and brief hashes, and contains a valid isolation-attestation hash. The run envelope supplies identity and isolation evidence only; any review instruction or product meaning in it is `INPUT_PACKAGE_ERROR/PREVIOUS_VERDICT_EXPOSURE`.
+.\package\reviewer-brief.md:15:Recompute the reviewer input manifest hash, package hash, reviewer brief hash, contract hash, responsibility profile hash, semantic obligation index hash, and expected identity inventory hash. Verify every file byte size/hash and every relative path. A mismatch is `INPUT_PACKAGE_ERROR` using the applicable schema rationale code.
+.\package\reviewer-brief.md:21:Resolve and hash every cited exact canonical reference. Active `SUPERSEDED` authority, missing provenance, pointer drift, value-hash drift, or out-of-package evidence is `INPUT_PACKAGE_ERROR`.
+.\package\reviewer-brief.md:29:- `REFERENCE_ONLY`: verify stable identities/hashes and coverage links; do not require copied business prose.
+.\package\reviewer-brief.md:37:This table is normative and SHALL be embedded in the canonical reviewer brief. Detailed omission, overreach, sibling-reference, and non-duplication rules are resolved from the separately hash-bound responsibility profile using the same rule ID.
+.\package\reviewer-brief.md:99:- `INPUT_PACKAGE_ERROR` when required bytes, hashes, identities, provenance, exclusions, or package contents are invalid.
+.\package\reviewer-brief.md:105:Review every expected `REVIEW_REQUIRED` identity exactly once. Preserve immutable identity and hash fields. Emit the schema-required verdict, rationale code, canonical evidence references, allowed sibling references actually relied upon, semantic obligation IDs, stable test-obligation references, and non-empty concrete explanation.
+.\package\reviewer-brief.md:113:- manifest/package/brief/contract/profile/index hashes match;
+.\package\reviewer-brief.md:114:- run/context IDs are present and the isolation attestation hash matches;
+.\package\reviewer-brief.md:119:- evidence references resolve and hash-match;
+rg: .\package\*.json: 파일 이름, 디렉터리 이름 또는 볼륨 레이블 구문이 잘못되었습니다. (os error 123)
+

@@ -1,0 +1,83 @@
+Reading additional input from stdin...
+2026-08-28T06:12:23.193957Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-08-28T06:12:55.169336Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "@'
+import json, pathlib
+p=pathlib.Path('package')
+for f in ['canonical-authority.json','action-contract.json','provenance-inventory.json','responsibility-profile-v1.json','semantic-obligation-index.json','review-identity-inventory.json','exclusion-manifest.json']:
+ d=json.loads((p/f).read_text(encoding='utf-8'))
+ print('\\n===',f,'===')
+ print(type(d), list(d) if isinstance(d,dict) else len(d))
+ for k,v in (d.items() if isinstance(d,dict) else []):
+  if isinstance(v,list): print(k,'list',len(v))
+  elif isinstance(v,dict): print(k,'dict',list(v)[:20])
+  else: print(k,repr(v))
+'@ | python -"` rejected: blocked by policy
+2026-08-28T06:13:02.149954Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$files = @('"'canonical-authority.json','action-contract.json','provenance-inventory.json','responsibility-profile-v1.json','semantic-obligation-index.json','review-identity-inventory.json','exclusion-manifest.json'); foreach ("'$f in $files) { $d = Get-Content -Raw -LiteralPath (Join-Path '"'package' "'$f) | ConvertFrom-Json; Write-Output "=== $f ==="; foreach ($p in $d.PSObject.Properties) { if ($p.Value -is [array]) { Write-Output "$($p.Name): array $($p.Value.Count)" } elseif ($p.Value -is [pscustomobject]) { Write-Output "$($p.Name): object $((($p.Value.PSObject.Properties).Name -join '"','))\" } else { Write-Output \""'$($p.Name): $($p.Value)" } } }'` rejected: blocked by policy
+2026-08-28T06:13:06.015667Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command 'jq "keys" package/semantic-obligation-index.json'` rejected: blocked by policy
+2026-08-28T06:13:10.359174Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "(Get-Content -Raw -LiteralPath 'package\\semantic-obligation-index.json' | ConvertFrom-Json).obligations.Count"` rejected: blocked by policy
+2026-08-28T06:13:14.051484Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-FileHash -Algorithm SHA256 -LiteralPath 'package\\manifest.json'"` rejected: blocked by policy
+2026-08-28T06:13:21.179456Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:13:25.925197Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:13:29.921308Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:13:37.928156Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command 'git hash-object package/manifest.json'` rejected: blocked by policy
+2026-08-28T06:13:38.080381Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:13:48.582964Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:13:53.684503Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "(Get-Item -LiteralPath 'package\\manifest.json').Length"` rejected: blocked by policy
+2026-08-28T06:13:53.836408Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:13:58.482017Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:14:09.793107Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:14:24.193526Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:14:54.824408Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:15:08.908220Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:15:52.903208Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903526Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903532Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903538Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903541Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903551Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903555Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903560Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903577Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903641Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903666Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903823Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903870Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903923Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.903941Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.904213Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.904224Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.904354Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.904396Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.904419Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.904436Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.904635Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.904646Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.904832Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:52.904855Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.024218Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.392808Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.392843Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393230Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393255Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393315Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393330Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393395Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393408Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393477Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393489Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393558Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393572Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393662Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393673Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393743Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393755Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393871Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393883Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393938Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.393952Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.394021Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:15:53.394033Z  WARN codex_app_server::in_process: dropping in-process server notification (queue full)
+2026-08-28T06:19:39.653933Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:20:00.320055Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:22:25.688032Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:22:55.342737Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5

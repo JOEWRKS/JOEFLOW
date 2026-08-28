@@ -1,0 +1,65 @@
+{
+  "review_schema_version": "joewrks.semantic-review/1.0",
+  "review_run_id": "V043-RUN-01-C3-G-008-001",
+  "reviewer_context_id": "C3-G-008-001",
+  "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+  "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+  "reviewer_input_manifest_hash": "188f5d519627dbd4081f282ecf8cf703a9faf7d5b3d0e7a9ff5b618fdd1dadbb",
+  "reviewer_input_package_hash": "306a4eed4346a8ad586c2ca199c3c4592fd1be69f314fe308069f923c9c06876",
+  "contract_hash": "a4b626226007dbfa70023b69cc67710b6f9a0851dcf5471911adfffbf53ee23a",
+  "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+  "semantic_obligation_index_hash": "67bfeff9b44d6840daefa54a51fbe91000da67fecf99d06a6f4bdcd941b6329d",
+  "review_identity_inventory_hash": "f976f250b5bf9c62a6253cb96928856b8204c512c049b655ce423d1815b06777",
+  "preflight_errors": [],
+  "records": [
+    {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "188f5d519627dbd4081f282ecf8cf703a9faf7d5b3d0e7a9ff5b618fdd1dadbb",
+      "contract_hash": "a4b626226007dbfa70023b69cc67710b6f9a0851dcf5471911adfffbf53ee23a",
+      "review_identity": "action:ACT-G-008:test_obligations",
+      "owner_kind": "action",
+      "owner_id": "ACT-G-008",
+      "semantic_field": "test_obligations",
+      "semantic_value_hash": "c1bbbeb0591073ef0e3ead7fe2b1494346b1d535208430be980745d77a059285",
+      "provenance_hashes": [
+        "8a6acdd5a3f353612aac2f606e041526634e20328c0252acae7fd1425022f046"
+      ],
+      "provenance_set_hash": "e11e42e63d4369d0587d24b8e522fd62be3220be9a5589443a71d3be2c6d7f8c",
+      "responsibility_rule_id": "FR-A25",
+      "completeness_mode": "REFERENCE_ONLY",
+      "sibling_review_identity_refs": [],
+      "semantic_obligation_ids": [
+        "OBL-G-008-FOCUS"
+      ],
+      "test_obligation_refs": [
+        "TEST-G008"
+      ],
+      "verdict": "REJECTED_CANDIDATE",
+      "rationale_code": "MISSING_OWNED_SEMANTIC",
+      "canonical_evidence_refs": [
+        {
+          "object_id": "RULE-G-008",
+          "pointer": "/objects/rules/0/text",
+          "value_sha256": "610d05676d05d186647166e09068c75c28e94981f435d8d00a9e49aaf769bc06",
+          "source_status": "CURRENT",
+          "active": true
+        }
+      ],
+      "reviewer_explanation": "The candidate supplies TEST-G008, but OBL-G-008-FOCUS requires the stable reference TEST-G-008-FOCUS. The required verification-coverage reference is absent."
+    }
+  ],
+  "summary": {
+    "expected_identity_count": 1,
+    "record_count": 1,
+    "unique_identity_count": 1,
+    "pending_count": 0,
+    "verdict_counts": {
+      "APPROVED": 0,
+      "REJECTED_CANDIDATE": 1,
+      "RUBRIC_ERROR": 0,
+      "INPUT_PACKAGE_ERROR": 0
+    },
+    "complete": true
+  }
+}

@@ -1,0 +1,17 @@
+Reading additional input from stdin...
+2026-08-28T06:18:29.111686Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-08-28T06:19:02.495638Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command 'Get-ChildItem package -File | Sort-Object Name | ForEach-Object { $h=(Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLower(); "$($_.Name)`t$($_.Length)`t$h" }; (Get-FileHash -Algorithm SHA256 -LiteralPath package'"\\manifest.json).Hash.ToLower(); (Get-FileHash -Algorithm SHA256 -LiteralPath run-envelope.json).Hash.ToLower()"` rejected: blocked by policy
+2026-08-28T06:19:08.101971Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command 'Get-ChildItem package -File | Sort-Object Name | ForEach-Object { $itemHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLower(); Write-Output (($_.Name) + "`t" + ($_.Length) + "`t" + $itemHash) }'` rejected: blocked by policy
+2026-08-28T06:19:13.429111Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "@'
+from pathlib import Path
+import hashlib
+for p in sorted(Path('package').iterdir()):
+    if p.is_file():
+        b=p.read_bytes()
+        print(p.name, len(b), hashlib.sha256(b).hexdigest(), sep='\\t')
+'@ | python -"` rejected: blocked by policy
+2026-08-28T06:19:17.438322Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "certutil -hashfile package\\contract.json SHA256"` rejected: blocked by policy
+2026-08-28T06:19:25.870982Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command 'Get-ChildItem package -File | Select-Object Name,Length'` rejected: blocked by policy
+2026-08-28T06:19:26.047458Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T06:19:31.260772Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "(Get-Item -LiteralPath package\\contract.json).Length"` rejected: blocked by policy
+2026-08-28T06:19:31.419569Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5

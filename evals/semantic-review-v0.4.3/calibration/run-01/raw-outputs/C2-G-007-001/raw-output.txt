@@ -1,0 +1,63 @@
+{
+  "review_schema_version": "joewrks.semantic-review/1.0",
+  "review_run_id": "V043-RUN-01-C2-G-007-001",
+  "reviewer_context_id": "C2-G-007-001",
+  "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+  "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+  "reviewer_input_manifest_hash": "bdf3ba551b1d869aa4bd18a1fdd8a8efc89fa8890e513358d01736ef0bdf7c3c",
+  "reviewer_input_package_hash": "170d6d18fc7875a84078036ff5e6fde02ab2a696bc33faa425a1a861b30a8498",
+  "contract_hash": "64778f4c85537c595d2513339538ab08b2b5a0019ef1a4a2becb828cfc18bb81",
+  "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+  "semantic_obligation_index_hash": "56e6708b5c2fb8348f2713e14ed446a3f17df3e254c9411eb750020235d3b826",
+  "review_identity_inventory_hash": "bcfbf0b8bf3bbe395852d1c37e4c4ba30a9d1d79a9f63c880f0e1f05056517f3",
+  "preflight_errors": [],
+  "records": [
+    {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "bdf3ba551b1d869aa4bd18a1fdd8a8efc89fa8890e513358d01736ef0bdf7c3c",
+      "contract_hash": "64778f4c85537c595d2513339538ab08b2b5a0019ef1a4a2becb828cfc18bb81",
+      "review_identity": "action:ACT-G-007:test_obligations",
+      "owner_kind": "action",
+      "owner_id": "ACT-G-007",
+      "semantic_field": "test_obligations",
+      "semantic_value_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "provenance_hashes": [
+        "d4517414046d11f2b55baceda1ae978bc26a7c58499a222a291da0a98ca1c235"
+      ],
+      "provenance_set_hash": "c9998c5f0ce645d93959fc57c2170f274b2bbe81a69bf1ffe059de811e00cd97",
+      "responsibility_rule_id": "FR-A25",
+      "completeness_mode": "REFERENCE_ONLY",
+      "sibling_review_identity_refs": [],
+      "semantic_obligation_ids": [
+        "OBL-G-007-FOCUS"
+      ],
+      "test_obligation_refs": [],
+      "verdict": "REJECTED_CANDIDATE",
+      "rationale_code": "MISSING_OWNED_SEMANTIC",
+      "canonical_evidence_refs": [
+        {
+          "object_id": "RULE-G-007",
+          "pointer": "/objects/rules/0/text",
+          "value_sha256": "610d05676d05d186647166e09068c75c28e94981f435d8d00a9e49aaf769bc06",
+          "source_status": "CURRENT",
+          "active": true
+        }
+      ],
+      "reviewer_explanation": "The test_obligations value is empty, so material obligation OBL-G-007-FOCUS lacks its required stable verification reference TEST-G-007-FOCUS."
+    }
+  ],
+  "summary": {
+    "expected_identity_count": 1,
+    "record_count": 1,
+    "unique_identity_count": 1,
+    "pending_count": 0,
+    "verdict_counts": {
+      "APPROVED": 0,
+      "REJECTED_CANDIDATE": 1,
+      "RUBRIC_ERROR": 0,
+      "INPUT_PACKAGE_ERROR": 0
+    },
+    "complete": true
+  }
+}

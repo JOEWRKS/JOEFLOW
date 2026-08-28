@@ -1,0 +1,65 @@
+{
+  "review_schema_version": "joewrks.semantic-review/1.0",
+  "review_run_id": "V043-RUN-01-C2-G-001-001",
+  "reviewer_context_id": "C2-G-001-001",
+  "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+  "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+  "reviewer_input_manifest_hash": "a7242fcb6e53b7259027334736053559b04fb7a0703d2ce771278e79d3ebebb9",
+  "reviewer_input_package_hash": "f62ca6765e4722965d60f48e437eb44007b804322b2992965ad02e7e7cca0ef3",
+  "contract_hash": "a3db9a25fe87a673ce61d5cd77e3a3eea956d0931b8d92623f67297400df3a01",
+  "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+  "semantic_obligation_index_hash": "b10072a1c2506c770a85a24b060a06ace08b7b0a307a46f8257a82fa0cbd6ddd",
+  "review_identity_inventory_hash": "7a6dad2964ec6083cebcbd776742f0dc8add461e9b44c2039af92a41b6fbb265",
+  "preflight_errors": [],
+  "records": [
+    {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "a7242fcb6e53b7259027334736053559b04fb7a0703d2ce771278e79d3ebebb9",
+      "contract_hash": "a3db9a25fe87a673ce61d5cd77e3a3eea956d0931b8d92623f67297400df3a01",
+      "review_identity": "action:ACT-G-001:input_invariants",
+      "owner_kind": "action",
+      "owner_id": "ACT-G-001",
+      "semantic_field": "input_invariants",
+      "semantic_value_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "provenance_hashes": [
+        "fb6e98b3849632bc190f113497c0f1871fb56d76a5b07bf1af0e56c43dff7dcc"
+      ],
+      "provenance_set_hash": "080d78bf4e025d965e127f6445b7a0aa7bbcdadce984df7f614f64343c9cfaa6",
+      "responsibility_rule_id": "FR-A09",
+      "completeness_mode": "LOCAL",
+      "sibling_review_identity_refs": [],
+      "semantic_obligation_ids": [
+        "OBL-G-001-FOCUS"
+      ],
+      "test_obligation_refs": [
+        "TEST-G-001-FOCUS"
+      ],
+      "verdict": "REJECTED_CANDIDATE",
+      "rationale_code": "MISSING_OWNED_SEMANTIC",
+      "canonical_evidence_refs": [
+        {
+          "object_id": "RULE-G-001",
+          "pointer": "/objects/rules/0/text",
+          "value_sha256": "b20f50a7a10e909f337a65500039194360e3562b6f6b9dfbff2ff69be26f1ee5",
+          "source_status": "CURRENT",
+          "active": true
+        }
+      ],
+      "reviewer_explanation": "The candidate input_invariants value is empty, but the active canonical authority requires a non-empty reason input. This owned command-input predicate is therefore missing."
+    }
+  ],
+  "summary": {
+    "expected_identity_count": 1,
+    "record_count": 1,
+    "unique_identity_count": 1,
+    "pending_count": 0,
+    "verdict_counts": {
+      "APPROVED": 0,
+      "REJECTED_CANDIDATE": 1,
+      "RUBRIC_ERROR": 0,
+      "INPUT_PACKAGE_ERROR": 0
+    },
+    "complete": true
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "review_schema_version": "joewrks.semantic-review/1.0",
+  "review_run_id": "V043-RUN-01-C3-G-005-001",
+  "reviewer_context_id": "C3-G-005-001",
+  "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+  "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+  "reviewer_input_manifest_hash": "494540ff31c84bc5a4551dd21a6db1dd8fc57d43184ab8d67efd184d362c6ee4",
+  "reviewer_input_package_hash": "b973e00afa8ab39d00ec01c5f465f5e589df57df6a30d531b324aba855f0038f",
+  "contract_hash": "8edbaf0c2f9f35307d49cd48fdd074e1a6ec7411c537d52c0481f2799949dee4",
+  "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+  "semantic_obligation_index_hash": "cc08c3ad7e48aee0749dcb4fa1e82bd9c5eaf44faf5f2f7e0b5a0fead1a04d5f",
+  "review_identity_inventory_hash": "4a2f912b519c78f83a7a61172c4df11430e31d7d05d9a49ea865725bc218fde4",
+  "preflight_errors": [],
+  "records": [
+    {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "494540ff31c84bc5a4551dd21a6db1dd8fc57d43184ab8d67efd184d362c6ee4",
+      "contract_hash": "8edbaf0c2f9f35307d49cd48fdd074e1a6ec7411c537d52c0481f2799949dee4",
+      "review_identity": "action:ACT-G-005:visible_error",
+      "owner_kind": "action",
+      "owner_id": "ACT-G-005",
+      "semantic_field": "visible_error",
+      "semantic_value_hash": "b6bcdce31667688204acebfe0ad07288972fedc8dd71f7b45d0f42cc7028d505",
+      "provenance_hashes": [
+        "bb84713682b685f27aaadb2bb72ad1307749982a756585463684f4944294de56"
+      ],
+      "provenance_set_hash": "01654cf3764f22771167a80c0d5e2d881ded98fea8be28919ba7f5c73f8044a2",
+      "responsibility_rule_id": "FR-A23",
+      "completeness_mode": "COMPOSITIONAL",
+      "sibling_review_identity_refs": [],
+      "semantic_obligation_ids": [
+        "OBL-G-005-FOCUS"
+      ],
+      "test_obligation_refs": [
+        "TEST-G-005-FOCUS"
+      ],
+      "verdict": "REJECTED_CANDIDATE",
+      "rationale_code": "MISSING_OWNED_SEMANTIC",
+      "canonical_evidence_refs": [
+        {
+          "object_id": "RULE-G-005",
+          "pointer": "/objects/rules/0/text",
+          "value_sha256": "ce6dc649b56e71d69155326685581880f05cd7b86a7d01e3fe9e954873d7dde1",
+          "source_status": "CURRENT",
+          "active": true
+        }
+      ],
+      "reviewer_explanation": "The candidate preserves the input, but it only requires presenting an unspecified error. The canonical authority specifically requires presenting the input error, and the observable error category is owned by visible_error under FR-A23."
+    }
+  ],
+  "summary": {
+    "expected_identity_count": 1,
+    "record_count": 1,
+    "unique_identity_count": 1,
+    "pending_count": 0,
+    "verdict_counts": {
+      "APPROVED": 0,
+      "REJECTED_CANDIDATE": 1,
+      "RUBRIC_ERROR": 0,
+      "INPUT_PACKAGE_ERROR": 0
+    },
+    "complete": true
+  }
+}

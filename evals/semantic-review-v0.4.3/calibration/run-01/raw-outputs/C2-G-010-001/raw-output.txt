@@ -1,0 +1,65 @@
+{
+  "review_schema_version": "joewrks.semantic-review/1.0",
+  "review_run_id": "V043-RUN-01-C2-G-010-001",
+  "reviewer_context_id": "C2-G-010-001",
+  "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+  "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+  "reviewer_input_manifest_hash": "7dc4aa6372e126615278931c5d57765ec64a0537546d84ab54e12107f531c659",
+  "reviewer_input_package_hash": "277d75113c1988be68f98ed099f9164a6521a4f83cc0fe56d9e61b3ab6b79560",
+  "contract_hash": "8e219ed4c275d0d02932a61946978fd98f7f3cda4fa0d680c50b30d51677c20e",
+  "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+  "semantic_obligation_index_hash": "8122baf876c2dc7e39029d36a8575d3d8ca41967b08ffb151be6414046d60347",
+  "review_identity_inventory_hash": "02847b04319ca4b1b6761e691151511e382e7ab06bdf01ad44ae7a925ed35249",
+  "preflight_errors": [],
+  "records": [
+    {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "7dc4aa6372e126615278931c5d57765ec64a0537546d84ab54e12107f531c659",
+      "contract_hash": "8e219ed4c275d0d02932a61946978fd98f7f3cda4fa0d680c50b30d51677c20e",
+      "review_identity": "action:ACT-G-010:preconditions",
+      "owner_kind": "action",
+      "owner_id": "ACT-G-010",
+      "semantic_field": "preconditions",
+      "semantic_value_hash": "eb7e8a80ea2755cfdbb79385296b4393c4bf8c80579f156b3c80b983f11e65fd",
+      "provenance_hashes": [
+        "e26b2e826b0d0fcc6f455702f2bbf4f948a22b1713caa34506c5c68905bfda27"
+      ],
+      "provenance_set_hash": "c5e0bb0c8efe98d8b9049875ec4e2402ab7c1c2c6fc16740e84f149aae651182",
+      "responsibility_rule_id": "FR-A06",
+      "completeness_mode": "LOCAL",
+      "sibling_review_identity_refs": [],
+      "semantic_obligation_ids": [
+        "OBL-G-010-FOCUS"
+      ],
+      "test_obligation_refs": [
+        "TEST-G-010-FOCUS"
+      ],
+      "verdict": "REJECTED_CANDIDATE",
+      "rationale_code": "UNSUPPORTED_OVERREACH",
+      "canonical_evidence_refs": [
+        {
+          "object_id": "RULE-G-010",
+          "pointer": "/objects/rules/0/text",
+          "value_sha256": "9ef79d22682073d5b3b0290e02a4353b4113201526387addd0f0432131f53135",
+          "source_status": "CURRENT",
+          "active": true
+        }
+      ],
+      "reviewer_explanation": "The candidate preconditions field introduces an additional non-input domain constraint, while the canonical authority states that only the declared constraint applies. The added prerequisite therefore has no canonical support and exceeds the semantics owned by FR-A06."
+    }
+  ],
+  "summary": {
+    "expected_identity_count": 1,
+    "record_count": 1,
+    "unique_identity_count": 1,
+    "pending_count": 0,
+    "verdict_counts": {
+      "APPROVED": 0,
+      "REJECTED_CANDIDATE": 1,
+      "RUBRIC_ERROR": 0,
+      "INPUT_PACKAGE_ERROR": 0
+    },
+    "complete": true
+  }
+}

@@ -1,0 +1,21 @@
+Reading additional input from stdin...
+2026-08-28T05:47:04.964242Z ERROR codex_models_manager::cache: failed to load models cache: missing field `base_instructions` at line 97 column 5
+2026-08-28T05:47:05.428800Z  WARN codex_core::shell_snapshot: Failed to create shell snapshot for powershell: Shell snapshot not supported yet for PowerShell
+2026-08-28T05:47:32.696835Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command '$paths = @('"'run-envelope.json','package\\manifest.json','package\\authority.json','package\\contract.json','package\\obligations.json','package\\identities.json','package\\provenance.json','package\\exclusions.json'); foreach ("'$p in $paths) { "### $p"; Get-Content -Raw -LiteralPath $p }; "### HASHES"; Get-ChildItem -LiteralPath package -File | Sort-Object Name | ForEach-Object { $h=(Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLower(); "$($_.Name)`t$($_.Length)`t$h" }; $rh=(Get-FileHash -Algorithm SHA256 -LiteralPath '"'run-envelope.json').Hash.ToLower(); \"run-envelope.json"'`t$((Get-Item '"'run-envelope.json').Length)"'`t$rh"'` rejected: blocked by policy
+2026-08-28T05:47:45.089047Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "Get-FileHash -Algorithm SHA256 package\\authority.json,package\\contract.json,package\\provenance.json,package\\responsibility.json,package\\obligations.json,package\\reviewer-brief.md,package\\review-output.schema.json,package\\identities.json,package\\exclusions.json | Format-Table -AutoSize; Get-ChildItem package -File | Select-Object Name,Length | Sort-Object Name | Format-Table -AutoSize"` rejected: blocked by policy
+2026-08-28T05:47:51.185435Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "@'
+import hashlib, os
+for name in sorted(os.listdir('package')):
+ p=os.path.join('package',name)
+ if os.path.isfile(p):
+  b=open(p,'rb').read()
+  print(name, len(b), hashlib.sha256(b).hexdigest())
+'@ | python -"` rejected: blocked by policy
+2026-08-28T05:47:54.736302Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "certutil -hashfile package\\authority.json SHA256"` rejected: blocked by policy
+2026-08-28T05:47:58.822188Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command 'Get-ChildItem package -File | Select-Object Name,Length | Sort-Object Name'` rejected: blocked by policy
+2026-08-28T05:48:03.629195Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command 'cmd /c dir package'` rejected: blocked by policy
+2026-08-28T05:48:08.089245Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command 'sha256sum package/authority.json'` rejected: blocked by policy
+2026-08-28T05:48:46.808771Z ERROR codex_core::tools::router: error=`"C:\\Users\\tjdwo\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe" -Command "[Convert]::ToBase64String((Get-Content -AsByteStream -Raw package\\authority.json))"` rejected: blocked by policy
+2026-08-28T05:49:35.826406Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T05:52:18.815395Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5
+2026-08-28T05:52:35.063235Z ERROR codex_models_manager::manager: failed to renew cache TTL: missing field `base_instructions` at line 97 column 5

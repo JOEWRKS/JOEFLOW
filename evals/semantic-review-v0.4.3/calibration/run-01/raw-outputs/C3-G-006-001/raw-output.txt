@@ -1,0 +1,65 @@
+{
+  "review_schema_version": "joewrks.semantic-review/1.0",
+  "review_run_id": "V043-RUN-01-C3-G-006-001",
+  "reviewer_context_id": "C3-G-006-001",
+  "isolation_attestation_hash": "54902d45d43d7292ce9f307ce5254c482ada74f998f2eca87e0ae4f1ba193860",
+  "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+  "reviewer_input_manifest_hash": "244cc68913900aff1b97dc053cda2ed285aa48e9712031fe7e8d67e430fbd170",
+  "reviewer_input_package_hash": "1c6c2e27f1b2fa0462872db00b75198ab2c8637a1627d838ab953e63a5ab6ce4",
+  "contract_hash": "900b6679bede20c3828925a94d8674cd9e68c8f914651db28fcfdfc23bb1581c",
+  "responsibility_profile_hash": "f8010b9410bfb786cc3107e78a001e226bf30ce6cf8aafcfca303851dce56fc5",
+  "semantic_obligation_index_hash": "1f3993a8e26ac05cdc4d0846bc2dd6c48d2f3f837742ed8f3ea892e6100053d7",
+  "review_identity_inventory_hash": "eb91531c6d789a75207497aa6833b58367780ed66c88ac89737314f78a6a1156",
+  "preflight_errors": [],
+  "records": [
+    {
+      "review_schema_version": "joewrks.semantic-review/1.0",
+      "reviewer_brief_hash": "3d44f6c70536be375f8b76908b8d7cb2a48e4ad2b543800c8c6378502e9f526c",
+      "reviewer_input_manifest_hash": "244cc68913900aff1b97dc053cda2ed285aa48e9712031fe7e8d67e430fbd170",
+      "contract_hash": "900b6679bede20c3828925a94d8674cd9e68c8f914651db28fcfdfc23bb1581c",
+      "review_identity": "action:ACT-G-006:visible_error",
+      "owner_kind": "action",
+      "owner_id": "ACT-G-006",
+      "semantic_field": "visible_error",
+      "semantic_value_hash": "6655477f987dab482a906249b3c754f96912f0634e1c57f71a0708d89b415d2a",
+      "provenance_hashes": [
+        "b5e9ab1335e40d5a2b508d806a3154b43133c2544c64c63d1ab8e3a78e516700"
+      ],
+      "provenance_set_hash": "57f06c5b368619e77bb2eb19dcdfa7dd73e23ceac9287b4fed23a899f70a3ac4",
+      "responsibility_rule_id": "FR-A23",
+      "completeness_mode": "COMPOSITIONAL",
+      "sibling_review_identity_refs": [],
+      "semantic_obligation_ids": [
+        "OBL-G-006-FOCUS"
+      ],
+      "test_obligation_refs": [
+        "TEST-G-006-FOCUS"
+      ],
+      "verdict": "REJECTED_CANDIDATE",
+      "rationale_code": "UNSUPPORTED_OVERREACH",
+      "canonical_evidence_refs": [
+        {
+          "object_id": "RULE-G-006",
+          "pointer": "/objects/rules/0/text",
+          "value_sha256": "b8efe4769a190ff44e0bbdda84f537b725e1e9f4e5d4b145be9501e2195bec99",
+          "source_status": "CURRENT",
+          "active": true
+        }
+      ],
+      "reviewer_explanation": "The candidate offers retry after an error, but the canonical authority states that failure is terminal. This recovery affordance is unsupported semantic overreach."
+    }
+  ],
+  "summary": {
+    "expected_identity_count": 1,
+    "record_count": 1,
+    "unique_identity_count": 1,
+    "pending_count": 0,
+    "verdict_counts": {
+      "APPROVED": 0,
+      "REJECTED_CANDIDATE": 1,
+      "RUBRIC_ERROR": 0,
+      "INPUT_PACKAGE_ERROR": 0
+    },
+    "complete": true
+  }
+}
