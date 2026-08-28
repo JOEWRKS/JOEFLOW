@@ -1,0 +1,65 @@
+{
+  "schema_version": "joewrks.semantic-review-isolation-capability-evidence/1.0",
+  "recorded_date": "2026-08-28",
+  "probe_kind": "CAPABILITY_ONLY_NOT_SEMANTIC_REVIEW",
+  "authority": {
+    "repaired_calibration_input_commit": "748254d6def81080a2fd2736115a3ab5e0bde5a3",
+    "main_commit": "efd96410f6401cbf9624328e94b795c315164b7f"
+  },
+  "result": "BLOCKED — MANIFEST_ONLY_ISOLATION_UNAVAILABLE",
+  "blocking_observation": "RUN01_READABLE = YES",
+  "execution_mechanisms": [
+    {
+      "mechanism": "collaboration_agent",
+      "selected_for_reviewer_execution": false,
+      "reviewer_context_spawned": false,
+      "capability_assessment": "UNAVAILABLE",
+      "reason": "The runtime declares that collaboration agents share the repository filesystem."
+    },
+    {
+      "mechanism": "codex_sandbox_restricted_token",
+      "selected_for_reviewer_execution": false,
+      "reviewer_context_spawned": false,
+      "capability_assessment": "UNAVAILABLE",
+      "reason": "The local sandbox invocation required a permissions profile that was not configured; no isolated semantic execution occurred."
+    },
+    {
+      "mechanism": "ephemeral_codex_exec",
+      "selected_for_reviewer_execution": false,
+      "reviewer_context_spawned": false,
+      "probe_context_id": "01a0477c-238c-7583-9a65-930275634782",
+      "working_directory": "C:\\Users\\tjdwo\\AppData\\Local\\Temp",
+      "sandbox_mode": "read-only",
+      "repository_filesystem_visible": "YES",
+      "repository_history_accessible": "NOT_VERIFIED_COMMAND_POLICY_BLOCKED",
+      "normative_oracle_readable": "NOT_VERIFIED_COMMAND_POLICY_BLOCKED",
+      "forbidden_run_01_canary_path": "D:\\JOEWRKS\\JOEWRKS-Product-v043-calibration-run-01\\evals\\semantic-review-v0.4.3\\calibration\\run-01",
+      "canary_enumeration_observation": "controller",
+      "RUN01_READABLE": "YES",
+      "capability_assessment": "BLOCKED"
+    }
+  ],
+  "probe_accounting": {
+    "preflight_attempts": 1,
+    "preflight_retries": 0,
+    "policy_blocked_command_adjustments_within_preflight": 1,
+    "reviewer_contexts_spawned": 0,
+    "semantic_outputs_produced": 0,
+    "semantic_execution_retries": 0,
+    "REAL_CALIBRATION_ATTEMPTS": 1,
+    "VALID_REAL_CALIBRATION_RUNS": 0
+  },
+  "transcript_artifact": {
+    "status": "NOT_PRESERVED",
+    "sha256": null,
+    "reason": "The capability invocation was ephemeral and no byte-for-byte transcript file was created. The observations above are a faithful evidence summary, not an invented transcript."
+  },
+  "interpretation": {
+    "capability_probe_was_semantic_reviewer_execution": false,
+    "run_02_semantic_execution_started": false,
+    "calibration_result": "NOT_MEASURED",
+    "calibration_pass_claimed": false,
+    "calibration_fail_claimed": false,
+    "semantic_or_rubric_defect_established": false
+  }
+}
