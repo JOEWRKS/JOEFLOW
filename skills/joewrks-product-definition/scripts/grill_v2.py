@@ -1766,8 +1766,9 @@ def grill_unknown_metrics(state: dict[str, object]) -> dict[str, int]:
         "missing_required_user_decisions": sum(
             isinstance(unknown, dict)
             and unknown.get("status") == "OPEN"
-            and isinstance(unknown.get("decision_authority"), str)
-            and unknown.get("decision_authority") in {"USER_CONFIRMATION", "USER_DECISION_REQUIRED"}
+            and derive_decision_authority(
+                unknown, evidence_index=evidence_index,
+            ) in {"USER_CONFIRMATION", "USER_DECISION_REQUIRED"}
             for unknown in unknowns
         ),
     }

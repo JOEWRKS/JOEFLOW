@@ -81,30 +81,18 @@ inventory completeness only. It remains true when valid required rows contain
 
 `evaluate_closure_v2` retains the M1/M2 metrics and adds these final M3 metrics:
 
-- `open_material_unknowns` counts OPEN unknowns whose Materiality recomputes to
-  `MATERIAL`.
-- `unresolved_unknown_provenance` counts each affected record once.
-- `invalid_resolution_authority` counts each affected unknown or decision once,
-  including an unauthorized agent decision only once even when policy findings
-  overlap.
-- `unassessed_materiality` counts each Materiality-bearing canonical requirement,
-  unknown, decision, surface, or contradiction record once when its Materiality
-  shape or stored classification is invalid. It does not trust the stored label
-  and does not crash on malformed input; ordinary validation reports the precise
-  error.
-- `unauthorized_agent_decisions` counts each affected decision once.
-- `missing_required_user_decisions` counts unresolved user-confirmation and
-  user-decision-required records.
-- `active_grill_pack_gaps` counts topology, identity, instance, and inventory
-  gaps.
-- `unresolved_pack_axes` independently counts OPEN Core and specialist axes.
-- `umbrella_unknown_compression` independently counts invalid reuse or origin
-  compression for independent axes.
-- `pack_materiality_floor_violations` independently counts invalid Materiality
-  floors.
+- `open_material_unknowns` counts each `OPEN` unknown once when its Materiality recomputes to `MATERIAL`.
+- `missing_required_user_decisions` counts each `OPEN` unknown once when deterministic `derive_decision_authority` produces `USER_CONFIRMATION` or `USER_DECISION_REQUIRED`; the stored declared authority is not trusted.
+- `unresolved_unknown_provenance` counts each `RESOLVED` unknown once when required qualifying evidence, matching current decision provenance, or external constraint authority is absent or invalid.
+- `invalid_resolution_authority` counts each affected unknown or decision once when its resolution mode or declared decision authority conflicts with deterministic policy, even when multiple policy findings overlap.
+- `unassessed_materiality` counts each Materiality-bearing canonical requirement, unknown, decision, surface, or contradiction record once when its Materiality shape or stored classification is invalid. The stored classification is not trusted; malformed input does not crash evaluation, and ordinary validation reports the precise error.
+- `unauthorized_agent_decisions` counts each agent decision once unless it uses `AGENT_NON_MATERIAL_DEFAULT` over a recomputed `NON_MATERIAL` source unknown whose deterministic authority is `AGENT_AUTONOMOUS`.
+- `active_grill_pack_gaps` counts each invalid or `OPEN` topology-profile cell and each missing, duplicate, identity-mismatched, or axis-inventory-mismatched required Core or specialist coverage row.
+- `unresolved_pack_axes` counts each `OPEN` Core or activated specialist axis independently of activation-inventory completeness and other violations.
+- `umbrella_unknown_compression` counts each independent `OPEN` specialist axis that lacks exactly one unique `OPEN` unknown with the exact matching target, pack, and axis origin.
+- `pack_materiality_floor_violations` counts each `MATERIAL`-floor independent `OPEN` specialist axis whose same exact unique origin unknown does not recompute to `MATERIAL`.
 
-The pack gap, OPEN-axis, umbrella-compression, and Materiality-floor metrics are
-independent and may intentionally overlap for the same malformed coverage row.
+These counts are independent and may intentionally overlap for the same record or coverage row.
 
 ## M3 boundary
 

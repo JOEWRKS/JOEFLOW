@@ -180,6 +180,27 @@ class StateV020FoundationTest(unittest.TestCase):
         self.assertIn("one highest-leverage user question", grill_contract)
         self.assertIn("Pack identity, version, and digest", grill_contract)
 
+        metric_definitions = (
+            "`open_material_unknowns` counts each `OPEN` unknown once when its Materiality recomputes to `MATERIAL`.",
+            "`missing_required_user_decisions` counts each `OPEN` unknown once when deterministic `derive_decision_authority` produces `USER_CONFIRMATION` or `USER_DECISION_REQUIRED`; the stored declared authority is not trusted.",
+            "`unresolved_unknown_provenance` counts each `RESOLVED` unknown once when required qualifying evidence, matching current decision provenance, or external constraint authority is absent or invalid.",
+            "`invalid_resolution_authority` counts each affected unknown or decision once when its resolution mode or declared decision authority conflicts with deterministic policy, even when multiple policy findings overlap.",
+            "`unassessed_materiality` counts each Materiality-bearing canonical requirement, unknown, decision, surface, or contradiction record once when its Materiality shape or stored classification is invalid.",
+            "`unauthorized_agent_decisions` counts each agent decision once unless it uses `AGENT_NON_MATERIAL_DEFAULT` over a recomputed `NON_MATERIAL` source unknown whose deterministic authority is `AGENT_AUTONOMOUS`.",
+            "`active_grill_pack_gaps` counts each invalid or `OPEN` topology-profile cell and each missing, duplicate, identity-mismatched, or axis-inventory-mismatched required Core or specialist coverage row.",
+            "`unresolved_pack_axes` counts each `OPEN` Core or activated specialist axis independently of activation-inventory completeness and other violations.",
+            "`umbrella_unknown_compression` counts each independent `OPEN` specialist axis that lacks exactly one unique `OPEN` unknown with the exact matching target, pack, and axis origin.",
+            "`pack_materiality_floor_violations` counts each `MATERIAL`-floor independent `OPEN` specialist axis whose same exact unique origin unknown does not recompute to `MATERIAL`.",
+        )
+        for definition in metric_definitions:
+            with self.subTest(definition=definition):
+                self.assertIn(definition, grill_contract)
+
+        self.assertIn(
+            "These counts are independent and may intentionally overlap for the same record or coverage row.",
+            grill_contract,
+        )
+
     def test_foundation_state_passes_v2_validation(self):
         self.assertEqual(validate_state_v2(foundation_state()), [])
 

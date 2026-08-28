@@ -491,6 +491,21 @@ class AutonomyPolicyV020Test(unittest.TestCase):
         codes = self.error_codes(material_state)
         self.assertIn("unauthorized_agent_decision", codes)
 
+    def test_missing_required_user_decisions_uses_derived_authority_not_stored_label(self):
+        state = self.state_with_unknown(unknown_record(
+            status="OPEN",
+            classification="MATERIAL",
+            decision_authority="AGENT_AUTONOMOUS",
+        ))
+
+        result = evaluate_closure_v2(state)
+
+        self.assertIn(
+            "invalid_decision_authority_derivation",
+            {error["code"] for error in result["errors"]},
+        )
+        self.assertEqual(result["metrics"]["missing_required_user_decisions"], 1)
+
     def test_resolution_authority_metric_counts_unauthorized_agent_conflicts_once_per_record(self):
         unknown = unknown_record(
             status="RESOLVED",
