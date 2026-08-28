@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://joewrks.example/schemas/grill-pack-1.0.schema.json",
+  "title": "JOEWRKS Declarative Grill Pack 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["pack_id", "version", "activation", "axes"],
+  "properties": {
+    "pack_id": {"type": "string", "pattern": "^GRILL-[A-Z-]+-1$"},
+    "version": {"const": "1.0"},
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["always", "surface_kinds", "topology_tags"],
+      "properties": {
+        "always": {"type": "boolean"},
+        "surface_kinds": {
+          "type": "array",
+          "items": {"enum": ["MONEY_FLOW", "ASYNC_PROCESS", "PERMISSION", "DESTRUCTIVE_OPERATION"]}
+        },
+        "topology_tags": {
+          "type": "array",
+          "items": {"enum": ["AUTH", "MONEY", "FILE_UPLOAD", "ASYNC", "PERMISSION", "DESTRUCTIVE_ACTION"]}
+        }
+      }
+    },
+    "axes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "independent_decision", "materiality_floor"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "description": {"type": "string", "pattern": ".*\\S.*"},
+          "independent_decision": {"type": "boolean"},
+          "materiality_floor": {"enum": ["INHERIT", "MATERIAL"]}
+        }
+      }
+    }
+  }
+}

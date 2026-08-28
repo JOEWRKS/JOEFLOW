@@ -1,0 +1,19 @@
+{
+  "pack_id": "GRILL-MONEY-1",
+  "version": "1.0",
+  "activation": {"always": false, "surface_kinds": ["MONEY_FLOW"], "topology_tags": ["MONEY"]},
+  "axes": [
+    {"id": "currency", "description": "Currency selection, display, and conversion policy.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "price_authority", "description": "Canonical authority for prices and price changes.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "tax", "description": "Tax calculation and presentation policy.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "discount", "description": "Discount eligibility and application behavior.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "payment_failure", "description": "Payment failure behavior and recovery.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "duplicate_payment", "description": "Duplicate payment prevention and remediation.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "refund", "description": "Full refund eligibility and execution policy.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "partial_refund", "description": "Partial refund eligibility and allocation policy.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "cancellation", "description": "Cancellation policy and monetary effects.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "chargeback", "description": "Chargeback handling and account effects.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "settlement", "description": "Settlement timing, status, and reconciliation policy.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "receipt", "description": "Receipt contents, delivery, and retention policy.", "independent_decision": true, "materiality_floor": "MATERIAL"}
+  ]
+}

@@ -10,6 +10,7 @@ try:
     from tests.v020_support import (
         decision_record as canonical_decision_record,
         evidence_record,
+        evidence_with_grill_basis,
         foundation_state,
         materiality,
         surface_record,
@@ -19,6 +20,7 @@ except ModuleNotFoundError:
     from v020_support import (
         decision_record as canonical_decision_record,
         evidence_record,
+        evidence_with_grill_basis,
         foundation_state,
         materiality,
         surface_record,
@@ -161,13 +163,13 @@ class ReverseBootstrapV020Test(unittest.TestCase):
 
         state["objects"]["requirements"] = [requirement_record()]
         state["surface_manifest"]["records"][0]["authority_refs"] = ["REQ-001"]
-        state["evidence"] = [evidence_record()]
+        state["evidence"] = evidence_with_grill_basis(evidence_record())
         self.assertIn("invalid_authoritative_surface", self.errors(state))
 
-        state["evidence"] = [
+        state["evidence"] = evidence_with_grill_basis(
             evidence_record("EVD-001", source_kind="DESIGN_ARTIFACT", authority_classes=["INTENT"]),
             evidence_record("EVD-002", source_kind="INFERRED_INTENT", authority_classes=["PREFERENCE"]),
-        ]
+        )
         state["surface_manifest"]["records"][0]["evidence_refs"] = ["EVD-001", "EVD-002"]
         self.assertIn("invalid_authoritative_surface", self.errors(state))
 
@@ -198,9 +200,9 @@ class ReverseBootstrapV020Test(unittest.TestCase):
         state = self.existing_state(surface)
         self.assertIn("invalid_observed_only_surface", self.errors(state))
 
-        state["evidence"] = [evidence_record(
+        state["evidence"] = evidence_with_grill_basis(evidence_record(
             source_kind="USER_CONFIRMED_INTENT", authority_classes=["INTENT"],
-        )]
+        ))
         state["surface_manifest"]["records"][0]["evidence_refs"] = ["EVD-001"]
         self.assertIn("invalid_observed_only_surface", self.errors(state))
 
@@ -215,7 +217,7 @@ class ReverseBootstrapV020Test(unittest.TestCase):
         surface["evidence_refs"] = ["EVD-001"]
         state = self.existing_state(surface)
         state["objects"]["requirements"] = [requirement_record()]
-        state["evidence"] = [evidence_record()]
+        state["evidence"] = evidence_with_grill_basis(evidence_record())
         self.assertIn("invalid_observed_only_surface", self.errors(state))
 
         state["objects"]["unknowns"] = [unknown_record()]
@@ -230,7 +232,7 @@ class ReverseBootstrapV020Test(unittest.TestCase):
         state["objects"]["requirements"] = [requirement_record()]
         self.assertIn("invalid_conflicting_surface", self.errors(state))
 
-        state["evidence"] = [evidence_record("EVD-001"), evidence_record("EVD-002")]
+        state["evidence"] = evidence_with_grill_basis(evidence_record("EVD-001"), evidence_record("EVD-002"))
         state["contradictions"] = [contradiction_record()]
         state["surface_manifest"]["records"][0]["contradiction_refs"] = ["CON-001"]
         self.assertEqual(self.errors(state), set())
@@ -247,9 +249,9 @@ class ReverseBootstrapV020Test(unittest.TestCase):
         state["surface_manifest"]["records"][0]["unknown_refs"] = ["UNK-001"]
         self.assertEqual(self.errors(state), set())
 
-        state["evidence"] = [evidence_record(
+        state["evidence"] = evidence_with_grill_basis(evidence_record(
             source_kind="DOCUMENTED_INTENT", authority_classes=["INTENT"],
-        )]
+        ))
         state["surface_manifest"]["records"][0]["evidence_refs"] = ["EVD-001"]
         self.assertIn("invalid_unexplained_surface", self.errors(state))
 
@@ -258,7 +260,7 @@ class ReverseBootstrapV020Test(unittest.TestCase):
         surface["intent_classification"] = "OBSERVED_ONLY"
         surface["evidence_refs"] = ["EVD-001"]
         state = self.existing_state(surface)
-        state["evidence"] = [evidence_record()]
+        state["evidence"] = evidence_with_grill_basis(evidence_record())
         self.assertEqual(self.errors(state), set())
 
         state["project"]["bootstrap_mode"] = "NEW_PRODUCT"

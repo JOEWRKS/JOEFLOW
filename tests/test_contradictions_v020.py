@@ -8,6 +8,7 @@ try:
     from tests.v020_support import (
         decision_record as canonical_decision_record,
         evidence_record,
+        evidence_with_grill_basis,
         foundation_state,
         materiality,
         unknown_record as canonical_unknown_record,
@@ -16,6 +17,7 @@ except ModuleNotFoundError:
     from v020_support import (
         decision_record as canonical_decision_record,
         evidence_record,
+        evidence_with_grill_basis,
         foundation_state,
         materiality,
         unknown_record as canonical_unknown_record,
@@ -75,7 +77,9 @@ class ContradictionsV020Test(unittest.TestCase):
 
     def state_with(self, contradiction, *evidence):
         state = foundation_state()
-        state["evidence"] = [copy.deepcopy(record) for record in evidence]
+        state["evidence"] = evidence_with_grill_basis(*(
+            copy.deepcopy(record) for record in evidence
+        ))
         state["objects"]["unknowns"] = [decision_source_unknown()]
         state["objects"]["decisions"] = [decision_record()]
         state["contradictions"] = [copy.deepcopy(contradiction)]

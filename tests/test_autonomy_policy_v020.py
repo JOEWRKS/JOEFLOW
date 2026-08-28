@@ -8,6 +8,7 @@ try:
     from tests.v020_support import (
         decision_record,
         evidence_record,
+        evidence_with_grill_basis,
         foundation_state,
         materiality,
         unknown_record,
@@ -16,6 +17,7 @@ except ModuleNotFoundError:
     from v020_support import (
         decision_record,
         evidence_record,
+        evidence_with_grill_basis,
         foundation_state,
         materiality,
         unknown_record,
@@ -92,7 +94,7 @@ class AutonomyPolicyV020Test(unittest.TestCase):
     def state_with_unknown(unknown, *, evidence=None, decision=None):
         state = foundation_state()
         state["objects"]["unknowns"] = [copy.deepcopy(unknown)]
-        state["evidence"] = copy.deepcopy(evidence or [])
+        state["evidence"] = evidence_with_grill_basis(*copy.deepcopy(evidence or []))
         if decision is not None:
             state["objects"]["decisions"] = [copy.deepcopy(decision)]
         return state

@@ -1,3 +1,42 @@
+GRILL_PROFILE_DOMAINS = (
+    "AUTH", "MONEY", "FILE_UPLOAD", "ASYNC", "PERMISSION",
+    "DESTRUCTIVE_ACTION",
+)
+
+
+def grill_profile(*, basis_ref="EVD-900"):
+    return {
+        domain: {
+            "status": "N/A",
+            "surface_refs": [],
+            "unknown_refs": [],
+            "basis_refs": [basis_ref],
+            "rationale": "Discovery found no applicable topology in this domain.",
+        }
+        for domain in GRILL_PROFILE_DOMAINS
+    }
+
+
+def grill_profile_basis_evidence():
+    return {
+        "id": "EVD-900",
+        "status": "CURRENT",
+        "source_kind": "USER_CONFIRMED_INTENT",
+        "locator": "product-definition/topology-classification",
+        "claim": "The six specialist topology domains were explicitly classified.",
+        "confidence": "DIRECT",
+        "authority_classes": ["INTENT"],
+        "observed_version": None,
+        "content_hash": None,
+    }
+
+
+def evidence_with_grill_basis(*records):
+    return [
+        record for record in records if record.get("id") != "EVD-900"
+    ] + [grill_profile_basis_evidence()]
+
+
 def foundation_state():
     return {
         "schema_version": "0.2.0",
@@ -9,8 +48,8 @@ def foundation_state():
             "closure_contract": {"level": "SEMANTIC_CLOSURE"},
         },
         "migration": {"mode": "NATIVE"},
-        "evidence": [],
-        "surface_manifest": {"records": []},
+        "evidence": evidence_with_grill_basis(),
+        "surface_manifest": {"records": [], "grill_profile": grill_profile()},
         "contradictions": [],
         "objects": {
             "goals": [], "users": [], "requirements": [], "unknowns": [],
@@ -20,6 +59,7 @@ def foundation_state():
         },
         "coverage": [],
         "ux_coverage": [],
+        "grill_coverage": [],
         "discovery_baseline": {"status": "NOT_ESTABLISHED"},
         "approval": {"status": "UNAPPROVED"},
         "approval_history": [],

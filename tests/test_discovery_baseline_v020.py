@@ -11,6 +11,7 @@ try:
     from tests.v020_support import (
         decision_record as canonical_decision_record,
         evidence_record,
+        evidence_with_grill_basis,
         foundation_state,
         materiality,
         surface_record,
@@ -20,6 +21,7 @@ except ModuleNotFoundError:
     from v020_support import (
         decision_record as canonical_decision_record,
         evidence_record,
+        evidence_with_grill_basis,
         foundation_state,
         materiality,
         surface_record,
@@ -164,7 +166,7 @@ class DiscoveryBaselineV020Test(unittest.TestCase):
 
     def test_stale_consumed_evidence_is_counted_and_rejected_as_current_authority(self):
         state = foundation_state()
-        state["evidence"] = [evidence_record(status="STALE")]
+        state["evidence"] = evidence_with_grill_basis(evidence_record(status="STALE"))
         state["objects"]["unknowns"] = [decision_source_unknown()]
         state["objects"]["decisions"] = [decision_record(evidence_refs=["EVD-001"])]
 
@@ -185,9 +187,9 @@ class DiscoveryBaselineV020Test(unittest.TestCase):
             "id": "REQ-001", "status": "CURRENT", "statement": "Save feedback.",
             "scope": "CORE", "ui_required": True, "materiality": materiality(),
         }]
-        state["evidence"] = [evidence_record(
+        state["evidence"] = evidence_with_grill_basis(evidence_record(
             status="SUPERSEDED", source_kind="DOCUMENTED_INTENT", authority_classes=["INTENT"],
-        )]
+        ))
         state["evidence"][0]["superseded_by"] = "EVD-002"
         state["evidence"].append(evidence_record(
             "EVD-002", source_kind="DOCUMENTED_INTENT", authority_classes=["INTENT"],
@@ -200,7 +202,7 @@ class DiscoveryBaselineV020Test(unittest.TestCase):
 
     def test_unconsumed_stale_evidence_does_not_count_as_stale_consumption(self):
         state = foundation_state()
-        state["evidence"] = [evidence_record(status="UNAVAILABLE")]
+        state["evidence"] = evidence_with_grill_basis(evidence_record(status="UNAVAILABLE"))
         state["evidence"][0]["unavailable_reason"] = "The source was removed."
 
         self.assertNotIn("stale_consumed_evidence", self.error_codes(state))

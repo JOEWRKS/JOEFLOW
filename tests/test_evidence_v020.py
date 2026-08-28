@@ -5,9 +5,9 @@ import unittest
 from pathlib import Path
 
 try:
-    from tests.v020_support import evidence_record, foundation_state
+    from tests.v020_support import evidence_record, evidence_with_grill_basis, foundation_state
 except ModuleNotFoundError:
-    from v020_support import evidence_record, foundation_state
+    from v020_support import evidence_record, evidence_with_grill_basis, foundation_state
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,7 +41,9 @@ class EvidenceV020Test(unittest.TestCase):
 
     def state_with(self, *records):
         state = foundation_state()
-        state["evidence"] = [copy.deepcopy(record) for record in records]
+        state["evidence"] = evidence_with_grill_basis(*(
+            copy.deepcopy(record) for record in records
+        ))
         return state
 
     def valid_state_for_status(self, status):

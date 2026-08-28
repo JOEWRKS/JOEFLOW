@@ -8,6 +8,7 @@ try:
     from tests.v020_support import (
         decision_record,
         evidence_record,
+        evidence_with_grill_basis,
         foundation_state,
         materiality,
         surface_record,
@@ -17,6 +18,7 @@ except ModuleNotFoundError:
     from v020_support import (
         decision_record,
         evidence_record,
+        evidence_with_grill_basis,
         foundation_state,
         materiality,
         surface_record,
@@ -417,9 +419,9 @@ class UnknownResolutionV020Test(unittest.TestCase):
         evidence_backed = unknown_record(decision_authority="USER_CONFIRMATION")
         evidence_backed["recommendation"] = recommendation()
         state = self.state_with_unknown(evidence_backed)
-        state["evidence"] = [evidence_record(
+        state["evidence"] = evidence_with_grill_basis(evidence_record(
             source_kind="USER_CONFIRMED_INTENT", authority_classes=["INTENT"],
-        )]
+        ))
         self.assertEqual(self.error_codes(state), set())
 
         authority_backed = unknown_record(decision_authority="USER_CONFIRMATION")
@@ -427,7 +429,7 @@ class UnknownResolutionV020Test(unittest.TestCase):
         authority_state = self.state_with_unknown(authority_backed)
         authority_state["objects"]["requirements"] = [{
             "id": "REQ-001", "status": "CURRENT", "statement": "Use the alternative behavior.",
-            "scope": "CORE", "ui_required": True, "materiality": materiality(classification="MATERIAL"),
+            "scope": "CORE", "ui_required": True, "materiality": materiality(),
         }]
         self.assertEqual(self.error_codes(authority_state), set())
 
@@ -464,9 +466,9 @@ class UnknownResolutionV020Test(unittest.TestCase):
         unknown = self.resolved_unknown(mode="EVIDENCE", authority="EVIDENCE_RESOLVABLE")
         unknown["evidence_refs"] = ["EVD-001"]
         state = self.state_with_unknown(unknown)
-        state["evidence"] = [evidence_record(
+        state["evidence"] = evidence_with_grill_basis(evidence_record(
             source_kind="USER_CONFIRMED_INTENT", authority_classes=["INTENT"],
-        )]
+        ))
         self.assertEqual(self.error_codes(state), set())
 
         for evidence in (
@@ -476,7 +478,7 @@ class UnknownResolutionV020Test(unittest.TestCase):
         ):
             with self.subTest(evidence=evidence):
                 candidate = copy.deepcopy(state)
-                candidate["evidence"] = [evidence]
+                candidate["evidence"] = evidence_with_grill_basis(evidence)
                 self.assertIn("unresolved_unknown_provenance", self.error_codes(candidate))
 
         linked = copy.deepcopy(state)
@@ -495,9 +497,9 @@ class UnknownResolutionV020Test(unittest.TestCase):
         )
         unknown["evidence_refs"] = ["EVD-001"]
         state = self.state_with_unknown(unknown)
-        state["evidence"] = [evidence_record(
+        state["evidence"] = evidence_with_grill_basis(evidence_record(
             source_kind="EXTERNAL_CONSTRAINT", authority_classes=["CONSTRAINT"],
-        )]
+        ))
         self.assertEqual(self.error_codes(state), set())
 
         state["evidence"][0] = evidence_record(
@@ -530,9 +532,9 @@ class UnknownResolutionV020Test(unittest.TestCase):
             acceptance=accepted_recommendation(),
         )
         state["objects"]["unknowns"][0]["recommendation"] = recommendation()
-        state["evidence"] = [evidence_record(
+        state["evidence"] = evidence_with_grill_basis(evidence_record(
             source_kind="USER_CONFIRMED_INTENT", authority_classes=["INTENT"],
-        )]
+        ))
         self.assertEqual(self.error_codes(state), set())
 
         phantom = self.state_with_linked_decision(
@@ -740,9 +742,9 @@ class UnknownResolutionV020Test(unittest.TestCase):
         )
         decision["evidence_refs"] = ["EVD-001"]
         state["objects"]["decisions"] = [decision]
-        state["evidence"] = [evidence_record(
+        state["evidence"] = evidence_with_grill_basis(evidence_record(
             source_kind="EXTERNAL_CONSTRAINT", authority_classes=["CONSTRAINT"],
-        )]
+        ))
         self.assertEqual(self.error_codes(state), set())
 
         for mutate in ("stale", "source", "mode", "authority", "actor", "evidence"):

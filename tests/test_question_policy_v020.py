@@ -8,9 +8,9 @@ import unittest
 from pathlib import Path
 
 try:
-    from tests.v020_support import evidence_record, foundation_state, materiality, unknown_record
+    from tests.v020_support import evidence_record, evidence_with_grill_basis, foundation_state, materiality, unknown_record
 except ModuleNotFoundError:
-    from v020_support import evidence_record, foundation_state, materiality, unknown_record
+    from v020_support import evidence_record, evidence_with_grill_basis, foundation_state, materiality, unknown_record
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -75,11 +75,11 @@ def make_unknown(
 def state_with_unknowns(*unknowns):
     state = foundation_state()
     state["objects"]["unknowns"] = [copy.deepcopy(unknown) for unknown in unknowns]
-    state["evidence"] = [evidence_record(
+    state["evidence"] = evidence_with_grill_basis(evidence_record(
         source_kind="USER_CONFIRMED_INTENT",
         authority_classes=["INTENT"],
         claim="The user-confirmed intent supports this product choice.",
-    )]
+    ))
     return state
 
 

@@ -1,0 +1,18 @@
+{
+  "pack_id": "GRILL-FILE-UPLOAD-1",
+  "version": "1.0",
+  "activation": {"always": false, "surface_kinds": [], "topology_tags": ["FILE_UPLOAD"]},
+  "axes": [
+    {"id": "type", "description": "Allowed file types and type validation.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "size", "description": "File size limits and oversized-file behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "quota", "description": "Upload and storage quota policy.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "malware", "description": "Malware detection and infected-file handling.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "processing", "description": "Post-upload processing states and behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "partial_failure", "description": "Partial upload or processing failure behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "resume", "description": "Interrupted upload resume policy.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "retention", "description": "Uploaded file retention policy.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "deletion", "description": "Uploaded file deletion policy and effects.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "ownership", "description": "Ownership of uploaded files and derived artifacts.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "download_permission", "description": "Permission policy for downloading uploaded files.", "independent_decision": true, "materiality_floor": "MATERIAL"}
+  ]
+}

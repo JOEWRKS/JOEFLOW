@@ -26,6 +26,7 @@ TEMPLATE = ROOT / "skills" / "joewrks-product-definition" / "templates" / "state
 
 sys.path.insert(0, str(SCRIPTS))
 import state_validation_v2
+from grill_v2 import CORE_GRILL_AXES
 from state_validation_v2 import evaluate_closure_v2, validate_state_v2
 
 
@@ -102,7 +103,7 @@ class StateV020FoundationTest(unittest.TestCase):
             set(schema["required"]),
             {
                 "schema_version", "project", "migration", "evidence", "surface_manifest",
-                "contradictions", "objects", "coverage", "ux_coverage",
+                "contradictions", "objects", "coverage", "ux_coverage", "grill_coverage",
                 "discovery_baseline", "approval", "approval_history",
             },
         )
@@ -274,6 +275,10 @@ class StateV020FoundationTest(unittest.TestCase):
         requirement = copy.deepcopy(VALID_RECORDS["requirements"])
         requirement["materiality"] = materiality(classification="MATERIAL")
         state["objects"]["requirements"] = [requirement]
+        state["coverage"] = [{
+            "feature_id": requirement["id"],
+            "cells": {axis: {"status": "COVERED"} for axis in CORE_GRILL_AXES},
+        }]
         self.assertEqual(validate_state_v2(state), [])
 
         invalid_materiality = (

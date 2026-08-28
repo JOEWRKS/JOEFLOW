@@ -1,0 +1,15 @@
+{
+  "pack_id": "GRILL-DESTRUCTIVE-ACTION-1",
+  "version": "1.0",
+  "activation": {"always": false, "surface_kinds": ["DESTRUCTIVE_OPERATION"], "topology_tags": ["DESTRUCTIVE_ACTION"]},
+  "axes": [
+    {"id": "confirmation", "description": "Confirmation requirements before destructive execution.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "reason", "description": "Reason capture requirements for destructive execution.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "undo", "description": "Undo availability and restoration behavior.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "grace_period", "description": "Grace period timing and behavior.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "dependency_effects", "description": "Effects on dependent records, users, and systems.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "irreversible_boundary", "description": "The exact point after which reversal is impossible.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "audit", "description": "Audit requirements for destructive actions.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "notification", "description": "Notifications required before and after destructive actions.", "independent_decision": true, "materiality_floor": "MATERIAL"}
+  ]
+}

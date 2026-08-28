@@ -3,7 +3,7 @@
   "title": "JOEWRKS Product Definition State 0.2.0 Foundation",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "project", "migration", "evidence", "surface_manifest", "contradictions", "objects", "coverage", "ux_coverage", "discovery_baseline", "approval", "approval_history"],
+  "required": ["schema_version", "project", "migration", "evidence", "surface_manifest", "contradictions", "objects", "coverage", "ux_coverage", "grill_coverage", "discovery_baseline", "approval", "approval_history"],
   "$defs": {
     "text": {"type": "string", "minLength": 1},
     "string_array": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
@@ -149,6 +149,55 @@
           }
         }
       ]
+    },
+    "grill_topology_cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "surface_refs", "unknown_refs", "basis_refs", "rationale"],
+      "properties": {
+        "status": {"enum": ["ACTIVE", "N/A", "OPEN"]},
+        "surface_refs": {"type": "array", "items": {"type": "string", "pattern": "^SURF-[0-9]{3,}$"}, "uniqueItems": true},
+        "unknown_refs": {"type": "array", "items": {"type": "string", "pattern": "^UNK-[0-9]{3,}$"}, "uniqueItems": true},
+        "basis_refs": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "uniqueItems": true},
+        "rationale": {"oneOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]}
+      }
+    },
+    "grill_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["AUTH", "MONEY", "FILE_UPLOAD", "ASYNC", "PERMISSION", "DESTRUCTIVE_ACTION"],
+      "properties": {
+        "AUTH": {"$ref": "#/$defs/grill_topology_cell"},
+        "MONEY": {"$ref": "#/$defs/grill_topology_cell"},
+        "FILE_UPLOAD": {"$ref": "#/$defs/grill_topology_cell"},
+        "ASYNC": {"$ref": "#/$defs/grill_topology_cell"},
+        "PERMISSION": {"$ref": "#/$defs/grill_topology_cell"},
+        "DESTRUCTIVE_ACTION": {"$ref": "#/$defs/grill_topology_cell"}
+      }
+    },
+    "grill_axis_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "authority_refs", "unknown_refs", "basis_refs", "rationale"],
+      "properties": {
+        "status": {"enum": ["ADDRESSED", "OPEN", "N/A"]},
+        "authority_refs": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "uniqueItems": true},
+        "unknown_refs": {"type": "array", "items": {"type": "string", "pattern": "^UNK-[0-9]{3,}$"}, "uniqueItems": true},
+        "basis_refs": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "uniqueItems": true},
+        "rationale": {"oneOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]}
+      }
+    },
+    "grill_coverage_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_ref", "pack_id", "pack_version", "pack_digest", "axes"],
+      "properties": {
+        "target_ref": {"type": "string", "pattern": "^SURF-[0-9]{3,}$"},
+        "pack_id": {"enum": ["GRILL-AUTH-1", "GRILL-MONEY-1", "GRILL-FILE-UPLOAD-1", "GRILL-ASYNC-1", "GRILL-PERMISSION-1", "GRILL-DESTRUCTIVE-ACTION-1"]},
+        "pack_version": {"const": "1.0"},
+        "pack_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "axes": {"type": "object", "additionalProperties": {"$ref": "#/$defs/grill_axis_coverage"}}
+      }
     },
     "lifecycle_requirements": {
       "allOf": [
@@ -398,8 +447,11 @@
     },
     "migration": {"type": "object"}, "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence_record"}},
     "surface_manifest": {
-      "type": "object", "required": ["records"], "additionalProperties": false,
-      "properties": {"records": {"type": "array", "items": {"$ref": "#/$defs/surface_record"}}}
+      "type": "object", "required": ["records", "grill_profile"], "additionalProperties": false,
+      "properties": {
+        "records": {"type": "array", "items": {"$ref": "#/$defs/surface_record"}},
+        "grill_profile": {"$ref": "#/$defs/grill_profile"}
+      }
     },
     "contradictions": {"type": "array", "items": {"$ref": "#/$defs/contradiction_record"}},
     "objects": {
@@ -421,7 +473,9 @@
         "tasks": {"type": "array", "items": {"$ref": "#/$defs/tasks"}}
       }
     },
-    "coverage": {"type": "array"}, "ux_coverage": {"type": "array"}, "discovery_baseline": {"$ref": "#/$defs/discovery_baseline"},
+    "coverage": {"type": "array"}, "ux_coverage": {"type": "array"},
+    "grill_coverage": {"type": "array", "items": {"$ref": "#/$defs/grill_coverage_row"}},
+    "discovery_baseline": {"$ref": "#/$defs/discovery_baseline"},
     "approval": {"type": "object"}, "approval_history": {"type": "array"}
   },
   "allOf": [

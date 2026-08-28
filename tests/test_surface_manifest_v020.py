@@ -8,6 +8,7 @@ try:
     from tests.v020_support import (
         decision_record as canonical_decision_record,
         evidence_record,
+        evidence_with_grill_basis,
         foundation_state,
         materiality,
         surface_record,
@@ -17,6 +18,7 @@ except ModuleNotFoundError:
     from v020_support import (
         decision_record as canonical_decision_record,
         evidence_record,
+        evidence_with_grill_basis,
         foundation_state,
         materiality,
         surface_record,
@@ -30,6 +32,7 @@ SCHEMA = ROOT / "skills" / "joewrks-product-definition" / "schemas" / "state-v0.
 sys.path.insert(0, str(SCRIPTS))
 
 import state_validation_v2
+from grill_v2 import canonical_pack_digest, load_grill_packs
 from state_validation_v2 import evaluate_closure_v2, validate_state_v2
 
 
@@ -112,6 +115,45 @@ class SurfaceManifestV020Test(unittest.TestCase):
     def state_with(self, *surfaces):
         state = foundation_state()
         state["surface_manifest"]["records"] = [copy.deepcopy(surface) for surface in surfaces]
+        forced_domains = {
+            "MONEY_FLOW": ("MONEY", "GRILL-MONEY-1"),
+            "ASYNC_PROCESS": ("ASYNC", "GRILL-ASYNC-1"),
+            "PERMISSION": ("PERMISSION", "GRILL-PERMISSION-1"),
+            "DESTRUCTIVE_OPERATION": ("DESTRUCTIVE_ACTION", "GRILL-DESTRUCTIVE-ACTION-1"),
+        }
+        packs = load_grill_packs()
+        for kind, (domain, pack_id) in forced_domains.items():
+            refs = sorted(
+                surface["id"] for surface in state["surface_manifest"]["records"]
+                if surface.get("kind") == kind
+                and surface.get("status") not in {"SUPERSEDED", "RETIRED"}
+            )
+            if refs:
+                state["surface_manifest"]["grill_profile"][domain] = {
+                    "status": "ACTIVE",
+                    "surface_refs": refs,
+                    "unknown_refs": [],
+                    "basis_refs": [],
+                    "rationale": None,
+                }
+                pack = packs[pack_id]
+                for target_ref in refs:
+                    state["grill_coverage"].append({
+                        "target_ref": target_ref,
+                        "pack_id": pack_id,
+                        "pack_version": pack["version"],
+                        "pack_digest": canonical_pack_digest(pack),
+                        "axes": {
+                            axis["id"]: {
+                                "status": "N/A",
+                                "authority_refs": [],
+                                "unknown_refs": [],
+                                "basis_refs": ["EVD-900"],
+                                "rationale": "This test surface does not exercise this specialist axis.",
+                            }
+                            for axis in pack["axes"]
+                        },
+                    })
         return state
 
     def bind_current_authority(self, state, prefix="REQ"):
@@ -125,13 +167,13 @@ class SurfaceManifestV020Test(unittest.TestCase):
         manifest = schema["properties"]["surface_manifest"]
         record = schema["$defs"]["surface_record"]
 
-        self.assertEqual(manifest["required"], ["records"])
+        self.assertEqual(set(manifest["required"]), {"records", "grill_profile"})
         self.assertFalse(manifest["additionalProperties"])
         self.assertEqual(manifest["properties"]["records"]["items"], {"$ref": "#/$defs/surface_record"})
         self.assertFalse(record["additionalProperties"])
 
-    def test_surface_manifest_requires_only_a_records_array_at_runtime(self):
-        for manifest in ({}, {"records": {}}, {"records": [], "unexpected": True}):
+    def test_surface_manifest_requires_records_and_complete_grill_profile_at_runtime(self):
+        for manifest in ({}, {"records": {}}, {"records": []}, {"records": [], "unexpected": True}):
             with self.subTest(manifest=manifest):
                 state = foundation_state()
                 state["surface_manifest"] = manifest
@@ -206,7 +248,7 @@ class SurfaceManifestV020Test(unittest.TestCase):
             "decision_refs": ["DEC-001"], "contradiction_refs": ["CON-001"],
         })
         state = self.state_with(surface)
-        state["evidence"] = [evidence_record(), evidence_record("EVD-002")]
+        state["evidence"] = evidence_with_grill_basis(evidence_record(), evidence_record("EVD-002"))
         state["objects"]["unknowns"] = [unknown_record()]
         add_decision(state)
         state["contradictions"] = [{
@@ -269,7 +311,7 @@ class SurfaceManifestV020Test(unittest.TestCase):
         intent_based = surface_record(status="OUT_OF_SCOPE", classification="NON_MATERIAL")
         intent_based.update({"rationale": "The feedback form is intentionally excluded.", "evidence_refs": ["EVD-001"]})
         intent_state = self.state_with(intent_based)
-        intent_state["evidence"] = [evidence_record(source_kind="USER_CONFIRMED_INTENT", authority_classes=["INTENT"])]
+        intent_state["evidence"] = evidence_with_grill_basis(evidence_record(source_kind="USER_CONFIRMED_INTENT", authority_classes=["INTENT"]))
         self.assertEqual(self.error_codes(intent_state), set())
 
         decision_based = surface_record(status="OUT_OF_SCOPE", classification="NON_MATERIAL")
@@ -282,7 +324,7 @@ class SurfaceManifestV020Test(unittest.TestCase):
         surface = surface_record(status="OUT_OF_SCOPE", classification="NON_MATERIAL")
         surface.update({"rationale": "The implementation has no feedback form.", "evidence_refs": ["EVD-001"]})
         state = self.state_with(surface)
-        state["evidence"] = [evidence_record()]
+        state["evidence"] = evidence_with_grill_basis(evidence_record())
 
         self.assertIn("invalid_out_of_scope_surface", self.error_codes(state))
 

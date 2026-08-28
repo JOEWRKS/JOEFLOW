@@ -1,0 +1,17 @@
+{
+  "pack_id": "GRILL-PERMISSION-1",
+  "version": "1.0",
+  "activation": {"always": false, "surface_kinds": ["PERMISSION"], "topology_tags": ["PERMISSION"]},
+  "axes": [
+    {"id": "role", "description": "Roles recognized by the permission model.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "resource_ownership", "description": "Resource ownership rules and ownership transitions.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "read", "description": "Read permission policy.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "write", "description": "Write permission policy.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "delete", "description": "Delete permission policy.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "delegation", "description": "Permission delegation policy and limits.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "revocation", "description": "Permission revocation behavior and timing.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "role_change_mid_flow", "description": "Behavior when a role changes during an active flow.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "stale_permission", "description": "Detection and handling of stale permission state.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "audit", "description": "Permission decision audit requirements.", "independent_decision": true, "materiality_floor": "MATERIAL"}
+  ]
+}

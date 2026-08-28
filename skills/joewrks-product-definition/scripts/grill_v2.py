@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import hashlib
+import json
+from pathlib import Path
 from typing import Any
 
 from materiality_v2 import classify_materiality, is_high_risk
@@ -119,6 +122,95 @@ _QUESTION_CATEGORY_PRIORITY = {
     "SECONDARY_BEHAVIOR": 3,
     "PREFERENCE": 4,
     "COSMETIC": 5,
+}
+
+PACK_DIR = Path(__file__).resolve().parents[1] / "references" / "grill-packs"
+GRILL_PROFILE_DOMAINS = (
+    "AUTH", "MONEY", "FILE_UPLOAD", "ASYNC", "PERMISSION",
+    "DESTRUCTIVE_ACTION",
+)
+DOMAIN_PACK_IDS = {
+    "AUTH": "GRILL-AUTH-1",
+    "MONEY": "GRILL-MONEY-1",
+    "FILE_UPLOAD": "GRILL-FILE-UPLOAD-1",
+    "ASYNC": "GRILL-ASYNC-1",
+    "PERMISSION": "GRILL-PERMISSION-1",
+    "DESTRUCTIVE_ACTION": "GRILL-DESTRUCTIVE-ACTION-1",
+}
+FORCED_SURFACE_KIND_DOMAINS = {
+    "MONEY_FLOW": "MONEY",
+    "ASYNC_PROCESS": "ASYNC",
+    "PERMISSION": "PERMISSION",
+    "DESTRUCTIVE_OPERATION": "DESTRUCTIVE_ACTION",
+}
+CORE_GRILL_AXES = (
+    "actor", "goal", "entry_point", "precondition", "happy_path",
+    "alternative_path", "error", "recovery", "permission", "state",
+    "data", "side_effect", "notification", "validation", "boundary",
+    "persistence", "security", "privacy", "analytics", "acceptance",
+)
+PACK_AXIS_ORDER = {
+    "GRILL-CORE-1": CORE_GRILL_AXES,
+    "GRILL-AUTH-1": (
+        "registration", "verification", "login", "logout", "session_expiry",
+        "session_renewal", "password_reset", "account_recovery", "revocation",
+        "role_change", "provider_failure", "duplicate_identity", "account_linking",
+    ),
+    "GRILL-MONEY-1": (
+        "currency", "price_authority", "tax", "discount", "payment_failure",
+        "duplicate_payment", "refund", "partial_refund", "cancellation",
+        "chargeback", "settlement", "receipt",
+    ),
+    "GRILL-FILE-UPLOAD-1": (
+        "type", "size", "quota", "malware", "processing", "partial_failure",
+        "resume", "retention", "deletion", "ownership", "download_permission",
+    ),
+    "GRILL-ASYNC-1": (
+        "pending", "polling", "timeout", "retry", "idempotency",
+        "duplicate_execution", "late_completion", "partial_completion", "cancel",
+        "reconciliation",
+    ),
+    "GRILL-PERMISSION-1": (
+        "role", "resource_ownership", "read", "write", "delete", "delegation",
+        "revocation", "role_change_mid_flow", "stale_permission", "audit",
+    ),
+    "GRILL-DESTRUCTIVE-ACTION-1": (
+        "confirmation", "reason", "undo", "grace_period", "dependency_effects",
+        "irreversible_boundary", "audit", "notification",
+    ),
+}
+PACK_MATERIAL_FLOORS = {
+    "GRILL-CORE-1": frozenset(),
+    "GRILL-AUTH-1": frozenset({
+        "session_expiry", "password_reset", "account_recovery", "revocation",
+        "role_change", "duplicate_identity", "account_linking",
+    }),
+    "GRILL-MONEY-1": frozenset(PACK_AXIS_ORDER["GRILL-MONEY-1"]),
+    "GRILL-FILE-UPLOAD-1": frozenset({
+        "malware", "retention", "deletion", "ownership", "download_permission",
+    }),
+    "GRILL-ASYNC-1": frozenset({
+        "idempotency", "duplicate_execution", "partial_completion", "reconciliation",
+    }),
+    "GRILL-PERMISSION-1": frozenset(PACK_AXIS_ORDER["GRILL-PERMISSION-1"]),
+    "GRILL-DESTRUCTIVE-ACTION-1": frozenset(
+        PACK_AXIS_ORDER["GRILL-DESTRUCTIVE-ACTION-1"]
+    ),
+}
+PACK_SURFACE_KIND_METADATA = {
+    "GRILL-CORE-1": (),
+    "GRILL-AUTH-1": (),
+    "GRILL-MONEY-1": ("MONEY_FLOW",),
+    "GRILL-FILE-UPLOAD-1": (),
+    "GRILL-ASYNC-1": ("ASYNC_PROCESS",),
+    "GRILL-PERMISSION-1": ("PERMISSION",),
+    "GRILL-DESTRUCTIVE-ACTION-1": ("DESTRUCTIVE_OPERATION",),
+}
+GRILL_PROFILE_CELL_KEYS = {
+    "status", "surface_refs", "unknown_refs", "basis_refs", "rationale",
+}
+GRILL_AXIS_CELL_KEYS = {
+    "status", "authority_refs", "unknown_refs", "basis_refs", "rationale",
 }
 
 
@@ -921,6 +1013,679 @@ def validate_unknown_decision_integrity(
             ))
     errors.extend(_unknown_dependency_cycle_errors(state))
     return errors
+
+
+def canonical_pack_digest(pack: dict[str, object]) -> str:
+    canonical = json.dumps(
+        pack,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def _validate_pack_contract(pack: object, *, source: Path) -> dict[str, object]:
+    if not isinstance(pack, dict) or set(pack) != {"pack_id", "version", "activation", "axes"}:
+        raise ValueError(f"invalid Grill Pack object: {source}")
+    pack_id = pack.get("pack_id")
+    if not isinstance(pack_id, str) or pack_id not in PACK_AXIS_ORDER:
+        raise ValueError(f"invalid Grill Pack identity: {source}")
+    if pack.get("version") != "1.0" or "digest" in pack:
+        raise ValueError(f"invalid Grill Pack version or stored digest: {source}")
+
+    activation = pack.get("activation")
+    if not isinstance(activation, dict) or set(activation) != {
+        "always", "surface_kinds", "topology_tags",
+    }:
+        raise ValueError(f"invalid Grill Pack activation metadata: {source}")
+    expected_domain = next(
+        (domain for domain, identity in DOMAIN_PACK_IDS.items() if identity == pack_id),
+        None,
+    )
+    expected_tags = [] if expected_domain is None else [expected_domain]
+    if (
+        activation.get("always") is not (pack_id == "GRILL-CORE-1")
+        or activation.get("surface_kinds") != list(PACK_SURFACE_KIND_METADATA[pack_id])
+        or activation.get("topology_tags") != expected_tags
+    ):
+        raise ValueError(f"Grill Pack activation metadata drift: {source}")
+
+    axes = pack.get("axes")
+    if not isinstance(axes, list):
+        raise ValueError(f"invalid Grill Pack axes: {source}")
+    axis_ids: list[str] = []
+    for axis in axes:
+        if (
+            not isinstance(axis, dict)
+            or set(axis) != {
+                "id", "description", "independent_decision", "materiality_floor",
+            }
+            or not isinstance(axis.get("id"), str)
+            or not _meaningful_text(axis.get("description"))
+            or axis.get("independent_decision") is not True
+            or axis.get("materiality_floor") not in {"INHERIT", "MATERIAL"}
+        ):
+            raise ValueError(f"invalid Grill Pack axis: {source}")
+        axis_ids.append(axis["id"])
+    if tuple(axis_ids) != PACK_AXIS_ORDER[pack_id] or len(axis_ids) != len(set(axis_ids)):
+        raise ValueError(f"Grill Pack axis inventory drift: {source}")
+    material_axes = {
+        axis["id"] for axis in axes if axis["materiality_floor"] == "MATERIAL"
+    }
+    if material_axes != PACK_MATERIAL_FLOORS[pack_id]:
+        raise ValueError(f"Grill Pack materiality floor drift: {source}")
+    return pack
+
+
+def load_grill_packs(pack_dir: Path = PACK_DIR) -> dict[str, dict[str, object]]:
+    directory = Path(pack_dir)
+    loaded: dict[str, dict[str, object]] = {}
+    for source in sorted(directory.glob("*.json"), key=lambda path: path.name):
+        if source.name == "grill-pack.schema.json":
+            continue
+        try:
+            parsed = json.loads(source.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            raise ValueError(f"cannot load Grill Pack: {source}") from error
+        pack = _validate_pack_contract(parsed, source=source)
+        pack_id = pack["pack_id"]
+        if pack_id in loaded:
+            raise ValueError(f"duplicate Grill Pack identity: {pack_id}")
+        loaded[pack_id] = pack
+    if set(loaded) != set(PACK_AXIS_ORDER):
+        raise ValueError("the checked-in Grill Pack authority set must contain exactly seven packs")
+    return {pack_id: loaded[pack_id] for pack_id in sorted(loaded)}
+
+
+def _grill_indexes(
+    state: dict[str, object],
+) -> tuple[
+    dict[str, tuple[str, dict[str, object]]],
+    dict[str, dict[str, object]],
+    dict[str, dict[str, object]],
+]:
+    index: dict[str, tuple[str, dict[str, object]]] = {}
+    objects = state.get("objects")
+    if isinstance(objects, dict):
+        for group, records in objects.items():
+            if not isinstance(records, list):
+                continue
+            for record in records:
+                if isinstance(record, dict) and isinstance(record.get("id"), str):
+                    index[record["id"]] = (group, record)
+    evidence_index: dict[str, dict[str, object]] = {}
+    evidence = state.get("evidence")
+    if isinstance(evidence, list):
+        for record in evidence:
+            if isinstance(record, dict) and isinstance(record.get("id"), str):
+                evidence_index[record["id"]] = record
+                index[record["id"]] = ("evidence", record)
+    surfaces: dict[str, dict[str, object]] = {}
+    manifest = state.get("surface_manifest")
+    records = manifest.get("records") if isinstance(manifest, dict) else None
+    if isinstance(records, list):
+        for record in records:
+            if isinstance(record, dict) and isinstance(record.get("id"), str):
+                surfaces[record["id"]] = record
+                index[record["id"]] = ("surfaces", record)
+    return index, evidence_index, surfaces
+
+
+def _surface_is_current(record: object) -> bool:
+    return isinstance(record, dict) and record.get("status") not in {"SUPERSEDED", "RETIRED"}
+
+
+def _basis_ref_is_current(
+    reference: object,
+    *,
+    index: dict[str, tuple[str, dict[str, object]]],
+    topology_profile: bool,
+) -> bool:
+    if not isinstance(reference, str) or reference not in index:
+        return False
+    group, record = index[reference]
+    if group == "evidence":
+        return (
+            record.get("status") == "CURRENT"
+            and record.get("source_kind") not in CANDIDATE_ONLY_SOURCE_KINDS
+        )
+    if group == "surfaces":
+        return _surface_is_current(record)
+    if group == "decisions":
+        return record.get("status") == "CURRENT"
+    return not topology_profile and record.get("status") == "CURRENT" and group != "unknowns"
+
+
+def _profile_analysis(
+    state: dict[str, object],
+) -> tuple[list[dict[str, str]], int, dict[str, tuple[str, ...]]]:
+    errors: list[dict[str, str]] = []
+    gaps = 0
+    valid_active: dict[str, tuple[str, ...]] = {}
+    index, _, surfaces = _grill_indexes(state)
+    manifest = state.get("surface_manifest")
+    profile = manifest.get("grill_profile") if isinstance(manifest, dict) else None
+    forced_refs: dict[str, set[str]] = {domain: set() for domain in GRILL_PROFILE_DOMAINS}
+    for surface_id, surface in surfaces.items():
+        if not _surface_is_current(surface):
+            continue
+        domain = FORCED_SURFACE_KIND_DOMAINS.get(surface.get("kind"))
+        if domain is not None:
+            forced_refs[domain].add(surface_id)
+    if not isinstance(profile, dict):
+        errors = [_error(
+            "invalid_grill_profile",
+            "surface_manifest.grill_profile must contain all six topology domains",
+            "surface_manifest.grill_profile",
+        )]
+        for domain, references in forced_refs.items():
+            if references:
+                errors.append(_error(
+                    "grill_topology_contradiction",
+                    "forced current surface kinds require an ACTIVE topology profile cell",
+                    f"surface_manifest.grill_profile.{domain}",
+                ))
+        return errors, len(GRILL_PROFILE_DOMAINS), {}
+
+    expected_domains = set(GRILL_PROFILE_DOMAINS)
+    missing = expected_domains - set(profile)
+    extra = set(profile) - expected_domains
+    if missing or extra:
+        errors.append(_error(
+            "invalid_grill_profile",
+            "grill_profile keys must exactly equal the six topology domains",
+            "surface_manifest.grill_profile",
+        ))
+        gaps += len(missing) + len(extra)
+
+    for domain in GRILL_PROFILE_DOMAINS:
+        if domain not in profile:
+            if forced_refs[domain]:
+                errors.append(_error(
+                    "grill_topology_contradiction",
+                    "forced current surface kinds require an ACTIVE topology profile cell",
+                    f"surface_manifest.grill_profile.{domain}",
+                ))
+            continue
+        path = f"surface_manifest.grill_profile.{domain}"
+        cell = profile[domain]
+        cell_valid = True
+        if not isinstance(cell, dict) or set(cell) != GRILL_PROFILE_CELL_KEYS:
+            errors.append(_error(
+                "invalid_grill_profile",
+                "topology profile cells must use the exact M3 shape",
+                path,
+            ))
+            if forced_refs[domain]:
+                errors.append(_error(
+                    "grill_topology_contradiction",
+                    "forced current surface kinds require an ACTIVE topology profile cell",
+                    path,
+                ))
+            gaps += 1
+            continue
+
+        status = cell.get("status")
+        surface_refs = cell.get("surface_refs")
+        unknown_refs = cell.get("unknown_refs")
+        basis_refs = cell.get("basis_refs")
+        if (
+            status not in {"ACTIVE", "N/A", "OPEN"}
+            or not _unique_strings(surface_refs)
+            or not _unique_strings(unknown_refs)
+            or not _unique_strings(basis_refs)
+        ):
+            cell_valid = False
+
+        current_surface_refs = (
+            isinstance(surface_refs, list)
+            and all(
+                isinstance(reference, str)
+                and reference in surfaces
+                and _surface_is_current(surfaces[reference])
+                for reference in surface_refs
+            )
+        )
+        current_basis_refs = (
+            isinstance(basis_refs, list)
+            and all(
+                _basis_ref_is_current(reference, index=index, topology_profile=True)
+                for reference in basis_refs
+            )
+        )
+        if not current_surface_refs or not current_basis_refs:
+            cell_valid = False
+
+        if status == "ACTIVE":
+            if not surface_refs or unknown_refs != [] or cell.get("rationale") is not None:
+                cell_valid = False
+        elif status == "N/A":
+            if (
+                surface_refs != []
+                or unknown_refs != []
+                or not basis_refs
+                or not _meaningful_text(cell.get("rationale"))
+            ):
+                cell_valid = False
+        elif status == "OPEN":
+            pack_id = DOMAIN_PACK_IDS[domain]
+            if not unknown_refs or cell.get("rationale") is not None:
+                cell_valid = False
+            elif any(
+                not isinstance(reference, str)
+                or reference not in index
+                or index[reference][0] != "unknowns"
+                or index[reference][1].get("status") != "OPEN"
+                or index[reference][1].get("origin") != {
+                    "kind": "GRILL_TOPOLOGY",
+                    "surface_ref": None,
+                    "pack_id": pack_id,
+                    "axis_id": None,
+                    "source_path": None,
+                }
+                for reference in unknown_refs
+            ):
+                cell_valid = False
+
+        forced = forced_refs[domain]
+        forced_contradiction = bool(forced) and (
+            status != "ACTIVE"
+            or not isinstance(surface_refs, list)
+            or not forced.issubset(set(surface_refs))
+        )
+        if forced_contradiction:
+            errors.append(_error(
+                "grill_topology_contradiction",
+                "forced current surface kinds require ACTIVE and every forced surface ref",
+                path,
+            ))
+            cell_valid = False
+
+        if not cell_valid:
+            errors.append(_error(
+                "invalid_grill_profile",
+                "topology profile cell does not satisfy its declared status",
+                path,
+            ))
+            gaps += 1
+        elif status == "OPEN":
+            gaps += 1
+        elif status == "ACTIVE":
+            valid_active[domain] = tuple(sorted(set(surface_refs)))
+    return errors, gaps, valid_active
+
+
+def _core_target_refs(state: dict[str, object]) -> list[str]:
+    objects = state.get("objects")
+    requirements = objects.get("requirements") if isinstance(objects, dict) else None
+    if not isinstance(requirements, list):
+        return []
+    targets = []
+    for requirement in requirements:
+        if (
+            isinstance(requirement, dict)
+            and isinstance(requirement.get("id"), str)
+            and requirement.get("status") == "CURRENT"
+            and isinstance(requirement.get("materiality"), dict)
+        ):
+            try:
+                is_material = classify_materiality(requirement["materiality"]) == "MATERIAL"
+            except (KeyError, TypeError, ValueError):
+                is_material = False
+            if is_material:
+                targets.append(requirement["id"])
+    return sorted(set(targets))
+
+
+def _compile_active_grill_packs(
+    state: dict[str, object],
+    packs: dict[str, dict[str, object]],
+    valid_active: dict[str, tuple[str, ...]],
+) -> list[dict[str, object]]:
+    instances = [{
+        "pack_id": "GRILL-CORE-1",
+        "version": packs["GRILL-CORE-1"]["version"],
+        "digest": canonical_pack_digest(packs["GRILL-CORE-1"]),
+        "target_refs": _core_target_refs(state),
+    }]
+    for domain, target_refs in valid_active.items():
+        pack_id = DOMAIN_PACK_IDS[domain]
+        pack = packs[pack_id]
+        instances.append({
+            "pack_id": pack_id,
+            "version": pack["version"],
+            "digest": canonical_pack_digest(pack),
+            "target_refs": list(target_refs),
+        })
+    return sorted(instances, key=lambda instance: instance["pack_id"])
+
+
+def compile_active_grill_packs(state: dict[str, object]) -> list[dict[str, object]]:
+    packs = load_grill_packs()
+    _, _, valid_active = _profile_analysis(state)
+    return _compile_active_grill_packs(state, packs, valid_active)
+
+
+def _current_product_authority(
+    reference: object,
+    index: dict[str, tuple[str, dict[str, object]]],
+) -> bool:
+    if not isinstance(reference, str) or reference not in index:
+        return False
+    group, record = index[reference]
+    return group in PRODUCT_AUTHORITY_GROUPS and record.get("status") == "CURRENT"
+
+
+def _coverage_analysis(
+    state: dict[str, object],
+    packs: dict[str, dict[str, object]],
+    profile_gaps: int,
+    valid_active: dict[str, tuple[str, ...]],
+) -> tuple[list[dict[str, str]], dict[str, int]]:
+    errors: list[dict[str, str]] = []
+    active_gaps = profile_gaps
+    unresolved_axes = 0
+    umbrella_violations = 0
+    materiality_floor_violations = 0
+    index, _, surfaces = _grill_indexes(state)
+    instances = _compile_active_grill_packs(state, packs, valid_active)
+
+    coverage = state.get("coverage")
+    coverage = coverage if isinstance(coverage, list) else []
+    core_rows: dict[str, list[tuple[int, dict[str, object]]]] = {}
+    for position, row in enumerate(coverage):
+        if isinstance(row, dict) and isinstance(row.get("feature_id"), str):
+            core_rows.setdefault(row["feature_id"], []).append((position, row))
+    core_targets = next(
+        instance["target_refs"] for instance in instances if instance["pack_id"] == "GRILL-CORE-1"
+    )
+    for target_ref in core_targets:
+        rows = core_rows.get(target_ref, [])
+        if not rows:
+            errors.append(_error(
+                "missing_core_grill_coverage",
+                "current material requirement requires one Core Grill coverage row",
+                f"coverage.{target_ref}",
+            ))
+            active_gaps += 1
+            continue
+        if len(rows) != 1:
+            errors.append(_error(
+                "duplicate_core_grill_coverage",
+                "current material requirement requires exactly one Core Grill coverage row",
+                f"coverage.{target_ref}",
+            ))
+            active_gaps += 1
+        position, row = rows[0]
+        cells = row.get("cells")
+        if not isinstance(cells, dict) or set(cells) != set(CORE_GRILL_AXES):
+            errors.append(_error(
+                "core_grill_axis_inventory_mismatch",
+                "Core Grill coverage cells must exactly equal the frozen 20 axes",
+                f"coverage[{position}].cells",
+            ))
+            active_gaps += 1
+            continue
+        unresolved_axes += sum(
+            isinstance(cell, dict) and cell.get("status") == "OPEN"
+            for cell in cells.values()
+        )
+
+    grill_coverage = state.get("grill_coverage")
+    grill_coverage = grill_coverage if isinstance(grill_coverage, list) else []
+    required_pairs = {
+        (target_ref, instance["pack_id"]): instance
+        for instance in instances
+        if instance["pack_id"] != "GRILL-CORE-1"
+        for target_ref in instance["target_refs"]
+    }
+    row_groups: dict[tuple[str, str], list[tuple[int, dict[str, object]]]] = {}
+    row_keys = {"target_ref", "pack_id", "pack_version", "pack_digest", "axes"}
+    for position, row in enumerate(grill_coverage):
+        path = f"grill_coverage[{position}]"
+        if not isinstance(row, dict) or set(row) != row_keys:
+            errors.append(_error(
+                "invalid_grill_coverage",
+                "specialist coverage rows must use the exact M3 shape",
+                path,
+            ))
+            continue
+        target_ref = row.get("target_ref")
+        pack_id = row.get("pack_id")
+        if not isinstance(target_ref, str) or not isinstance(pack_id, str):
+            errors.append(_error("invalid_grill_coverage", "invalid specialist row identity", path))
+            continue
+        pair = (target_ref, pack_id)
+        row_groups.setdefault(pair, []).append((position, row))
+        if (
+            pack_id not in SPECIALIST_PACK_IDS
+            or target_ref not in surfaces
+            or not _surface_is_current(surfaces[target_ref])
+            or pair not in required_pairs
+        ):
+            errors.append(_error(
+                "invalid_grill_coverage",
+                "specialist coverage must target a current ACTIVE pack instance",
+                path,
+            ))
+
+    independent_open_axes: list[
+        tuple[int, str, str, str, list[object], dict[str, object]]
+    ] = []
+    for pair, instance in sorted(required_pairs.items()):
+        target_ref, pack_id = pair
+        rows = row_groups.get(pair, [])
+        if not rows:
+            errors.append(_error(
+                "missing_grill_coverage",
+                "ACTIVE specialist pack target requires one coverage row",
+                f"grill_coverage.{pack_id}.{target_ref}",
+            ))
+            active_gaps += 1
+            continue
+        if len(rows) != 1:
+            errors.append(_error(
+                "duplicate_grill_coverage",
+                "specialist coverage permits one row per target and pack",
+                f"grill_coverage.{pack_id}.{target_ref}",
+            ))
+            active_gaps += 1
+        position, row = rows[0]
+        path = f"grill_coverage[{position}]"
+        identity_valid = (
+            row.get("pack_version") == instance["version"]
+            and row.get("pack_digest") == instance["digest"]
+        )
+        if not identity_valid:
+            errors.append(_error(
+                "grill_pack_identity_mismatch",
+                "coverage pack version and digest must match checked-in authority",
+                path,
+            ))
+            active_gaps += 1
+        axes = row.get("axes")
+        expected_axes = set(PACK_AXIS_ORDER[pack_id])
+        if not isinstance(axes, dict) or set(axes) != expected_axes:
+            errors.append(_error(
+                "grill_pack_axis_inventory_mismatch",
+                "specialist row axes must exactly equal the activated pack definition",
+                f"{path}.axes",
+            ))
+            active_gaps += 1
+            continue
+
+        pack_axis_defs = {
+            axis["id"]: axis for axis in packs[pack_id]["axes"]
+        }
+        for axis_id in PACK_AXIS_ORDER[pack_id]:
+            cell_path = f"{path}.axes.{axis_id}"
+            cell = axes[axis_id]
+            if not isinstance(cell, dict) or set(cell) != GRILL_AXIS_CELL_KEYS:
+                errors.append(_error(
+                    "invalid_grill_axis_coverage",
+                    "specialist axis coverage must use the exact M3 shape",
+                    cell_path,
+                ))
+                continue
+            status = cell.get("status")
+            authority_refs = cell.get("authority_refs")
+            unknown_refs = cell.get("unknown_refs")
+            basis_refs = cell.get("basis_refs")
+            lists_valid = all(
+                _unique_strings(value)
+                for value in (authority_refs, unknown_refs, basis_refs)
+            )
+            if status not in {"ADDRESSED", "OPEN", "N/A"} or not lists_valid:
+                errors.append(_error(
+                    "invalid_grill_axis_coverage",
+                    "invalid specialist axis status or reference arrays",
+                    cell_path,
+                ))
+                continue
+
+            if status == "ADDRESSED":
+                if (
+                    not authority_refs
+                    or unknown_refs != []
+                    or basis_refs != []
+                    or cell.get("rationale") is not None
+                    or any(not _current_product_authority(ref, index) for ref in authority_refs)
+                ):
+                    errors.append(_error(
+                        "invalid_grill_axis_authority",
+                        "ADDRESSED requires broad current canonical product authority",
+                        cell_path,
+                    ))
+            elif status == "N/A":
+                if (
+                    authority_refs != []
+                    or unknown_refs != []
+                    or not basis_refs
+                    or not _meaningful_text(cell.get("rationale"))
+                    or any(
+                        not _basis_ref_is_current(ref, index=index, topology_profile=False)
+                        for ref in basis_refs
+                    )
+                ):
+                    errors.append(_error(
+                        "invalid_grill_axis_basis",
+                        "N/A requires meaningful rationale and current basis authority",
+                        cell_path,
+                    ))
+            else:
+                unresolved_axes += 1
+                unknowns_valid = (
+                    bool(unknown_refs)
+                    and all(
+                        isinstance(ref, str)
+                        and ref in index
+                        and index[ref][0] == "unknowns"
+                        and index[ref][1].get("status") == "OPEN"
+                        for ref in unknown_refs
+                    )
+                )
+                if (
+                    authority_refs != []
+                    or basis_refs != []
+                    or cell.get("rationale") is not None
+                    or not unknowns_valid
+                ):
+                    errors.append(_error(
+                        "invalid_grill_axis_unknown",
+                        "OPEN requires one or more current OPEN unknown refs",
+                        cell_path,
+                    ))
+                if pack_axis_defs[axis_id].get("independent_decision") is True:
+                    independent_open_axes.append((
+                        position,
+                        target_ref,
+                        pack_id,
+                        axis_id,
+                        list(unknown_refs) if isinstance(unknown_refs, list) else [],
+                        pack_axis_defs[axis_id],
+                    ))
+
+    origin_usage: dict[str, int] = {}
+    for _, _, _, _, refs, _ in independent_open_axes:
+        for reference in refs:
+            if isinstance(reference, str):
+                origin_usage[reference] = origin_usage.get(reference, 0) + 1
+    for position, target_ref, pack_id, axis_id, refs, axis_definition in independent_open_axes:
+        cell_path = f"grill_coverage[{position}].axes.{axis_id}"
+        origin_unknown = None
+        if len(refs) == 1 and isinstance(refs[0], str):
+            entry = index.get(refs[0])
+            if entry is not None and entry[0] == "unknowns" and entry[1].get("status") == "OPEN":
+                origin_unknown = entry[1]
+        exact_origin = {
+            "kind": "GRILL_PACK_AXIS",
+            "surface_ref": target_ref,
+            "pack_id": pack_id,
+            "axis_id": axis_id,
+            "source_path": None,
+        }
+        origin_valid = (
+            origin_unknown is not None
+            and origin_unknown.get("origin") == exact_origin
+            and origin_usage.get(refs[0], 0) == 1
+        )
+        if not origin_valid:
+            umbrella_violations += 1
+            errors.append(_error(
+                "umbrella_unknown_compression",
+                "independent OPEN axes require one unique exact-origin unknown",
+                cell_path,
+            ))
+        if axis_definition.get("materiality_floor") == "MATERIAL":
+            material = False
+            if origin_unknown is not None:
+                materiality_value = origin_unknown.get("materiality")
+                try:
+                    material = (
+                        isinstance(materiality_value, dict)
+                        and classify_materiality(materiality_value) == "MATERIAL"
+                    )
+                except (KeyError, TypeError, ValueError):
+                    material = False
+            if not material:
+                materiality_floor_violations += 1
+                errors.append(_error(
+                    "pack_materiality_floor_violation",
+                    "MATERIAL-floor OPEN axis requires a MATERIAL origin unknown",
+                    cell_path,
+                ))
+
+    return errors, {
+        "active_grill_pack_gaps": active_gaps,
+        "unresolved_pack_axes": unresolved_axes,
+        "umbrella_unknown_compression": umbrella_violations,
+        "pack_materiality_floor_violations": materiality_floor_violations,
+    }
+
+
+def validate_grill_coverage(state: dict[str, object]) -> list[dict[str, str]]:
+    packs = load_grill_packs()
+    profile_errors, profile_gaps, valid_active = _profile_analysis(state)
+    coverage_errors, _ = _coverage_analysis(
+        state,
+        packs,
+        profile_gaps,
+        valid_active,
+    )
+    return profile_errors + coverage_errors
+
+
+def grill_pack_metrics(state: dict[str, object]) -> dict[str, int]:
+    packs = load_grill_packs()
+    _, profile_gaps, valid_active = _profile_analysis(state)
+    _, metrics = _coverage_analysis(
+        state,
+        packs,
+        profile_gaps,
+        valid_active,
+    )
+    return metrics
 
 
 def grill_unknown_metrics(state: dict[str, object]) -> dict[str, int]:

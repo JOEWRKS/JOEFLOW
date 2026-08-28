@@ -1,0 +1,17 @@
+{
+  "pack_id": "GRILL-ASYNC-1",
+  "version": "1.0",
+  "activation": {"always": false, "surface_kinds": ["ASYNC_PROCESS"], "topology_tags": ["ASYNC"]},
+  "axes": [
+    {"id": "pending", "description": "Pending-state meaning and user-visible behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "polling", "description": "Polling cadence, limits, and stop conditions.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "timeout", "description": "Timeout policy and resulting state.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "retry", "description": "Retry eligibility, limits, and backoff behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "idempotency", "description": "Idempotency authority and replay behavior.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "duplicate_execution", "description": "Duplicate execution prevention and remediation.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "late_completion", "description": "Behavior when work completes after a timeout or cancellation.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "partial_completion", "description": "Partial completion state and recovery behavior.", "independent_decision": true, "materiality_floor": "MATERIAL"},
+    {"id": "cancel", "description": "Cancellation eligibility and state transition behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "reconciliation", "description": "Reconciliation authority for uncertain asynchronous outcomes.", "independent_decision": true, "materiality_floor": "MATERIAL"}
+  ]
+}

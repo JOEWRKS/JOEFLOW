@@ -12,9 +12,29 @@
   "migration": {
     "mode": "NATIVE"
   },
-  "evidence": [],
+  "evidence": [
+    {
+      "id": "EVD-900",
+      "status": "CURRENT",
+      "source_kind": "USER_CONFIRMED_INTENT",
+      "locator": "product-definition/topology-classification",
+      "claim": "The six specialist topology domains were explicitly classified.",
+      "confidence": "DIRECT",
+      "authority_classes": ["INTENT"],
+      "observed_version": null,
+      "content_hash": null
+    }
+  ],
   "surface_manifest": {
-    "records": []
+    "records": [],
+    "grill_profile": {
+      "AUTH": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
+      "MONEY": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
+      "FILE_UPLOAD": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
+      "ASYNC": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
+      "PERMISSION": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
+      "DESTRUCTIVE_ACTION": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."}
+    }
   },
   "contradictions": [],
   "objects": {
@@ -34,6 +54,7 @@
   },
   "coverage": [],
   "ux_coverage": [],
+  "grill_coverage": [],
   "discovery_baseline": {
     "status": "NOT_ESTABLISHED"
   },

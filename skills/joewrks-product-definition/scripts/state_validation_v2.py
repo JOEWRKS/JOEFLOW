@@ -4,8 +4,10 @@ from typing import Any
 
 from discovery_v2 import validate_discovery_baseline
 from grill_v2 import (
+    grill_pack_metrics,
     grill_unknown_metrics,
     validate_decision_authority_policy,
+    validate_grill_coverage,
     validate_unknown_decision_integrity,
 )
 from materiality_v2 import validate_materiality_classification
@@ -14,7 +16,7 @@ from materiality_v2 import validate_materiality_classification
 SCHEMA_VERSION = "0.2.0"
 ROOT_KEYS = {
     "schema_version", "project", "migration", "evidence", "surface_manifest",
-    "contradictions", "objects", "coverage", "ux_coverage",
+    "contradictions", "objects", "coverage", "ux_coverage", "grill_coverage",
     "discovery_baseline", "approval", "approval_history",
 }
 PROJECT_KEYS = {"slug", "definition_status", "definition_revision", "bootstrap_mode", "closure_contract"}
@@ -380,12 +382,12 @@ def _validate_surface_manifest(
     surface_manifest = state.get("surface_manifest")
     if (
         not isinstance(surface_manifest, dict)
-        or set(surface_manifest) != {"records"}
+        or set(surface_manifest) != {"records", "grill_profile"}
         or not isinstance(surface_manifest.get("records"), list)
     ):
         return [_error(
             "invalid_surface_manifest",
-            "surface_manifest must contain only a records array",
+            "surface_manifest must contain records and the complete Grill Topology Profile",
             "surface_manifest",
         )]
     records = surface_manifest["records"]
@@ -1061,6 +1063,7 @@ def _validate_state_v2(
         ("contradictions", list),
         ("coverage", list),
         ("ux_coverage", list),
+        ("grill_coverage", list),
         ("discovery_baseline", dict),
         ("approval", dict),
         ("approval_history", list),
@@ -1083,6 +1086,7 @@ def _validate_state_v2(
     errors.extend(validate_decision_authority_policy(
         state, evidence_index=evidence_index,
     ))
+    errors.extend(validate_grill_coverage(state))
     errors.extend(validate_discovery_baseline(
         state, check_freshness=check_discovery_baseline,
     ))
@@ -1101,6 +1105,7 @@ def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:
             **_surface_metrics(state),
             **_contradiction_metrics(state),
             **grill_unknown_metrics(state),
+            **grill_pack_metrics(state),
             "stale_consumed_evidence": _stale_consumed_evidence_count(state),
             "discovery_baseline_gaps": int(
                 isinstance(state.get("discovery_baseline"), dict)

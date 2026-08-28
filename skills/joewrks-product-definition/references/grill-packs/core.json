@@ -1,0 +1,27 @@
+{
+  "pack_id": "GRILL-CORE-1",
+  "version": "1.0",
+  "activation": {"always": true, "surface_kinds": [], "topology_tags": []},
+  "axes": [
+    {"id": "actor", "description": "Actors participating in the product behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "goal", "description": "Product goal achieved by the behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "entry_point", "description": "Entry points into the behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "precondition", "description": "Conditions required before the behavior begins.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "happy_path", "description": "Expected successful product path.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "alternative_path", "description": "Valid alternative product paths.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "error", "description": "Error behavior and failure states.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "recovery", "description": "Recovery behavior after failure.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "permission", "description": "Permission rules governing the behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "state", "description": "Product states involved in the behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "data", "description": "Data read, written, or exposed by the behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "side_effect", "description": "Business and system side effects.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "notification", "description": "Notifications produced by the behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "validation", "description": "Input and domain validation rules.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "boundary", "description": "Scope and behavior boundaries.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "persistence", "description": "Persistence and retention behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "security", "description": "Security requirements and failure behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "privacy", "description": "Privacy requirements and data handling.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "analytics", "description": "Analytics events and measurement behavior.", "independent_decision": true, "materiality_floor": "INHERIT"},
+    {"id": "acceptance", "description": "Acceptance proof required for the behavior.", "independent_decision": true, "materiality_floor": "INHERIT"}
+  ]
+}
