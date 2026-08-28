@@ -125,7 +125,9 @@ def validate_discovery_baseline(
         and not isinstance(baseline["definition_revision"], bool)
         and baseline["definition_revision"] >= 1
         and all(
-            isinstance(baseline[field], str) and len(baseline[field]) == 64
+            isinstance(baseline[field], str)
+            and len(baseline[field]) == 64
+            and all(character in "0123456789abcdef" for character in baseline[field])
             for field in ("surface_manifest_digest", "evidence_commitment_digest")
         )
         and all(

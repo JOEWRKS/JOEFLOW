@@ -1,4 +1,5 @@
 import copy
+import base64
 import json
 import subprocess
 import sys
@@ -14,10 +15,11 @@ except ModuleNotFoundError:
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "skills" / "joewrks-product-definition" / "scripts"
+SCHEMA = ROOT / "skills" / "joewrks-product-definition" / "schemas" / "state-v0.2.0.schema.json"
 sys.path.insert(0, str(SCRIPTS))
 
 from discovery_v2 import build_discovery_baseline, canonical_json_bytes, validate_discovery_baseline
-from state_validation_v2 import evaluate_closure_v2, validate_state_v2
+from state_validation_v2 import _validate_state_v2, evaluate_closure_v2, validate_state_v2
 
 
 def decision_record(*, evidence_refs=None):
@@ -46,6 +48,26 @@ def current_baseline(state):
 class DiscoveryBaselineV020Test(unittest.TestCase):
     def error_codes(self, state):
         return {error["code"] for error in validate_state_v2(state)}
+
+    def schema_valid(self, state):
+        encoded_state = base64.b64encode(json.dumps(state).encode("utf-8")).decode("ascii")
+        command = (
+            "$json = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String("
+            f"'{encoded_state}')); "
+            f"Test-Json -Json $json -SchemaFile '{SCHEMA}'"
+        )
+        result = subprocess.run(
+            ["pwsh.exe", "-NoProfile", "-Command", command],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 1:
+            self.assertIn("The JSON is not valid with the schema:", result.stderr)
+            return False
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "True")
+        return True
 
     def test_same_semantic_input_produces_identical_baseline_bytes(self):
         state = foundation_state()
@@ -263,6 +285,36 @@ class DiscoveryBaselineV020Test(unittest.TestCase):
             with self.subTest(stderr=result.stderr):
                 self.assertEqual(result.returncode, 2)
                 self.assertIn("error", json.loads(result.stderr))
+
+    def test_digest_syntax_is_enforced_by_runtime_schema_and_regeneration_cli(self):
+        for invalid_digest in ("Z" * 64, "A" * 64):
+            with self.subTest(invalid_digest=invalid_digest[:1]):
+                state = foundation_state()
+                state["discovery_baseline"] = current_baseline(state)
+                state["discovery_baseline"]["surface_manifest_digest"] = invalid_digest
+                state["discovery_baseline"]["evidence_commitment_digest"] = invalid_digest
+
+                self.assertIn("invalid_discovery_baseline", self.error_codes(state))
+                prevalidation_codes = {
+                    error["code"]
+                    for error in _validate_state_v2(state, check_discovery_baseline=False)
+                }
+                self.assertIn("invalid_discovery_baseline", prevalidation_codes)
+                self.assertFalse(self.schema_valid(state))
+
+                with tempfile.TemporaryDirectory() as directory:
+                    path = Path(directory) / "state.json"
+                    path.write_text(json.dumps(state), encoding="utf-8")
+                    result = subprocess.run(
+                        [sys.executable, str(SCRIPTS / "build_discovery_baseline.py"), str(path)],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+
+                self.assertEqual(result.returncode, 1, result.stderr)
+                payload = json.loads(result.stdout)
+                self.assertIn("invalid_discovery_baseline", {error["code"] for error in payload["errors"]})
 
 
 if __name__ == "__main__":
