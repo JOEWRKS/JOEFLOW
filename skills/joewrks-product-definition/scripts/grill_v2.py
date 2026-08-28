@@ -313,6 +313,8 @@ def _accepted_recommendation_is_valid(value: Any, unknowns: list[dict[str, objec
         or not (value.get("accepted_at") is None or _meaningful_text(value.get("accepted_at")))
     ):
         return False
+    if not unknowns:
+        return False
     for unknown in unknowns:
         options = unknown.get("options")
         recommendation = unknown.get("recommendation")
@@ -637,6 +639,15 @@ def _validate_decision(
 
     mode = decision.get("resolution_mode")
     acceptance = decision.get("accepted_recommendation")
+    if (
+        (decision.get("status") == "CURRENT" or mode == "USER_ACCEPTED_RECOMMENDATION")
+        and not _unique_strings(source_refs, nonempty=True)
+    ):
+        errors.append(_error(
+            "invalid_decision_provenance",
+            "current and recommendation-acceptance decisions require a source unknown",
+            f"{path}.source_unknown_refs",
+        ))
     if mode == "USER_ACCEPTED_RECOMMENDATION":
         if not _accepted_recommendation_is_valid(acceptance, source_unknowns):
             errors.append(_error(
@@ -653,10 +664,6 @@ def _validate_decision(
 
     if decision.get("status") != "CURRENT":
         return errors
-    if not source_refs:
-        errors.append(_error(
-            "invalid_decision_provenance", "current decisions require a source unknown", path,
-        ))
 
     authority = decision.get("decision_authority")
     if not isinstance(mode, str) or mode not in DECISION_RESOLUTION_MODES:

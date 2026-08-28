@@ -302,7 +302,7 @@
       "allOf": [
         {"$ref": "#/$defs/lifecycle_requirements"},
         {"if": {"properties": {"status": {"const": "CURRENT"}}, "required": ["status"]}, "then": {"properties": {"source_unknown_refs": {"minItems": 1}}}},
-        {"if": {"properties": {"resolution_mode": {"const": "USER_ACCEPTED_RECOMMENDATION"}}, "required": ["resolution_mode"]}, "then": {"properties": {"accepted_recommendation": {"$ref": "#/$defs/accepted_recommendation"}}}, "else": {"properties": {"accepted_recommendation": {"type": "null"}}}}
+        {"if": {"properties": {"resolution_mode": {"const": "USER_ACCEPTED_RECOMMENDATION"}}, "required": ["resolution_mode"]}, "then": {"properties": {"source_unknown_refs": {"minItems": 1}, "accepted_recommendation": {"$ref": "#/$defs/accepted_recommendation"}}}, "else": {"properties": {"accepted_recommendation": {"type": "null"}}}}
       ]
     },
     "rules": {

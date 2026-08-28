@@ -352,6 +352,43 @@ class UnknownResolutionV020Test(unittest.TestCase):
             {"type": "null"},
         )
 
+    def test_historical_user_accepted_recommendation_requires_a_canonical_source_unknown(self):
+        for source_refs in ([], None, ["UNK-999"]):
+            with self.subTest(source_refs=source_refs):
+                state = foundation_state()
+                decision = decision_record(
+                    status="STALE",
+                    source_unknown_refs=[],
+                    resolution_mode="USER_ACCEPTED_RECOMMENDATION",
+                    decision_authority="USER_CONFIRMATION",
+                    accepted_recommendation=accepted_recommendation(),
+                )
+                decision["source_unknown_refs"] = source_refs
+                state["objects"]["decisions"] = [decision]
+
+                try:
+                    errors = self.errors(state)
+                except Exception as exception:
+                    self.fail(f"validation raised {type(exception).__name__}: {exception}")
+                codes = {error["code"] for error in errors}
+                self.assertIn("invalid_decision_provenance", codes)
+                self.assertIn("invalid_recommendation_acceptance", codes)
+                self.assertTrue(
+                    all(set(error) == {"code", "message", "path"} for error in errors),
+                    errors,
+                )
+
+        schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+        acceptance_condition = next(
+            condition for condition in schema["$defs"]["decisions"]["allOf"]
+            if condition.get("if", {}).get("properties", {}).get("resolution_mode", {}).get("const")
+            == "USER_ACCEPTED_RECOMMENDATION"
+        )
+        self.assertEqual(
+            acceptance_condition.get("then", {}).get("properties", {}).get("source_unknown_refs"),
+            {"minItems": 1},
+        )
+
     def test_response_options_are_exact_unique_and_match_response_mode(self):
         invalid_unknowns = []
         one_option = unknown_record()
