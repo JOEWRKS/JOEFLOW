@@ -140,6 +140,18 @@ class UxBindingV020Test(unittest.TestCase):
         self.assertIn("screen_state_axis_inventory_mismatch", self.codes(state))
         self.assertIn("invalid_ux_coverage_cell", self.codes(state))
 
+    def test_extra_state_axis_still_enforces_open_unknown_proof(self):
+        # Break caught: a well-shaped extra state cell bypassing OPEN's required current unknown.
+        state = state_with_authorities()
+        state["ux_coverage"] = [exact_ux_row(state)]
+        state["ux_coverage"][0]["states"]["unexpected"] = {
+            "status": "OPEN", "authority_bindings": [], "unknown_refs": [],
+            "basis_bindings": [], "rationale": None,
+        }
+        self.assertIn("screen_state_axis_inventory_mismatch", self.codes(state))
+        self.assertIn("ux_open_without_unknown", self.codes(state))
+        self.assertEqual(ux_binding_metrics(state)["ux_open_without_unknown"], 1)
+
     def test_action_keys_equal_major_actions_without_missing_extra_or_duplicates(self):
         # Break caught: action rows diverging from the screen's declared major actions.
         state = state_with_authorities(actions=("submit", "cancel"))
@@ -150,6 +162,25 @@ class UxBindingV020Test(unittest.TestCase):
         self.assertIn("screen_action_inventory_mismatch", self.codes(state))
         state["ux_coverage"] = [exact_ux_row(state, action_keys=("submit", "submit"))]
         self.assertIn("screen_action_inventory_mismatch", self.codes(state))
+
+    def test_orphan_row_with_duplicate_actions_fails_row_and_action_inventory(self):
+        # Break caught: orphan or non-current UX rows bypassing duplicate-action validation.
+        state = state_with_authorities()
+        orphan = exact_ux_row(state, action_keys=("submit", "submit"))
+        orphan["screen_id"] = "SCR-999"
+        state["ux_coverage"] = [exact_ux_row(state), orphan]
+        self.assertIn("invalid_ux_coverage_row", self.codes(state))
+        self.assertIn("screen_action_inventory_mismatch", self.codes(state))
+        self.assertEqual(ux_binding_metrics(state)["screen_action_inventory_gaps"], 1)
+        stale = copy.deepcopy(state_with_authorities())
+        stale["objects"]["screens"].append({
+            "id": "SCR-002", "status": "STALE", "major_actions": ["cancel"],
+        })
+        non_current = exact_ux_row(stale, action_keys=("submit", "submit"))
+        non_current["screen_id"] = "SCR-002"
+        stale["ux_coverage"] = [exact_ux_row(stale), non_current]
+        self.assertIn("screen_action_inventory_mismatch", self.codes(stale))
+        self.assertEqual(ux_binding_metrics(stale)["screen_action_inventory_gaps"], 1)
 
     def test_every_action_row_has_the_exact_frozen_twenty_two_axes(self):
         # Break caught: a declared action dropping or inventing a required action-axis cell.

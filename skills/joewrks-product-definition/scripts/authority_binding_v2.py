@@ -527,6 +527,18 @@ def _current_screen_targets(state: dict[str, object]) -> dict[str, dict[str, obj
     }
 
 
+def _screen_records(state: dict[str, object]) -> dict[str, dict[str, object]]:
+    objects = state.get("objects")
+    screens = objects.get("screens") if isinstance(objects, dict) else None
+    if not isinstance(screens, list):
+        return {}
+    return {
+        record_id: record
+        for record in screens
+        if isinstance(record, dict) and isinstance((record_id := record.get("id")), str)
+    }
+
+
 def _ux_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]], dict[str, int]]:
     """Validate exact M4 UX state/action coverage with record-relative authority proof."""
     contract = load_binding_contracts()["ux"]
@@ -592,9 +604,7 @@ def _ux_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]]
             cell_path = f"{path}.{axis}"
             allowed_types = expected.get(axis)
             if allowed_types is None:
-                if not isinstance(cell, dict) or set(cell) != _UX_COVERAGE_CELL_KEYS:
-                    errors.append(_coverage_error("invalid_ux_coverage_cell", "UX coverage cell must use the exact M4 shape", cell_path))
-                    metric_cells["ux_invalid_authority_binding"].add(cell_path)
+                validate_cell(cell, set(), cell_path)
                 continue
             validate_cell(cell, allowed_types, cell_path)
 
@@ -635,12 +645,14 @@ def _ux_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]]
                 "screen_action_inventory_gaps",
             )
         screen_id = row.get("screen_id")
-        target = _current_screen_targets(state).get(screen_id) if isinstance(screen_id, str) else None
-        if target is not None:
-            expected_keys = target.get("major_actions")
-            if not isinstance(expected_keys, list) or len(keys) != len(set(keys)) or set(keys) != set(expected_keys):
-                errors.append(_coverage_error("screen_action_inventory_mismatch", "UX action keys must exactly equal screen major_actions", f"{row_path}.actions"))
-                metric_cells["screen_action_inventory_gaps"].add(row_path)
+        target = _screen_records(state).get(screen_id) if isinstance(screen_id, str) else None
+        if target is None:
+            errors.append(_coverage_error("invalid_ux_coverage_row", "UX coverage rows must reference a canonical screen", f"{row_path}.screen_id"))
+            metric_cells["ux_coverage_gaps"].add(row_path)
+        expected_keys = target.get("major_actions") if target is not None else None
+        if not isinstance(expected_keys, list) or len(keys) != len(set(keys)) or set(keys) != set(expected_keys):
+            errors.append(_coverage_error("screen_action_inventory_mismatch", "UX action keys must exactly equal screen major_actions", f"{row_path}.actions"))
+            metric_cells["screen_action_inventory_gaps"].add(row_path)
 
     for position, row in enumerate(rows):
         validate_row(position, row)
