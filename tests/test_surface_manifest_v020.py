@@ -32,6 +32,7 @@ SCHEMA = ROOT / "skills" / "joewrks-product-definition" / "schemas" / "state-v0.
 sys.path.insert(0, str(SCRIPTS))
 
 import state_validation_v2
+from authority_binding_v2 import make_authority_binding
 from grill_v2 import canonical_pack_digest, load_grill_packs
 from state_validation_v2 import evaluate_closure_v2, validate_state_v2
 
@@ -137,6 +138,7 @@ class SurfaceManifestV020Test(unittest.TestCase):
                     "rationale": None,
                 }
                 pack = packs[pack_id]
+                basis_binding = make_authority_binding(state, "EVD-900", "/claim")
                 for target_ref in refs:
                     state["grill_coverage"].append({
                         "target_ref": target_ref,
@@ -146,9 +148,9 @@ class SurfaceManifestV020Test(unittest.TestCase):
                         "axes": {
                             axis["id"]: {
                                 "status": "N/A",
-                                "authority_refs": [],
+                                "authority_bindings": [],
                                 "unknown_refs": [],
-                                "basis_refs": ["EVD-900"],
+                                "basis_bindings": [basis_binding],
                                 "rationale": "This test surface does not exercise this specialist axis.",
                             }
                             for axis in pack["axes"]

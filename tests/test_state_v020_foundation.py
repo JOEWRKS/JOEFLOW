@@ -27,6 +27,7 @@ TEMPLATE = ROOT / "skills" / "joewrks-product-definition" / "templates" / "state
 
 sys.path.insert(0, str(SCRIPTS))
 import state_validation_v2
+from authority_binding_v2 import make_authority_binding
 from grill_v2 import CORE_GRILL_AXES
 from state_validation_v2 import evaluate_closure_v2, validate_state_v2
 
@@ -44,6 +45,26 @@ def resolved_decision_source():
         "resolution_summary": "The user selected the canonical format.",
     })
     return record
+
+
+def not_applicable_cell(state):
+    return {
+        "status": "N/A", "authority_bindings": [], "unknown_refs": [],
+        "basis_bindings": [make_authority_binding(state, "EVD-900", "/claim")],
+        "rationale": "The fixture has no applicable behavior for this axis.",
+    }
+
+
+def screen_ux_coverage(state):
+    return [{
+        "screen_id": "SCR-001",
+        "states": {axis: not_applicable_cell(state) for axis in (
+            "default", "loading", "empty", "partial", "success", "error", "disabled",
+            "permission_denied", "unauthenticated", "offline", "timeout", "retrying",
+            "submitting", "completed", "cancelled", "expired",
+        )},
+        "actions": [],
+    }]
 
 
 VALID_RECORDS = {
@@ -353,6 +374,8 @@ class StateV020FoundationTest(unittest.TestCase):
                 state["objects"][group] = [copy.deepcopy(record)]
                 if group == "decisions":
                     state["objects"]["unknowns"] = [resolved_decision_source()]
+                if group == "screens":
+                    state["ux_coverage"] = screen_ux_coverage(state)
 
                 self.assertEqual(validate_state_v2(state), [])
 
@@ -386,7 +409,7 @@ class StateV020FoundationTest(unittest.TestCase):
         state["objects"]["requirements"] = [requirement]
         state["coverage"] = [{
             "feature_id": requirement["id"],
-            "cells": {axis: {"status": "COVERED"} for axis in CORE_GRILL_AXES},
+            "cells": {axis: not_applicable_cell(state) for axis in CORE_GRILL_AXES},
         }]
         self.assertEqual(validate_state_v2(state), [])
 

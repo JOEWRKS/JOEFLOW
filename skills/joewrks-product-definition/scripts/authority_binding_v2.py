@@ -287,6 +287,7 @@ _CORE_COVERAGE_CELL_KEYS = {
     "status", "authority_bindings", "unknown_refs", "basis_bindings", "rationale",
 }
 _SPECIALIST_COVERAGE_CELL_KEYS = _CORE_COVERAGE_CELL_KEYS
+_UX_COVERAGE_CELL_KEYS = _CORE_COVERAGE_CELL_KEYS
 
 
 def _coverage_error(code: str, message: str, path: str) -> dict[str, str]:
@@ -510,3 +511,157 @@ def validate_product_coverage_bindings(state: dict[str, object]) -> list[dict[st
 def product_binding_metrics(state: dict[str, object]) -> dict[str, int]:
     """Count affected semantic coverage cells once for each M4 metric."""
     return _product_binding_analysis(state)[1]
+
+
+def _current_screen_targets(state: dict[str, object]) -> dict[str, dict[str, object]]:
+    objects = state.get("objects")
+    screens = objects.get("screens") if isinstance(objects, dict) else None
+    if not isinstance(screens, list):
+        return {}
+    return {
+        record_id: record
+        for record in screens
+        if isinstance(record, dict)
+        and record.get("status") == "CURRENT"
+        and isinstance((record_id := record.get("id")), str)
+    }
+
+
+def _ux_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]], dict[str, int]]:
+    """Validate exact M4 UX state/action coverage with record-relative authority proof."""
+    contract = load_binding_contracts()["ux"]
+    roots = {record_type: set(values) for record_type, values in contract["semantic_roots"].items()}
+    basis_roots = {record_type: set(values) for record_type, values in contract["basis_semantic_roots"].items()}
+    basis_types = set(contract["basis_types"])
+    state_types = {axis: set(values) for axis, values in contract["state_axis_types"].items()}
+    action_types = {axis: set(values) for axis, values in contract["action_axis_types"].items()}
+    errors: list[dict[str, str]] = []
+    metric_cells = {
+        "ux_coverage_gaps": set(), "screen_state_gaps": set(),
+        "screen_action_inventory_gaps": set(), "ux_invalid_authority_binding": set(),
+        "ux_stale_authority_binding": set(), "ux_open_without_unknown": set(),
+        "ux_unjustified_na": set(),
+    }
+    coverage = state.get("ux_coverage")
+    rows = coverage if isinstance(coverage, list) else []
+    by_screen: dict[str, list[tuple[int, dict[str, object]]]] = {}
+    for position, row in enumerate(rows):
+        if isinstance(row, dict) and isinstance(row.get("screen_id"), str):
+            by_screen.setdefault(row["screen_id"], []).append((position, row))
+
+    def validate_cell(cell: object, allowed_types: set[str], cell_path: str) -> None:
+        if not isinstance(cell, dict) or set(cell) != _UX_COVERAGE_CELL_KEYS:
+            errors.append(_coverage_error("invalid_ux_coverage_cell", "UX coverage cell must use the exact M4 shape", cell_path))
+            metric_cells["ux_invalid_authority_binding"].add(cell_path)
+            if isinstance(cell, dict) and cell.get("status") == "OPEN":
+                metric_cells["ux_open_without_unknown"].add(cell_path)
+            elif isinstance(cell, dict) and cell.get("status") == "N/A":
+                metric_cells["ux_unjustified_na"].add(cell_path)
+            return
+        status = cell.get("status")
+        bindings, unknowns, basis, rationale = (
+            cell.get("authority_bindings"), cell.get("unknown_refs"),
+            cell.get("basis_bindings"), cell.get("rationale"),
+        )
+        if status == "COVERED":
+            codes = _verify_bindings(state, bindings, allowed_types=allowed_types, semantic_roots=roots, basis=False)
+            if codes or unknowns != [] or basis != [] or rationale is not None:
+                _binding_metric_codes(codes, {"invalid_authority_binding": metric_cells["ux_invalid_authority_binding"], "stale_authority_binding": metric_cells["ux_stale_authority_binding"], "invalid_coverage_authority_type": set()}, cell_path)
+                errors.append(_coverage_error(codes[0] if codes else "invalid_ux_coverage_cell", "COVERED requires only verified exact authority bindings", cell_path))
+        elif status == "OPEN":
+            if bindings != [] or basis != [] or rationale is not None or not _open_unknowns_are_current(state, unknowns):
+                metric_cells["ux_open_without_unknown"].add(cell_path)
+                errors.append(_coverage_error("ux_open_without_unknown", "OPEN requires current OPEN unknown refs only", cell_path))
+        elif status == "N/A":
+            codes = _verify_bindings(state, basis, allowed_types=basis_types, semantic_roots=basis_roots, basis=True)
+            if bindings != [] or unknowns != [] or not _meaningful_rationale(rationale) or codes:
+                metric_cells["ux_unjustified_na"].add(cell_path)
+                _binding_metric_codes(codes, {"invalid_authority_binding": metric_cells["ux_invalid_authority_binding"], "stale_authority_binding": metric_cells["ux_stale_authority_binding"], "invalid_coverage_authority_type": set()}, cell_path)
+                errors.append(_coverage_error(codes[0] if codes else "ux_unjustified_na", "N/A requires rationale and verified exact basis bindings", cell_path))
+        else:
+            errors.append(_coverage_error("invalid_ux_coverage_cell", "UX status must be COVERED, OPEN, or N/A", cell_path))
+            metric_cells["ux_invalid_authority_binding"].add(cell_path)
+
+    def validate_axes(cells: object, expected: dict[str, set[str]], path: str, mismatch_code: str, mismatch_message: str, gap_metric: str) -> None:
+        if not isinstance(cells, dict) or set(cells) != set(expected):
+            errors.append(_coverage_error(mismatch_code, mismatch_message, path))
+            metric_cells[gap_metric].add(path.rsplit(".", 1)[0])
+        if not isinstance(cells, dict):
+            return
+        for axis, cell in cells.items():
+            cell_path = f"{path}.{axis}"
+            allowed_types = expected.get(axis)
+            if allowed_types is None:
+                if not isinstance(cell, dict) or set(cell) != _UX_COVERAGE_CELL_KEYS:
+                    errors.append(_coverage_error("invalid_ux_coverage_cell", "UX coverage cell must use the exact M4 shape", cell_path))
+                    metric_cells["ux_invalid_authority_binding"].add(cell_path)
+                continue
+            validate_cell(cell, allowed_types, cell_path)
+
+    def validate_row(position: int, row: object) -> None:
+        row_path = f"ux_coverage[{position}]"
+        if not isinstance(row, dict):
+            errors.append(_coverage_error("invalid_ux_coverage_row", "UX coverage rows must be objects", row_path))
+            metric_cells["ux_coverage_gaps"].add(row_path)
+            return
+        if set(row) != {"screen_id", "states", "actions"}:
+            errors.append(_coverage_error("invalid_ux_coverage_row", "UX coverage rows require exactly screen_id, states, and actions", row_path))
+            metric_cells["ux_coverage_gaps"].add(row_path)
+        validate_axes(
+            row.get("states"), state_types, f"{row_path}.states",
+            "screen_state_axis_inventory_mismatch", "screen states must equal the frozen 16-axis inventory",
+            "screen_state_gaps",
+        )
+        actions = row.get("actions")
+        if not isinstance(actions, list):
+            errors.append(_coverage_error("invalid_ux_action_row", "UX actions must be an array", f"{row_path}.actions"))
+            metric_cells["screen_action_inventory_gaps"].add(row_path)
+            return
+        keys: list[str] = []
+        for action_position, action in enumerate(actions):
+            action_path = f"{row_path}.actions[{action_position}]"
+            if not isinstance(action, dict):
+                errors.append(_coverage_error("invalid_ux_action_row", "UX action rows must be objects", action_path))
+                metric_cells["screen_action_inventory_gaps"].add(action_path)
+                continue
+            if set(action) != {"key", "cells"} or not isinstance(action.get("key"), str):
+                errors.append(_coverage_error("invalid_ux_action_row", "UX action rows require exactly key and cells", action_path))
+                metric_cells["screen_action_inventory_gaps"].add(action_path)
+            else:
+                keys.append(action["key"])
+            validate_axes(
+                action.get("cells"), action_types, f"{action_path}.cells",
+                "action_axis_inventory_mismatch", "action cells must equal the frozen 22-axis inventory",
+                "screen_action_inventory_gaps",
+            )
+        screen_id = row.get("screen_id")
+        target = _current_screen_targets(state).get(screen_id) if isinstance(screen_id, str) else None
+        if target is not None:
+            expected_keys = target.get("major_actions")
+            if not isinstance(expected_keys, list) or len(keys) != len(set(keys)) or set(keys) != set(expected_keys):
+                errors.append(_coverage_error("screen_action_inventory_mismatch", "UX action keys must exactly equal screen major_actions", f"{row_path}.actions"))
+                metric_cells["screen_action_inventory_gaps"].add(row_path)
+
+    for position, row in enumerate(rows):
+        validate_row(position, row)
+
+    for screen_id in sorted(_current_screen_targets(state)):
+        target_rows = by_screen.get(screen_id, [])
+        target_path = f"ux_coverage.{screen_id}"
+        if not target_rows:
+            errors.append(_coverage_error("missing_ux_coverage", "current screen requires one UX coverage row", target_path))
+            metric_cells["ux_coverage_gaps"].add(target_path)
+        elif len(target_rows) != 1:
+            errors.append(_coverage_error("duplicate_ux_coverage", "current screen requires exactly one UX coverage row", target_path))
+            metric_cells["ux_coverage_gaps"].add(target_path)
+    return errors, {name: len(cells) for name, cells in metric_cells.items()}
+
+
+def validate_ux_coverage_bindings(state: dict[str, object]) -> list[dict[str, str]]:
+    """Return exact M4 authority-binding errors for UX coverage."""
+    return _ux_binding_analysis(state)[0]
+
+
+def ux_binding_metrics(state: dict[str, object]) -> dict[str, int]:
+    """Count affected UX coverage rows and cells once for each M4 metric."""
+    return _ux_binding_analysis(state)[1]
