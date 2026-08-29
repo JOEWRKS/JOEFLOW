@@ -32,6 +32,7 @@ SCHEMA = ROOT / "skills" / "joewrks-product-definition" / "schemas" / "state-v0.
 sys.path.insert(0, str(SCRIPTS))
 
 from grill_v2 import CORE_GRILL_AXES
+from authority_binding_v2 import make_authority_binding
 from state_validation_v2 import evaluate_closure_v2, validate_state_v2
 
 
@@ -432,9 +433,17 @@ class UnknownResolutionV020Test(unittest.TestCase):
             "id": "REQ-001", "status": "CURRENT", "statement": "Use the alternative behavior.",
             "scope": "CORE", "ui_required": True, "materiality": materiality(classification="MATERIAL"),
         }]
+        basis = make_authority_binding(authority_state, "EVD-900", "/claim")
         authority_state["coverage"] = [{
             "feature_id": "REQ-001",
-            "cells": {axis: {"status": "COVERED"} for axis in CORE_GRILL_AXES},
+            "cells": {
+                axis: {
+                    "status": "N/A", "authority_bindings": [], "unknown_refs": [],
+                    "basis_bindings": [copy.deepcopy(basis)],
+                    "rationale": "This coverage axis does not apply to the recommendation authority.",
+                }
+                for axis in CORE_GRILL_AXES
+            },
         }]
         self.assertEqual(self.error_codes(authority_state), set())
 

@@ -8,6 +8,9 @@
     "text": {"type": "string", "minLength": 1},
     "binding_contract_identity": {"type": "object", "additionalProperties": false, "required": ["contract_id", "version", "digest"], "properties": {"contract_id": {"type": "string"}, "version": {"const": "1.0"}, "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}},
     "string_array": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "authority_binding": {"type": "object", "additionalProperties": false, "required": ["record_id", "pointer", "value_sha256"], "properties": {"record_id": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "pointer": {"type": "string"}, "value_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}},
+    "core_coverage_cell": {"type": "object", "additionalProperties": false, "required": ["status", "authority_bindings", "unknown_refs", "basis_bindings", "rationale"], "properties": {"status": {"enum": ["COVERED", "OPEN", "N/A"]}, "authority_bindings": {"type": "array", "items": {"$ref": "#/$defs/authority_binding"}}, "unknown_refs": {"type": "array", "items": {"type": "string", "pattern": "^UNK-[0-9]{3,}$"}, "uniqueItems": true}, "basis_bindings": {"type": "array", "items": {"$ref": "#/$defs/authority_binding"}}, "rationale": {"oneOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]}}},
+    "core_coverage_row": {"type": "object", "additionalProperties": false, "required": ["feature_id", "cells"], "properties": {"feature_id": {"type": "string", "pattern": "^REQ-[0-9]{3,}$"}, "cells": {"type": "object", "additionalProperties": {"$ref": "#/$defs/core_coverage_cell"}}}},
     "normal_status": {"enum": ["CURRENT", "STALE", "SUPERSEDED", "RETIRED"]},
     "unknown_status": {"enum": ["OPEN", "RESOLVED", "DEFERRED", "BLOCKED", "SUPERSEDED", "RETIRED"]},
     "decision_authority": {"enum": ["EVIDENCE_RESOLVABLE", "AGENT_AUTONOMOUS", "USER_CONFIRMATION", "USER_DECISION_REQUIRED", "EXTERNAL_AUTHORITY_REQUIRED"]},
@@ -198,12 +201,12 @@
     "grill_axis_coverage": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "authority_refs", "unknown_refs", "basis_refs", "rationale"],
+      "required": ["status", "authority_bindings", "unknown_refs", "basis_bindings", "rationale"],
       "properties": {
         "status": {"enum": ["ADDRESSED", "OPEN", "N/A"]},
-        "authority_refs": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "uniqueItems": true},
+        "authority_bindings": {"type": "array", "items": {"$ref": "#/$defs/authority_binding"}},
         "unknown_refs": {"type": "array", "items": {"type": "string", "pattern": "^UNK-[0-9]{3,}$"}, "uniqueItems": true},
-        "basis_refs": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "uniqueItems": true},
+        "basis_bindings": {"type": "array", "items": {"$ref": "#/$defs/authority_binding"}},
         "rationale": {"oneOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]}
       }
     },
@@ -493,7 +496,7 @@
         "tasks": {"type": "array", "items": {"$ref": "#/$defs/tasks"}}
       }
     },
-    "coverage": {"type": "array"}, "ux_coverage": {"type": "array"},
+    "coverage": {"type": "array", "items": {"$ref": "#/$defs/core_coverage_row"}}, "ux_coverage": {"type": "array"},
     "grill_coverage": {"type": "array", "items": {"$ref": "#/$defs/grill_coverage_row"}},
     "discovery_baseline": {"$ref": "#/$defs/discovery_baseline"},
     "approval": {"type": "object"}, "approval_history": {"type": "array"}

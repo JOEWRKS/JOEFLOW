@@ -8,6 +8,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from materiality_v2 import classify_materiality
+
 
 CONTRACT_DIR = Path(__file__).resolve().parents[1] / "references" / "binding-contracts"
 CONTRACT_FILES = {
@@ -279,3 +281,223 @@ def binding_contract_identity() -> dict[str, dict[str, str]]:
         name: {"contract_id": contract["contract_id"], "version": contract["version"], "digest": sha256_json(contract)}
         for name, contract in load_binding_contracts().items()
     }
+
+
+_CORE_COVERAGE_CELL_KEYS = {
+    "status", "authority_bindings", "unknown_refs", "basis_bindings", "rationale",
+}
+_SPECIALIST_COVERAGE_CELL_KEYS = _CORE_COVERAGE_CELL_KEYS
+
+
+def _coverage_error(code: str, message: str, path: str) -> dict[str, str]:
+    return {"code": code, "message": message, "path": path}
+
+
+def _meaningful_rationale(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _unique_strings(value: object, *, nonempty: bool = False) -> bool:
+    return (
+        isinstance(value, list)
+        and (bool(value) or not nonempty)
+        and all(isinstance(item, str) for item in value)
+        and len(value) == len(set(value))
+    )
+
+
+def _material_core_targets(state: dict[str, object]) -> list[str]:
+    objects = state.get("objects")
+    requirements = objects.get("requirements") if isinstance(objects, dict) else None
+    if not isinstance(requirements, list):
+        return []
+    targets: list[str] = []
+    for record in requirements:
+        if not isinstance(record, dict) or record.get("status") != "CURRENT":
+            continue
+        record_id = record.get("id")
+        materiality = record.get("materiality")
+        try:
+            is_material = isinstance(materiality, dict) and classify_materiality(materiality) == "MATERIAL"
+        except (KeyError, TypeError, ValueError):
+            is_material = False
+        if isinstance(record_id, str) and is_material:
+            targets.append(record_id)
+    return sorted(set(targets))
+
+
+def _open_unknowns_are_current(state: dict[str, object], refs: object) -> bool:
+    if not _unique_strings(refs, nonempty=True):
+        return False
+    index = canonical_record_index(state)
+    return all(
+        reference in index
+        and index[reference][0] == "UNK"
+        and index[reference][1].get("status") == "OPEN"
+        for reference in refs
+    )
+
+
+def _verify_bindings(
+    state: dict[str, object], bindings: object, *, allowed_types: set[str],
+    semantic_roots: dict[str, set[str]], basis: bool,
+) -> list[str]:
+    if not isinstance(bindings, list) or not bindings:
+        return ["missing_authority_binding"]
+    codes: list[str] = []
+    for binding in bindings:
+        try:
+            verify_authority_binding(
+                state, binding, allowed_types=allowed_types,
+                semantic_roots=semantic_roots, basis=basis,
+            )
+        except BindingError as exc:
+            codes.append(exc.code)
+    return codes
+
+
+def _binding_metric_codes(codes: list[str], metrics: dict[str, set[str]], cell_path: str) -> None:
+    if not codes:
+        return
+    metrics["invalid_authority_binding"].add(cell_path)
+    if "stale_authority_binding" in codes:
+        metrics["stale_authority_binding"].add(cell_path)
+    if "invalid_authority_binding_type" in codes:
+        metrics["invalid_coverage_authority_type"].add(cell_path)
+
+
+def _product_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]], dict[str, int]]:
+    """Validate exact M4 Core and specialist coverage proof without M3 topology logic."""
+    contract = load_binding_contracts()["product"]
+    roots = {record_type: set(values) for record_type, values in contract["semantic_roots"].items()}
+    basis_roots = {record_type: set(values) for record_type, values in contract["basis_semantic_roots"].items()}
+    basis_types = set(contract["basis_types"])
+    core_types = {axis: set(values) for axis, values in contract["core_axis_types"].items()}
+    specialist_types = {pack: set(values) for pack, values in contract["specialist_pack_types"].items()}
+    errors: list[dict[str, str]] = []
+    metric_cells = {
+        "invalid_authority_binding": set(), "stale_authority_binding": set(),
+        "coverage_without_authority": set(), "open_coverage_without_unknown": set(),
+        "unjustified_na_without_basis": set(), "invalid_coverage_authority_type": set(),
+        "core_coverage_gaps": set(), "specialist_binding_gaps": set(),
+    }
+
+    coverage = state.get("coverage")
+    rows = coverage if isinstance(coverage, list) else []
+    by_target: dict[str, list[tuple[int, dict[str, object]]]] = {}
+    for position, row in enumerate(rows):
+        if isinstance(row, dict) and isinstance(row.get("feature_id"), str):
+            by_target.setdefault(row["feature_id"], []).append((position, row))
+    for target in _material_core_targets(state):
+        target_rows = by_target.get(target, [])
+        target_path = f"coverage.{target}"
+        if not target_rows:
+            errors.append(_coverage_error("missing_core_coverage", "current MATERIAL requirement requires one Core coverage row", target_path))
+            metric_cells["core_coverage_gaps"].add(target_path)
+            continue
+        if len(target_rows) != 1:
+            errors.append(_coverage_error("duplicate_core_coverage", "current MATERIAL requirement requires exactly one Core coverage row", target_path))
+            metric_cells["core_coverage_gaps"].add(target_path)
+        position, row = target_rows[0]
+        cells = row.get("cells")
+        if not isinstance(cells, dict) or set(cells) != set(core_types):
+            errors.append(_coverage_error("core_coverage_axis_inventory_mismatch", "Core cells must equal the frozen 20-axis inventory", f"coverage[{position}].cells"))
+            metric_cells["core_coverage_gaps"].add(target_path)
+            continue
+        for axis, allowed_types in core_types.items():
+            cell_path = f"coverage[{position}].cells.{axis}"
+            cell = cells[axis]
+            if not isinstance(cell, dict) or set(cell) != _CORE_COVERAGE_CELL_KEYS:
+                errors.append(_coverage_error("invalid_core_coverage_cell", "Core coverage cell must use the exact M4 shape", cell_path))
+                metric_cells["invalid_authority_binding"].add(cell_path)
+                if isinstance(cell, dict) and cell.get("status") == "COVERED":
+                    metric_cells["coverage_without_authority"].add(cell_path)
+                elif isinstance(cell, dict) and cell.get("status") == "OPEN":
+                    metric_cells["open_coverage_without_unknown"].add(cell_path)
+                elif isinstance(cell, dict) and cell.get("status") == "N/A":
+                    metric_cells["unjustified_na_without_basis"].add(cell_path)
+                continue
+            status = cell.get("status")
+            bindings, unknowns, basis, rationale = (
+                cell.get("authority_bindings"), cell.get("unknown_refs"),
+                cell.get("basis_bindings"), cell.get("rationale"),
+            )
+            if status == "COVERED":
+                codes = _verify_bindings(state, bindings, allowed_types=allowed_types, semantic_roots=roots, basis=False)
+                invalid = bool(codes) or unknowns != [] or basis != [] or rationale is not None
+                if invalid:
+                    if codes == ["missing_authority_binding"]:
+                        metric_cells["coverage_without_authority"].add(cell_path)
+                    _binding_metric_codes(codes, metric_cells, cell_path)
+                    errors.append(_coverage_error(codes[0] if codes else "invalid_core_coverage_cell", "COVERED requires only verified exact authority bindings", cell_path))
+            elif status == "OPEN":
+                if bindings != [] or basis != [] or rationale is not None or not _open_unknowns_are_current(state, unknowns):
+                    metric_cells["open_coverage_without_unknown"].add(cell_path)
+                    errors.append(_coverage_error("open_coverage_without_unknown", "OPEN requires current OPEN unknown refs only", cell_path))
+            elif status == "N/A":
+                codes = _verify_bindings(state, basis, allowed_types=basis_types, semantic_roots=basis_roots, basis=True)
+                if bindings != [] or unknowns != [] or not _meaningful_rationale(rationale) or codes:
+                    metric_cells["unjustified_na_without_basis"].add(cell_path)
+                    _binding_metric_codes(codes, metric_cells, cell_path)
+                    errors.append(_coverage_error(codes[0] if codes else "unjustified_na_without_basis", "N/A requires rationale and verified exact basis bindings", cell_path))
+            else:
+                errors.append(_coverage_error("invalid_core_coverage_cell", "Core status must be COVERED, OPEN, or N/A", cell_path))
+
+    grill_coverage = state.get("grill_coverage")
+    specialist_rows = grill_coverage if isinstance(grill_coverage, list) else []
+    for row_position, row in enumerate(specialist_rows):
+        if not isinstance(row, dict) or row.get("pack_id") not in specialist_types or not isinstance(row.get("axes"), dict):
+            continue
+        pack_id = row["pack_id"]
+        for axis, cell in row["axes"].items():
+            cell_path = f"grill_coverage[{row_position}].axes.{axis}"
+            invalid_cell = False
+            if not isinstance(cell, dict) or set(cell) != _SPECIALIST_COVERAGE_CELL_KEYS:
+                errors.append(_coverage_error("invalid_specialist_coverage_cell", "specialist coverage cell must use the exact M4 shape", cell_path))
+                metric_cells["specialist_binding_gaps"].add(cell_path)
+                continue
+            status = cell.get("status")
+            bindings, unknowns, basis, rationale = (
+                cell.get("authority_bindings"), cell.get("unknown_refs"),
+                cell.get("basis_bindings"), cell.get("rationale"),
+            )
+            if status == "ADDRESSED":
+                codes = _verify_bindings(state, bindings, allowed_types=specialist_types[pack_id], semantic_roots=roots, basis=False)
+                invalid_cell = bool(codes) or unknowns != [] or basis != [] or rationale is not None
+                if codes == ["missing_authority_binding"]:
+                    metric_cells["coverage_without_authority"].add(cell_path)
+                _binding_metric_codes(codes, metric_cells, cell_path)
+                error_code = codes[0] if codes else "invalid_specialist_coverage_cell"
+                message = "ADDRESSED requires only verified exact authority bindings"
+            elif status == "OPEN":
+                invalid_cell = bindings != [] or basis != [] or rationale is not None or not _open_unknowns_are_current(state, unknowns)
+                if invalid_cell:
+                    metric_cells["open_coverage_without_unknown"].add(cell_path)
+                error_code = "open_coverage_without_unknown"
+                message = "OPEN requires current OPEN unknown refs only"
+            elif status == "N/A":
+                codes = _verify_bindings(state, basis, allowed_types=basis_types, semantic_roots=basis_roots, basis=True)
+                invalid_cell = bindings != [] or unknowns != [] or not _meaningful_rationale(rationale) or bool(codes)
+                if invalid_cell:
+                    metric_cells["unjustified_na_without_basis"].add(cell_path)
+                _binding_metric_codes(codes, metric_cells, cell_path)
+                error_code = codes[0] if codes else "unjustified_na_without_basis"
+                message = "N/A requires rationale and verified exact basis bindings"
+            else:
+                invalid_cell = True
+                error_code = "invalid_specialist_coverage_cell"
+                message = "specialist status must be ADDRESSED, OPEN, or N/A"
+            if invalid_cell:
+                metric_cells["specialist_binding_gaps"].add(cell_path)
+                errors.append(_coverage_error(error_code, message, cell_path))
+    return errors, {name: len(cells) for name, cells in metric_cells.items()}
+
+
+def validate_product_coverage_bindings(state: dict[str, object]) -> list[dict[str, str]]:
+    """Return exact M4 authority-binding errors for Core and specialist coverage."""
+    return _product_binding_analysis(state)[0]
+
+
+def product_binding_metrics(state: dict[str, object]) -> dict[str, int]:
+    """Count affected semantic coverage cells once for each M4 metric."""
+    return _product_binding_analysis(state)[1]

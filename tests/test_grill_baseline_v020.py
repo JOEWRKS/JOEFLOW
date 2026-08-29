@@ -24,6 +24,7 @@ STATE_SCHEMA = SKILL_ROOT / "schemas" / "state-v0.2.0.schema.json"
 sys.path.insert(0, str(SCRIPTS))
 
 import grill_v2 as grill  # noqa: E402
+from authority_binding_v2 import sha256_json  # noqa: E402
 from discovery_v2 import (  # noqa: E402
     build_discovery_baseline,
     canonical_json_bytes,
@@ -66,9 +67,12 @@ def specialist_row(pack_id, target_ref):
         "axes": {
             axis["id"]: {
                 "status": "N/A",
-                "authority_refs": [],
+                "authority_bindings": [],
                 "unknown_refs": [],
-                "basis_refs": ["EVD-900"],
+                "basis_bindings": [{
+                    "record_id": "EVD-900", "pointer": "/claim",
+                    "value_sha256": sha256_json("The six specialist topology domains were explicitly classified."),
+                }],
                 "rationale": "This axis does not apply to the classified surface.",
             }
             for axis in pack["axes"]
@@ -91,9 +95,9 @@ def add_open_axis(state, row, axis_id, unknown_id="UNK-901"):
     ))
     row["axes"][axis_id] = {
         "status": "OPEN",
-        "authority_refs": [],
+        "authority_bindings": [],
         "unknown_refs": [unknown_id],
-        "basis_refs": [],
+        "basis_bindings": [],
         "rationale": None,
     }
 

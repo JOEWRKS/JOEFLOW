@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from authority_binding_v2 import BindingError, binding_contract_identity
+from authority_binding_v2 import (
+    BindingError,
+    binding_contract_identity,
+    product_binding_metrics,
+    validate_product_coverage_bindings,
+)
 from discovery_v2 import validate_discovery_baseline
 from grill_v2 import (
     grill_pack_metrics,
@@ -1147,6 +1152,7 @@ def _validate_state_v2(
         state, evidence_index=evidence_index,
     ))
     errors.extend(validate_grill_coverage(state))
+    errors.extend(validate_product_coverage_bindings(state))
     errors.extend(validate_discovery_baseline(
         state, check_freshness=check_discovery_baseline,
     ))
@@ -1167,6 +1173,7 @@ def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:
             "unassessed_materiality": _unassessed_materiality_count(state),
             **grill_unknown_metrics(state),
             **grill_pack_metrics(state),
+            **product_binding_metrics(state),
             "stale_consumed_evidence": _stale_consumed_evidence_count(state),
             "discovery_baseline_gaps": int(
                 isinstance(state.get("discovery_baseline"), dict)

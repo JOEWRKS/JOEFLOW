@@ -210,7 +210,7 @@ GRILL_PROFILE_CELL_KEYS = {
     "status", "surface_refs", "unknown_refs", "basis_refs", "rationale",
 }
 GRILL_AXIS_CELL_KEYS = {
-    "status", "authority_refs", "unknown_refs", "basis_refs", "rationale",
+    "status", "authority_bindings", "unknown_refs", "basis_bindings", "rationale",
 }
 
 
@@ -1596,12 +1596,12 @@ def _coverage_analysis(
                 ))
                 continue
             status = cell.get("status")
-            authority_refs = cell.get("authority_refs")
+            authority_bindings = cell.get("authority_bindings")
             unknown_refs = cell.get("unknown_refs")
-            basis_refs = cell.get("basis_refs")
+            basis_bindings = cell.get("basis_bindings")
             lists_valid = all(
-                _unique_strings(value)
-                for value in (authority_refs, unknown_refs, basis_refs)
+                isinstance(value, list)
+                for value in (authority_bindings, unknown_refs, basis_bindings)
             )
             if (
                 not isinstance(status, str)
@@ -1617,31 +1617,24 @@ def _coverage_analysis(
 
             if status == "ADDRESSED":
                 if (
-                    not authority_refs
-                    or unknown_refs != []
-                    or basis_refs != []
+                    unknown_refs != []
+                    or basis_bindings != []
                     or cell.get("rationale") is not None
-                    or any(not _current_product_authority(ref, index) for ref in authority_refs)
                 ):
                     errors.append(_error(
                         "invalid_grill_axis_authority",
-                        "ADDRESSED requires broad current canonical product authority",
+                        "ADDRESSED permits only exact M4 authority bindings",
                         cell_path,
                     ))
             elif status == "N/A":
                 if (
-                    authority_refs != []
+                    authority_bindings != []
                     or unknown_refs != []
-                    or not basis_refs
                     or not _meaningful_text(cell.get("rationale"))
-                    or any(
-                        not _basis_ref_is_current(ref, index=index, topology_profile=False)
-                        for ref in basis_refs
-                    )
                 ):
                     errors.append(_error(
                         "invalid_grill_axis_basis",
-                        "N/A requires meaningful rationale and current basis authority",
+                        "N/A permits only exact M4 basis bindings and rationale",
                         cell_path,
                     ))
             else:
@@ -1657,8 +1650,8 @@ def _coverage_analysis(
                     )
                 )
                 if (
-                    authority_refs != []
-                    or basis_refs != []
+                    authority_bindings != []
+                    or basis_bindings != []
                     or cell.get("rationale") is not None
                     or not unknowns_valid
                 ):

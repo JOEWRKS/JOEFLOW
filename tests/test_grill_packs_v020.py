@@ -19,6 +19,7 @@ sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(SKILL_ROOT))
 
 import grill_v2 as grill  # noqa: E402
+from authority_binding_v2 import make_authority_binding, sha256_json  # noqa: E402
 from downstream.schema_validation import (  # noqa: E402
     SchemaValidationError,
     validate_instance,
@@ -196,9 +197,12 @@ def specialist_row(pack_id, target_ref, *, status="N/A", basis_ref="EVD-900"):
     for axis in PACK_AXES[pack_id]:
         cells[axis] = {
             "status": status,
-            "authority_refs": [],
+            "authority_bindings": [],
             "unknown_refs": [],
-            "basis_refs": [basis_ref] if status == "N/A" else [],
+            "basis_bindings": [{
+                "record_id": basis_ref, "pointer": "/claim",
+                "value_sha256": sha256_json("The six specialist topology domains were explicitly classified."),
+            }] if status == "N/A" else [],
             "rationale": "This axis does not apply to the classified surface." if status == "N/A" else None,
         }
     return {
@@ -231,9 +235,9 @@ def axis_unknown(state, target_ref, pack_id, axis_id, *, unknown_id="UNK-901", c
 def open_axis(row, axis_id, unknown_id):
     row["axes"][axis_id] = {
         "status": "OPEN",
-        "authority_refs": [],
+        "authority_bindings": [],
         "unknown_refs": [unknown_id],
-        "basis_refs": [],
+        "basis_bindings": [],
         "rationale": None,
     }
 
@@ -629,9 +633,9 @@ class GrillPacksV020Test(unittest.TestCase):
         row = specialist_row("GRILL-AUTH-1", "SURF-001")
         row["axes"]["registration"] = {
             "status": "ADDRESSED",
-            "authority_refs": ["RULE-900"],
+            "authority_bindings": [make_authority_binding(state, "RULE-900", "/statement")],
             "unknown_refs": [],
-            "basis_refs": [],
+            "basis_bindings": [],
             "rationale": None,
         }
         axis_unknown(state, "SURF-001", "GRILL-AUTH-1", "login")
@@ -645,7 +649,7 @@ class GrillPacksV020Test(unittest.TestCase):
 
         stale_authority = copy.deepcopy(state)
         stale_authority["objects"]["rules"][0]["status"] = "STALE"
-        self.assertIn("invalid_grill_axis_authority", self.error_codes(stale_authority))
+        self.assertIn("stale_authority_binding", self.error_codes(stale_authority))
 
         noncanonical_authority = copy.deepcopy(state)
         noncanonical_authority["objects"]["goals"] = [{
@@ -653,11 +657,11 @@ class GrillPacksV020Test(unittest.TestCase):
             "status": "CURRENT",
             "statement": "The product should be easy to use.",
         }]
-        noncanonical_authority["grill_coverage"][0]["axes"]["registration"]["authority_refs"] = [
-            "GOAL-900"
+        noncanonical_authority["grill_coverage"][0]["axes"]["registration"]["authority_bindings"] = [
+            make_authority_binding(noncanonical_authority, "GOAL-900", "/statement")
         ]
         self.assertIn(
-            "invalid_grill_axis_authority",
+            "invalid_authority_binding_type",
             self.error_codes(noncanonical_authority),
         )
 
@@ -665,8 +669,10 @@ class GrillPacksV020Test(unittest.TestCase):
         stale_basis["evidence"].append(evidence_record(
             "EVD-901", source_kind="USER_CONFIRMED_INTENT", authority_classes=["INTENT"], status="STALE",
         ))
-        stale_basis["grill_coverage"][0]["axes"]["verification"]["basis_refs"] = ["EVD-901"]
-        self.assertIn("invalid_grill_axis_basis", self.error_codes(stale_basis))
+        stale_basis["grill_coverage"][0]["axes"]["verification"]["basis_bindings"] = [
+            make_authority_binding(stale_basis, "EVD-901", "/claim")
+        ]
+        self.assertIn("stale_authority_binding", self.error_codes(stale_basis))
 
         missing_unknown = copy.deepcopy(state)
         missing_unknown["grill_coverage"][0]["axes"]["login"]["unknown_refs"] = ["UNK-999"]
@@ -806,10 +812,10 @@ class GrillPacksV020Test(unittest.TestCase):
         cell = schema["$defs"]["grill_axis_coverage"]
         self.assertEqual(
             set(cell["required"]),
-            {"status", "authority_refs", "unknown_refs", "basis_refs", "rationale"},
+            {"status", "authority_bindings", "unknown_refs", "basis_bindings", "rationale"},
         )
-        self.assertNotIn("authority_bindings", cell["properties"])
-        self.assertNotIn("basis_bindings", cell["properties"])
+        self.assertNotIn("authority_refs", cell["properties"])
+        self.assertNotIn("basis_refs", cell["properties"])
 
         template = json.loads(TEMPLATE.read_text(encoding="utf-8"))
         self.assertEqual(set(template["surface_manifest"]["grill_profile"]), set(DOMAINS))
