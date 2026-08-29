@@ -115,7 +115,9 @@ def _scope_refs(context: object) -> list[str]:
     if not refs or any(not isinstance(ref, str) or not _SCOPE_REF.fullmatch(ref) for ref in refs) or len(set(refs)) != len(refs):
         _fail("INVALID_AUTHORITY_SCOPE_REFS")
     current = context.get("current_scope_refs")
-    if current is not None and (not isinstance(current, list) or any(ref not in current for ref in refs)):
+    if not isinstance(current, list) or any(not isinstance(ref, str) or not _SCOPE_REF.fullmatch(ref) for ref in current) or len(set(current)) != len(current):
+        _fail("INVALID_CURRENT_SCOPE_REFS")
+    if any(ref not in current for ref in refs):
         _fail("UNRESOLVED_AUTHORITY_SCOPE_REF")
     return refs
 

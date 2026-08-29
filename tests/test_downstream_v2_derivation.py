@@ -99,17 +99,17 @@ class ResponsibilityProfileTests(unittest.TestCase):
         self.assertEqual(responsibility_profile_digest(), hashlib.sha256(canonical.encode("utf-8")).hexdigest())
         profile["action_fields"]["actor"]["unexpected"] = True
         with self.assertRaises(ValueError):
-            derive_semantic_field({"kind": "DIRECT_AUTHORITY", "source_seed_ref": "SEED-001"}, field_name="actor", field_kind="ACTION", context={"authority_scope_refs": ["REQ-001"]}, seeds={"SEED-001": make_seed()}, profile=profile)
+            derive_semantic_field({"kind": "DIRECT_AUTHORITY", "source_seed_ref": "SEED-001"}, field_name="actor", field_kind="ACTION", context={"authority_scope_refs": ["REQ-001"], "current_scope_refs": ["REQ-001"]}, seeds={"SEED-001": make_seed()}, profile=profile)
         profile = load_responsibility_profile()
         del profile["action_fields"]["actor"]
         with self.assertRaises(ValueError):
-            derive_semantic_field({"kind": "DIRECT_AUTHORITY", "source_seed_ref": "SEED-001"}, field_name="actor", field_kind="ACTION", context={"authority_scope_refs": ["REQ-001"]}, seeds={"SEED-001": make_seed()}, profile=profile)
+            derive_semantic_field({"kind": "DIRECT_AUTHORITY", "source_seed_ref": "SEED-001"}, field_name="actor", field_kind="ACTION", context={"authority_scope_refs": ["REQ-001"], "current_scope_refs": ["REQ-001"]}, seeds={"SEED-001": make_seed()}, profile=profile)
 
 
 class DerivationTests(unittest.TestCase):
     def setUp(self):
         self.profile = load_responsibility_profile()
-        self.context = {"authority_scope_refs": ["REQ-001", "SCR-001"]}
+        self.context = {"authority_scope_refs": ["REQ-001", "SCR-001"], "current_scope_refs": ["REQ-001", "SCR-001"]}
 
     def derive(self, spec, field="actor", kind="ACTION", seed=None, context=None):
         seed = make_seed(axis="actor") if seed is None else seed
@@ -160,13 +160,24 @@ class DerivationTests(unittest.TestCase):
 
     def test_scope_selector_and_ux_action_locator_must_all_match(self):
         direct = {"kind": "DIRECT_AUTHORITY", "source_seed_ref": "SEED-001"}
-        with self.assertRaises(ValueError): self.derive(direct, context={"authority_scope_refs": ["SCR-001"]})
+        with self.assertRaises(ValueError): self.derive(direct, context={"authority_scope_refs": ["SCR-001"], "current_scope_refs": ["SCR-001"]})
         with self.assertRaises(ValueError): self.derive(direct, seed=make_seed(axis="permission"))
         ux_seed = make_seed(scope="UX_ACTION", owner="SCR-001", axis="submit", action_key="submit", value="send")
-        ok_context = {"authority_scope_refs": ["SCR-001"], "ux_action_locator": {"screen_ref": "SCR-001", "action_key": "submit"}}
+        ok_context = {"authority_scope_refs": ["SCR-001"], "current_scope_refs": ["SCR-001"], "ux_action_locator": {"screen_ref": "SCR-001", "action_key": "submit"}}
         self.assertEqual(self.derive(direct, field="command", seed=ux_seed, context=ok_context)["value"], "send")
         bad_context = copy.deepcopy(ok_context); bad_context["ux_action_locator"]["action_key"] = "save"
         with self.assertRaises(ValueError): self.derive(direct, field="command", seed=ux_seed, context=bad_context)
+
+    def test_current_scope_inventory_is_required(self):
+        direct = {"kind": "DIRECT_AUTHORITY", "source_seed_ref": "SEED-001"}
+        with self.assertRaises(ValueError):
+            self.derive(direct, context={"authority_scope_refs": ["REQ-001"]})
+
+    def test_current_scope_inventory_rejects_stale_scope_references(self):
+        direct = {"kind": "DIRECT_AUTHORITY", "source_seed_ref": "SEED-001"}
+        stale_seed = make_seed(owner="REQ-STALE", axis="actor")
+        with self.assertRaises(ValueError):
+            self.derive(direct, seed=stale_seed, context={"authority_scope_refs": ["REQ-STALE"], "current_scope_refs": ["REQ-001"]})
 
     def test_review_needs_meaningful_explanation_scope_and_permitted_seed(self):
         base = {"kind": "REVIEW_REQUIRED", "source_seed_refs": ["SEED-001"], "proposed_value": "reviewed", "why_structuring_is_insufficient": "A human judgment is required.", "interpretation_scope": "Presentation wording."}
@@ -186,8 +197,9 @@ class DerivationTests(unittest.TestCase):
 
     def test_selector_matching_uses_exact_scope_axis_pack_and_ux_action(self):
         selector = {"scope": "GRILL", "pack_id": "GRILL-AUTH-1", "axis": "login"}
-        self.assertTrue(seed_matches_selector(make_seed(scope="GRILL", owner="SURF-001", pack_id="GRILL-AUTH-1", axis="login"), selector, {"authority_scope_refs": ["SURF-001"]}))
-        self.assertFalse(seed_matches_selector(make_seed(scope="GRILL", owner="SURF-001", pack_id="OTHER", axis="login"), selector, {"authority_scope_refs": ["SURF-001"]}))
+        context = {"authority_scope_refs": ["SURF-001"], "current_scope_refs": ["SURF-001"]}
+        self.assertTrue(seed_matches_selector(make_seed(scope="GRILL", owner="SURF-001", pack_id="GRILL-AUTH-1", axis="login"), selector, context))
+        self.assertFalse(seed_matches_selector(make_seed(scope="GRILL", owner="SURF-001", pack_id="OTHER", axis="login"), selector, context))
 
 
 if __name__ == "__main__":
