@@ -157,6 +157,27 @@ class CoreCoverageBindingV020Test(unittest.TestCase):
         state["coverage"] = [exact_core_coverage(state), exact_core_coverage(state)]
         self.assertEqual(product_binding_metrics(state)["core_coverage_gaps"], 1)
 
+    def test_malformed_non_target_core_row_still_requires_frozen_inventory(self):
+        # Break caught: an extra Core row escaping inventory validation because it is not MATERIAL/CURRENT.
+        state = state_with_authorities()
+        state["coverage"] = [
+            exact_core_coverage(state),
+            {"feature_id": "REQ-999", "cells": {"actor": {"status": "COVERED"}}},
+        ]
+        errors = validate_product_coverage_bindings(state)
+        self.assertIn("core_coverage_axis_inventory_mismatch", {error["code"] for error in errors})
+        self.assertEqual(product_binding_metrics(state)["core_coverage_gaps"], 1)
+
+    def test_malformed_second_duplicate_core_row_requires_exact_cell_shape(self):
+        # Break caught: only the first duplicate Core row receiving exact five-key cell validation.
+        state = state_with_authorities()
+        malformed_second = exact_core_coverage(state)
+        malformed_second["cells"]["actor"] = {"status": "COVERED"}
+        state["coverage"] = [exact_core_coverage(state), malformed_second]
+        errors = validate_product_coverage_bindings(state)
+        self.assertIn("invalid_core_coverage_cell", {error["code"] for error in errors})
+        self.assertEqual(product_binding_metrics(state)["coverage_without_authority"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

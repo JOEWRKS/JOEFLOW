@@ -388,22 +388,18 @@ def _product_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, 
     for position, row in enumerate(rows):
         if isinstance(row, dict) and isinstance(row.get("feature_id"), str):
             by_target.setdefault(row["feature_id"], []).append((position, row))
-    for target in _material_core_targets(state):
-        target_rows = by_target.get(target, [])
-        target_path = f"coverage.{target}"
-        if not target_rows:
-            errors.append(_coverage_error("missing_core_coverage", "current MATERIAL requirement requires one Core coverage row", target_path))
-            metric_cells["core_coverage_gaps"].add(target_path)
-            continue
-        if len(target_rows) != 1:
-            errors.append(_coverage_error("duplicate_core_coverage", "current MATERIAL requirement requires exactly one Core coverage row", target_path))
-            metric_cells["core_coverage_gaps"].add(target_path)
-        position, row = target_rows[0]
+
+    def validate_core_row(position: int, row: object) -> None:
+        row_path = f"coverage[{position}]"
+        if not isinstance(row, dict):
+            errors.append(_coverage_error("invalid_core_coverage_row", "Core coverage rows must be objects", row_path))
+            metric_cells["core_coverage_gaps"].add(row_path)
+            return
         cells = row.get("cells")
         if not isinstance(cells, dict) or set(cells) != set(core_types):
             errors.append(_coverage_error("core_coverage_axis_inventory_mismatch", "Core cells must equal the frozen 20-axis inventory", f"coverage[{position}].cells"))
-            metric_cells["core_coverage_gaps"].add(target_path)
-            continue
+            metric_cells["core_coverage_gaps"].add(row_path)
+            return
         for axis, allowed_types in core_types.items():
             cell_path = f"coverage[{position}].cells.{axis}"
             cell = cells[axis]
@@ -442,6 +438,19 @@ def _product_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, 
                     errors.append(_coverage_error(codes[0] if codes else "unjustified_na_without_basis", "N/A requires rationale and verified exact basis bindings", cell_path))
             else:
                 errors.append(_coverage_error("invalid_core_coverage_cell", "Core status must be COVERED, OPEN, or N/A", cell_path))
+
+    for position, row in enumerate(rows):
+        validate_core_row(position, row)
+
+    for target in _material_core_targets(state):
+        target_rows = by_target.get(target, [])
+        target_path = f"coverage.{target}"
+        if not target_rows:
+            errors.append(_coverage_error("missing_core_coverage", "current MATERIAL requirement requires one Core coverage row", target_path))
+            metric_cells["core_coverage_gaps"].add(target_path)
+        elif len(target_rows) != 1:
+            errors.append(_coverage_error("duplicate_core_coverage", "current MATERIAL requirement requires exactly one Core coverage row", target_path))
+            metric_cells["core_coverage_gaps"].add(target_path)
 
     grill_coverage = state.get("grill_coverage")
     specialist_rows = grill_coverage if isinstance(grill_coverage, list) else []
