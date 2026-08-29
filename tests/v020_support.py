@@ -45,7 +45,11 @@ def foundation_state():
             "definition_status": "OPEN",
             "definition_revision": 1,
             "bootstrap_mode": "NEW_PRODUCT",
-            "closure_contract": {"level": "SEMANTIC_CLOSURE"},
+            "closure_contract": {
+                "level": "SEMANTIC_CLOSURE",
+                "product_binding_contract": {"contract_id": "joewrks.product-coverage-binding", "version": "1.0", "digest": "b57459533247de52038aacb158e785c2184edcdd2fa6831f0edc3db713775f3c"},
+                "ux_binding_contract": {"contract_id": "joewrks.ux-coverage-binding", "version": "1.0", "digest": "8fc84057a4a6f0f0ce329a58d11b8e208989800147d703665cea52088de0be0d"},
+            },
         },
         "migration": {"mode": "NATIVE"},
         "evidence": evidence_with_grill_basis(),

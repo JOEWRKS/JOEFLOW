@@ -1,0 +1,17 @@
+{
+  "contract_id": "joewrks.ux-coverage-binding",
+  "version": "1.0",
+  "state_axis_types": {
+    "default": ["SCR", "STATE", "FLOW", "RULE"], "loading": ["STATE", "FLOW"], "empty": ["STATE", "FLOW", "RULE"], "partial": ["STATE", "FLOW", "RULE"], "success": ["STATE", "FLOW", "AC"], "error": ["STATE", "FLOW", "RULE", "AC"], "disabled": ["STATE", "RULE"], "permission_denied": ["STATE", "RULE", "DEC", "USR"], "unauthenticated": ["STATE", "RULE", "FLOW"], "offline": ["STATE", "FLOW", "RULE"], "timeout": ["STATE", "FLOW", "RULE"], "retrying": ["STATE", "FLOW", "RULE"], "submitting": ["STATE", "FLOW"], "completed": ["STATE", "FLOW", "AC"], "cancelled": ["STATE", "FLOW", "RULE"], "expired": ["STATE", "RULE", "FLOW"]
+  },
+  "action_axis_types": {
+    "entry": ["FLOW", "SCR", "RULE"], "precondition": ["RULE", "STATE", "FLOW"], "input": ["DATA", "SCR", "RULE"], "validation": ["RULE", "DATA", "AC"], "submit": ["FLOW", "SCR", "RULE"], "success": ["FLOW", "STATE", "AC"], "failure": ["FLOW", "STATE", "RULE", "AC"], "retry": ["FLOW", "STATE", "RULE"], "cancel": ["FLOW", "STATE", "RULE"], "back": ["FLOW", "SCR", "RULE"], "refresh": ["FLOW", "STATE", "RULE"], "duplicate_concurrent_action": ["RULE", "STATE", "FLOW"], "timeout": ["FLOW", "STATE", "RULE"], "offline": ["STATE", "FLOW", "RULE"], "permission": ["RULE", "DEC", "USR"], "session_expiration": ["STATE", "RULE", "FLOW"], "data_mutation": ["DATA", "RULE", "FLOW"], "side_effect": ["RULE", "DATA", "INT"], "notification": ["RULE", "FLOW", "INT"], "persistence": ["DATA", "RULE"], "undo": ["FLOW", "STATE", "RULE"], "destructive_confirmation": ["RULE", "DEC", "FLOW"]
+  },
+  "semantic_roots": {
+    "GOAL": ["statement"], "USR": ["description", "actor_kind"], "REQ": ["statement", "scope", "ui_required"], "DEC": ["statement", "accepted_recommendation"], "RULE": ["statement"], "FLOW": ["entry", "preconditions", "paths", "outcomes"], "SCR": ["purpose", "interaction_mode", "major_actions"], "STATE": ["state_name", "conditions"], "DATA": ["name", "purpose", "ownership"], "INT": ["name", "purpose"], "AC": ["assertion"]
+  },
+  "basis_types": ["GOAL", "USR", "REQ", "DEC", "RULE", "FLOW", "SCR", "STATE", "DATA", "INT", "AC", "SURF", "EVD"],
+  "basis_semantic_roots": {
+    "GOAL": ["statement"], "USR": ["description", "actor_kind"], "REQ": ["statement", "scope", "ui_required"], "DEC": ["statement", "accepted_recommendation"], "RULE": ["statement"], "FLOW": ["entry", "preconditions", "paths", "outcomes"], "SCR": ["purpose", "interaction_mode", "major_actions"], "STATE": ["state_name", "conditions"], "DATA": ["name", "purpose", "ownership"], "INT": ["name", "purpose"], "AC": ["assertion"], "SURF": ["status", "kind", "rationale", "intent_classification"], "EVD": ["claim", "source_kind", "authority_classes"]
+  }
+}

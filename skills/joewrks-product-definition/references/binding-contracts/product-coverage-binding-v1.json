@@ -1,0 +1,17 @@
+{
+  "contract_id": "joewrks.product-coverage-binding",
+  "version": "1.0",
+  "core_axis_types": {
+    "actor": ["USR", "DEC", "RULE"], "goal": ["GOAL", "REQ"], "entry_point": ["FLOW", "SCR", "RULE"], "precondition": ["RULE", "STATE", "FLOW"], "happy_path": ["FLOW", "REQ"], "alternative_path": ["FLOW", "RULE"], "error": ["FLOW", "STATE", "RULE"], "recovery": ["FLOW", "STATE", "RULE"], "permission": ["RULE", "DEC", "USR"], "state": ["STATE", "RULE"], "data": ["DATA", "RULE"], "side_effect": ["RULE", "DATA", "INT"], "notification": ["RULE", "FLOW", "INT"], "validation": ["RULE", "DATA", "AC"], "boundary": ["RULE", "DEC"], "persistence": ["DATA", "RULE"], "security": ["RULE", "DEC"], "privacy": ["RULE", "DEC", "DATA"], "analytics": ["RULE", "DATA", "INT"], "acceptance": ["AC"]
+  },
+  "specialist_pack_types": {
+    "GRILL-AUTH-1": ["USR", "DEC", "RULE", "FLOW", "STATE", "DATA", "AC"], "GRILL-MONEY-1": ["DEC", "RULE", "FLOW", "STATE", "DATA", "INT", "AC"], "GRILL-FILE-UPLOAD-1": ["DEC", "RULE", "FLOW", "STATE", "DATA", "INT", "AC"], "GRILL-ASYNC-1": ["DEC", "RULE", "FLOW", "STATE", "DATA", "INT", "AC"], "GRILL-PERMISSION-1": ["USR", "DEC", "RULE", "FLOW", "STATE", "DATA", "AC"], "GRILL-DESTRUCTIVE-ACTION-1": ["DEC", "RULE", "FLOW", "STATE", "DATA", "INT", "AC"]
+  },
+  "semantic_roots": {
+    "GOAL": ["statement"], "USR": ["description", "actor_kind"], "REQ": ["statement", "scope", "ui_required"], "DEC": ["statement", "accepted_recommendation"], "RULE": ["statement"], "FLOW": ["entry", "preconditions", "paths", "outcomes"], "SCR": ["purpose", "interaction_mode", "major_actions"], "STATE": ["state_name", "conditions"], "DATA": ["name", "purpose", "ownership"], "INT": ["name", "purpose"], "AC": ["assertion"]
+  },
+  "basis_types": ["GOAL", "USR", "REQ", "DEC", "RULE", "FLOW", "SCR", "STATE", "DATA", "INT", "AC", "SURF", "EVD"],
+  "basis_semantic_roots": {
+    "GOAL": ["statement"], "USR": ["description", "actor_kind"], "REQ": ["statement", "scope", "ui_required"], "DEC": ["statement", "accepted_recommendation"], "RULE": ["statement"], "FLOW": ["entry", "preconditions", "paths", "outcomes"], "SCR": ["purpose", "interaction_mode", "major_actions"], "STATE": ["state_name", "conditions"], "DATA": ["name", "purpose", "ownership"], "INT": ["name", "purpose"], "AC": ["assertion"], "SURF": ["status", "kind", "rationale", "intent_classification"], "EVD": ["claim", "source_kind", "authority_classes"]
+  }
+}

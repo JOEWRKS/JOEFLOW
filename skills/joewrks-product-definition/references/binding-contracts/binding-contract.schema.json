@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "version", "semantic_roots", "basis_types", "basis_semantic_roots"],
+  "properties": {
+    "contract_id": {"type": "string"},
+    "version": {"const": "1.0"},
+    "semantic_roots": {"type": "object"},
+    "basis_types": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "basis_semantic_roots": {"type": "object"},
+    "core_axis_types": {"type": "object"},
+    "specialist_pack_types": {"type": "object"},
+    "state_axis_types": {"type": "object"},
+    "action_axis_types": {"type": "object"}
+  }
+}

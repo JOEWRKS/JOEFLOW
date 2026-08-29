@@ -6,6 +6,7 @@
   "required": ["schema_version", "project", "migration", "evidence", "surface_manifest", "contradictions", "objects", "coverage", "ux_coverage", "grill_coverage", "discovery_baseline", "approval", "approval_history"],
   "$defs": {
     "text": {"type": "string", "minLength": 1},
+    "binding_contract_identity": {"type": "object", "additionalProperties": false, "required": ["contract_id", "version", "digest"], "properties": {"contract_id": {"type": "string"}, "version": {"const": "1.0"}, "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}},
     "string_array": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
     "normal_status": {"enum": ["CURRENT", "STALE", "SUPERSEDED", "RETIRED"]},
     "unknown_status": {"enum": ["OPEN", "RESOLVED", "DEFERRED", "BLOCKED", "SUPERSEDED", "RETIRED"]},
@@ -461,7 +462,7 @@
         "slug": {"type": "string"}, "definition_status": {"enum": ["OPEN", "READY_FOR_REVIEW", "CLOSED", "BLOCKED"]},
         "definition_revision": {"type": "integer", "minimum": 1},
         "bootstrap_mode": {"enum": ["NEW_PRODUCT", "EXISTING_PRODUCT_RECONCILIATION"]},
-        "closure_contract": {"type": "object", "required": ["level"], "properties": {"level": {"const": "SEMANTIC_CLOSURE"}}}
+        "closure_contract": {"type": "object", "additionalProperties": false, "required": ["level", "product_binding_contract", "ux_binding_contract"], "properties": {"level": {"const": "SEMANTIC_CLOSURE"}, "product_binding_contract": {"$ref": "#/$defs/binding_contract_identity"}, "ux_binding_contract": {"$ref": "#/$defs/binding_contract_identity"}}}
       }
     },
     "migration": {"type": "object"}, "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence_record"}},

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from authority_binding_v2 import BindingError, binding_contract_identity
 from discovery_v2 import validate_discovery_baseline
 from grill_v2 import (
     grill_pack_metrics,
@@ -1093,8 +1094,21 @@ def _validate_state_v2(
         if not isinstance(project["bootstrap_mode"], str) or project["bootstrap_mode"] not in BOOTSTRAP_MODES:
             errors.append(_error("schema_error", "project.bootstrap_mode must be a supported bootstrap mode", "project.bootstrap_mode"))
         closure_contract = project["closure_contract"]
-        if not isinstance(closure_contract, dict) or closure_contract.get("level") != "SEMANTIC_CLOSURE":
-            errors.append(_error("schema_error", "project.closure_contract.level must equal SEMANTIC_CLOSURE", "project.closure_contract"))
+        try:
+            identities = binding_contract_identity()
+        except BindingError:
+            identities = None
+        expected_closure_contract = None if identities is None else {
+            "level": "SEMANTIC_CLOSURE",
+            "product_binding_contract": identities["product"],
+            "ux_binding_contract": identities["ux"],
+        }
+        if closure_contract != expected_closure_contract:
+            errors.append(_error(
+                "binding_contract_identity_mismatch",
+                "project.closure_contract must bind the frozen product and UX contract identities",
+                "project.closure_contract",
+            ))
 
     objects = state.get("objects")
     if not isinstance(objects, dict) or set(objects) != OBJECT_GROUPS:
