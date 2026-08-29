@@ -5,16 +5,30 @@ import re
 
 from ..authority import sha256_json
 from ..contracts import CONTRACT_VERSION, validate_action_contract_v2
+from ..derivation import RESPONSIBILITY_PROFILE_ID, responsibility_profile_digest
 
 
 SEMANTIC_REVIEW_VERSION = "joewrks.semantic-review/2.0"
 RELIABILITY_STATUS = "NOT_MEASURED"
 _FIELD_PATH = re.compile(r"^(actions|lifecycles)/([^/\s]+)/([^/\s]+)$")
 _HASH = re.compile(r"^[0-9a-f]{64}$")
+_SEED_KEYS = {
+    "seed_key", "location", "record_id", "record_type", "pointer",
+    "value_sha256", "source_status", "value",
+}
+_LOCATION_KEYS = {"scope", "owner_ref", "axis", "pack_id", "action_key"}
+_SEED_SCOPES = {"CORE", "GRILL", "UX_STATE", "UX_ACTION"}
 
 
 def _is_hash(value: object) -> bool:
     return isinstance(value, str) and _HASH.fullmatch(value) is not None
+
+
+def _hash(value: object) -> str | None:
+    try:
+        return sha256_json(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _review_fields(contract: dict[str, object]):
@@ -37,9 +51,59 @@ def _require_contract(contract: object) -> dict[str, object]:
 
 
 def _package_content(package: dict[str, object]) -> dict[str, object]:
-    content = copy.deepcopy(package)
-    content.pop("package_hash", None)
-    return content
+    return {key: value for key, value in package.items() if key != "package_hash"}
+
+
+def _valid_profile(profile: object) -> bool:
+    return profile == {
+        "profile_id": RESPONSIBILITY_PROFILE_ID,
+        "digest": responsibility_profile_digest(),
+    }
+
+
+def _valid_seed_snapshot(seed: object, source_ref: object) -> bool:
+    if (
+        not isinstance(seed, dict)
+        or set(seed) != _SEED_KEYS
+        or not isinstance(source_ref, str)
+        or seed.get("seed_key") != source_ref
+        or not isinstance(seed.get("record_id"), str)
+        or not seed["record_id"]
+        or not isinstance(seed.get("record_type"), str)
+        or not seed["record_type"]
+        or not isinstance(seed.get("pointer"), str)
+        or not seed["pointer"]
+        or seed.get("source_status") != "CURRENT"
+        or not _is_hash(seed.get("value_sha256"))
+    ):
+        return False
+    location = seed.get("location")
+    if (
+        not isinstance(location, dict)
+        or set(location) != _LOCATION_KEYS
+        or location.get("scope") not in _SEED_SCOPES
+        or not isinstance(location.get("owner_ref"), str)
+        or not location["owner_ref"]
+        or not isinstance(location.get("axis"), str)
+        or not location["axis"]
+        or location.get("pack_id") is not None and not isinstance(location.get("pack_id"), str)
+        or location.get("action_key") is not None and not isinstance(location.get("action_key"), str)
+    ):
+        return False
+    if location["scope"] == "GRILL" and not location.get("pack_id"):
+        return False
+    if location["scope"] == "UX_ACTION" and not location.get("action_key"):
+        return False
+    value_hash = _hash(seed.get("value"))
+    if value_hash is None or value_hash != seed["value_sha256"]:
+        return False
+    expected_key_hash = _hash({
+        "location": location,
+        "record_id": seed["record_id"],
+        "pointer": seed["pointer"],
+        "value_sha256": value_hash,
+    })
+    return expected_key_hash is not None and seed["seed_key"] == "SEED-" + expected_key_hash[:24]
 
 
 def validate_semantic_review_package(review_package: object) -> list[dict[str, str]]:
@@ -62,12 +126,14 @@ def validate_semantic_review_package(review_package: object) -> list[dict[str, s
         add("/review_schema_version", "unsupported review schema version")
     if review_package.get("reliability_status") != RELIABILITY_STATUS:
         add("/reliability_status", "reliability must be NOT_MEASURED")
+    if not _valid_profile(review_package.get("responsibility_profile")):
+        add("/responsibility_profile", "responsibility profile identity does not match")
     for key in ("source_semantic_contract_hash", "source_definition_digest", "package_hash"):
         if not _is_hash(review_package.get(key)):
             add(f"/{key}", "must be a lowercase SHA-256")
     obligations = review_package.get("review_obligations")
-    seen = []
-    paths = []
+    seen_ids: list[str] = []
+    field_paths: list[str] = []
     if not isinstance(obligations, list) or not obligations:
         add("/review_obligations", "must be a nonempty array")
         obligations = []
@@ -84,32 +150,58 @@ def validate_semantic_review_package(review_package: object) -> list[dict[str, s
         obligation_id = obligation.get("obligation_id")
         if not isinstance(obligation_id, str) or re.fullmatch(r"REVIEW-[0-9a-f]{24}", obligation_id) is None:
             add(f"{path}/obligation_id", "invalid obligation ID")
-        seen.append(obligation_id)
+        elif obligation_id in seen_ids:
+            add(f"{path}/obligation_id", "duplicate obligation ID")
+        else:
+            seen_ids.append(obligation_id)
         field_path = obligation.get("field_path")
-        paths.append(field_path)
-        if _FIELD_PATH.fullmatch(str(field_path or "")) is None:
+        if not isinstance(field_path, str) or _FIELD_PATH.fullmatch(field_path) is None:
             add(f"{path}/field_path", "invalid field path")
+        elif field_path in field_paths:
+            add(f"{path}/field_path", "duplicate field path")
+        else:
+            field_paths.append(field_path)
+        proposed_value_hash = _hash(obligation.get("proposed_value"))
         if not _is_hash(obligation.get("proposed_value_sha256")) or (
-            _is_hash(obligation.get("proposed_value_sha256"))
-            and sha256_json(obligation.get("proposed_value")) != obligation["proposed_value_sha256"]
+            proposed_value_hash is None
+            or proposed_value_hash != obligation.get("proposed_value_sha256")
         ):
             add(f"{path}/proposed_value_sha256", "proposed value hash does not match")
         refs = obligation.get("source_seed_refs")
         seeds = obligation.get("source_seeds")
-        if not isinstance(refs, list) or not refs or any(not isinstance(ref, str) or not ref for ref in refs):
+        valid_refs = (
+            isinstance(refs, list)
+            and bool(refs)
+            and all(isinstance(ref, str) and ref for ref in refs)
+            and len(refs) == len(set(refs))
+        )
+        if not valid_refs:
             add(f"{path}/source_seed_refs", "must be nonempty source seed references")
-        if not isinstance(seeds, list) or len(seeds) != len(refs):
+        if not isinstance(seeds, list) or not isinstance(refs, list) or len(seeds) != len(refs):
             add(f"{path}/source_seeds", "must align with source seed references")
-        elif any(not isinstance(seed, dict) or seed.get("seed_key") != ref for ref, seed in zip(refs, seeds)):
-            add(f"{path}/source_seeds", "seed snapshots do not match source seed references")
+        elif any(not _valid_seed_snapshot(seed, ref) for ref, seed in zip(refs, seeds)):
+            add(f"{path}/source_seeds", "seed snapshots do not match exact source seed identities")
+        if (
+            isinstance(obligation_id, str)
+            and isinstance(field_path, str)
+            and proposed_value_hash is not None
+            and valid_refs
+        ):
+            expected_id_hash = _hash({
+                "field_path": field_path,
+                "proposed_value_sha256": proposed_value_hash,
+                "source_seed_refs": refs,
+            })
+            if expected_id_hash is None or obligation_id != "REVIEW-" + expected_id_hash[:24]:
+                add(f"{path}/obligation_id", "does not match the deterministic obligation identity")
         for key in ("why_structuring_is_insufficient", "interpretation_scope"):
             if not isinstance(obligation.get(key), str) or not obligation[key].strip():
                 add(f"{path}/{key}", "must be meaningful")
-    if len(seen) != len(set(seen)) or paths != sorted(paths):
-        add("/review_obligations", "obligations must have unique IDs and sorted field paths")
+    if field_paths != sorted(field_paths):
+        add("/review_obligations", "obligations must have sorted field paths")
     if _is_hash(review_package.get("package_hash")):
         try:
-            if review_package["package_hash"] != sha256_json(_package_content(review_package)):
+            if review_package["package_hash"] != _hash(_package_content(review_package)):
                 add("/package_hash", "package hash does not match")
         except (TypeError, ValueError):
             add("/package_hash", "package is not canonical JSON")

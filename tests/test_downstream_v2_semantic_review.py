@@ -22,6 +22,7 @@ from downstream_v2.semantic_review import (  # noqa: E402
     semantic_assurance_result,
     validate_semantic_review_output,
 )
+from downstream_v2.semantic_review.package import validate_semantic_review_package  # noqa: E402
 from tests.downstream_v2_support import closed_v2_state  # noqa: E402
 from tests.test_downstream_v2_compiler import complete_definition  # noqa: E402
 
@@ -187,6 +188,32 @@ class SemanticReviewV2Tests(unittest.TestCase):
                 output["reliability_status"] = invalid
                 output["output_hash"] = output_hash(output)
                 self.assertTrue(validate_semantic_review_output(package, output))
+
+    def test_rehashed_forged_package_is_rejected_by_both_public_validators(self):
+        forged = self.package()
+        forged["responsibility_profile"] = {}
+        forged["review_obligations"][0]["obligation_id"] = "REVIEW-" + "0" * 24
+        forged["review_obligations"][0]["source_seeds"] = [{
+            "seed_key": forged["review_obligations"][0]["source_seed_refs"][0],
+        }]
+        content = copy.deepcopy(forged)
+        content.pop("package_hash")
+        forged["package_hash"] = hashlib.sha256(canonical_bytes(content)).hexdigest()
+        output = self.confirmed_output(forged)
+        self.assertTrue(validate_semantic_review_package(forged))
+        self.assertTrue(validate_semantic_review_output(forged, output))
+
+    def test_public_validators_return_errors_for_non_object_inputs(self):
+        for package in (None, [], "package", 42):
+            with self.subTest(package=package):
+                errors = validate_semantic_review_package(package)
+                self.assertIsInstance(errors, list)
+                self.assertTrue(errors)
+                for output in (None, [], "output", 42, {}):
+                    with self.subTest(output=output):
+                        combined = validate_semantic_review_output(package, output)
+                        self.assertIsInstance(combined, list)
+                        self.assertTrue(combined)
 
 
 if __name__ == "__main__":

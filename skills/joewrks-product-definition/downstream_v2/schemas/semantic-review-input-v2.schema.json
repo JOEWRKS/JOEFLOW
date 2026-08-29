@@ -9,12 +9,47 @@
     "reliability_status": {"const": "NOT_MEASURED"},
     "source_semantic_contract_hash": {"$ref": "#/$defs/hash"},
     "source_definition_digest": {"$ref": "#/$defs/hash"},
-    "responsibility_profile": {"type": "object"},
+    "responsibility_profile": {"$ref": "#/$defs/responsibilityProfile"},
     "review_obligations": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/obligation"}},
     "package_hash": {"$ref": "#/$defs/hash"}
   },
   "$defs": {
     "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "responsibilityProfile": {
+      "type": "object",
+      "required": ["profile_id", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "profile_id": {"const": "joewrks.downstream-responsibility/1.0"},
+        "digest": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "sourceSeed": {
+      "type": "object",
+      "required": ["seed_key", "location", "record_id", "record_type", "pointer", "value_sha256", "source_status", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "seed_key": {"type": "string", "pattern": "^SEED-[0-9a-f]{24}$"},
+        "location": {
+          "type": "object",
+          "required": ["scope", "owner_ref", "axis", "pack_id", "action_key"],
+          "additionalProperties": false,
+          "properties": {
+            "scope": {"enum": ["CORE", "GRILL", "UX_STATE", "UX_ACTION"]},
+            "owner_ref": {"type": "string", "pattern": ".*\\S.*"},
+            "axis": {"type": "string", "pattern": ".*\\S.*"},
+            "pack_id": {"type": ["string", "null"]},
+            "action_key": {"type": ["string", "null"]}
+          }
+        },
+        "record_id": {"type": "string", "pattern": ".*\\S.*"},
+        "record_type": {"type": "string", "pattern": ".*\\S.*"},
+        "pointer": {"type": "string", "pattern": ".*\\S.*"},
+        "value_sha256": {"$ref": "#/$defs/hash"},
+        "source_status": {"const": "CURRENT"},
+        "value": {}
+      }
+    },
     "obligation": {
       "type": "object",
       "required": ["obligation_id", "field_path", "proposed_value", "proposed_value_sha256", "source_seed_refs", "source_seeds", "why_structuring_is_insufficient", "interpretation_scope"],
@@ -24,8 +59,8 @@
         "field_path": {"type": "string", "pattern": "^(actions|lifecycles)/[^/\\s]+/[^/\\s]+$"},
         "proposed_value": {},
         "proposed_value_sha256": {"$ref": "#/$defs/hash"},
-        "source_seed_refs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
-        "source_seeds": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+        "source_seed_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^SEED-[0-9a-f]{24}$"}},
+        "source_seeds": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/sourceSeed"}},
         "why_structuring_is_insufficient": {"type": "string", "pattern": ".*\\S.*"},
         "interpretation_scope": {"type": "string", "pattern": ".*\\S.*"}
       }

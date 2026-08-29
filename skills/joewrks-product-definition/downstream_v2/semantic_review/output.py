@@ -27,9 +27,14 @@ def _is_hash(value: object) -> bool:
 
 
 def _output_content(output: dict[str, object]) -> dict[str, object]:
-    content = copy.deepcopy(output)
-    content.pop("output_hash", None)
-    return content
+    return {key: value for key, value in output.items() if key != "output_hash"}
+
+
+def _hash(value: object) -> str | None:
+    try:
+        return sha256_json(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def validate_semantic_review_output(
@@ -52,19 +57,23 @@ def validate_semantic_review_output(
         add("/review_schema_version", "unsupported review schema version")
     if output.get("reliability_status") != RELIABILITY_STATUS:
         add("/reliability_status", "reliability must be NOT_MEASURED")
-    if output.get("input_package_hash") != review_package.get("package_hash"):
+    package_hash = review_package.get("package_hash") if isinstance(review_package, dict) else None
+    if output.get("input_package_hash") != package_hash:
         add("/input_package_hash", "does not bind the supplied review package")
     if not _is_hash(output.get("output_hash")):
         add("/output_hash", "must be a lowercase SHA-256")
-    elif output["output_hash"] != sha256_json(_output_content(output)):
+    elif output["output_hash"] != _hash(_output_content(output)):
         add("/output_hash", "output hash does not match")
+    raw_obligations = review_package.get("review_obligations") if isinstance(review_package, dict) else []
+    if not isinstance(raw_obligations, list):
+        raw_obligations = []
     expected = {
         obligation["obligation_id"]: obligation
-        for obligation in review_package.get("review_obligations", [])
+        for obligation in raw_obligations
         if isinstance(obligation, dict) and isinstance(obligation.get("obligation_id"), str)
     }
     results = output.get("results")
-    seen = []
+    seen: list[str] = []
     if not isinstance(results, list):
         add("/results", "must be an array")
         results = []
@@ -75,6 +84,9 @@ def validate_semantic_review_output(
             add(path, "result has missing or extra fields")
             continue
         obligation_id = result.get("obligation_id")
+        if not isinstance(obligation_id, str):
+            add(f"{path}/obligation_id", "must be a string package obligation")
+            continue
         seen.append(obligation_id)
         obligation = expected.get(obligation_id)
         if obligation is None:
