@@ -4,6 +4,7 @@ from typing import Any
 
 from authority_binding_v2 import (
     BindingError,
+    authority_consumption_metrics,
     binding_contract_identity,
     product_binding_metrics,
     ux_binding_metrics,
@@ -1166,23 +1167,38 @@ def validate_state_v2(state: dict[str, Any]) -> list[dict[str, str]]:
     return _validate_state_v2(state, check_discovery_baseline=True)
 
 
+def semantic_readiness_metrics(state: dict[str, object]) -> dict[str, int]:
+    """Return all presently implemented M1-M4 non-approval blockers."""
+    unknown_metrics = grill_unknown_metrics(state)
+    return {
+        **_surface_metrics(state),
+        **_contradiction_metrics(state),
+        "stale_consumed_evidence": _stale_consumed_evidence_count(state),
+        "discovery_baseline_gaps": int(
+            isinstance(state.get("discovery_baseline"), dict)
+            and state["discovery_baseline"].get("status") != "CURRENT"
+        ),
+        "unassessed_materiality": _unassessed_materiality_count(state),
+        **{
+            name: count
+            for name, count in unknown_metrics.items()
+            if name != "deferred_unknowns"
+        },
+        **grill_pack_metrics(state),
+        **product_binding_metrics(state),
+        **ux_binding_metrics(state),
+        **authority_consumption_metrics(state),
+    }
+
+
 def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:
+    unknown_metrics = grill_unknown_metrics(state)
     return {
         "errors": validate_state_v2(state),
         "metrics": {
             "semantic_closure_not_implemented": 1,
-            **_surface_metrics(state),
-            **_contradiction_metrics(state),
-            "unassessed_materiality": _unassessed_materiality_count(state),
-            **grill_unknown_metrics(state),
-            **grill_pack_metrics(state),
-            **product_binding_metrics(state),
-            **ux_binding_metrics(state),
-            "stale_consumed_evidence": _stale_consumed_evidence_count(state),
-            "discovery_baseline_gaps": int(
-                isinstance(state.get("discovery_baseline"), dict)
-                and state["discovery_baseline"].get("status") != "CURRENT"
-            ),
+            **semantic_readiness_metrics(state),
+            "deferred_unknowns": unknown_metrics["deferred_unknowns"],
         },
         "closed": False,
         "definition_digest": None,

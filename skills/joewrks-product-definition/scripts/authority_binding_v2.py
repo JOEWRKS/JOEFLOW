@@ -677,3 +677,309 @@ def validate_ux_coverage_bindings(state: dict[str, object]) -> list[dict[str, st
 def ux_binding_metrics(state: dict[str, object]) -> dict[str, int]:
     """Count affected UX coverage rows and cells once for each M4 metric."""
     return _ux_binding_analysis(state)[1]
+
+
+_GRAPH_AUTHORITY_TYPES = {
+    "GOAL", "USR", "REQ", "DEC", "RULE", "FLOW", "SCR", "STATE",
+    "DATA", "INT", "AC", "TASK", "SURF",
+}
+_SURFACE_TRACE_TYPES = {"REQ", "RULE", "FLOW", "DATA", "INT"}
+_ORPHAN_EXCEPTIONS = {"GOAL", "USR", "TASK"}
+_SEMANTIC_SINKS = {"SINK:CORE", "SINK:GRILL", "SINK:UX", "SINK:TASK"}
+
+
+def _current_authority_index(
+    state: dict[str, object],
+) -> dict[str, tuple[str, dict[str, object]]]:
+    index = canonical_record_index(state)
+    return {
+        record_id: (record_type, record)
+        for record_id, (record_type, record) in index.items()
+        if record_type in _GRAPH_AUTHORITY_TYPES
+        and (
+            record.get("status") == "CURRENT"
+            if record_type != "SURF"
+            else record.get("status") not in {"SUPERSEDED", "RETIRED"}
+        )
+    }
+
+
+def _positive_binding_ids(
+    state: dict[str, object], cell: object, *, status: str,
+    allowed_types: set[str], semantic_roots: dict[str, set[str]],
+) -> set[str]:
+    """Return sources from one valid positive exact-binding cell."""
+    if (
+        not isinstance(cell, dict)
+        or set(cell) != _CORE_COVERAGE_CELL_KEYS
+        or cell.get("status") != status
+        or cell.get("unknown_refs") != []
+        or cell.get("basis_bindings") != []
+        or cell.get("rationale") is not None
+        or not isinstance(cell.get("authority_bindings"), list)
+        or not cell["authority_bindings"]
+    ):
+        return set()
+    record_ids: set[str] = set()
+    for authority_binding in cell["authority_bindings"]:
+        try:
+            _, record = verify_authority_binding(
+                state,
+                authority_binding,
+                allowed_types=allowed_types,
+                semantic_roots=semantic_roots,
+            )
+        except BindingError:
+            return set()
+        record_id = record.get("id")
+        if not isinstance(record_id, str):
+            return set()
+        record_ids.add(record_id)
+    return record_ids
+
+
+def _exact_binding_sinks(state: dict[str, object]) -> dict[str, set[str]]:
+    contracts = load_binding_contracts()
+    product = contracts["product"]
+    product_roots = {
+        record_type: set(values)
+        for record_type, values in product["semantic_roots"].items()
+    }
+    core_types = {
+        axis: set(values) for axis, values in product["core_axis_types"].items()
+    }
+    specialist_types = {
+        pack: set(values) for pack, values in product["specialist_pack_types"].items()
+    }
+    sinks: dict[str, set[str]] = {}
+
+    coverage = state.get("coverage")
+    if isinstance(coverage, list):
+        for row in coverage:
+            cells = row.get("cells") if isinstance(row, dict) else None
+            if not isinstance(cells, dict) or set(cells) != set(core_types):
+                continue
+            for axis, allowed_types in core_types.items():
+                for record_id in _positive_binding_ids(
+                    state, cells[axis], status="COVERED",
+                    allowed_types=allowed_types, semantic_roots=product_roots,
+                ):
+                    sinks.setdefault(record_id, set()).add("SINK:CORE")
+
+    grill_coverage = state.get("grill_coverage")
+    if isinstance(grill_coverage, list):
+        for row in grill_coverage:
+            if not isinstance(row, dict) or row.get("pack_id") not in specialist_types:
+                continue
+            axes = row.get("axes")
+            if not isinstance(axes, dict):
+                continue
+            allowed_types = specialist_types[row["pack_id"]]
+            for cell in axes.values():
+                for record_id in _positive_binding_ids(
+                    state, cell, status="ADDRESSED",
+                    allowed_types=allowed_types, semantic_roots=product_roots,
+                ):
+                    sinks.setdefault(record_id, set()).add("SINK:GRILL")
+
+    ux = contracts["ux"]
+    ux_roots = {
+        record_type: set(values)
+        for record_type, values in ux["semantic_roots"].items()
+    }
+    state_types = {
+        axis: set(values) for axis, values in ux["state_axis_types"].items()
+    }
+    action_types = {
+        axis: set(values) for axis, values in ux["action_axis_types"].items()
+    }
+    ux_coverage = state.get("ux_coverage")
+    if isinstance(ux_coverage, list):
+        for row in ux_coverage:
+            if not isinstance(row, dict):
+                continue
+            state_cells = row.get("states")
+            if isinstance(state_cells, dict):
+                for axis, cell in state_cells.items():
+                    allowed_types = state_types.get(axis)
+                    if allowed_types is None:
+                        continue
+                    for record_id in _positive_binding_ids(
+                        state, cell, status="COVERED",
+                        allowed_types=allowed_types, semantic_roots=ux_roots,
+                    ):
+                        sinks.setdefault(record_id, set()).add("SINK:UX")
+            actions = row.get("actions")
+            if not isinstance(actions, list):
+                continue
+            for action in actions:
+                cells = action.get("cells") if isinstance(action, dict) else None
+                if not isinstance(cells, dict):
+                    continue
+                for axis, cell in cells.items():
+                    allowed_types = action_types.get(axis)
+                    if allowed_types is None:
+                        continue
+                    for record_id in _positive_binding_ids(
+                        state, cell, status="COVERED",
+                        allowed_types=allowed_types, semantic_roots=ux_roots,
+                    ):
+                        sinks.setdefault(record_id, set()).add("SINK:UX")
+    return sinks
+
+
+def build_authority_consumption_graph(
+    state: dict[str, object],
+) -> dict[str, set[str]]:
+    """Build the pure typed graph from current authority to semantic sinks."""
+    index = _current_authority_index(state)
+    graph = {record_id: set() for record_id in sorted(index)}
+
+    def add_edge(
+        source: object, target: object, *,
+        source_types: set[str] | None = None,
+        target_types: set[str] | None = None,
+    ) -> None:
+        if not isinstance(source, str) or not isinstance(target, str):
+            return
+        source_entry, target_entry = index.get(source), index.get(target)
+        if (
+            source_entry is None
+            or target_entry is None
+            or (source_types is not None and source_entry[0] not in source_types)
+            or (target_types is not None and target_entry[0] not in target_types)
+        ):
+            return
+        graph[source].add(target)
+
+    for record_id in sorted(index):
+        record_type, record = index[record_id]
+        if record_type == "DEC":
+            for target in record.get("affects", []) if isinstance(record.get("affects"), list) else []:
+                add_edge(record_id, target, target_types=_GRAPH_AUTHORITY_TYPES)
+        elif record_type == "RULE":
+            for target in record.get("applies_to", []) if isinstance(record.get("applies_to"), list) else []:
+                add_edge(target, record_id, source_types=_GRAPH_AUTHORITY_TYPES)
+        elif record_type == "FLOW":
+            for goal in record.get("goal_refs", []) if isinstance(record.get("goal_refs"), list) else []:
+                add_edge(goal, record_id, source_types={"GOAL"})
+        elif record_type == "SCR":
+            for requirement in record.get("requirement_refs", []) if isinstance(record.get("requirement_refs"), list) else []:
+                add_edge(requirement, record_id, source_types={"REQ"})
+        elif record_type == "STATE":
+            for owner in record.get("owner_refs", []) if isinstance(record.get("owner_refs"), list) else []:
+                add_edge(owner, record_id, source_types=_GRAPH_AUTHORITY_TYPES)
+        elif record_type == "AC":
+            for requirement in record.get("requirement_refs", []) if isinstance(record.get("requirement_refs"), list) else []:
+                add_edge(requirement, record_id, source_types={"REQ"})
+        elif record_type == "TASK":
+            for requirement in record.get("implements", []) if isinstance(record.get("implements"), list) else []:
+                add_edge(requirement, record_id, source_types={"REQ"})
+            for acceptance in record.get("acceptance_refs", []) if isinstance(record.get("acceptance_refs"), list) else []:
+                add_edge(acceptance, record_id, source_types={"AC"})
+            graph[record_id].add("SINK:TASK")
+        elif record_type == "SURF":
+            for authority in record.get("authority_refs", []) if isinstance(record.get("authority_refs"), list) else []:
+                add_edge(record_id, authority, target_types=_SURFACE_TRACE_TYPES)
+
+    for record_id, semantic_sinks in _exact_binding_sinks(state).items():
+        if record_id in graph:
+            graph[record_id].update(semantic_sinks)
+    return graph
+
+
+def _is_material_record(record: dict[str, object]) -> bool:
+    materiality = record.get("materiality")
+    try:
+        return (
+            isinstance(materiality, dict)
+            and classify_materiality(materiality) == "MATERIAL"
+        )
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
+def _can_reach_semantic_sink(graph: dict[str, set[str]], start: str) -> bool:
+    pending = [start]
+    visited: set[str] = set()
+    while pending:
+        node = pending.pop()
+        if node in _SEMANTIC_SINKS:
+            return True
+        if node in visited:
+            continue
+        visited.add(node)
+        pending.extend(graph.get(node, set()) - visited)
+    return False
+
+
+def authority_consumption_metrics(state: dict[str, object]) -> dict[str, int]:
+    """Count current material authority and delivery gaps once per record."""
+    index = _current_authority_index(state)
+    graph = build_authority_consumption_graph(state)
+    seeds = {
+        record_id
+        for record_id, (record_type, record) in index.items()
+        if record_type in {"REQ", "DEC"} and _is_material_record(record)
+    }
+    reachable: set[str] = set()
+    pending = list(seeds)
+    while pending:
+        node = pending.pop()
+        if node in reachable or node in _SEMANTIC_SINKS:
+            continue
+        reachable.add(node)
+        pending.extend(graph.get(node, set()) - reachable)
+
+    orphaned = {
+        record_id
+        for record_id in reachable
+        if index[record_id][0] not in _ORPHAN_EXCEPTIONS
+        and not _can_reach_semantic_sink(graph, record_id)
+    }
+    material_requirements = {
+        record_id for record_id in seeds if index[record_id][0] == "REQ"
+    }
+    current_acceptances = {
+        record_id: record
+        for record_id, (record_type, record) in index.items()
+        if record_type == "AC"
+    }
+    current_tasks = [
+        record for record_type, record in index.values() if record_type == "TASK"
+    ]
+    acceptance_by_requirement = {
+        requirement_id: {
+            acceptance_id
+            for acceptance_id, record in current_acceptances.items()
+            if isinstance(record.get("requirement_refs"), list)
+            and requirement_id in record["requirement_refs"]
+        }
+        for requirement_id in material_requirements
+    }
+    requirement_acceptance_gaps = {
+        requirement_id
+        for requirement_id, acceptance_ids in acceptance_by_requirement.items()
+        if not acceptance_ids
+    }
+    task_mapping_gaps = {
+        requirement_id
+        for requirement_id, acceptance_ids in acceptance_by_requirement.items()
+        if not any(
+            isinstance(task_record.get("implements"), list)
+            and requirement_id in task_record["implements"]
+            and isinstance(task_record.get("acceptance_refs"), list)
+            and bool(acceptance_ids.intersection(task_record["acceptance_refs"]))
+            for task_record in current_tasks
+        )
+    }
+    return {
+        "orphan_material_authority": len(orphaned),
+        "unconsumed_material_decision": sum(
+            index[record_id][0] == "DEC"
+            and not _can_reach_semantic_sink(graph, record_id)
+            for record_id in seeds
+        ),
+        "requirement_acceptance_gaps": len(requirement_acceptance_gaps),
+        "task_mapping_gaps": len(task_mapping_gaps),
+    }
