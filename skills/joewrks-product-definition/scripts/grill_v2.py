@@ -943,6 +943,14 @@ def _validate_decision(
             "evidence and migration reconciliation are not current decision modes",
             path,
         ))
+        if isinstance(mode, str) and mode in {
+            "EVIDENCE", "MIGRATION_RECONCILIATION",
+        }:
+            errors.append(_error(
+                "invalid_unknown_resolution_authority",
+                "evidence and migration reconciliation cannot authorize a current decision",
+                path,
+            ))
     expected_authority = MODE_AUTHORITIES.get(mode) if isinstance(mode, str) else None
     if expected_authority is not None and authority != expected_authority:
         errors.append(_error(

@@ -834,11 +834,104 @@ class UnknownResolutionV020Test(unittest.TestCase):
                 self.assertIn("unresolved_unknown_provenance", self.error_codes(candidate))
 
     def test_evidence_and_migration_modes_are_invalid_for_current_decisions(self):
-        for mode in ("EVIDENCE", "MIGRATION_RECONCILIATION"):
+        cases = (
+            ("EVIDENCE", "EVIDENCE_RESOLVABLE"),
+            ("MIGRATION_RECONCILIATION", "USER_DECISION_REQUIRED"),
+        )
+        for mode, authority in cases:
             with self.subTest(mode=mode):
-                state = self.state_with_linked_decision()
-                state["objects"]["decisions"][0]["resolution_mode"] = mode
-                self.assertIn("invalid_decision_provenance", self.error_codes(state))
+                state = foundation_state()
+                state["objects"]["decisions"] = [decision_record(
+                    resolution_mode=mode,
+                    decision_authority=authority,
+                    source_unknown_refs=[],
+                )]
+                result = evaluate_closure_v2(state)
+                decision_authority_errors = [
+                    error for error in result["errors"]
+                    if error["code"] == "invalid_unknown_resolution_authority"
+                    and error["path"] == "objects.decisions[0]"
+                ]
+
+                self.assertIn(
+                    "invalid_decision_provenance",
+                    {error["code"] for error in result["errors"]},
+                )
+                self.assertEqual(len(decision_authority_errors), 1)
+                self.assertEqual(result["metrics"]["invalid_resolution_authority"], 1)
+
+    def test_linked_forbidden_unknown_and_decision_count_two_authority_records(self):
+        state = self.state_with_linked_decision(
+            mode="MIGRATION_RECONCILIATION",
+            authority="USER_DECISION_REQUIRED",
+        )
+
+        result = evaluate_closure_v2(state)
+
+        authority_error_paths = {
+            error["path"] for error in result["errors"]
+            if error["code"] == "invalid_unknown_resolution_authority"
+        }
+        self.assertEqual(
+            authority_error_paths,
+            {"objects.unknowns[0]", "objects.decisions[0]"},
+        )
+        self.assertEqual(result["metrics"]["invalid_resolution_authority"], 2)
+
+    def test_permitted_current_decision_modes_do_not_create_authority_conflicts(self):
+        user_decision = self.state_with_linked_decision()
+
+        accepted = self.state_with_linked_decision(
+            mode="USER_ACCEPTED_RECOMMENDATION",
+            authority="USER_CONFIRMATION",
+            acceptance=accepted_recommendation(),
+        )
+        accepted["objects"]["unknowns"][0]["recommendation"] = recommendation()
+        accepted["evidence"] = evidence_with_grill_basis(evidence_record(
+            source_kind="USER_CONFIRMED_INTENT",
+            authority_classes=["INTENT"],
+        ))
+
+        agent_default = self.state_with_linked_decision(
+            mode="AGENT_NON_MATERIAL_DEFAULT",
+            authority="AGENT_AUTONOMOUS",
+            decided_by="AGENT",
+            classification="NON_MATERIAL",
+        )
+
+        external_constraint = self.state_with_linked_decision(
+            mode="EXTERNAL_CONSTRAINT",
+            authority="EXTERNAL_AUTHORITY_REQUIRED",
+            decided_by="EXTERNAL_AUTHORITY",
+        )
+        external_constraint["objects"]["unknowns"][0][
+            "required_authority_class"
+        ] = "CONSTRAINT"
+        external_constraint["objects"]["unknowns"][0]["evidence_refs"] = [
+            "EVD-001",
+        ]
+        external_constraint["objects"]["decisions"][0]["evidence_refs"] = [
+            "EVD-001",
+        ]
+        external_constraint["evidence"] = evidence_with_grill_basis(evidence_record(
+            source_kind="EXTERNAL_CONSTRAINT",
+            authority_classes=["CONSTRAINT"],
+        ))
+
+        permitted = (
+            ("USER_DECISION", user_decision),
+            ("USER_ACCEPTED_RECOMMENDATION", accepted),
+            ("AGENT_NON_MATERIAL_DEFAULT", agent_default),
+            ("EXTERNAL_CONSTRAINT", external_constraint),
+        )
+        for mode, state in permitted:
+            with self.subTest(mode=mode):
+                result = evaluate_closure_v2(state)
+                self.assertNotIn(
+                    "invalid_unknown_resolution_authority",
+                    {error["code"] for error in result["errors"]},
+                )
+                self.assertEqual(result["metrics"]["invalid_resolution_authority"], 0)
 
     def test_unknown_metrics_distinguish_open_blocked_and_deferred_records(self):
         open_unknown = unknown_record("UNK-001")
