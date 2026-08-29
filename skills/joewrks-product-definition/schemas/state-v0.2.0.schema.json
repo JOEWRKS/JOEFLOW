@@ -7,6 +7,56 @@
   "$defs": {
     "text": {"type": "string", "minLength": 1},
     "binding_contract_identity": {"type": "object", "additionalProperties": false, "required": ["contract_id", "version", "digest"], "properties": {"contract_id": {"type": "string"}, "version": {"const": "1.0"}, "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}},
+    "migration_legacy_record": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_id", "source_group", "source_record", "source_record_sha256"],
+      "properties": {
+        "source_id": {"oneOf": [{"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, {"type": "null"}]},
+        "source_group": {"enum": ["goals", "users", "requirements", "unknowns", "decisions", "rules", "flows", "screens", "states", "data", "integrations", "acceptance_criteria", "tasks", "contradictions"]},
+        "source_record": {"type": "object"},
+        "source_record_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "migration_reconciliation_gap": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_id", "source_path", "missing_v2_fields", "reason_code"],
+      "properties": {
+        "source_id": {"oneOf": [{"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, {"type": "null"}]},
+        "source_path": {"type": "string", "pattern": "^/"},
+        "missing_v2_fields": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "uniqueItems": true},
+        "reason_code": {"const": "MISSING_V2_SEMANTIC_AUTHORITY"}
+      }
+    },
+    "migration_native": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mode"], "properties": {"mode": {"const": "NATIVE"}}
+    },
+    "migration_migrated": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mode", "from_schema", "to_schema", "migration_version", "source_digest", "source_revision", "source_legacy_status", "source_legacy_approval_digest", "plan_digest", "preserved_ids", "promoted_ids", "generated_ids", "legacy_records", "reconciliation_gaps", "reconciliation_gap_count"],
+      "properties": {
+        "mode": {"const": "MIGRATED"},
+        "from_schema": {"const": "0.1.2.1"},
+        "to_schema": {"const": "0.2.0"},
+        "migration_version": {"const": "0.2.0-m6.1"},
+        "source_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_revision": {"type": "integer", "minimum": 1},
+        "source_legacy_status": {"enum": ["OPEN", "READY_FOR_REVIEW", "CLOSED", "BLOCKED"]},
+        "source_legacy_approval_digest": {"oneOf": [{"type": "string", "pattern": "^[0-9a-f]{64}$"}, {"type": "null"}]},
+        "plan_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "preserved_ids": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "uniqueItems": true},
+        "promoted_ids": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "uniqueItems": true},
+        "generated_ids": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "uniqueItems": true},
+        "legacy_records": {"type": "array", "items": {"$ref": "#/$defs/migration_legacy_record"}},
+        "reconciliation_gaps": {
+          "type": "object",
+          "propertyNames": {"pattern": "^gap:[0-9a-f]{24}$"},
+          "additionalProperties": {"$ref": "#/$defs/migration_reconciliation_gap"}
+        },
+        "reconciliation_gap_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "migration": {"oneOf": [{"$ref": "#/$defs/migration_native"}, {"$ref": "#/$defs/migration_migrated"}]},
     "string_array": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
     "authority_binding": {"type": "object", "additionalProperties": false, "required": ["record_id", "pointer", "value_sha256"], "properties": {"record_id": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3,}$"}, "pointer": {"type": "string"}, "value_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}},
     "core_coverage_cell": {"type": "object", "additionalProperties": false, "required": ["status", "authority_bindings", "unknown_refs", "basis_bindings", "rationale"], "properties": {"status": {"enum": ["COVERED", "OPEN", "N/A"]}, "authority_bindings": {"type": "array", "items": {"$ref": "#/$defs/authority_binding"}}, "unknown_refs": {"type": "array", "items": {"type": "string", "pattern": "^UNK-[0-9]{3,}$"}, "uniqueItems": true}, "basis_bindings": {"type": "array", "items": {"$ref": "#/$defs/authority_binding"}}, "rationale": {"oneOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]}}},
@@ -511,12 +561,12 @@
         "closure_contract": {"type": "object", "additionalProperties": false, "required": ["level", "product_binding_contract", "ux_binding_contract"], "properties": {"level": {"const": "SEMANTIC_CLOSURE"}, "product_binding_contract": {"$ref": "#/$defs/binding_contract_identity"}, "ux_binding_contract": {"$ref": "#/$defs/binding_contract_identity"}}}
       }
     },
-    "migration": {"type": "object"}, "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence_record"}},
+    "migration": {"$ref": "#/$defs/migration"}, "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence_record"}},
     "surface_manifest": {
       "type": "object", "required": ["records", "grill_profile"], "additionalProperties": false,
       "properties": {
         "records": {"type": "array", "items": {"$ref": "#/$defs/surface_record"}},
-        "grill_profile": {"$ref": "#/$defs/grill_profile"}
+        "grill_profile": {"oneOf": [{"$ref": "#/$defs/grill_profile"}, {"type": "object", "maxProperties": 0}]}
       }
     },
     "contradictions": {"type": "array", "items": {"$ref": "#/$defs/contradiction_record"}},
@@ -546,6 +596,26 @@
     "approval_history": {"type": "array", "items": {"$ref": "#/$defs/approval_commitment"}}
   },
   "allOf": [
+    {
+      "if": {
+        "required": ["migration"],
+        "properties": {
+          "migration": {
+            "required": ["mode"],
+            "properties": {"mode": {"const": "NATIVE"}}
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "surface_manifest": {
+            "properties": {
+              "grill_profile": {"$ref": "#/$defs/grill_profile"}
+            }
+          }
+        }
+      }
+    },
     {
       "if": {
         "required": ["project"],

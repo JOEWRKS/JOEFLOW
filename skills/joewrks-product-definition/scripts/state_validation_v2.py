@@ -101,6 +101,19 @@ TYPE_MINIMA = {
     "acceptance_criteria": frozenset({"requirement_refs", "assertion"}),
     "tasks": frozenset({"implements", "acceptance_refs"}),
 }
+MIGRATION_APPLY_VERSION = "0.2.0-m6.1"
+MIGRATION_FIELDS = {
+    "mode", "from_schema", "to_schema", "migration_version", "source_digest",
+    "source_revision", "source_legacy_status", "source_legacy_approval_digest",
+    "plan_digest", "preserved_ids", "promoted_ids", "generated_ids",
+    "legacy_records", "reconciliation_gaps", "reconciliation_gap_count",
+}
+MIGRATION_LEGACY_RECORD_FIELDS = {
+    "source_id", "source_group", "source_record", "source_record_sha256",
+}
+MIGRATION_GAP_FIELDS = {
+    "source_id", "source_path", "missing_v2_fields", "reason_code",
+}
 
 _LIFECYCLE_FIELDS = {"superseded_by", "retired_by", "retired_at_revision", "retirement_reason"}
 _TEXT_FIELDS = {
@@ -207,6 +220,144 @@ def _is_stable_id(value: Any, *, expected_prefix: str | None = None) -> bool:
         and number.isascii()
         and number.isdigit()
     )
+
+
+def _is_sha256(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
+def _validate_migration_metadata(state: dict[str, Any]) -> list[dict[str, str]]:
+    migration = state.get("migration")
+    if not isinstance(migration, dict):
+        return [_error("schema_error", "migration must be an object", "migration")]
+    if migration == {"mode": "NATIVE"}:
+        return []
+    if set(migration) != MIGRATION_FIELDS or migration.get("mode") != "MIGRATED":
+        return [_error(
+            "schema_error",
+            "migrated metadata fields do not match the 0.2.0 M6 contract",
+            "migration",
+        )]
+
+    errors: list[dict[str, str]] = []
+    exact_values = {
+        "from_schema": "0.1.2.1",
+        "to_schema": "0.2.0",
+        "migration_version": MIGRATION_APPLY_VERSION,
+    }
+    for field, expected in exact_values.items():
+        if migration.get(field) != expected:
+            errors.append(_error(
+                "schema_error", f"migration.{field} has the wrong value", f"migration.{field}"
+            ))
+    for field in ("source_digest", "plan_digest"):
+        if not _is_sha256(migration.get(field)):
+            errors.append(_error(
+                "schema_error", f"migration.{field} must be lowercase sha256", f"migration.{field}"
+            ))
+    approval_digest = migration.get("source_legacy_approval_digest")
+    if approval_digest is not None and not _is_sha256(approval_digest):
+        errors.append(_error(
+            "schema_error",
+            "migration.source_legacy_approval_digest must be lowercase sha256 or null",
+            "migration.source_legacy_approval_digest",
+        ))
+    revision = migration.get("source_revision")
+    if not isinstance(revision, int) or isinstance(revision, bool) or revision < 1:
+        errors.append(_error(
+            "schema_error", "migration.source_revision must be a positive integer",
+            "migration.source_revision",
+        ))
+    if migration.get("source_legacy_status") not in DEFINITION_STATUSES:
+        errors.append(_error(
+            "schema_error", "migration.source_legacy_status is invalid",
+            "migration.source_legacy_status",
+        ))
+
+    for field in ("preserved_ids", "promoted_ids", "generated_ids"):
+        values = migration.get(field)
+        if (
+            not isinstance(values, list)
+            or values != sorted(values)
+            or len(values) != len(set(values))
+            or any(not _is_stable_id(value) for value in values)
+        ):
+            errors.append(_error(
+                "schema_error", f"migration.{field} must be sorted unique stable ids",
+                f"migration.{field}",
+            ))
+
+    legacy_records = migration.get("legacy_records")
+    if not isinstance(legacy_records, list):
+        errors.append(_error(
+            "schema_error", "migration.legacy_records must be an array",
+            "migration.legacy_records",
+        ))
+    else:
+        for position, record in enumerate(legacy_records):
+            path = f"migration.legacy_records[{position}]"
+            if (
+                not isinstance(record, dict)
+                or set(record) != MIGRATION_LEGACY_RECORD_FIELDS
+                or not (
+                    record.get("source_id") is None
+                    or _is_stable_id(record.get("source_id"))
+                )
+                or record.get("source_group") not in OBJECT_GROUPS | {"contradictions"}
+                or not isinstance(record.get("source_record"), dict)
+                or not _is_sha256(record.get("source_record_sha256"))
+            ):
+                errors.append(_error(
+                    "schema_error", "legacy archive entry has invalid shape", path
+                ))
+
+    gaps = migration.get("reconciliation_gaps")
+    if not isinstance(gaps, dict):
+        errors.append(_error(
+            "schema_error", "migration.reconciliation_gaps must be an object",
+            "migration.reconciliation_gaps",
+        ))
+    else:
+        for key, gap in gaps.items():
+            path = f"migration.reconciliation_gaps.{key}"
+            valid_key = (
+                isinstance(key, str)
+                and key.startswith("gap:")
+                and len(key) == 28
+                and all(character in "0123456789abcdef" for character in key[4:])
+            )
+            if (
+                not valid_key
+                or not isinstance(gap, dict)
+                or set(gap) != MIGRATION_GAP_FIELDS
+                or not (gap.get("source_id") is None or _is_stable_id(gap.get("source_id")))
+                or not isinstance(gap.get("source_path"), str)
+                or not gap["source_path"].startswith("/")
+                or not isinstance(gap.get("missing_v2_fields"), list)
+                or gap["missing_v2_fields"] != sorted(set(gap["missing_v2_fields"]))
+                or not gap["missing_v2_fields"]
+                or any(not isinstance(field, str) or not field for field in gap["missing_v2_fields"])
+                or gap.get("reason_code") != "MISSING_V2_SEMANTIC_AUTHORITY"
+            ):
+                errors.append(_error(
+                    "schema_error", "reconciliation gap has invalid shape", path
+                ))
+    gap_count = migration.get("reconciliation_gap_count")
+    if (
+        not isinstance(gap_count, int)
+        or isinstance(gap_count, bool)
+        or not isinstance(gaps, dict)
+        or gap_count != len(gaps)
+    ):
+        errors.append(_error(
+            "schema_error", "migration.reconciliation_gap_count must equal gap count",
+            "migration.reconciliation_gap_count",
+        ))
+    return errors
 
 
 def _iter_records(state: dict[str, Any]):
@@ -1106,6 +1257,7 @@ def _validate_state_v2(
     ):
         if not isinstance(state.get(field), expected_type):
             errors.append(_error("schema_error", f"{field} must be a {expected_type.__name__}", field))
+    errors.extend(_validate_migration_metadata(state))
     index, id_errors = _collect_ids(state)
     errors.extend(id_errors)
     evidence_index = _collect_evidence(state)
