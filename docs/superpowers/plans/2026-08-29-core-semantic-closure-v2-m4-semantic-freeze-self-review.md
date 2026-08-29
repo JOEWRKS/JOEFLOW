@@ -64,19 +64,31 @@ Rules:
 
 The frozen design requires material Product Definition changes to increment `definition_revision` and invalidate approval. Approval-history commitments now make this enforceable.
 
-If approval history contains a commitment whose `revision == project.definition_revision` but its `definition_digest` differs from the current recomputed semantic definition digest, emit/block:
+If approval history already contains a commitment whose `revision == project.definition_revision`, recompute the **entire semantic approval commitment** for the current state and compare these fields:
+
+```text
+definition_digest
+manifest_digest
+record_hashes
+coverage_digest
+surface_digest
+grill_pack_set_digest
+```
+
+If any differ, emit/block:
 
 ```text
 semantic_change_without_revision_increment
 ```
 
-This is distinct from ordinary `stale_approval`.
+This is distinct from ordinary `stale_approval` and applies even when the active-current `definition_digest` happens to remain the same—for example, rewriting historical record content or changing exact binding commitments inside the same revision.
 
 Consequences:
 
-- changing product meaning after an approval while retaining the same revision cannot be re-approved;
+- changing current product meaning after approval while retaining the same revision cannot be re-approved;
+- changing approved historical/provenance records or exact coverage commitments inside the same revision cannot be silently re-approved;
 - the project must increment `definition_revision`, set approval `UNAPPROVED`, reconcile stale authority as required, then build a new manifest;
-- adding unconsumed evidence and rebuilding the discovery baseline is **not** a semantic definition change and does not trigger this blocker because the semantic digest remains equal.
+- adding unconsumed evidence and rebuilding the discovery baseline is **not** a semantic approval-commitment change and does not trigger this blocker because the semantic projection, pure manifest, record hashes, coverage/surface/pack commitments remain equal.
 
 Add this metric to Task 4/6 blocking readiness and dedicated tests to Task 5/6.
 
@@ -281,6 +293,25 @@ provided every field is computed from pure semantic readiness and is invariant a
 
 Add a regression that computes the manifest before approval and after installing the exact approval/history commitment and changing only `definition_status` to `CLOSED`; manifest body and manifest digest must be byte-identical.
 
+## 12. Approval validity is a recorded human-authority claim, not cryptographic identity proof
+
+M4 can deterministically prove that the canonical state records:
+
+```text
+approved_by = user
+approved_at = supplied value
+approved_revision = current revision
+approved_definition_digest = exact current semantic digest
+approved_manifest_digest = exact current pure manifest digest
+matching approval-history commitment exists
+```
+
+It cannot cryptographically prove, from `state.json` alone, that a particular human physically clicked a UI control or authored a chat message. Do not overstate M4 as human-identity authentication.
+
+The authoring workflow is responsible for writing `approval.status = APPROVED` only after the actual user has been shown the deterministic manifest and explicitly approved it. M4 itself never synthesizes `approved_at`, never changes `approved_by` to `user`, and never auto-approves a READY state.
+
+The semantic-freeze reference must state this trust boundary explicitly. A future authenticated approval-receipt mechanism could strengthen identity assurance without changing the M4 semantic digest/manifest model.
+
 ## Self-review result
 
-With these clarifications, no remaining known blocking contradiction or lifecycle escape hatch was found in the M4 decomposition. Execution must read the frozen design, M3 audit, M4 plan and this addendum before coding.
+With these clarifications, no remaining known blocking contradiction, lifecycle escape hatch, or approval-control recursion was found in the M4 decomposition. Execution must read the frozen design, M3 audit, M4 plan and this addendum before coding.
