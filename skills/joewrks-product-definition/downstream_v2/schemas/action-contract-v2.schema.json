@@ -23,7 +23,8 @@
     "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "scopeRef": {"type": "string", "pattern": "^(REQ|SURF|SCR)-[^\\s]+$"},
     "scopeRefs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/scopeRef"}},
-    "bindingIdentity": {"type": "object", "required": ["contract_id", "version", "digest"], "additionalProperties": false, "properties": {"contract_id": {"type": "string", "pattern": ".*\\S.*"}, "version": {"type": "string", "pattern": ".*\\S.*"}, "digest": {"$ref": "#/$defs/hash"}}},
+    "productBindingIdentity": {"type": "object", "required": ["contract_id", "version", "digest"], "additionalProperties": false, "properties": {"contract_id": {"const": "joewrks.product-coverage-binding"}, "version": {"const": "1.0"}, "digest": {"const": "b57459533247de52038aacb158e785c2184edcdd2fa6831f0edc3db713775f3c"}}},
+    "uxBindingIdentity": {"type": "object", "required": ["contract_id", "version", "digest"], "additionalProperties": false, "properties": {"contract_id": {"const": "joewrks.ux-coverage-binding"}, "version": {"const": "1.0"}, "digest": {"const": "8fc84057a4a6f0f0ce329a58d11b8e208989800147d703665cea52088de0be0d"}}},
     "sourceAuthority": {
       "type": "object",
       "required": ["state_schema_version", "product_slug", "approved_revision", "approved_definition_digest", "approved_manifest_digest", "product_binding_contract", "ux_binding_contract", "snapshot_state_sha256", "consumed_seed_inventory_digest"],
@@ -34,8 +35,8 @@
         "approved_revision": {"type": "integer", "minimum": 1},
         "approved_definition_digest": {"$ref": "#/$defs/hash"},
         "approved_manifest_digest": {"$ref": "#/$defs/hash"},
-        "product_binding_contract": {"$ref": "#/$defs/bindingIdentity"},
-        "ux_binding_contract": {"$ref": "#/$defs/bindingIdentity"},
+        "product_binding_contract": {"$ref": "#/$defs/productBindingIdentity"},
+        "ux_binding_contract": {"$ref": "#/$defs/uxBindingIdentity"},
         "snapshot_state_sha256": {"$ref": "#/$defs/hash"},
         "consumed_seed_inventory_digest": {"$ref": "#/$defs/hash"}
       }

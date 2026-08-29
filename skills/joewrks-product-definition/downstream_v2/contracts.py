@@ -3,6 +3,8 @@
 import copy
 import re
 
+from authority_binding_v2 import BindingError, binding_contract_identity
+
 from .authority import sha256_json
 from .derivation import (
     RESPONSIBILITY_PROFILE_ID,
@@ -40,6 +42,10 @@ _DEBT_KEYS = {
     "authority_gap_count", "direct_authority_fields", "machine_derived_fields",
     "review_required_fields", "authority_gaps",
 }
+
+
+def _is_hash(value: object) -> bool:
+    return isinstance(value, str) and _HASH.fullmatch(value) is not None
 
 
 def semantic_contract_projection(contract: dict[str, object]) -> dict[str, object]:
@@ -130,20 +136,25 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
         "approved_definition_digest", "approved_manifest_digest", "snapshot_state_sha256",
         "consumed_seed_inventory_digest",
     ):
-        if _HASH.fullmatch(authority.get(key, "")) is None:
+        if not _is_hash(authority.get(key)):
             add(f"/source_authority/{key}", "must be a lowercase SHA-256")
-    for key in ("product_binding_contract", "ux_binding_contract"):
+    try:
+        expected_bindings = binding_contract_identity()
+    except BindingError as error:
+        expected_bindings = {}
+        add("/source_authority", f"frozen binding identities are unavailable: {error.code}")
+    for key, identity_key in (
+        ("product_binding_contract", "product"),
+        ("ux_binding_contract", "ux"),
+    ):
         binding = authority.get(key)
         if (
             not isinstance(binding, dict)
             or set(binding) != {"contract_id", "version", "digest"}
-            or not isinstance(binding.get("contract_id"), str)
-            or not binding["contract_id"]
-            or not isinstance(binding.get("version"), str)
-            or not binding["version"]
-            or _HASH.fullmatch(binding.get("digest", "")) is None
+            or not _is_hash(binding.get("digest"))
+            or binding != expected_bindings.get(identity_key)
         ):
-            add(f"/source_authority/{key}", "binding identity is invalid")
+            add(f"/source_authority/{key}", "binding identity does not match frozen authority")
 
     responsibility = contract.get("responsibility_profile")
     if responsibility != {
@@ -170,7 +181,7 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
             not isinstance(record_id, str)
             or _SCOPE_REF.fullmatch(record_id) is None
             or record_type != record_id.split("-", 1)[0]
-            or _HASH.fullmatch(commitment.get("record_sha256", "")) is None
+            or not _is_hash(commitment.get("record_sha256"))
         ):
             add(path, "scope commitment identity is invalid")
         commitment_ids.append(record_id)
@@ -191,7 +202,7 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
         if (
             not isinstance(seed.get("seed_key"), str)
             or not seed["seed_key"].startswith("SEED-")
-            or _HASH.fullmatch(seed.get("value_sha256", "")) is None
+            or not _is_hash(seed.get("value_sha256"))
             or seed.get("source_status") != "CURRENT"
         ):
             add(path, "source seed identity is invalid")
@@ -310,7 +321,7 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
             add("/semantic_assurance", "semantic assurance does not match semantic debt")
 
     for key in ("semantic_contract_hash", "artifact_hash"):
-        if _HASH.fullmatch(contract.get(key, "")) is None:
+        if not _is_hash(contract.get(key)):
             add(f"/{key}", "must be a lowercase SHA-256")
     try:
         if contract.get("semantic_contract_hash") != semantic_contract_hash(contract):

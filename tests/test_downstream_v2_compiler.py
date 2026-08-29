@@ -27,6 +27,7 @@ from downstream_v2.derivation import (  # noqa: E402
     seed_matches_selector,
 )
 from downstream_v2.seeds import build_closed_source_seed_inventory  # noqa: E402
+from downstream.schema_validation import SchemaValidationError, validate_instance  # noqa: E402
 from tests.downstream_v2_support import closed_v2_state  # noqa: E402
 
 
@@ -361,6 +362,68 @@ class ContractHashTests(unittest.TestCase):
                     target = target[token]
                 target[path[-1]] = "A" * 64
                 self.assertTrue(validate_action_contract_v2(invalid))
+
+    def test_non_string_hashes_return_structured_errors_instead_of_raising(self):
+        contract = self.contract()
+        cases = (
+            (("semantic_contract_hash",), "/semantic_contract_hash"),
+            (("artifact_hash",), "/artifact_hash"),
+            (("source_authority", "approved_definition_digest"), "/source_authority/approved_definition_digest"),
+            (("source_authority", "approved_manifest_digest"), "/source_authority/approved_manifest_digest"),
+            (("source_authority", "snapshot_state_sha256"), "/source_authority/snapshot_state_sha256"),
+            (("source_authority", "consumed_seed_inventory_digest"), "/source_authority/consumed_seed_inventory_digest"),
+            (("source_authority", "product_binding_contract", "digest"), "/source_authority/product_binding_contract"),
+            (("source_authority", "ux_binding_contract", "digest"), "/source_authority/ux_binding_contract"),
+            (("responsibility_profile", "digest"), "/responsibility_profile"),
+            (("scope_commitments", 0, "record_sha256"), "/scope_commitments/0"),
+            (("source_seed_inventory", 0, "value_sha256"), "/source_seed_inventory/0"),
+        )
+        for path, expected_error_path in cases:
+            with self.subTest(path=path):
+                invalid = copy.deepcopy(contract)
+                target = invalid
+                for token in path[:-1]:
+                    target = target[token]
+                target[path[-1]] = 123
+                errors = validate_action_contract_v2(invalid)
+                self.assertIsInstance(errors, list)
+                self.assertTrue(any(error["path"] == expected_error_path for error in errors))
+
+    def test_frozen_product_and_ux_binding_identities_are_required_after_rehash(self):
+        contract = self.contract()
+        self.assertEqual(validate_action_contract_v2(contract), [])
+        for key in ("product_binding_contract", "ux_binding_contract"):
+            with self.subTest(binding=key):
+                invalid = copy.deepcopy(contract)
+                invalid["source_authority"][key] = {
+                    "contract_id": "wrong.binding",
+                    "version": "9.9",
+                    "digest": "0" * 64,
+                }
+                invalid["semantic_contract_hash"] = semantic_contract_hash(invalid)
+                invalid["artifact_hash"] = artifact_hash(invalid)
+                errors = validate_action_contract_v2(invalid)
+                self.assertTrue(any(
+                    error["path"] == f"/source_authority/{key}"
+                    and "identity" in error["message"]
+                    for error in errors
+                ))
+
+    def test_schema_freezes_product_and_ux_binding_identities(self):
+        contract = self.contract()
+        schema_path = PACKAGE_ROOT / "downstream_v2" / "schemas" / "action-contract-v2.schema.json"
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        validate_instance(contract, schema)
+        for key in ("product_binding_contract", "ux_binding_contract"):
+            with self.subTest(binding=key):
+                invalid = copy.deepcopy(contract)
+                invalid["source_authority"][key] = {
+                    "contract_id": "wrong.binding",
+                    "version": "9.9",
+                    "digest": "0" * 64,
+                }
+                with self.assertRaises(SchemaValidationError):
+                    validate_instance(invalid, schema)
 
 
 if __name__ == "__main__":
