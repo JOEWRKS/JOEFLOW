@@ -215,6 +215,18 @@ class SemanticReviewV2Tests(unittest.TestCase):
                         self.assertIsInstance(combined, list)
                         self.assertTrue(combined)
 
+    def test_output_validator_returns_errors_for_non_string_verdicts(self):
+        package = self.package()
+        for verdict in ([], 7):
+            with self.subTest(verdict=verdict):
+                output = self.confirmed_output(package)
+                output["results"][0]["verdict"] = verdict
+                output["output_hash"] = output_hash(output)
+                errors = validate_semantic_review_output(package, output)
+                self.assertIsInstance(errors, list)
+                self.assertTrue(errors)
+        self.assertEqual(validate_semantic_review_output(package, self.confirmed_output(package)), [])
+
 
 if __name__ == "__main__":
     unittest.main()

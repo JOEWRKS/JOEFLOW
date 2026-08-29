@@ -93,7 +93,8 @@ def validate_semantic_review_output(
             add(f"{path}/obligation_id", "is not a package obligation")
         elif result.get("reviewed_value_sha256") != obligation.get("proposed_value_sha256"):
             add(f"{path}/reviewed_value_sha256", "must equal the proposed value hash")
-        if result.get("verdict") not in _VERDICTS:
+        verdict = result.get("verdict")
+        if not isinstance(verdict, str) or verdict not in _VERDICTS:
             add(f"{path}/verdict", "is not a permitted interpretation verdict")
         if not isinstance(result.get("rationale"), str) or not result["rationale"].strip():
             add(f"{path}/rationale", "must be meaningful")
