@@ -147,7 +147,8 @@ skills/joewrks-product-definition/
 ├─ schemas/
 ├─ templates/
 ├─ scripts/
-└─ downstream/
+├─ downstream/       # historical v1 compatibility
+└─ downstream_v2/    # current V2 downstream authority
 ```
 
 정확한 설치 경로는 사용하는 Codex/Agent 환경의 Skills 설치 방식에 맞춥니다.
@@ -272,15 +273,48 @@ my-site/
 
 ---
 
+## 현재 설치된 계약 라우팅
+
+새 프로젝트는 State `0.2.0` 네이티브 템플릿으로 시작합니다. 기존 `0.2.0` 프로젝트는 그대로 재개하고, 기존 `0.1.2.1` 프로젝트는 동결된 레거시 계약으로 먼저 검증합니다. 사용자가 V2 채택을 명시적으로 요청하지 않으면 자동 마이그레이션하지 않습니다.
+
+```text
+PRODUCT_DEFINITION_STATE_V2_DEFAULT
+LEGACY_0_1_2_1_COMPATIBILITY_PRESERVED
+DOWNSTREAM_V2_INSTALLED_ROUTING
+SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED
+```
+
+Current Product Definition state contract: `0.2.0`
+
+Current V2 downstream authority contract: `joewrks.action-conformance/2.0`
+
+Current V2 semantic review boundary: `joewrks.semantic-review/2.0` / reliability `NOT_MEASURED`
+
+Historical compatibility: state `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, and v0.4.3 evidence
+
+설치된 전체 V2 흐름과 명령은 [`workflow-v0.2.0.md`](skills/joewrks-product-definition/references/workflow-v0.2.0.md)에 정리되어 있습니다. 새 프로젝트 템플릿의 `migration.mode`는 `NATIVE`이며, 템플릿 자체는 Closure, 사용자 승인, 승인 시각, downstream authority를 주장하지 않습니다.
+
+---
+
 ## 더 강한 동작 검증이 필요한 경우
 
 Product Definition Closure 이후 중요한 상태 변화나 business behavior는 Downstream Conformance로 검증할 수 있습니다.
 
-현재 production contract:
+현재 V2 downstream authority contract:
 
 ```text
-joewrks.action-conformance/1.0
+joewrks.action-conformance/2.0
 ```
+
+설치된 skill 경로를 기준으로 다음 wrapper를 실행합니다. consumer 프로젝트의 현재 디렉터리나 영구 `PYTHONPATH` 설정에 의존하지 않습니다.
+
+```text
+python <skill-directory>/scripts/compile_downstream_v2.py STATE_JSON HANDOFF_DEFINITION_JSON
+python <skill-directory>/scripts/audit_downstream_v2.py CONTRACT_JSON STATE_JSON
+python <skill-directory>/scripts/build_semantic_review_v2.py CONTRACT_JSON
+```
+
+`build_semantic_review_v2.py`는 정당한 `REVIEW_REQUIRED` 의미가 있을 때 `joewrks.semantic-review/2.0` 패키지를 만듭니다. 이 review 계약의 reliability는 `NOT_MEASURED`이며, review 결과는 Product Definition authority를 만들지 않습니다.
 
 특히 다음 같은 영역에 적합합니다.
 
@@ -294,9 +328,10 @@ joewrks.action-conformance/1.0
 
 단순한 hero, 이미지 갤러리, footer 같은 표현 중심 영역까지 무조건 적용할 필요는 없습니다.
 
-자세한 내용:
+V2 계약과 historical v1 호환성:
 
-[`skills/joewrks-product-definition/downstream/README.md`](skills/joewrks-product-definition/downstream/README.md)
+- [`skills/joewrks-product-definition/references/downstream-v2-contract.md`](skills/joewrks-product-definition/references/downstream-v2-contract.md)
+- [`skills/joewrks-product-definition/downstream/README.md`](skills/joewrks-product-definition/downstream/README.md) — historical `joewrks.action-conformance/1.0`
 
 ---
 
@@ -343,9 +378,9 @@ Script 경로는 consumer project가 아니라 **설치된 skill 디렉터리**�
 
 ---
 
-## 현재 v0.4.3 상태
+## Historical v0.4.3 calibration boundary
 
-현재 통합 개발선은 **v0.4.3**입니다.
+v0.4.3은 현재 V2 설치 라우팅의 전체 프로그램 릴리스 번호가 아니라, 동결된 historical semantic-review/1.0 calibration evidence 경계입니다.
 
 | 항목 | 상태 |
 | --- | --- |
@@ -384,9 +419,9 @@ Environment-blocked disposition:
 
 ---
 
-## 다음 Core 설계 — Semantic Closure V2
+## 현재 Core 계약 — Semantic Closure V2
 
-현재 Product Definition Core의 남아 있는 구조적 회색지대를 보완하기 위한 차세대 설계가 진행 중입니다.
+State `0.2.0` Product Definition Core와 downstream V2 authority는 설치된 skill workflow에서 기본 경로로 연결됩니다. 이 Task 2 경계는 compile, dependency audit, semantic-review package wrapper까지만 설치하며 runtime evidence verifier, dogfood approval, 전체 M6 완료는 주장하지 않습니다.
 
 목표는 단순합니다.
 
@@ -401,7 +436,7 @@ Environment-blocked disposition:
 
 [`docs/superpowers/specs/2026-08-28-core-semantic-closure-v2-design.md`](docs/superpowers/specs/2026-08-28-core-semantic-closure-v2-design.md)
 
-현재 문서 상태는 `WRITTEN_SPEC_PENDING_FINAL_USER_REVIEW`이며, 구현 코드는 아직 이 설계를 기준으로 변경하지 않았습니다.
+동결된 설계 authority는 [`2026-08-28-core-semantic-closure-v2-freeze.md`](docs/superpowers/specs/2026-08-28-core-semantic-closure-v2-freeze.md)입니다. State `0.1.2.1`, action-conformance/1.0, semantic-review/1.0, v0.4.3 evidence는 historical compatibility로 유지되며 V2 의미로 재정의되지 않습니다.
 
 ---
 

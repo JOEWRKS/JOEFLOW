@@ -12,10 +12,31 @@ The existing runtime skill/package identifier remains **`joewrks-product-definit
 | Repository | `JOEWRKS/joewrks-product-definition` |
 | Runtime skill/package ID | `joewrks-product-definition` |
 | Canonical Product Definition authority | `product-definition/<project-slug>/state.json` |
-| Current integrated development line | `v0.4.3` |
+| Current Product Definition state contract | `0.2.0` |
+| Current downstream authority contract | `joewrks.action-conformance/2.0` |
+| Current semantic-review boundary | `joewrks.semantic-review/2.0` / reliability `NOT_MEASURED` |
 | Current protected `main` baseline | `efd96410f6401cbf9624328e94b795c315164b7f` |
 | Repaired v0.4.3 calibration input | `748254d6def81080a2fd2736115a3ab5e0bde5a3` |
 | v0.4.3 environment-blocked disposition | `6a0674c5d00a40790afef78cfa19494314b894e3` |
+
+Installed routing markers:
+
+```text
+PRODUCT_DEFINITION_STATE_V2_DEFAULT
+LEGACY_0_1_2_1_COMPATIBILITY_PRESERVED
+DOWNSTREAM_V2_INSTALLED_ROUTING
+SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED
+```
+
+Current Product Definition state contract: `0.2.0`
+
+Current V2 downstream authority contract: `joewrks.action-conformance/2.0`
+
+Current V2 semantic review boundary: `joewrks.semantic-review/2.0` / reliability `NOT_MEASURED`
+
+Historical compatibility: state `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, and v0.4.3 evidence
+
+These are contract identities, not an overall program release number.
 
 ## Purpose
 
@@ -29,30 +50,30 @@ It is not a single document generator. It is a staged authority-and-verification
 JOEWRKS Product Definition System
 │
 ├─ 1. Product Definition Core
+│  ├─ state contract 0.2.0 (installed default)
 │  ├─ evidence discovery
-│  ├─ unknown / decision ledgers
+│  ├─ Product Surface + Evidence + Contradictions
+│  ├─ unknown / Materiality / decision authority
 │  ├─ canonical state.json authority
 │  ├─ requirements / rules / data / flows / screens / states
-│  ├─ stale + ripple propagation
-│  ├─ Product / UX compilation
-│  └─ deterministic Closure Gate
+│  ├─ Core + specialist Grill coverage bindings
+│  ├─ Approval Manifest + definition digest
+│  └─ deterministic Semantic Closure Gate
 │
 ├─ 2. Downstream Conformance
-│  ├─ joewrks.action-conformance/1.0
-│  ├─ source provenance + derivation binding
+│  ├─ joewrks.action-conformance/2.0
+│  ├─ exact M4 source seeds + scope commitments
+│  ├─ DIRECT_AUTHORITY / MACHINE_DERIVED / REVIEW_REQUIRED
+│  ├─ hard SEMANTIC_AUTHORITY_GAP re-entry
 │  ├─ implementation / Figma handoff obligations
-│  ├─ runtime execution protocol
-│  ├─ sequence verification
-│  └─ implementation-drift evidence
+│  └─ dependency-scoped audit
 │
 ├─ 3. Semantic Review
-│  ├─ joewrks.semantic-review/1.0
-│  ├─ reviewer brief
-│  ├─ responsibility profile
-│  ├─ semantic obligation index
-│  ├─ review identity inventory
-│  ├─ deterministic golden cases + normative oracle
-│  └─ reliability gate
+│  ├─ joewrks.semantic-review/2.0
+│  ├─ only legitimate REVIEW_REQUIRED obligations
+│  ├─ exact obligation/value binding
+│  ├─ assurance, never Product Definition authority
+│  └─ reliability NOT_MEASURED
 │
 └─ 4. Evaluation & Calibration Harness
    ├─ behavioral / dogfood evaluations
@@ -62,6 +83,8 @@ JOEWRKS Product Definition System
    ├─ disagreement / reliability metrics
    └─ isolated reviewer execution boundary
 ```
+
+Historical State `0.1.2.1`, downstream v1, semantic-review/1.0, the frozen execution transport, and v0.4.3 evidence remain available under their exact original identities. They are compatibility boundaries, not the installed V2 default.
 
 ## 1. Product Definition Core
 
@@ -77,64 +100,55 @@ product-definition/<project-slug>/state.json
 
 Markdown PRDs, plans, wireflows, handoffs, and summaries are projections of that state and do not replace it.
 
-The core lifecycle is:
+The current core lifecycle is:
 
 ```text
-Discover
-→ Register Unknown
-→ Rank Materiality
-→ Ask / Resolve
-→ Record Decision
-→ Propagate Impact
-→ Recompile
-→ Discover Again
-→ Closure Gate
+DISCOVER
+→ CLOSE
+→ FREEZE
+→ APPROVE
+→ HANDOFF
+→ VERIFY
 ```
 
-Closure requires deterministic validation plus explicit approval of the current definition revision.
+Semantic Closure requires deterministic validation, exact coverage-to-authority bindings, a matching Approval Manifest and definition digest, plus explicit approval of the current definition revision. It does not claim implementation completion.
 
 ## 2. Downstream Conformance
 
 After Product Definition Closure, the system compiles approved canonical clauses into executable downstream obligations.
 
-The production handoff contract is:
+The current V2 handoff contract is:
 
 ```text
-joewrks.action-conformance/1.0
+joewrks.action-conformance/2.0
 ```
 
-This layer binds implementation obligations to exact canonical source IDs, JSON pointers, source hashes, derivation modes, runtime sequence expectations, and verification evidence.
+This layer reuses exact M4 coverage bindings as source seeds, commits consumed seed and authority-scope identities, and materializes only handoffs with zero semantic authority gaps.
 
 It separates:
 
 - product authority from implementation behavior;
-- business state from delivery effects;
-- structural validity from semantic proof;
-- machine-derived semantics from review-required semantics.
+- direct authority from closed deterministic derivation;
+- legitimate qualitative review from upstream authority gaps;
+- global definition state from dependency-local contract validity.
 
-It is read-only with respect to Product Definition authority.
+Installed wrappers compile and audit from any consumer working directory without a persistent `PYTHONPATH`. This layer is read-only with respect to Product Definition authority.
+
+Historical `joewrks.action-conformance/1.0` remains frozen and reproducible under its own contract.
 
 ## 3. Semantic Review
 
-Some downstream semantic fields cannot be proven by deterministic extraction alone. Those fields remain `REVIEW_REQUIRED` and are evaluated through the semantic-review sidecar:
+Some downstream semantic fields cannot be represented safely as structured Product Definition authority or closed derivation. Only responsibility-profile-approved fields may remain `REVIEW_REQUIRED` and enter the V2 semantic-review sidecar:
 
 ```text
-joewrks.semantic-review/1.0
+joewrks.semantic-review/2.0
 ```
 
-The semantic-review system binds every review decision to:
+The semantic-review/2.0 package binds every obligation to the exact action contract, source obligations, proposed value hash, and responsibility rule. Review output is assurance evidence and may emit read-only affected-scope re-entry; it never modifies Product Definition or the action contract.
 
-- exact reviewer package bytes;
-- reviewer brief hash;
-- responsibility rule;
-- semantic obligation;
-- expected review identity;
-- canonical evidence;
-- provenance hashes;
-- required test references;
-- explicit verdict and rationale code.
+Semantic-review/2.0 reliability begins and remains `NOT_MEASURED` in this integration task. It does not inherit the v0.4.3 calibration disposition or any semantic-review/1.0 reliability claim.
 
-The responsibility model currently covers **26 action semantic fields + 12 lifecycle semantic fields = 38 responsibility rules**.
+Historical `joewrks.semantic-review/1.0`, its **26 action + 12 lifecycle = 38** responsibility rules, and v0.4.3 evidence remain factual frozen compatibility.
 
 The four terminal review outcomes are:
 
@@ -172,21 +186,19 @@ Product Definition Core
         ↓
 canonical state.json
         ↓
-Closure Gate
+Semantic Closure + exact approval
         ↓
-Downstream Conformance compiler
+Downstream V2 compiler
         ↓
-action-conformance contract
+action-conformance/2.0 contract
         ↓
 Implementation / Figma Make
         ↓
-runtime + drift evidence
+dependency audit + implementation evidence
         ↓
-Semantic Review for REVIEW_REQUIRED fields
+semantic-review/2.0 for legitimate REVIEW_REQUIRED fields
         ↓
-Reliability Calibration
-        ↓
-Trusted downstream execution / later efficacy evaluation
+re-entry for affected authority gaps or ambiguity
 ```
 
 Any material ambiguity discovered during implementation re-enters Product Definition instead of being decided silently downstream.
@@ -199,8 +211,9 @@ skills/joewrks-product-definition/
 ├─ references/                      # authority and workflow rules
 ├─ schemas/                         # canonical schemas
 ├─ templates/                       # generated projection templates
-├─ scripts/                         # deterministic validators
-└─ downstream/
+├─ scripts/                         # validators + installed V2 wrappers
+├─ downstream_v2/                   # current action-conformance/2.0 authority
+└─ downstream/                      # historical v1 compatibility
    ├─ contracts.py                  # downstream contract compilation
    ├─ provenance.py                 # source binding
    ├─ verifier.py / invariants.py   # runtime conformance
@@ -228,9 +241,9 @@ The repository evolved in layers rather than replacing its earlier core:
 - **v0.4.2** — fresh downstream-contract efficacy experiment; stopped before paired result after review-construction instability.
 - **v0.4.3** — deterministic semantic-review contract, responsibility model, reliability gate, calibration controller, and control-plane hardening.
 
-## Current v0.4.3 boundary
+## Historical v0.4.3 calibration boundary
 
-The current frozen status is deliberately narrower than a calibration PASS:
+This frozen historical status is deliberately narrower than a calibration PASS and does not define the current V2 contract identities:
 
 | Boundary | Status |
 | --- | --- |
@@ -247,7 +260,7 @@ The current frozen status is deliberately narrower than a calibration PASS:
 
 The capability probe established that the current collaboration/Codex execution environment can read repository-side Run-01 evidence, so it cannot truthfully provide package-only reviewer isolation. No semantic defect or rubric defect is inferred from that environment limitation.
 
-## Future execution boundary
+## Historical calibration execution boundary
 
 The next valid real calibration run starts only after an isolated reviewer runner proves that each fresh reviewer context can read its assigned package and envelope while the repository, Run-01 evidence, golden answers, seed oracle, prior outputs, and sibling packages are unavailable.
 

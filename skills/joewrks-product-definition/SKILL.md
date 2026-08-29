@@ -5,46 +5,66 @@ description: Use when a product, feature, website, app, workflow, or redesign ne
 
 # JOEWRKS Product Definition
 
-Close the product definition before implementation. Persist authority in `product-definition/<project-slug>/state.json`; conversation history and generated Markdown are never authoritative. Create state from `templates/state.example.json`, conform it to `schemas/state.schema.json`, and read [state-contract.md](references/state-contract.md).
+Close the product definition before implementation. Persist authority in `product-definition/<project-slug>/state.json`; conversation history and generated Markdown are never authoritative.
+
+Installed routing status:
+
+- `PRODUCT_DEFINITION_STATE_V2_DEFAULT`
+- `LEGACY_0_1_2_1_COMPATIBILITY_PRESERVED`
+- `DOWNSTREAM_V2_INSTALLED_ROUTING`
+- `SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED`
+
+Read [workflow-v0.2.0.md](references/workflow-v0.2.0.md) before running the V2 lifecycle.
+
+## State-contract dispatch
+
+- **New project:** create `state.json` from `templates/state-v0.2.0.example.json`, validate it through `scripts/validate_state.py` against the V2 dispatcher and `schemas/state-v0.2.0.schema.json`, and continue under [state-contract-v0.2.0.md](references/state-contract-v0.2.0.md).
+- **Existing `0.2.0` state:** resume the V2 workflow at the current canonical state. Do not replace it with a fresh template.
+- **Existing `0.1.2.1` state:** validate it with the frozen legacy dispatcher, `schemas/state.schema.json`, `templates/state.example.json`, and [state-contract.md](references/state-contract.md). Preserve it as legacy; never silently migrate. Run `scripts/migrate_state.py --apply` only when the user explicitly asks to adopt V2.
 
 ## Non-negotiable rules
 
 - Do not invent a material product decision. Register it as an unknown; close it only from evidence, an explicit user answer, or an explicitly accepted recommendation.
-- Inspect available evidence before asking. Read [interrogation-engine.md](references/interrogation-engine.md) for discovery and questioning.
+- Inspect available evidence before asking. V2 uses first-class evidence, surface, contradiction, unknown, Materiality, decision-authority, and Grill Pack records.
 - Keep stable IDs forever. Never renumber or reuse an ID.
-- On any material state change, increment `definition_revision`, clear `approval`, then follow [artifact-dependency-graph.md](references/artifact-dependency-graph.md) and mark every affected downstream object `STALE` before recompiling it.
-- Do not claim completion until both validators pass and the user explicitly approves closure. Read [closure-gate.md](references/closure-gate.md).
-- If implementation exposes ambiguity, re-enter this workflow; do not decide inside implementation.
+- On any material semantic change, increment `definition_revision`, set approval to `UNAPPROVED`, and stale only affected authority and downstream dependencies before recompiling.
+- Treat migration gaps as uncertainty, never as Product Definition authority. Migration cannot promote legacy Closure or approval to V2 Semantic Closure.
+- Do not claim Semantic Closure until V2 state validation, closure evaluation, the deterministic Approval Manifest, and exact user approval all bind the current definition.
+- `joewrks.semantic-review/2.0` may record review results but remains reliability `NOT_MEASURED`; review never creates product authority.
+- If implementation exposes a material ambiguity or `SEMANTIC_AUTHORITY_GAP`, re-enter DISCOVER/CLOSE for the affected scope; do not decide inside implementation.
 
-## Workflow
+## V2 workflow
 
-1. Determine or create the project slug and artifact directory. If resuming, read `state.json` first, then reconcile Markdown projections.
-2. Discover repository, documentation, tests, APIs, schemas, designs, prior decisions, current behavior, and relevant official constraints.
-3. Register facts, contradictions, and unknowns using [unknown-taxonomy.md](references/unknown-taxonomy.md) and [requirement-taxonomy.md](references/requirement-taxonomy.md). Before the first question, sweep the applicable coverage areas and create one unknown record per independently answerable material decision; never hide several policies inside one umbrella unknown. This is state breadth, not permission to question-bomb the user.
-4. Rank open material decisions and ask the highest-fan-out question. Record each answer and source immediately; then propagate and compile affected artifacts.
-5. Compile product requirements, flows, screens, states, rules, acceptance criteria, and implementation mappings using the templates. For UX work, read [product-coverage-matrix.md](references/product-coverage-matrix.md), [ux-state-taxonomy.md](references/ux-state-taxonomy.md), and [failure-recovery-taxonomy.md](references/failure-recovery-taxonomy.md).
-6. Repeat discovery after every answer until no new material unknown appears.
-7. If Figma is available, use stable screen IDs for editable frames. Otherwise follow [figma-make-handoff.md](references/figma-make-handoff.md) and mark visualization unverified.
-8. Resolve the absolute directory containing this loaded `SKILL.md`; do not resolve scripts from the consumer project's working directory. Run `python <skill-directory>/scripts/validate_state.py <state.json>` and `python <skill-directory>/scripts/validate_closure.py <state.json>`. Resolve reported failures, present the exact current revision for explicit approval, record `approval.approved_revision`, and rerun both validators.
+1. **DISCOVER:** inspect repository evidence and intended-product sources; disposition surfaces and contradictions without treating observed implementation as intent.
+2. **CLOSE:** resolve evidence-answerable gaps first, then ask one highest-leverage material question at a time. Record truthful Materiality and decision authority.
+3. **FREEZE:** bind Core, specialist Grill, and UX coverage to exact current authority; build the deterministic Approval Manifest.
+4. **APPROVE:** show the exact current manifest and wait for explicit user approval. Do not manufacture approval or timestamps.
+5. **HANDOFF:** after validated Semantic Closure, compile `joewrks.action-conformance/2.0` using `scripts/compile_downstream_v2.py`.
+6. **VERIFY:** audit contract dependencies with `scripts/audit_downstream_v2.py`; build `joewrks.semantic-review/2.0` packages with `scripts/build_semantic_review_v2.py` only when legitimate `REVIEW_REQUIRED` obligations exist.
+
+Resolve the absolute directory containing this loaded `SKILL.md`; never resolve scripts from the consumer project's working directory and never require the caller to persist `PYTHONPATH`.
 
 ## Quick reference
 
 | Situation | Required action |
 |---|---|
-| Evidence answers a question | Record fact, source, and affected IDs |
-| Human judgment is required | Create `UNK`, ask with options and recommendation |
-| Recommendation accepted | Record `ASSUMED_ACCEPTED`, never `ANSWERED` |
-| Material state changes | Increment revision, clear approval, mark dependents `STALE` |
-| Coverage item does not apply | Record `N/A` with rationale; never leave blank |
+| Evidence answers a question | Record evidence, resolution provenance, and affected IDs |
+| Human judgment is required | Create a truthful material `UNK`; ask with options and a recommendation when appropriate |
+| Recommendation accepted | Record `USER_ACCEPTED_RECOMMENDATION` |
+| Material semantic state changes | Increment revision, set approval `UNAPPROVED`, and stale affected dependencies |
+| Coverage item does not apply | Record `N/A` with rationale and exact basis binding |
 | Figma unavailable | Produce Markdown/Mermaid handoff and `NOT VERIFIED` |
-| Material ambiguity during build | Re-enter product definition and block affected work |
+| Material ambiguity during build | Re-enter DISCOVER/CLOSE and block only affected work |
+| Legacy `0.1.2.1` project | Validate frozen legacy state; migrate only on explicit V2 adoption request |
 
 ## Common mistakes
 
 - Asking for facts already available in code or docs.
 - Treating a Markdown projection or chat memory as newer than `state.json`.
-- Generating a final PRD once instead of recompiling after decisions.
-- Treating a workaround, deferred blocker, attractive wireframe, or validator availability as closure.
+- Treating observed implementation as intended product meaning.
+- Turning legacy `COVERED`, approval, or a migration gap into V2 authority.
+- Sending an upstream authority gap to Semantic Review instead of reopening Product Definition.
+- Treating a workaround, deferred blocker, attractive wireframe, or validator availability as Semantic Closure.
 - Allowing Figma Make or an implementation agent to add fields, roles, routes, rules, or branches.
 
 Use the templates in `templates/` for projections. Preserve additional project-specific fields when updating state.
