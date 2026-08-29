@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "joewrks.handoff-definition/2.0",
+  "type": "object",
+  "required": ["definition_schema_version", "product_slug", "actions", "lifecycles"],
+  "additionalProperties": false,
+  "properties": {
+    "definition_schema_version": {"const": "joewrks.handoff-definition/2.0"},
+    "product_slug": {"type": "string", "minLength": 1},
+    "actions": {"type": "array", "items": {"$ref": "#/$defs/action"}},
+    "lifecycles": {"type": "array", "items": {"$ref": "#/$defs/lifecycle"}}
+  },
+  "$defs": {
+    "scopeRefs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^(REQ|SURF|SCR)-[^\\s]+$"}},
+    "locator": {"type": "object", "required": ["screen_ref", "action_key"], "additionalProperties": false, "properties": {"screen_ref": {"type": "string", "pattern": "^SCR-[^\\s]+$"}, "action_key": {"type": "string", "minLength": 1}}},
+    "fieldSpec": {
+      "oneOf": [
+        {"type": "object", "required": ["kind", "source_seed_ref"], "additionalProperties": false, "properties": {"kind": {"const": "DIRECT_AUTHORITY"}, "source_seed_ref": {"type": "string", "minLength": 1}}},
+        {"type": "object", "required": ["kind", "operator", "source_seed_ref", "pointer"], "additionalProperties": false, "properties": {"kind": {"const": "MACHINE_DERIVED"}, "operator": {"const": "extract"}, "source_seed_ref": {"type": "string", "minLength": 1}, "pointer": {"type": "string", "minLength": 1, "pattern": "^/"}}},
+        {"type": "object", "required": ["kind", "operator", "source_seed_ref", "keys"], "additionalProperties": false, "properties": {"kind": {"const": "MACHINE_DERIVED"}, "operator": {"const": "select"}, "source_seed_ref": {"type": "string", "minLength": 1}, "keys": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}}},
+        {"type": "object", "required": ["kind", "source_seed_refs", "proposed_value", "why_structuring_is_insufficient", "interpretation_scope"], "additionalProperties": false, "properties": {"kind": {"const": "REVIEW_REQUIRED"}, "source_seed_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}, "proposed_value": {}, "why_structuring_is_insufficient": {"type": "string", "pattern": ".*\\S.*"}, "interpretation_scope": {"type": "string", "pattern": ".*\\S.*"}}},
+        {"type": "object", "required": ["kind", "gap_type", "description", "required_authority_class", "evidence_refs"], "additionalProperties": false, "properties": {"kind": {"const": "UNRESOLVED"}, "gap_type": {"enum": ["AMBIGUITY_FOUND", "CONTRACT_CONFLICT", "OUT_OF_SCOPE_REQUEST"]}, "description": {"type": "string", "pattern": ".*\\S.*"}, "required_authority_class": {"enum": ["FACTUAL", "INTENT", "CONSTRAINT", "BEHAVIORAL", "PREFERENCE"]}, "evidence_refs": {"type": "array"}}}
+      ]
+    },
+    "actionFields": {
+      "type": "object", "additionalProperties": false,
+      "required": ["actor", "authentication", "relationship_predicate", "object_binding", "concurrency", "preconditions", "allowed_current_states", "forbidden_states", "input_invariants", "command", "expected_domain_mutation", "forbidden_mutations", "default_result", "result_expectations", "version_result", "history_result", "business_side_effects", "delivery_effects", "idempotency", "rejection", "recovery", "visible_success", "visible_error", "superseded_rules", "test_obligations", "trace"],
+      "properties": {"actor": {"$ref": "#/$defs/fieldSpec"}, "authentication": {"$ref": "#/$defs/fieldSpec"}, "relationship_predicate": {"$ref": "#/$defs/fieldSpec"}, "object_binding": {"$ref": "#/$defs/fieldSpec"}, "concurrency": {"$ref": "#/$defs/fieldSpec"}, "preconditions": {"$ref": "#/$defs/fieldSpec"}, "allowed_current_states": {"$ref": "#/$defs/fieldSpec"}, "forbidden_states": {"$ref": "#/$defs/fieldSpec"}, "input_invariants": {"$ref": "#/$defs/fieldSpec"}, "command": {"$ref": "#/$defs/fieldSpec"}, "expected_domain_mutation": {"$ref": "#/$defs/fieldSpec"}, "forbidden_mutations": {"$ref": "#/$defs/fieldSpec"}, "default_result": {"$ref": "#/$defs/fieldSpec"}, "result_expectations": {"$ref": "#/$defs/fieldSpec"}, "version_result": {"$ref": "#/$defs/fieldSpec"}, "history_result": {"$ref": "#/$defs/fieldSpec"}, "business_side_effects": {"$ref": "#/$defs/fieldSpec"}, "delivery_effects": {"$ref": "#/$defs/fieldSpec"}, "idempotency": {"$ref": "#/$defs/fieldSpec"}, "rejection": {"$ref": "#/$defs/fieldSpec"}, "recovery": {"$ref": "#/$defs/fieldSpec"}, "visible_success": {"$ref": "#/$defs/fieldSpec"}, "visible_error": {"$ref": "#/$defs/fieldSpec"}, "superseded_rules": {"$ref": "#/$defs/fieldSpec"}, "test_obligations": {"$ref": "#/$defs/fieldSpec"}, "trace": {"$ref": "#/$defs/fieldSpec"}}
+    },
+    "lifecycleFields": {
+      "type": "object", "additionalProperties": false,
+      "required": ["current_states", "allowed_transitions", "forbidden_transitions", "boundary_conditions", "reversibility", "reversal_window", "object_outcome", "required_reason", "required_confirmation", "required_evidence", "authority", "history_preservation"],
+      "properties": {"current_states": {"$ref": "#/$defs/fieldSpec"}, "allowed_transitions": {"$ref": "#/$defs/fieldSpec"}, "forbidden_transitions": {"$ref": "#/$defs/fieldSpec"}, "boundary_conditions": {"$ref": "#/$defs/fieldSpec"}, "reversibility": {"$ref": "#/$defs/fieldSpec"}, "reversal_window": {"$ref": "#/$defs/fieldSpec"}, "object_outcome": {"$ref": "#/$defs/fieldSpec"}, "required_reason": {"$ref": "#/$defs/fieldSpec"}, "required_confirmation": {"$ref": "#/$defs/fieldSpec"}, "required_evidence": {"$ref": "#/$defs/fieldSpec"}, "authority": {"$ref": "#/$defs/fieldSpec"}, "history_preservation": {"$ref": "#/$defs/fieldSpec"}}
+    },
+    "action": {"type": "object", "required": ["action_id", "authority_scope_refs", "ux_action_locator", "fields"], "additionalProperties": false, "properties": {"action_id": {"type": "string", "minLength": 1}, "authority_scope_refs": {"$ref": "#/$defs/scopeRefs"}, "ux_action_locator": {"oneOf": [{"$ref": "#/$defs/locator"}, {"type": "null"}]}, "fields": {"$ref": "#/$defs/actionFields"}}},
+    "lifecycle": {"type": "object", "required": ["lifecycle_id", "authority_scope_refs", "fields"], "additionalProperties": false, "properties": {"lifecycle_id": {"type": "string", "minLength": 1}, "authority_scope_refs": {"$ref": "#/$defs/scopeRefs"}, "fields": {"$ref": "#/$defs/lifecycleFields"}}}
+  }
+}
