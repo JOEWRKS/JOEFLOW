@@ -1169,7 +1169,10 @@ def _approval_control_matches(
 
 
 def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:
-    errors = validate_state_v2(state)
+    try:
+        errors = validate_state_v2(state)
+    except BindingError:
+        _, errors = _collect_ids(state)
     metrics: dict[str, int] = {}
     projection_unsafe = False
 

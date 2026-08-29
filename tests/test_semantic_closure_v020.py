@@ -20,7 +20,7 @@ from approval_v2 import (  # noqa: E402
 )
 from authority_binding_v2 import sha256_json  # noqa: E402
 from state_validation_v2 import evaluate_closure_v2, validate_state_v2  # noqa: E402
-from tests.v020_support import materiality  # noqa: E402
+from tests.v020_support import materiality, unknown_record  # noqa: E402
 
 
 CORE_AXES = (
@@ -407,6 +407,23 @@ def approve_current_state(state):
     return state
 
 
+def canonical_open_core_state():
+    state = literal_ready_state()
+    state["objects"]["unknowns"].append(unknown_record(
+        "UNK-002",
+        classification="NON_MATERIAL",
+        decision_authority="AGENT_AUTONOMOUS",
+    ))
+    state["coverage"][0]["cells"]["actor"] = {
+        "status": "OPEN",
+        "authority_bindings": [],
+        "unknown_refs": ["UNK-002"],
+        "basis_bindings": [],
+        "rationale": None,
+    }
+    return state
+
+
 def error_codes(result):
     return {error["code"] for error in result["errors"]}
 
@@ -695,6 +712,50 @@ class SemanticClosureV020Test(unittest.TestCase):
             "invalid_authority_binding_shape",
             {error["code"] for error in payload["errors"]},
         )
+
+    def test_duplicate_id_with_canonical_open_core_cell_is_contained_by_evaluator(self):
+        # Break caught: OPEN-cell validation rebuilding a duplicate canonical index before evaluator containment.
+        state = canonical_open_core_state()
+        state["objects"]["goals"].append(copy.deepcopy(state["objects"]["goals"][0]))
+
+        result = evaluate_closure_v2(state)
+
+        self.assertFalse(result["closed"])
+        self.assertIsNone(result["definition_digest"])
+        self.assertIn("duplicate_id", error_codes(result))
+        self.assertIn("unsafe_semantic_projection", error_codes(result))
+        self.assertIn("deferred_unknowns", result["metrics"])
+
+    def test_duplicate_id_with_canonical_open_core_cell_cli_returns_json(self):
+        # Break caught: the official CLI emitting a traceback for duplicate authority plus canonical OPEN proof.
+        state = canonical_open_core_state()
+        state["objects"]["goals"].append(copy.deepcopy(state["objects"]["goals"][0]))
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            path.write_text(json.dumps(state), encoding="utf-8")
+            completed = subprocess.run(
+                [sys.executable, str(SCRIPTS / "validate_closure.py"), str(path)],
+                capture_output=True, text=True, check=False,
+            )
+
+        self.assertEqual(completed.returncode, 1)
+        self.assertEqual(completed.stderr, "")
+        payload = json.loads(completed.stdout)
+        self.assertEqual(payload["validator"], "closure")
+        self.assertFalse(payload["closed"])
+        self.assertIsNone(payload["definition_digest"])
+        self.assertIn("duplicate_id", {error["code"] for error in payload["errors"]})
+
+    def test_canonical_open_core_cell_without_duplicates_needs_no_containment(self):
+        # Break caught: containment falsely classifying a normal OPEN Core cell as unsafe or duplicate.
+        result = evaluate_closure_v2(canonical_open_core_state())
+
+        self.assertFalse(result["closed"])
+        self.assertIsNotNone(result["definition_digest"])
+        self.assertNotIn("duplicate_id", error_codes(result))
+        self.assertNotIn("unsafe_semantic_projection", error_codes(result))
+        self.assertEqual(result["metrics"]["open_coverage_without_unknown"], 0)
 
 
 if __name__ == "__main__":
