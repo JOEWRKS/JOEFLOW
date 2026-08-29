@@ -1,6 +1,6 @@
 """Assurance-only semantic review boundary for action-conformance/2.0."""
 
-from .build_package import build_semantic_review_package
+from .package import build_semantic_review_package
 from .output import (
     review_results_to_reentry_events,
     semantic_assurance_result,

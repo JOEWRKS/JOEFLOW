@@ -1,16 +1,14 @@
-"""Public API and read-only CLI for semantic-review/2.0 package construction."""
+"""Read-only command line entry point for dependency-scoped contract audit."""
 
 import json
 import sys
 from pathlib import Path
 
-from ..authority import canonical_json
-from .package import build_semantic_review_package
+from .authority import canonical_json
+from .reentry import audit_contract_against_state
 
 
-__all__ = ["build_semantic_review_package"]
-
-USAGE = "python -m downstream_v2.semantic_review.build_package CONTRACT_JSON"
+USAGE = "python -m downstream_v2.audit CONTRACT_JSON STATE_JSON"
 
 
 class _CliInputError(ValueError):
@@ -49,21 +47,22 @@ def _error(code: str, detail: object) -> dict[str, object]:
 
 def main(arguments: list[str] | None = None) -> int:
     arguments = sys.argv[1:] if arguments is None else arguments
-    if len(arguments) != 1:
+    if len(arguments) != 2:
         _emit(_error("USAGE_ERROR", {"usage": USAGE}))
         return 2
     try:
         contract = _read_json(arguments[0])
+        state = _read_json(arguments[1])
     except _CliInputError as error:
         _emit(_error(error.code, error.detail))
         return 2
     try:
-        package = build_semantic_review_package(contract)
+        result = audit_contract_against_state(contract, state)
     except (KeyError, TypeError, ValueError, AttributeError) as error:
-        _emit(_error("INVALID_ACTION_CONTRACT_V2", str(error)))
+        _emit(_error("INVALID_AUDIT_INPUT", str(error)))
         return 1
-    _emit({"review_required": package is not None, "package": package})
-    return 0
+    _emit(result)
+    return 0 if result.get("status") == "CONFORMANT" else 1
 
 
 if __name__ == "__main__":

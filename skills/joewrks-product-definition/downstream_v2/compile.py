@@ -1,16 +1,14 @@
-"""Public API and read-only CLI for semantic-review/2.0 package construction."""
+"""Read-only command line entry point for downstream V2 compilation."""
 
 import json
 import sys
 from pathlib import Path
 
-from ..authority import canonical_json
-from .package import build_semantic_review_package
+from .authority import DownstreamV2Error, canonical_json
+from .compiler import compile_handoff_definition
 
 
-__all__ = ["build_semantic_review_package"]
-
-USAGE = "python -m downstream_v2.semantic_review.build_package CONTRACT_JSON"
+USAGE = "python -m downstream_v2.compile STATE_JSON HANDOFF_DEFINITION_JSON"
 
 
 class _CliInputError(ValueError):
@@ -49,21 +47,25 @@ def _error(code: str, detail: object) -> dict[str, object]:
 
 def main(arguments: list[str] | None = None) -> int:
     arguments = sys.argv[1:] if arguments is None else arguments
-    if len(arguments) != 1:
+    if len(arguments) != 2:
         _emit(_error("USAGE_ERROR", {"usage": USAGE}))
         return 2
     try:
-        contract = _read_json(arguments[0])
+        state = _read_json(arguments[0])
+        definition = _read_json(arguments[1])
     except _CliInputError as error:
         _emit(_error(error.code, error.detail))
         return 2
     try:
-        package = build_semantic_review_package(contract)
-    except (KeyError, TypeError, ValueError, AttributeError) as error:
-        _emit(_error("INVALID_ACTION_CONTRACT_V2", str(error)))
+        result = compile_handoff_definition(state, definition)
+    except DownstreamV2Error as error:
+        _emit(_error(error.code, error.detail))
         return 1
-    _emit({"review_required": package is not None, "package": package})
-    return 0
+    except (KeyError, TypeError, ValueError, AttributeError) as error:
+        _emit(_error("INVALID_SEMANTIC_INPUT", str(error)))
+        return 1
+    _emit(result)
+    return 0 if result.get("contract") is not None else 1
 
 
 if __name__ == "__main__":
