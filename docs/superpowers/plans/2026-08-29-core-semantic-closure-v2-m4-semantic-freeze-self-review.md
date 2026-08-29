@@ -197,6 +197,90 @@ CLOSED → approval.status = APPROVED
 
 The review-manifest CLI requires READY_FOR_REVIEW plus zero non-approval readiness blockers. `validate_closure` requires CLOSED plus exact approval commitments.
 
+## 9. Previously approved stable records may not disappear
+
+The V2 lifecycle requires stable IDs and explicit `SUPERSEDED` / `RETIRED` history. Once a stable record has participated in an approval commitment, silently deleting it from a later canonical state would bypass that lifecycle.
+
+For every stable ID present in the latest previous approval commitment's `record_hashes`, require that the ID still resolves in the current canonical state, regardless of whether it remains active or currently consumed.
+
+Emit/block:
+
+```text
+approved_record_missing_from_state
+```
+
+when a previously approved record disappears entirely.
+
+This check applies to previously committed Product Definition records and previously consumed EVD records. A previously consumed EVD may stop contributing to the **current semantic digest**, but the `EVD-*` record itself remains in canonical state and transitions through its explicit evidence lifecycle when appropriate.
+
+Do not treat disappearance as implicit retirement. The record must remain and carry explicit `SUPERSEDED`, `RETIRED`, or evidence lifecycle state as defined by its type.
+
+Add this metric to approval/history blockers and tests proving that:
+
+- changing CURRENT → RETIRED with valid provenance is representable;
+- deleting the same ID is blocked;
+- a formerly consumed EVD that becomes unconsumed may remain in state without invalidating approval solely because it is no longer consumed;
+- deleting that previously committed EVD is blocked.
+
+## 10. Positive authority bindings must bind semantic content, not empty values
+
+A correct pointer and hash are not sufficient when the resolved value carries no positive semantic content. Otherwise a binding such as:
+
+```text
+DEC-001 /accepted_recommendation → null
+```
+
+could mechanically satisfy a `COVERED` or `ADDRESSED` cell.
+
+For positive semantic proof, after pointer/type/root/hash verification, require the resolved value to be **semantically non-empty**:
+
+```text
+null                 → invalid
+empty / whitespace string → invalid
+empty list           → invalid
+empty object         → invalid
+boolean false        → valid when the permitted semantic field itself is boolean
+number 0             → valid
+non-empty scalar/container → valid
+```
+
+Emit `empty_authority_binding_value` and count the affected cell under `invalid_authority_binding`.
+
+This rule applies to positive `COVERED` / `ADDRESSED` bindings. N/A basis bindings use their separate basis semantics and are not forced through this positive-content rule.
+
+Add explicit tests for null/empty string/list/object rejection and meaningful `false`/`0` preservation.
+
+## 11. Approval-manifest closure summary is semantic-readiness only
+
+The pure Approval Manifest must remain identical across the control-state transition from `READY_FOR_REVIEW + UNAPPROVED` to `CLOSED + APPROVED`.
+
+Therefore `semantic_closure_summary` inside the manifest contains only **non-approval semantic-readiness metrics**. It must not contain:
+
+```text
+missing_user_approval
+stale_approval
+missing_or_stale_approval_manifest
+approval_history_gaps
+project.definition_status-derived blockers
+```
+
+Those are validation/control-state results, not product meaning being approved.
+
+The manifest may include a deterministic summary such as:
+
+```text
+semantic_readiness_blockers = 0
+open_material_unknowns = 0
+unresolved_material_contradictions = 0
+coverage_binding_gaps = 0
+ux_binding_gaps = 0
+grill_binding_gaps = 0
+```
+
+provided every field is computed from pure semantic readiness and is invariant across the READY→CLOSED approval transition.
+
+Add a regression that computes the manifest before approval and after installing the exact approval/history commitment and changing only `definition_status` to `CLOSED`; manifest body and manifest digest must be byte-identical.
+
 ## Self-review result
 
-With these clarifications, no remaining known blocking contradiction was found in the M4 decomposition. Execution must read the frozen design, M3 audit, M4 plan and this addendum before coding.
+With these clarifications, no remaining known blocking contradiction or lifecycle escape hatch was found in the M4 decomposition. Execution must read the frozen design, M3 audit, M4 plan and this addendum before coding.
