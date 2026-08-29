@@ -32,6 +32,11 @@ def _read_json(path_text: str) -> object:
         raise _CliInputError("READ_ERROR", {"path": path_text, "message": str(error)}) from error
     try:
         return json.loads(text, parse_constant=_reject_constant)
+    except RecursionError as error:
+        raise _CliInputError(
+            "JSON_PARSE_ERROR",
+            {"path": path_text, "message": "maximum JSON nesting depth exceeded"},
+        ) from error
     except (json.JSONDecodeError, ValueError) as error:
         detail = {"path": path_text, "message": str(error)}
         if isinstance(error, json.JSONDecodeError):
@@ -59,6 +64,14 @@ def main(arguments: list[str] | None = None) -> int:
         return 2
     try:
         package = build_semantic_review_package(contract)
+    except RecursionError:
+        _emit(
+            _error(
+                "INVALID_ACTION_CONTRACT_V2",
+                "maximum semantic input nesting depth exceeded",
+            )
+        )
+        return 1
     except (KeyError, TypeError, ValueError, AttributeError) as error:
         _emit(_error("INVALID_ACTION_CONTRACT_V2", str(error)))
         return 1

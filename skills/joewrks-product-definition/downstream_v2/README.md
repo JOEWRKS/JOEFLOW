@@ -11,7 +11,7 @@ $env:PYTHONPATH = "<skill-root>;<skill-root>/scripts"
 On platforms that use `:` as the path separator:
 
 ```sh
-PYTHONPATH="<skill-root>:<skill-root>/scripts"
+export PYTHONPATH="<skill-root>:<skill-root>/scripts"
 ```
 
 Here, `<skill-root>` is `skills/joewrks-product-definition`.
