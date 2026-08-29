@@ -1,9 +1,11 @@
 import json
+import io
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -17,6 +19,7 @@ for path in (PACKAGE_ROOT, SCRIPTS):
 from downstream_v2.compiler import compile_handoff_definition  # noqa: E402
 from tests.downstream_v2_support import closed_v2_state  # noqa: E402
 from tests.test_downstream_v2_compiler import complete_definition  # noqa: E402
+import verify_runtime_v2  # noqa: E402
 
 
 def canonical_bytes(value):
@@ -140,11 +143,134 @@ class InstalledV2WrapperTest(unittest.TestCase):
         self.assertEqual(payload["package"]["reliability_status"], "NOT_MEASURED")
         self.assertEqual(contract_path.read_bytes(), before)
 
+    def test_v2_runtime_wrapper_works_outside_repo_cwd_without_pythonpath(self):
+        contract_path = self.write_json("runtime-contract.json", self.contract)
+        state_path = self.write_json("runtime-state.json", self.state)
+        evidence_path = self.directory / "runtime-evidence.jsonl"
+        evidence_path.write_bytes(b"")
+        before = {
+            path: path.read_bytes()
+            for path in (contract_path, state_path, evidence_path)
+        }
+
+        payload = self.assert_json_result(
+            self.run_wrapper(
+                "verify_runtime_v2.py",
+                contract_path,
+                state_path,
+                evidence_path,
+            ),
+            1,
+        )
+
+        self.assertEqual(
+            payload["report_schema_version"],
+            "joewrks.runtime-conformance-report/1.0",
+        )
+        self.assertEqual(payload["verification_scope"], "FULL_CONTRACT")
+        self.assertEqual(payload["contract_dependency_status"], "CONFORMANT")
+        self.assertEqual(payload["coverage_status"], "INCOMPLETE")
+        self.assertEqual(
+            {path: path.read_bytes() for path in before},
+            before,
+        )
+
+    def test_v2_runtime_wrapper_contains_deep_json_in_every_input_stream(self):
+        contract_path = self.write_json("deep-runtime-contract.json", self.contract)
+        state_path = self.write_json("deep-runtime-state.json", self.state)
+        evidence_path = self.directory / "deep-runtime-evidence.jsonl"
+        evidence_path.write_bytes(b"")
+        deep_json = b'{"x":' * 600 + b"null" + b"}" * 600
+        original = {
+            contract_path: contract_path.read_bytes(),
+            state_path: state_path.read_bytes(),
+            evidence_path: evidence_path.read_bytes(),
+        }
+        cases = (
+            ("contract", contract_path),
+            ("state", state_path),
+            ("jsonl", evidence_path),
+        )
+        for stream_name, deep_path in cases:
+            with self.subTest(stream=stream_name):
+                for path, value in original.items():
+                    path.write_bytes(value)
+                deep_path.write_bytes(deep_json + (b"\n" if stream_name == "jsonl" else b""))
+
+                payload = self.assert_json_result(
+                    self.run_wrapper(
+                        "verify_runtime_v2.py",
+                        contract_path,
+                        state_path,
+                        evidence_path,
+                    ),
+                    2,
+                )
+
+                self.assertEqual(payload["status"], "ERROR")
+                self.assertEqual(payload["error"]["code"], "JSON_PARSE_ERROR")
+
+    def test_v2_runtime_cli_validates_its_final_report_before_exit(self):
+        contract_path = self.write_json("validated-runtime-contract.json", self.contract)
+        state_path = self.write_json("validated-runtime-state.json", self.state)
+        evidence_path = self.directory / "validated-runtime-evidence.jsonl"
+        evidence_path.write_bytes(b"")
+        real_builder = verify_runtime_v2.build_runtime_conformance_report
+
+        def corrupted_builder(*arguments):
+            report = real_builder(*arguments)
+            report["implementation_status"] = "IMPLEMENTATION_CONFORMANT"
+            return report
+
+        captured = io.BytesIO()
+        stdout = io.TextIOWrapper(captured, encoding="utf-8")
+        with mock.patch.object(
+            verify_runtime_v2,
+            "build_runtime_conformance_report",
+            side_effect=corrupted_builder,
+        ), mock.patch.object(verify_runtime_v2.sys, "stdout", stdout):
+            exit_code = verify_runtime_v2.main([
+                str(contract_path),
+                str(state_path),
+                str(evidence_path),
+            ])
+            stdout.flush()
+
+        payload = json.loads(captured.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(captured.getvalue(), canonical_bytes(payload) + b"\n")
+        self.assertEqual(payload["status"], "ERROR")
+        self.assertEqual(payload["error"]["code"], "RUNTIME_REPORT_INVALID")
+
+    def test_v2_runtime_wrapper_binds_contained_failure_to_source_contract(self):
+        contract_path = self.write_json("failure-runtime-contract.json", self.contract)
+        state_path = self.write_json("failure-runtime-state.json", self.state)
+        evidence_path = self.directory / "failure-runtime-evidence.jsonl"
+        evidence_path.write_bytes(b"{}\n")
+
+        payload = self.assert_json_result(
+            self.run_wrapper(
+                "verify_runtime_v2.py",
+                contract_path,
+                state_path,
+                evidence_path,
+            ),
+            1,
+        )
+
+        self.assertEqual(len(payload["action_results"]), 1)
+        failed = payload["action_results"][0]
+        self.assertFalse(failed["conformant"])
+        self.assertEqual(failed["error"]["code"], "RUNTIME_EVIDENCE_PROTOCOL_INVALID")
+        self.assertEqual(failed["source_contract"], payload["source_contract"])
+        self.assertEqual(failed["runtime_evidence"], {})
+
     def test_installed_wrappers_preserve_m5_usage_json_and_exit_contract(self):
         cases = (
             "compile_downstream_v2.py",
             "audit_downstream_v2.py",
             "build_semantic_review_v2.py",
+            "verify_runtime_v2.py",
         )
         for wrapper_name in cases:
             with self.subTest(wrapper_name=wrapper_name):

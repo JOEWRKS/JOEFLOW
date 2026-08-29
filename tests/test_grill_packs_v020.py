@@ -802,9 +802,37 @@ class GrillPacksV020Test(unittest.TestCase):
         self.assertIn("grill_coverage", schema["required"])
         manifest = schema["properties"]["surface_manifest"]
         self.assertEqual(set(manifest["required"]), {"records", "grill_profile"})
-        profile_ref = manifest["properties"]["grill_profile"]["$ref"]
+        profile_variants = manifest["properties"]["grill_profile"]["oneOf"]
+        self.assertEqual(len(profile_variants), 2)
+        profile_ref = profile_variants[0]["$ref"]
+        self.assertEqual(
+            profile_variants[1],
+            {"type": "object", "maxProperties": 0},
+        )
         profile_schema = schema["$defs"][profile_ref.rsplit("/", 1)[-1]]
         self.assertEqual(set(profile_schema["required"]), set(DOMAINS))
+        migration_variants = schema["$defs"]["migration"]["oneOf"]
+        self.assertEqual(
+            migration_variants,
+            [
+                {"$ref": "#/$defs/migration_native"},
+                {"$ref": "#/$defs/migration_migrated"},
+            ],
+        )
+        native_profile_rules = [
+            rule
+            for rule in schema["allOf"]
+            if rule.get("if", {}).get("properties", {}).get("migration", {}).get(
+                "properties", {}
+            ).get("mode") == {"const": "NATIVE"}
+        ]
+        self.assertEqual(len(native_profile_rules), 1)
+        self.assertEqual(
+            native_profile_rules[0]["then"]["properties"]["surface_manifest"][
+                "properties"
+            ]["grill_profile"],
+            {"$ref": profile_ref},
+        )
         self.assertEqual(
             schema["properties"]["grill_coverage"]["items"],
             {"$ref": "#/$defs/grill_coverage_row"},

@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://joewrks.example/schemas/runtime-conformance-report.schema.json",
+  "title": "JOEWRKS V2 Runtime Conformance Report",
+  "type": "object",
+  "required": [
+    "report_schema_version",
+    "source_contract",
+    "verification_scope",
+    "contract_dependency_status",
+    "runtime_status",
+    "review_completion",
+    "semantic_review_reliability",
+    "implementation_status",
+    "coverage_status",
+    "action_coverage_status",
+    "lifecycle_coverage_status",
+    "lifecycle_applicability",
+    "required_action_test_ids",
+    "observed_action_test_ids",
+    "missing_action_test_ids",
+    "unexpected_action_test_ids",
+    "required_lifecycle_case_ids",
+    "observed_lifecycle_case_ids",
+    "missing_lifecycle_case_ids",
+    "unexpected_lifecycle_case_ids",
+    "action_results",
+    "lifecycle_results",
+    "blocking_reentry_events",
+    "contract_execution_errors",
+    "evidence_errors",
+    "deduplicated_evidence_count"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "report_schema_version": {"const": "joewrks.runtime-conformance-report/1.0"},
+    "source_contract": {"$ref": "#/$defs/sourceContract"},
+    "verification_scope": {"enum": ["FULL_CONTRACT", "PARTIAL_PROBE"]},
+    "contract_dependency_status": {"enum": ["CONFORMANT", "REENTRY_REQUIRED", "DEFINITION_NOT_READY"]},
+    "runtime_status": {"enum": ["NOT_RUN", "CONFORMANT", "NON_CONFORMANT"]},
+    "review_completion": {"enum": ["NOT_REQUIRED", "PENDING", "REVIEW_OUTPUT_RECORDED", "REENTRY_REQUIRED"]},
+    "semantic_review_reliability": {"enum": ["NOT_REQUIRED", "NOT_MEASURED"]},
+    "implementation_status": {"enum": ["IMPLEMENTATION_CONFORMANT", "IMPLEMENTATION_NOT_CONFORMANT"]},
+    "coverage_status": {"enum": ["COMPLETE", "INCOMPLETE"]},
+    "action_coverage_status": {"enum": ["COMPLETE", "INCOMPLETE"]},
+    "lifecycle_coverage_status": {"enum": ["COMPLETE", "INCOMPLETE"]},
+    "lifecycle_applicability": {"enum": ["APPLICABLE", "NOT_APPLICABLE"]},
+    "required_action_test_ids": {"$ref": "#/$defs/actionInventory"},
+    "observed_action_test_ids": {"$ref": "#/$defs/actionInventory"},
+    "missing_action_test_ids": {"$ref": "#/$defs/actionInventory"},
+    "unexpected_action_test_ids": {"$ref": "#/$defs/actionInventory"},
+    "required_lifecycle_case_ids": {"$ref": "#/$defs/lifecycleInventory"},
+    "observed_lifecycle_case_ids": {"$ref": "#/$defs/lifecycleInventory"},
+    "missing_lifecycle_case_ids": {"$ref": "#/$defs/lifecycleInventory"},
+    "unexpected_lifecycle_case_ids": {"$ref": "#/$defs/lifecycleInventory"},
+    "action_results": {"type": "array", "items": {"$ref": "#/$defs/actionResult"}},
+    "lifecycle_results": {"type": "array", "items": {"$ref": "#/$defs/lifecycleResult"}},
+    "blocking_reentry_events": {"type": "array", "items": {"type": "object"}},
+    "contract_execution_errors": {"$ref": "#/$defs/errors"},
+    "evidence_errors": {"$ref": "#/$defs/errors"},
+    "deduplicated_evidence_count": {"type": "integer", "minimum": 0}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nonblank": {"type": "string", "pattern": ".*\\S.*"},
+    "sourceContract": {
+      "type": "object",
+      "required": ["contract_schema_version", "semantic_contract_hash", "product_slug", "approved_revision", "approved_definition_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "contract_schema_version": {"const": "joewrks.action-conformance/2.0"},
+        "semantic_contract_hash": {"$ref": "#/$defs/hash"},
+        "product_slug": {"$ref": "#/$defs/nonblank"},
+        "approved_revision": {"type": "integer", "minimum": 1},
+        "approved_definition_digest": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "actionIdentity": {
+      "type": "object",
+      "required": ["action_id", "test_id"],
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {"$ref": "#/$defs/nonblank"},
+        "test_id": {"$ref": "#/$defs/nonblank"}
+      }
+    },
+    "actionInventory": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/actionIdentity"}
+    },
+    "lifecycleIdentity": {
+      "type": "object",
+      "required": ["lifecycle_id", "case_id"],
+      "additionalProperties": false,
+      "properties": {
+        "lifecycle_id": {"$ref": "#/$defs/nonblank"},
+        "case_id": {"$ref": "#/$defs/nonblank"}
+      }
+    },
+    "lifecycleInventory": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/lifecycleIdentity"}
+    },
+    "error": {
+      "type": "object",
+      "required": ["code", "detail"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {"$ref": "#/$defs/nonblank"},
+        "detail": {}
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/error"}
+    },
+    "stringList": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/nonblank"}
+    },
+    "invariantFailure": {
+      "type": "object",
+      "required": ["type", "pointer", "observed"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {"enum": ["required", "finite_number", "positive_number", "non_negative_number", "equals"]},
+        "pointer": {"type": "string"},
+        "observed": {}
+      }
+    },
+    "assertionResult": {
+      "type": "object",
+      "required": ["type", "pointer", "passed", "observed", "expected"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {"enum": ["path_present", "path_absent", "path_equals", "collection_item_field_equals"]},
+        "pointer": {"type": "string"},
+        "passed": {"type": "boolean"},
+        "observed": {},
+        "expected": {}
+      }
+    },
+    "componentResult": {
+      "type": "object",
+      "required": ["expectation", "changed", "passed"],
+      "additionalProperties": false,
+      "properties": {
+        "expectation": {"enum": ["CHANGED", "UNCHANGED", "ANY"]},
+        "changed": {"type": "boolean"},
+        "passed": {"type": "boolean"}
+      }
+    },
+    "componentResults": {
+      "type": "object",
+      "required": ["authoritative_state", "revision", "history", "business_side_effects", "delivery_effects"],
+      "additionalProperties": false,
+      "properties": {
+        "authoritative_state": {"$ref": "#/$defs/componentResult"},
+        "revision": {"$ref": "#/$defs/componentResult"},
+        "history": {"$ref": "#/$defs/componentResult"},
+        "business_side_effects": {"$ref": "#/$defs/componentResult"},
+        "delivery_effects": {"$ref": "#/$defs/componentResult"}
+      }
+    },
+    "actionVerifiedResult": {
+      "type": "object",
+      "required": ["source_contract", "action_id", "test_id", "evidence_sha256", "runtime_evidence", "expected_result", "observed_result", "result_matches", "input_invariant_failures", "components", "assertions", "failures", "conformant"],
+      "additionalProperties": false,
+      "properties": {
+        "source_contract": {"$ref": "#/$defs/sourceContract"},
+        "action_id": {"$ref": "#/$defs/nonblank"},
+        "test_id": {"$ref": "#/$defs/nonblank"},
+        "evidence_sha256": {"$ref": "#/$defs/hash"},
+        "runtime_evidence": {"type": "object"},
+        "expected_result": {"enum": ["SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"]},
+        "observed_result": {"enum": ["SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"]},
+        "result_matches": {"type": "boolean"},
+        "input_invariant_failures": {"type": "array", "items": {"$ref": "#/$defs/invariantFailure"}},
+        "components": {"$ref": "#/$defs/componentResults"},
+        "assertions": {"type": "array", "items": {"$ref": "#/$defs/assertionResult"}},
+        "failures": {"$ref": "#/$defs/stringList"},
+        "conformant": {"type": "boolean"}
+      }
+    },
+    "actionErrorResult": {
+      "type": "object",
+      "required": ["source_contract", "action_id", "test_id", "evidence_sha256", "runtime_evidence", "failures", "error", "conformant"],
+      "additionalProperties": false,
+      "properties": {
+        "source_contract": {"$ref": "#/$defs/sourceContract"},
+        "action_id": {"$ref": "#/$defs/nonblank"},
+        "test_id": {"$ref": "#/$defs/nonblank"},
+        "evidence_sha256": {"$ref": "#/$defs/hash"},
+        "runtime_evidence": {},
+        "failures": {"$ref": "#/$defs/stringList"},
+        "error": {"$ref": "#/$defs/error"},
+        "conformant": {"type": "boolean", "const": false}
+      }
+    },
+    "actionResult": {
+      "oneOf": [
+        {"$ref": "#/$defs/actionVerifiedResult"},
+        {"$ref": "#/$defs/actionErrorResult"}
+      ]
+    },
+    "lifecycleVerifiedResult": {
+      "type": "object",
+      "required": ["source_contract", "lifecycle_id", "case_id", "test_id", "evidence_sha256", "runtime_evidence", "expected_allowed", "observed_allowed", "boundary_failures", "failures", "conformant"],
+      "additionalProperties": false,
+      "properties": {
+        "source_contract": {"$ref": "#/$defs/sourceContract"},
+        "lifecycle_id": {"$ref": "#/$defs/nonblank"},
+        "case_id": {"$ref": "#/$defs/nonblank"},
+        "test_id": {"$ref": "#/$defs/nonblank"},
+        "evidence_sha256": {"$ref": "#/$defs/hash"},
+        "runtime_evidence": {"type": "object"},
+        "expected_allowed": {"type": "boolean"},
+        "observed_allowed": {"type": "boolean"},
+        "boundary_failures": {"type": "array", "items": {"$ref": "#/$defs/invariantFailure"}},
+        "failures": {"$ref": "#/$defs/stringList"},
+        "conformant": {"type": "boolean"}
+      }
+    },
+    "lifecycleErrorResult": {
+      "type": "object",
+      "required": ["source_contract", "lifecycle_id", "case_id", "test_id", "evidence_sha256", "runtime_evidence", "failures", "error", "conformant"],
+      "additionalProperties": false,
+      "properties": {
+        "source_contract": {"$ref": "#/$defs/sourceContract"},
+        "lifecycle_id": {"$ref": "#/$defs/nonblank"},
+        "case_id": {"$ref": "#/$defs/nonblank"},
+        "test_id": {"$ref": "#/$defs/nonblank"},
+        "evidence_sha256": {"$ref": "#/$defs/hash"},
+        "runtime_evidence": {},
+        "failures": {"$ref": "#/$defs/stringList"},
+        "error": {"$ref": "#/$defs/error"},
+        "conformant": {"type": "boolean", "const": false}
+      }
+    },
+    "lifecycleResult": {
+      "oneOf": [
+        {"$ref": "#/$defs/lifecycleVerifiedResult"},
+        {"$ref": "#/$defs/lifecycleErrorResult"}
+      ]
+    }
+  }
+}
