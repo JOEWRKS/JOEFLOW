@@ -14,7 +14,7 @@ Installed routing status:
 - `DOWNSTREAM_V2_INSTALLED_ROUTING`
 - `SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED`
 
-Read [workflow-v0.2.0.md](references/workflow-v0.2.0.md) before running the V2 lifecycle.
+Read [workflow-v0.2.0.md](references/workflow-v0.2.0.md) before running the V2 lifecycle. When implementation or downstream verification reports a mismatch, ambiguity, conflict, or scope request, use [reentry-workflow-v0.2.0.md](references/reentry-workflow-v0.2.0.md) before changing Product Definition.
 
 ## State-contract dispatch
 
@@ -27,11 +27,21 @@ Read [workflow-v0.2.0.md](references/workflow-v0.2.0.md) before running the V2 l
 - Do not invent a material product decision. Register it as an unknown; close it only from evidence, an explicit user answer, or an explicitly accepted recommendation.
 - Inspect available evidence before asking. V2 uses first-class evidence, surface, contradiction, unknown, Materiality, decision-authority, and Grill Pack records.
 - Keep stable IDs forever. Never renumber or reuse an ID.
-- On any material semantic change, increment `definition_revision`, set approval to `UNAPPROVED`, and stale only affected authority and downstream dependencies before recompiling.
+- Before any material semantic state mutation, prepare and validate the complete affected records off-state. Commit the revision increment, truthful non-`CLOSED` lifecycle state, `UNAPPROVED` approval, affected-only staleness, and complete records as one canonical mutation before recompiling.
 - Treat migration gaps as uncertainty, never as Product Definition authority. Migration cannot promote legacy Closure or approval to V2 Semantic Closure.
 - Do not claim Semantic Closure until V2 state validation, closure evaluation, the deterministic Approval Manifest, and exact user approval all bind the current definition.
 - `joewrks.semantic-review/2.0` may record review results but remains reliability `NOT_MEASURED`; review never creates product authority.
 - If implementation exposes a material ambiguity or `SEMANTIC_AUTHORITY_GAP`, re-enter DISCOVER/CLOSE for the affected scope; do not decide inside implementation.
+
+## Implementation re-entry routing
+
+- **Clear Product Definition authority, incorrect runtime behavior:** implementation correction required; do not create a new Product Definition decision merely to explain a code bug. Observed implementation/runtime evidence may be recorded when useful, but no semantic authority change follows automatically.
+- **Real downstream semantic gap or ambiguity:** inspect and resolve the exact affected authority and evidence, then assess Materiality and decision authority. Only when a real unresolved product question remains, independently author and prepare a complete V2 unknown record off-state. Then, as one canonical mutation, increment `definition_revision`, move to a truthful non-`CLOSED` state, set approval `UNAPPROVED`, stale only affected dependencies, and register the complete unknown under the new revision before re-running the affected Product Definition and approval flow.
+- **`OUT_OF_SCOPE_REQUEST`:** resolve Product Definition scope first. An implementation request does not expand approved scope.
+
+A `joewrks.product-definition-reentry/1.0` artifact and its `candidate_unknown` are read-only proposals, never canonical authority. Candidate wording must never be copied directly or verbatim into `state.json`, a decision, an unknown, or a user question; independently author any later record from inspected evidence and ordinary V2 semantics. Do not use a general-purpose re-entry state mutator.
+
+The event itself has no consumed-seed or scope-commitment inventories. For a non-null `source_contract_hash`, resolve the exact matching action contract and inspect its inventories. For a null hash, inspect the exact pre-contract handoff definition plus affected current state authority and evidence.
 
 ## V2 workflow
 
@@ -51,10 +61,12 @@ Resolve the absolute directory containing this loaded `SKILL.md`; never resolve 
 | Evidence answers a question | Record evidence, resolution provenance, and affected IDs |
 | Human judgment is required | Create a truthful material `UNK`; ask with options and a recommendation when appropriate |
 | Recommendation accepted | Record `USER_ACCEPTED_RECOMMENDATION` |
-| Material semantic state changes | Increment revision, set approval `UNAPPROVED`, and stale affected dependencies |
+| Material semantic state changes | Prepare complete records off-state, then atomically increment revision, set non-`CLOSED`/`UNAPPROVED`, stale affected dependencies, and register the complete records |
 | Coverage item does not apply | Record `N/A` with rationale and exact basis binding |
 | Figma unavailable | Produce Markdown/Mermaid handoff and `NOT VERIFIED` |
+| Clear-authority runtime bug | Correct the implementation; do not create a product decision or change revision/approval automatically |
 | Material ambiguity during build | Re-enter DISCOVER/CLOSE and block only affected work |
+| `OUT_OF_SCOPE_REQUEST` | Resolve Product Definition scope before implementation |
 | Legacy `0.1.2.1` project | Validate frozen legacy state; migrate only on explicit V2 adoption request |
 
 ## Common mistakes
@@ -64,6 +76,8 @@ Resolve the absolute directory containing this loaded `SKILL.md`; never resolve 
 - Treating observed implementation as intended product meaning.
 - Turning legacy `COVERED`, approval, or a migration gap into V2 authority.
 - Sending an upstream authority gap to Semantic Review instead of reopening Product Definition.
+- Treating every runtime mismatch as a new Product Definition question.
+- Copying `candidate_unknown` suggestion text into canonical authority.
 - Treating a workaround, deferred blocker, attractive wireframe, or validator availability as Semantic Closure.
 - Allowing Figma Make or an implementation agent to add fields, roles, routes, rules, or branches.
 

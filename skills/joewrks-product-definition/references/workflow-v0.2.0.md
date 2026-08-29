@@ -76,10 +76,22 @@ python <skill-directory>/scripts/build_semantic_review_v2.py CONTRACT_JSON
 
 The semantic-review identity is `joewrks.semantic-review/2.0`, and its reliability remains `NOT_MEASURED`. Review output is assurance evidence; it never creates or rewrites product authority.
 
-Task 2 installs compile, dependency-audit, and semantic-review-package wrappers only. It does not install the runtime-evidence verifier, which is a separate M6 task.
+Verify actual execution evidence against the compiled contract with the installed runtime verifier:
+
+```text
+python <skill-directory>/scripts/verify_runtime_v2.py CONTRACT_JSON CURRENT_STATE_JSON EXECUTION_JSONL [REVIEW_PACKAGE_JSON REVIEW_OUTPUT_JSON]
+```
+
+Runtime non-conformance is not automatically a Product Definition gap. Route it by inspecting whether exact authority is already clear.
 
 ## Re-enter only the affected scope
 
-Implementation ambiguity or a downstream authority gap returns to DISCOVER/CLOSE for the affected scope. A re-entry artifact is a read-only proposal, not canonical authority. Register a canonical unknown only when a real unresolved product question remains, then increment the definition revision, set approval to UNAPPROVED, reconcile affected bindings, and repeat the Approval step.
+Use the installed [reentry workflow](reentry-workflow-v0.2.0.md) before changing Product Definition. A re-entry artifact and its `candidate_unknown` are a read-only proposal or evidence, never canonical authority and never an automatic state mutation.
+
+- Read provenance from the actual event shape. When `source_contract_hash` is non-null, resolve the exact matching action contract and inspect its `source_seed_inventory` and `scope_commitments`; when it is null, inspect the exact pre-contract handoff definition plus affected current state authority and evidence.
+- If Product Definition authority and local contract dependencies are exact, a runtime mismatch is an implementation bug: correct the implementation without inventing a product decision or automatically changing revision or approval.
+- If inspection confirms a real semantic authority gap or ambiguity, return to DISCOVER/CLOSE for the affected scope: inspect and resolve exact evidence first; assess Materiality and decision authority; prepare a complete V2 unknown record off-state; then, as one canonical mutation, increment `definition_revision`, move to a truthful non-`CLOSED` state, set approval to `UNAPPROVED`, stale affected authority and downstream dependencies, and register the complete unknown under the new revision. Reconcile affected Grill and authority bindings and repeat the Approval step.
+- `candidate_unknown` wording must never be copied directly or verbatim. Any later canonical unknown or user question is independently authored from inspected evidence and ordinary V2 semantics.
+- For `OUT_OF_SCOPE_REQUEST`, scope resolution comes first. An implementation request does not make behavior part of approved scope, even provisionally or temporarily.
 
 An unrelated scope whose exact authority commitments remain current may continue. Final acceptance must still use the current approved definition.
