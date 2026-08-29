@@ -123,6 +123,15 @@ class AuthorityBindingTest(unittest.TestCase):
                     lambda pointer=pointer: resolve_record_pointer({"items": ["only"]}, pointer),
                 )
 
+    def test_non_ascii_array_index_tokens_are_structured_invalid_pointers(self):
+        # Break caught: Unicode digit tokens resolving as array indexes or escaping as bare ValueError.
+        for pointer in ("/items/١", "/items/²"):
+            with self.subTest(pointer=pointer):
+                self.assert_binding_error(
+                    "invalid_record_pointer",
+                    lambda pointer=pointer: resolve_record_pointer({"items": ["zero", "one"]}, pointer),
+                )
+
     def test_record_index_uses_only_canonical_stable_record_collections(self):
         # Break caught: bindings resolving array positions or arbitrary document fragments as authority.
         state = self.state_with_rule()

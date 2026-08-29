@@ -15,6 +15,7 @@ CONTRACT_FILES = {
     "ux": "ux-coverage-binding-v1.json",
 }
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
+_ARRAY_INDEX = re.compile(r"^(?:0|[1-9][0-9]*)$")
 _OBJECT_TYPES = {
     "goals": "GOAL", "users": "USR", "requirements": "REQ", "unknowns": "UNK",
     "decisions": "DEC", "rules": "RULE", "flows": "FLOW", "screens": "SCR",
@@ -113,7 +114,7 @@ def resolve_record_pointer(record: object, pointer: str) -> object:
                 raise BindingError("invalid_record_pointer", pointer)
             current = current[token]
         elif isinstance(current, list):
-            if not token.isdigit() or (len(token) > 1 and token.startswith("0")):
+            if not _ARRAY_INDEX.fullmatch(token):
                 raise BindingError("invalid_record_pointer", pointer)
             index = int(token)
             if index >= len(current):
