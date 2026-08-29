@@ -175,6 +175,15 @@ def _validate_spec(spec: object) -> str:
     return spec["kind"]
 
 
+def valid_unresolved_evidence_refs(values: object) -> bool:
+    """Return whether unresolved evidence references are unique nonblank strings."""
+    return (
+        isinstance(values, list)
+        and all(isinstance(value, str) and bool(value.strip()) for value in values)
+        and len(values) == len(set(values))
+    )
+
+
 def derive_semantic_field(spec: dict[str, object], *, field_name: str, field_kind: str, context: dict[str, object], seeds: dict[str, dict[str, object]], profile: dict[str, object]) -> dict[str, object]:
     """Safely materialize one field from direct, deterministic, or reviewed authority."""
     if field_kind not in {"ACTION", "LIFECYCLE"}:
@@ -189,7 +198,7 @@ def derive_semantic_field(spec: dict[str, object], *, field_name: str, field_kin
     selectors = entry["allowed_seed_selectors"]
     kind = _validate_spec(spec)
     if kind == "UNRESOLVED":
-        if set(spec) != {"kind", "gap_type", "description", "required_authority_class", "evidence_refs"} or spec.get("gap_type") not in {"AMBIGUITY_FOUND", "CONTRACT_CONFLICT", "OUT_OF_SCOPE_REQUEST"} or not isinstance(spec.get("description"), str) or not spec["description"].strip() or spec.get("required_authority_class") not in _VALID_AUTHORITY_CLASSES or not isinstance(spec.get("evidence_refs"), list):
+        if set(spec) != {"kind", "gap_type", "description", "required_authority_class", "evidence_refs"} or spec.get("gap_type") not in {"AMBIGUITY_FOUND", "CONTRACT_CONFLICT", "OUT_OF_SCOPE_REQUEST"} or not isinstance(spec.get("description"), str) or not spec["description"].strip() or spec.get("required_authority_class") not in _VALID_AUTHORITY_CLASSES or not valid_unresolved_evidence_refs(spec.get("evidence_refs")):
             _fail("INVALID_UNRESOLVED_SPEC")
         raise SemanticGap("SEMANTIC_GAP", spec)
     allowed = {"DIRECT_REQUIRED": {"DIRECT_AUTHORITY"}, "DETERMINISTIC_REQUIRED": {"DIRECT_AUTHORITY", "MACHINE_DERIVED"}, "REVIEW_PERMITTED": {"DIRECT_AUTHORITY", "MACHINE_DERIVED", "REVIEW_REQUIRED"}}

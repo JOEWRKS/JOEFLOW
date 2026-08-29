@@ -16,11 +16,15 @@ for path in (PACKAGE_ROOT, SCRIPTS):
         sys.path.insert(0, str(path))
 
 from downstream_v2.compiler import compile_handoff_definition  # noqa: E402
+from downstream_v2.contracts import artifact_hash, semantic_contract_hash  # noqa: E402
 from downstream_v2.derivation import (  # noqa: E402
     load_responsibility_profile,
     seed_matches_selector,
 )
-from downstream_v2.seeds import build_closed_source_seed_inventory  # noqa: E402
+from downstream_v2.seeds import (  # noqa: E402
+    build_closed_source_seed_inventory,
+    source_seed_inventory_digest,
+)
 from tests.downstream_v2_support import closed_v2_state  # noqa: E402
 from tests.test_downstream_v2_compiler import complete_definition  # noqa: E402
 from tests.test_downstream_v2_reentry import make_in_progress  # noqa: E402
@@ -138,6 +142,34 @@ class DownstreamV2CliTests(unittest.TestCase):
         self.assertIsNone(payload["contract"])
         self.assertGreater(payload["semantic_debt"]["authority_gap_count"], 0)
         self.assertTrue(payload["reentry_events"])
+
+    def test_compile_cli_rejects_malformed_unresolved_evidence_without_writes(self):
+        state_path = self.write_json("state.json", self.state)
+        for index, evidence_refs in enumerate(([[]], ["   "])):
+            with self.subTest(evidence_refs=evidence_refs):
+                changed = copy.deepcopy(self.definition)
+                changed["actions"][0]["fields"]["authentication"] = {
+                    "kind": "UNRESOLVED",
+                    "gap_type": "AMBIGUITY_FOUND",
+                    "description": "Authentication behavior has no approved authority.",
+                    "required_authority_class": "CONSTRAINT",
+                    "evidence_refs": evidence_refs,
+                }
+                definition_path = self.write_json(f"malformed-gap-{index}.json", changed)
+                before = {
+                    path: path.read_bytes()
+                    for path in (state_path, definition_path)
+                }
+                payload = self.assert_json_result(
+                    self.run_cli("downstream_v2.compile", state_path, definition_path),
+                    1,
+                )
+                self.assertEqual(payload["status"], "ERROR")
+                self.assertEqual(payload["error"]["code"], "INVALID_HANDOFF_DEFINITION")
+                self.assertEqual(
+                    {path: path.read_bytes() for path in (state_path, definition_path)},
+                    before,
+                )
 
     def test_compile_cli_requires_actual_m4_closure(self):
         open_state = copy.deepcopy(self.state)
@@ -355,6 +387,32 @@ class DownstreamV2CliTests(unittest.TestCase):
         )
         self.assertEqual(payload["status"], "ERROR")
         self.assertEqual(payload["error"]["code"], "INVALID_ACTION_CONTRACT_V2")
+
+    def test_semantic_review_cli_never_returns_an_invalid_constructed_package(self):
+        invalid = copy.deepcopy(self.review_contract)
+        reviewed_ref = invalid["actions"][0]["fields"]["visible_success"][
+            "source_seed_refs"
+        ][0]
+        reviewed_seed = next(
+            seed
+            for seed in invalid["source_seed_inventory"]
+            if seed["seed_key"] == reviewed_ref
+        )
+        reviewed_seed["location"]["extra"] = True
+        invalid["source_authority"][
+            "consumed_seed_inventory_digest"
+        ] = source_seed_inventory_digest(invalid["source_seed_inventory"])
+        invalid["semantic_contract_hash"] = semantic_contract_hash(invalid)
+        invalid["artifact_hash"] = artifact_hash(invalid)
+        contract_path = self.write_json("invalid-package-contract.json", invalid)
+        before = contract_path.read_bytes()
+        payload = self.assert_json_result(
+            self.run_cli("downstream_v2.semantic_review.build_package", contract_path),
+            1,
+        )
+        self.assertEqual(payload["status"], "ERROR")
+        self.assertEqual(payload["error"]["code"], "INVALID_ACTION_CONTRACT_V2")
+        self.assertEqual(contract_path.read_bytes(), before)
 
 
 class DownstreamV2DocumentationTests(unittest.TestCase):

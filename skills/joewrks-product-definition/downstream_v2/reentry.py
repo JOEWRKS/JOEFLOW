@@ -26,10 +26,12 @@ def _is_hash(value: object) -> bool:
 
 def _strings(values: object) -> list[str]:
     if not isinstance(values, list) or any(
-        not isinstance(value, str) or not value for value in values
+        not isinstance(value, str) or not value.strip() for value in values
     ):
         raise ValueError("INVALID_REENTRY_STRING_INVENTORY")
-    return sorted(set(values))
+    if len(values) != len(set(values)):
+        raise ValueError("INVALID_REENTRY_STRING_INVENTORY")
+    return sorted(values)
 
 
 def _event(

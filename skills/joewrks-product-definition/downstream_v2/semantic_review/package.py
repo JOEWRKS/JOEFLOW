@@ -245,4 +245,6 @@ def build_semantic_review_package(contract: dict[str, object]) -> dict[str, obje
         "review_obligations": obligations,
     }
     package["package_hash"] = sha256_json(package)
+    if validate_semantic_review_package(package):
+        raise ValueError("INVALID_SEMANTIC_REVIEW_PACKAGE")
     return package

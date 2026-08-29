@@ -195,6 +195,20 @@ class DerivationTests(unittest.TestCase):
         self.assertEqual(raised.exception.code, "SEMANTIC_GAP")
         self.assertEqual(raised.exception.detail, spec)
 
+    def test_unresolved_rejects_malformed_evidence_before_semantic_gap(self):
+        for evidence_refs in ([[]], ["   "], ["EVD-001", "EVD-001"]):
+            with self.subTest(evidence_refs=evidence_refs):
+                spec = {
+                    "kind": "UNRESOLVED",
+                    "gap_type": "AMBIGUITY_FOUND",
+                    "description": "The permitted state is unclear.",
+                    "required_authority_class": "FACTUAL",
+                    "evidence_refs": evidence_refs,
+                }
+                with self.assertRaises(ValueError) as raised:
+                    self.derive(spec)
+                self.assertNotIsInstance(raised.exception, SemanticGap)
+
     def test_selector_matching_uses_exact_scope_axis_pack_and_ux_action(self):
         selector = {"scope": "GRILL", "pack_id": "GRILL-AUTH-1", "axis": "login"}
         context = {"authority_scope_refs": ["SURF-001"], "current_scope_refs": ["SURF-001"]}

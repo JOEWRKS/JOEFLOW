@@ -1,5 +1,6 @@
 """Read-only command line entry point for dependency-scoped contract audit."""
 
+import copy
 import json
 import sys
 from pathlib import Path
@@ -62,6 +63,10 @@ def main(arguments: list[str] | None = None) -> int:
         _emit(_error(error.code, error.detail))
         return 2
     try:
+        # Keep post-decode recursion failures at the CLI's semantic-input
+        # boundary even when the runtime validator contains recursion itself.
+        copy.deepcopy(contract)
+        copy.deepcopy(state)
         result = audit_contract_against_state(contract, state)
     except RecursionError:
         _emit(_error("INVALID_AUDIT_INPUT", "maximum semantic input nesting depth exceeded"))

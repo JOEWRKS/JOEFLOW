@@ -20,6 +20,7 @@ COMPILER_VERSION = "core-semantic-closure-v2-m5.1"
 CONTRACT_VERSION = "joewrks.action-conformance/2.0"
 
 _HASH = re.compile(r"^[0-9a-f]{64}$")
+_SEED_KEY = re.compile(r"^SEED-[0-9a-f]{24}$")
 _SCOPE_REF = re.compile(r"^(?:REQ|SURF|SCR)-[^\s]+$")
 _TOP_LEVEL = {
     "contract_schema_version", "compiler", "source_authority",
@@ -37,6 +38,8 @@ _SEED_KEYS = {
     "seed_key", "location", "record_id", "record_type", "pointer",
     "value_sha256", "source_status", "value",
 }
+_LOCATION_KEYS = {"scope", "owner_ref", "axis", "pack_id", "action_key"}
+_SEED_SCOPES = {"CORE", "GRILL", "UX_STATE", "UX_ACTION"}
 _DEBT_KEYS = {
     "direct_authority_count", "machine_derived_count", "review_required_count",
     "authority_gap_count", "direct_authority_fields", "machine_derived_fields",
@@ -46,6 +49,29 @@ _DEBT_KEYS = {
 
 def _is_hash(value: object) -> bool:
     return isinstance(value, str) and _HASH.fullmatch(value) is not None
+
+
+def _is_nonblank_string(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _valid_seed_location(value: object) -> bool:
+    if not isinstance(value, dict) or set(value) != _LOCATION_KEYS:
+        return False
+    return (
+        value.get("scope") in _SEED_SCOPES
+        and isinstance(value.get("owner_ref"), str)
+        and _SCOPE_REF.fullmatch(value["owner_ref"]) is not None
+        and _is_nonblank_string(value.get("axis"))
+        and (
+            value.get("pack_id") is None
+            or _is_nonblank_string(value.get("pack_id"))
+        )
+        and (
+            value.get("action_key") is None
+            or _is_nonblank_string(value.get("action_key"))
+        )
+    )
 
 
 def semantic_contract_projection(contract: dict[str, object]) -> dict[str, object]:
@@ -196,7 +222,8 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
             or not _is_hash(commitment.get("record_sha256"))
         ):
             add(path, "scope commitment identity is invalid")
-        commitment_ids.append(record_id)
+        if isinstance(record_id, str) and _SCOPE_REF.fullmatch(record_id) is not None:
+            commitment_ids.append(record_id)
     if commitment_ids != sorted(set(commitment_ids)):
         add("/scope_commitments", "scope commitments must be sorted and unique")
 
@@ -210,26 +237,49 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
         if not isinstance(seed, dict) or set(seed) != _SEED_KEYS:
             add(path, "source seed shape does not match")
             continue
-        seed_keys.append(seed.get("seed_key"))
-        if (
-            not isinstance(seed.get("seed_key"), str)
-            or not seed["seed_key"].startswith("SEED-")
-            or not _is_hash(seed.get("value_sha256"))
-            or seed.get("source_status") != "CURRENT"
-        ):
+        seed_key = seed.get("seed_key")
+        if isinstance(seed_key, str) and _SEED_KEY.fullmatch(seed_key) is not None:
+            seed_keys.append(seed_key)
+        location = seed.get("location")
+        identity_shape_valid = (
+            isinstance(seed_key, str)
+            and _SEED_KEY.fullmatch(seed_key) is not None
+            and _valid_seed_location(location)
+            and _is_nonblank_string(seed.get("record_id"))
+            and _is_nonblank_string(seed.get("record_type"))
+            and isinstance(seed.get("pointer"), str)
+            and seed["pointer"].startswith("/")
+            and _is_hash(seed.get("value_sha256"))
+            and seed.get("source_status") == "CURRENT"
+        )
+        if not identity_shape_valid:
             add(path, "source seed identity is invalid")
+        value_hash = None
         try:
-            if sha256_json(seed.get("value")) != seed.get("value_sha256"):
+            value_hash = sha256_json(seed.get("value"))
+            if value_hash != seed.get("value_sha256"):
                 add(path, "source seed value hash does not match")
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, RecursionError):
             add(path, "source seed value is not canonical JSON")
+        if identity_shape_valid and value_hash is not None:
+            try:
+                expected_seed_key = "SEED-" + sha256_json({
+                    "location": location,
+                    "record_id": seed["record_id"],
+                    "pointer": seed["pointer"],
+                    "value_sha256": value_hash,
+                })[:24]
+                if seed_key != expected_seed_key:
+                    add(path, "source seed key does not match deterministic identity")
+            except (TypeError, ValueError, RecursionError):
+                add(path, "source seed identity is not canonical JSON")
     if seed_keys != sorted(set(seed_keys)):
         add("/source_seed_inventory", "source seed inventory must be sorted and unique")
     try:
         if authority.get("consumed_seed_inventory_digest") != source_seed_inventory_digest(inventory):
             add("/source_authority/consumed_seed_inventory_digest", "consumed seed digest does not match")
         seeds = source_seed_index(inventory)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, RecursionError):
         seeds = {}
         add("/source_seed_inventory", "source seed inventory cannot be indexed")
 
@@ -252,10 +302,9 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
                 add(item_path, "item shape does not match")
                 continue
             item_id = item.get(id_key)
-            ids.append(item_id)
             refs = item.get("authority_scope_refs")
             if (
-                not isinstance(item_id, str) or not item_id
+                not _is_nonblank_string(item_id)
                 or not isinstance(refs, list) or not refs
                 or any(not isinstance(ref, str) or _SCOPE_REF.fullmatch(ref) is None for ref in refs)
                 or refs != sorted(set(refs))
@@ -263,6 +312,7 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
             ):
                 add(item_path, "item identity or authority scope refs are invalid")
                 continue
+            ids.append(item_id)
             used_scope_refs.update(refs)
             context = {"authority_scope_refs": refs, "current_scope_refs": commitment_ids}
             if collection_name == "actions":
@@ -273,7 +323,7 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
                         or set(locator) != {"screen_ref", "action_key"}
                         or locator.get("screen_ref") not in refs
                         or not isinstance(locator.get("action_key"), str)
-                        or not locator["action_key"]
+                        or not locator["action_key"].strip()
                     ):
                         add(f"{item_path}/ux_action_locator", "UX action locator is invalid")
                     else:
@@ -296,7 +346,7 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
                         raise ValueError("semantic field is not the recomputed output")
                     used_seed_refs.update(field["source_seed_refs"])
                     derived_paths.append((field_path, field["derivation"]["kind"]))
-                except (KeyError, TypeError, ValueError) as error:
+                except (KeyError, TypeError, ValueError, AttributeError, RecursionError) as error:
                     add(f"{item_path}/fields/{field_name}", str(error))
         if ids != sorted(set(ids)):
             add(f"/{collection_name}", "IDs must be sorted and unique")
@@ -310,6 +360,14 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
     if not isinstance(debt, dict) or set(debt) != _DEBT_KEYS:
         add("/semantic_debt", "semantic debt shape does not match")
     else:
+        count_keys = (
+            "direct_authority_count",
+            "machine_derived_count",
+            "review_required_count",
+            "authority_gap_count",
+        )
+        if any(type(debt.get(key)) is not int or debt[key] < 0 for key in count_keys):
+            add("/semantic_debt", "semantic debt counts must be nonnegative integers")
         expected_fields = {
             "DIRECT_AUTHORITY": sorted(path for path, kind in derived_paths if kind == "DIRECT_AUTHORITY"),
             "MACHINE_DERIVED": sorted(path for path, kind in derived_paths if kind == "MACHINE_DERIVED"),
@@ -340,6 +398,6 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
             add("/semantic_contract_hash", "semantic contract hash does not match")
         if contract.get("artifact_hash") != artifact_hash(contract):
             add("/artifact_hash", "artifact hash does not match")
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, RecursionError):
         add("/", "contract is not canonical JSON")
     return sorted(errors, key=lambda error: (error["path"], error["message"]))

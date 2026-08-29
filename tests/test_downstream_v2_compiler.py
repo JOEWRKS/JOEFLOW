@@ -31,6 +31,24 @@ from downstream.schema_validation import SchemaValidationError, validate_instanc
 from tests.downstream_v2_support import closed_v2_state  # noqa: E402
 
 
+ACTION_CONTRACT_SCHEMA = json.loads(
+    (
+        PACKAGE_ROOT
+        / "downstream_v2"
+        / "schemas"
+        / "action-contract-v2.schema.json"
+    ).read_text(encoding="utf-8")
+)
+HANDOFF_DEFINITION_SCHEMA = json.loads(
+    (
+        PACKAGE_ROOT
+        / "downstream_v2"
+        / "schemas"
+        / "handoff-definition.schema.json"
+    ).read_text(encoding="utf-8")
+)
+
+
 ACTION_FIELDS = (
     "actor", "authentication", "relationship_predicate", "object_binding",
     "concurrency", "preconditions", "allowed_current_states", "forbidden_states",
@@ -265,6 +283,35 @@ class CompilerTests(unittest.TestCase):
         self.assertEqual(result["gaps"][0]["required_authority_class"], "CONSTRAINT")
         self.assertEqual(result["gaps"][0]["evidence_refs"], ["EVD-001"])
 
+    def test_malformed_unresolved_evidence_is_invalid_handoff_not_a_gap(self):
+        for evidence_refs in ([[]], ["   "], ["EVD-001", "EVD-001"]):
+            with self.subTest(evidence_refs=evidence_refs):
+                changed = copy.deepcopy(self.definition)
+                changed["actions"][0]["fields"]["authentication"] = {
+                    "kind": "UNRESOLVED",
+                    "gap_type": "AMBIGUITY_FOUND",
+                    "description": "Authentication behavior is not authoritative.",
+                    "required_authority_class": "CONSTRAINT",
+                    "evidence_refs": evidence_refs,
+                }
+                self.assert_rejected(changed, "INVALID_HANDOFF_DEFINITION")
+
+    def test_unresolved_evidence_schema_requires_unique_nonblank_strings(self):
+        field_variants = HANDOFF_DEFINITION_SCHEMA["$defs"]["fieldSpec"]["oneOf"]
+        unresolved = next(
+            variant
+            for variant in field_variants
+            if variant["properties"]["kind"].get("const") == "UNRESOLVED"
+        )
+        self.assertEqual(
+            unresolved["properties"]["evidence_refs"],
+            {
+                "type": "array",
+                "uniqueItems": True,
+                "items": {"type": "string", "pattern": ".*\\S.*"},
+            },
+        )
+
     def test_production_contract_never_contains_a_gap(self):
         contract = self.compile()["contract"]
         self.assertEqual(contract["semantic_debt"]["authority_gap_count"], 0)
@@ -304,6 +351,18 @@ class ContractHashTests(unittest.TestCase):
             self.state if state is None else state,
             self.definition if definition is None else definition,
         )["contract"]
+
+    def rehash(self, contract):
+        contract["source_authority"]["consumed_seed_inventory_digest"] = literal_sha256(
+            contract["source_seed_inventory"]
+        )
+        contract["semantic_contract_hash"] = semantic_contract_hash(contract)
+        contract["artifact_hash"] = artifact_hash(contract)
+        return contract
+
+    def assert_schema_rejected(self, contract):
+        with self.assertRaises(SchemaValidationError):
+            validate_instance(contract, ACTION_CONTRACT_SCHEMA)
 
     def test_repeated_compilation_is_byte_deterministic(self):
         first = self.contract()
@@ -432,6 +491,93 @@ class ContractHashTests(unittest.TestCase):
                 second = validate_action_contract_v2(copy.deepcopy(malformed))
                 self.assertEqual(first, expected)
                 self.assertEqual(second, first)
+
+    def test_validator_is_total_for_parsed_json_unhashable_identifiers(self):
+        cases = (
+            (("scope_commitments", 0, "record_id"), []),
+            (("source_seed_inventory", 0, "seed_key"), []),
+            (("actions", 0, "action_id"), []),
+            (("lifecycles", 0, "lifecycle_id"), []),
+        )
+        for path, value in cases:
+            with self.subTest(path=path):
+                malformed = self.contract()
+                target = malformed
+                for token in path[:-1]:
+                    target = target[token]
+                target[path[-1]] = value
+                parsed = json.loads(canonical_bytes(malformed))
+                first = validate_action_contract_v2(parsed)
+                second = validate_action_contract_v2(copy.deepcopy(parsed))
+                self.assertIsInstance(first, list)
+                self.assertTrue(first)
+                self.assertEqual(second, first)
+
+    def test_runtime_rejects_seed_nested_shape_and_nondeterministic_identity(self):
+        extra_location = self.contract()
+        extra_location["source_seed_inventory"][0]["location"]["extra"] = True
+        self.rehash(extra_location)
+
+        wrong_identity = self.contract()
+        seed = wrong_identity["source_seed_inventory"][0]
+        old_key = seed["seed_key"]
+        new_key = old_key[:-1] + ("0" if old_key[-1] != "0" else "1")
+        seed["seed_key"] = new_key
+        wrong_identity["source_seed_inventory"].sort(key=lambda item: item["seed_key"])
+        for collection in (wrong_identity["actions"], wrong_identity["lifecycles"]):
+            for item in collection:
+                for field in item["fields"].values():
+                    field["source_seed_refs"] = [
+                        new_key if ref == old_key else ref
+                        for ref in field["source_seed_refs"]
+                    ]
+        self.rehash(wrong_identity)
+
+        for name, malformed in (
+            ("extra_location_key", extra_location),
+            ("wrong_seed_identity", wrong_identity),
+        ):
+            with self.subTest(case=name):
+                if name == "extra_location_key":
+                    self.assert_schema_rejected(malformed)
+                errors = validate_action_contract_v2(malformed)
+                self.assertTrue(any(
+                    error["path"].startswith("/source_seed_inventory/")
+                    for error in errors
+                ), errors)
+
+    def test_runtime_rejects_boolean_debt_count_that_schema_rejects(self):
+        malformed = self.contract()
+        malformed["semantic_debt"]["authority_gap_count"] = False
+        self.rehash(malformed)
+        self.assert_schema_rejected(malformed)
+        errors = validate_action_contract_v2(malformed)
+        self.assertTrue(any(error["path"] == "/semantic_debt" for error in errors), errors)
+
+    def test_runtime_rejects_whitespace_item_ids_that_schema_rejects(self):
+        for collection, id_key, old_id in (
+            ("actions", "action_id", "submit-request"),
+            ("lifecycles", "lifecycle_id", "request-lifecycle"),
+        ):
+            with self.subTest(collection=collection):
+                malformed = self.contract()
+                malformed[collection][0][id_key] = "   "
+                for key in (
+                    "direct_authority_fields",
+                    "machine_derived_fields",
+                    "review_required_fields",
+                ):
+                    malformed["semantic_debt"][key] = [
+                        path.replace(f"{collection}/{old_id}/", f"{collection}/   /")
+                        for path in malformed["semantic_debt"][key]
+                    ]
+                self.rehash(malformed)
+                self.assert_schema_rejected(malformed)
+                errors = validate_action_contract_v2(malformed)
+                self.assertTrue(any(
+                    error["path"].startswith(f"/{collection}/0")
+                    for error in errors
+                ), errors)
 
     def test_frozen_product_and_ux_binding_identities_are_required_after_rehash(self):
         contract = self.contract()

@@ -4,6 +4,7 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -97,6 +98,15 @@ class SemanticReviewV2Tests(unittest.TestCase):
         content = copy.deepcopy(first)
         content.pop("package_hash")
         self.assertEqual(first["package_hash"], hashlib.sha256(canonical_bytes(content)).hexdigest())
+
+    def test_builder_never_returns_a_package_rejected_by_its_validator(self):
+        validator_errors = [{"path": "/review_obligations/0", "message": "invalid"}]
+        with mock.patch(
+            "downstream_v2.semantic_review.package.validate_semantic_review_package",
+            return_value=validator_errors,
+        ):
+            with self.assertRaisesRegex(ValueError, "INVALID_SEMANTIC_REVIEW_PACKAGE"):
+                build_semantic_review_package(self.review_contract)
 
     def test_package_binds_contract_definition_digest_and_exact_source_seeds(self):
         package = self.package()

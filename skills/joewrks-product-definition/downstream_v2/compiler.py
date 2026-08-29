@@ -16,6 +16,7 @@ from .derivation import (
     derive_semantic_field,
     load_responsibility_profile,
     responsibility_profile_digest,
+    valid_unresolved_evidence_refs,
 )
 from .seeds import (
     build_closed_source_seed_inventory,
@@ -109,6 +110,13 @@ def _validate_definition(
             fields = raw.get("fields")
             if not isinstance(fields, dict) or set(fields) != set(profile[profile_key]):
                 _fail("INVALID_SEMANTIC_FIELD_INVENTORY", item_id)
+            for spec in fields.values():
+                if (
+                    isinstance(spec, dict)
+                    and spec.get("kind") == "UNRESOLVED"
+                    and not valid_unresolved_evidence_refs(spec.get("evidence_refs"))
+                ):
+                    _fail("INVALID_HANDOFF_DEFINITION", spec)
             item = copy.deepcopy(raw)
             item["authority_scope_refs"] = _validate_refs(item["authority_scope_refs"], scope_index)
             if collection_name == "actions":

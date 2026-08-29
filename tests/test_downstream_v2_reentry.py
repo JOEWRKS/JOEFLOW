@@ -215,6 +215,12 @@ class ReentryEventTests(unittest.TestCase):
         ))
         self.assertNotIn("id", event["candidate_unknown"])
 
+    def test_reentry_rejects_nonblank_or_duplicate_evidence_violations(self):
+        for evidence_refs in ([[]], ["   "], ["EVD-001", "EVD-001"]):
+            with self.subTest(evidence_refs=evidence_refs):
+                with self.assertRaises(ValueError):
+                    self.build(gap(evidence_refs=evidence_refs))
+
     def test_compiler_attaches_formal_events_without_materializing_a_contract(self):
         changed = copy.deepcopy(self.definition)
         changed["actions"][0]["fields"]["authentication"] = {
