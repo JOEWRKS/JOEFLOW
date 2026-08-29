@@ -132,6 +132,18 @@ def validate_action_contract_v2(contract: dict[str, object]) -> list[dict[str, s
     if not isinstance(authority, dict) or set(authority) != _AUTHORITY_KEYS:
         add("/source_authority", "source authority shape does not match")
         authority = {}
+    if authority.get("state_schema_version") != "0.2.0":
+        add("/source_authority/state_schema_version", "must equal 0.2.0")
+    product_slug = authority.get("product_slug")
+    if not isinstance(product_slug, str) or not product_slug.strip():
+        add("/source_authority/product_slug", "must be a nonblank string")
+    approved_revision = authority.get("approved_revision")
+    if (
+        not isinstance(approved_revision, int)
+        or isinstance(approved_revision, bool)
+        or approved_revision < 1
+    ):
+        add("/source_authority/approved_revision", "must be an integer at least 1")
     for key in (
         "approved_definition_digest", "approved_manifest_digest", "snapshot_state_sha256",
         "consumed_seed_inventory_digest",

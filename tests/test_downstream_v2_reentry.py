@@ -492,12 +492,58 @@ class ContractDriftAuditTests(unittest.TestCase):
         self.assertTrue(result["reentry_events"])
         self.assertEqual(canonical_bytes(forged), before)
 
+    def test_rehashed_invalid_source_authority_never_audits_as_conformant(self):
+        forged = copy.deepcopy(self.contract)
+        forged["source_authority"]["state_schema_version"] = "9.9"
+        rehash_contract(forged)
+        first = self.audit(contract=forged)
+        second = self.audit(contract=copy.deepcopy(forged))
+        self.assertEqual(canonical_bytes(first), canonical_bytes(second))
+        self.assertEqual(first["status"], "REENTRY_REQUIRED")
+        self.assertTrue(first["reentry_events"])
+
     def test_malformed_contract_fails_closed_and_never_reports_conformant(self):
         malformed = copy.deepcopy(self.contract)
         malformed["semantic_contract_hash"] = "0" * 64
         result = self.audit(contract=malformed)
         self.assertEqual(result["status"], "REENTRY_REQUIRED")
         self.assertTrue(result["reentry_events"])
+
+    def test_non_object_contracts_fail_closed_deterministically(self):
+        for malformed in (None, []):
+            with self.subTest(malformed=malformed):
+                first = audit_contract_against_state(malformed, self.state)
+                second = audit_contract_against_state(copy.deepcopy(malformed), self.state)
+                self.assertEqual(canonical_bytes(first), canonical_bytes(second))
+                self.assertEqual(first["status"], "REENTRY_REQUIRED")
+                self.assertTrue(first["reentry_events"])
+
+    def test_corrupt_non_key_approval_commitment_requires_reentry(self):
+        for field, value in (
+            ("coverage_digest", "0" * 64),
+            ("surface_digest", []),
+            ("record_hashes", []),
+        ):
+            with self.subTest(field=field):
+                changed = copy.deepcopy(self.state)
+                original = changed["approval_history"][0]
+                triple = (
+                    original["revision"],
+                    original["definition_digest"],
+                    original["manifest_digest"],
+                )
+                original[field] = value
+                self.assertEqual(
+                    (
+                        original["revision"],
+                        original["definition_digest"],
+                        original["manifest_digest"],
+                    ),
+                    triple,
+                )
+                result = self.audit(changed)
+                self.assertEqual(result["status"], "REENTRY_REQUIRED")
+                self.assertTrue(result["reentry_events"])
 
     def test_duplicate_state_ids_are_not_ready_and_emit_no_semantic_event(self):
         changed = copy.deepcopy(self.state)

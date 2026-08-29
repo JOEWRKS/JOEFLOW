@@ -395,6 +395,35 @@ class ContractHashTests(unittest.TestCase):
                 self.assertIsInstance(errors, list)
                 self.assertTrue(any(error["path"] == expected_error_path for error in errors))
 
+    def test_source_authority_scalar_provenance_matches_the_schema(self):
+        contract = self.contract()
+        cases = (
+            ("state_schema_version", "9.9", "/source_authority/state_schema_version"),
+            ("product_slug", "", "/source_authority/product_slug"),
+            ("product_slug", "   ", "/source_authority/product_slug"),
+            ("product_slug", 123, "/source_authority/product_slug"),
+            ("approved_revision", 0, "/source_authority/approved_revision"),
+            ("approved_revision", -1, "/source_authority/approved_revision"),
+            ("approved_revision", True, "/source_authority/approved_revision"),
+            ("approved_revision", "1", "/source_authority/approved_revision"),
+        )
+        for key, value, expected_path in cases:
+            with self.subTest(key=key, value=value):
+                forged = copy.deepcopy(contract)
+                forged["source_authority"][key] = value
+                forged["semantic_contract_hash"] = semantic_contract_hash(forged)
+                forged["artifact_hash"] = artifact_hash(forged)
+                errors = validate_action_contract_v2(forged)
+                self.assertTrue(any(error["path"] == expected_path for error in errors), errors)
+
+    def test_valid_source_authority_scalar_provenance_remains_accepted(self):
+        contract = self.contract()
+        self.assertEqual(contract["source_authority"]["state_schema_version"], "0.2.0")
+        self.assertTrue(contract["source_authority"]["product_slug"].strip())
+        self.assertIs(type(contract["source_authority"]["approved_revision"]), int)
+        self.assertGreaterEqual(contract["source_authority"]["approved_revision"], 1)
+        self.assertEqual(validate_action_contract_v2(contract), [])
+
     def test_frozen_product_and_ux_binding_identities_are_required_after_rehash(self):
         contract = self.contract()
         self.assertEqual(validate_action_contract_v2(contract), [])

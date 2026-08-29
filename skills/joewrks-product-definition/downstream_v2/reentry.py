@@ -3,7 +3,7 @@
 import copy
 import re
 
-from approval_v2 import definition_digest
+from approval_v2 import definition_digest, validate_approval
 from authority_binding_v2 import BindingError, canonical_record_index
 from state_validation_v2 import evaluate_closure_v2
 
@@ -500,20 +500,21 @@ def _builder_failure_is_consumed(error: DownstreamV2Error, seeds: list[dict[str,
 
 
 def audit_contract_against_state(
-    contract: dict[str, object],
+    contract: object,
     state: dict[str, object],
 ) -> dict[str, object]:
     """Audit immutable contract provenance and only its current local dependencies."""
     contract_errors = validate_action_contract_v2(contract)
     if contract_errors:
+        contract_object = contract if isinstance(contract, dict) else {}
         reason = "Contract semantic/artifact provenance is invalid at: " + ", ".join(
             sorted({error["path"] for error in contract_errors})
         )
         return _result(
             "REENTRY_REQUIRED",
             global_definition_closed=_global_closed_truth(state),
-            authority_revision_relation=_revision_relation(contract, None),
-            events=[_global_event(contract, reason)],
+            authority_revision_relation=_revision_relation(contract_object, None),
+            events=[_global_event(contract_object, reason)],
         )
 
     project = None
@@ -542,8 +543,13 @@ def audit_contract_against_state(
         and entry.get("definition_digest") == authority["approved_definition_digest"]
         and entry.get("manifest_digest") == authority["approved_manifest_digest"]
     ]
+    approval_history_invalid = any(
+        error.get("code") == "approval_history_gaps"
+        for error in validate_approval(state)
+    )
     if (
         len(history_matches) != 1
+        or approval_history_invalid
         or project["slug"] != authority["product_slug"]
         or project["definition_revision"] < authority["approved_revision"]
     ):
