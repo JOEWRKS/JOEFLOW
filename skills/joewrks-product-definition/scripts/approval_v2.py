@@ -14,6 +14,7 @@ from authority_binding_v2 import (
     sha256_json,
     ux_binding_metrics,
 )
+from discovery_v2 import validate_discovery_baseline
 from grill_v2 import compile_active_grill_packs, grill_pack_metrics, grill_unknown_metrics
 from materiality_v2 import is_high_risk, validate_materiality_classification
 
@@ -303,7 +304,7 @@ def semantic_record_hashes(state: dict[str, object]) -> dict[str, str]:
     index = canonical_record_index(state)
     consumed = set(consumed_evidence_ids(state))
     hashes = {
-        record_id: sha256_json(_normalized(record))
+        record_id: sha256_json(_normalized(record, drop_operational=True))
         for record_id, (record_type, record) in index.items()
         if record_type in {
             "GOAL", "USR", "REQ", "UNK", "DEC", "RULE", "FLOW", "SCR",
@@ -451,6 +452,7 @@ def _semantic_product_readiness_metrics(state: dict[str, object]) -> dict[str, i
 
     unknown_metrics = grill_unknown_metrics(state)
     baseline = state.get("discovery_baseline")
+    baseline_errors = validate_discovery_baseline(state, check_freshness=True)
     return {
         "open_material_surfaces": sum(record.get("status") == "OPEN" for record in material_surfaces),
         "unbound_material_surfaces": sum(
@@ -470,7 +472,9 @@ def _semantic_product_readiness_metrics(state: dict[str, object]) -> dict[str, i
             for reference in consumed_evidence_ids(state)
         ),
         "discovery_baseline_gaps": int(
-            isinstance(baseline, dict) and baseline.get("status") != "CURRENT"
+            not isinstance(baseline, dict)
+            or baseline.get("status") != "CURRENT"
+            or bool(baseline_errors)
         ),
         "unassessed_materiality": sum(invalid_materiality(record) for record in materiality_records),
         **{name: count for name, count in unknown_metrics.items() if name != "deferred_unknowns"},
@@ -685,7 +689,11 @@ def _approval_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]], 
     approved_shape = isinstance(approval, dict) and set(approval) == {
         "status", "approved_revision", "approved_definition_digest",
         "approved_manifest_digest", "approved_at", "approved_by",
-    } and approval.get("status") == "APPROVED"
+    } and approval.get("status") == "APPROVED" and (
+        isinstance(approval.get("approved_revision"), int)
+        and not isinstance(approval.get("approved_revision"), bool)
+        and approval["approved_revision"] >= 1
+    )
     unapproved_shape = approval == {"status": "UNAPPROVED"}
 
     if not approved_shape and not unapproved_shape:

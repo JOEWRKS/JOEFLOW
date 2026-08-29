@@ -19,8 +19,9 @@ try:
 except ModuleNotFoundError:
     approval = None
 
-from discovery_v2 import build_discovery_baseline  # noqa: E402
+from discovery_v2 import build_discovery_baseline, validate_discovery_baseline  # noqa: E402
 from tests.v020_support import (  # noqa: E402
+    decision_record,
     establish_current_baseline,
     evidence_record,
     foundation_state,
@@ -61,6 +62,54 @@ def record_change_state(revision=1):
 
 def approved_state():
     state = review_ready_state()
+    manifest = api("compute_approval_manifest")(state)
+    commitment = api("build_approval_commitment")(state, manifest)
+    state["approval_history"] = [commitment]
+    state["approval"] = {
+        "status": "APPROVED",
+        "approved_revision": 1,
+        "approved_definition_digest": commitment["definition_digest"],
+        "approved_manifest_digest": commitment["manifest_digest"],
+        "approved_at": "2026-08-29T00:00:00Z",
+        "approved_by": "user",
+    }
+    state["project"]["definition_status"] = "CLOSED"
+    return state
+
+
+def approved_recommendation_state():
+    state = review_ready_state()
+    unknown = unknown_record(
+        status="RESOLVED",
+        classification="NON_MATERIAL",
+        decision_authority="USER_CONFIRMATION",
+    )
+    unknown.update({
+        "recommendation": {
+            "recommended_option": "OPT-A",
+            "reasoning_refs": ["EVD-900"],
+            "tradeoffs": ["The current behavior remains stable."],
+            "confidence": "HIGH",
+        },
+        "resolved_by": ["DEC-001"],
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+        "resolution_summary": "The user accepted the recommended current behavior.",
+    })
+    state["objects"]["unknowns"] = [unknown]
+    state["objects"]["decisions"] = [decision_record(
+        resolution_mode="USER_ACCEPTED_RECOMMENDATION",
+        decision_authority="USER_CONFIRMATION",
+        decided_by="USER",
+        classification="NON_MATERIAL",
+        accepted_recommendation={
+            "recommended_option": "OPT-A",
+            "alternatives_presented": ["OPT-A", "OPT-B"],
+            "tradeoffs_presented": ["The current behavior remains stable."],
+            "accepted_by": "user",
+            "accepted_at": "2026-08-29T00:00:00Z",
+        },
+    )]
+    establish_current_baseline(state)
     manifest = api("compute_approval_manifest")(state)
     commitment = api("build_approval_commitment")(state, manifest)
     state["approval_history"] = [commitment]
@@ -244,6 +293,19 @@ class ApprovalManifestV020Test(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     api("build_approval_manifest_for_review")(candidate)
 
+    def test_review_builder_rejects_stale_but_current_labelled_baseline(self):
+        # Break caught: a revision edit retaining a CURRENT label bypassing the deterministic M3 freshness check.
+        state = review_ready_state()
+        state["project"]["definition_revision"] = 2
+
+        self.assertEqual(
+            [error["code"] for error in validate_discovery_baseline(state, check_freshness=True)],
+            ["stale_discovery_baseline"],
+        )
+        self.assertEqual(api("semantic_readiness_metrics")(state)["discovery_baseline_gaps"], 1)
+        with self.assertRaises(ValueError):
+            api("build_approval_manifest_for_review")(state)
+
     def test_read_only_cli_emits_compact_packet_and_never_fabricates_approval_time(self):
         # Break caught: CLI mutating state, pretty/noncanonical output, or silently authoring a user approval timestamp.
         state = review_ready_state()
@@ -319,6 +381,15 @@ class ApprovalValidationV020Test(unittest.TestCase):
             with self.subTest(code=code, approval=candidate["approval"]):
                 self.assertIn(code, self.codes(candidate))
 
+    def test_approved_revision_requires_a_positive_non_boolean_integer(self):
+        # Break caught: Python numeric equality allowing booleans, floats, or non-positive revisions into exact approval.
+        for value in (True, 1.0, 0, -1):
+            state = approved_state()
+            state["approval"]["approved_revision"] = value
+
+            with self.subTest(approved_revision=value):
+                self.assertIn("invalid_approval", self.codes(state))
+
     def test_unapproved_is_exact_and_cannot_carry_fabricated_approval_fields(self):
         # Break caught: stale approval fields surviving under an UNAPPROVED label.
         state = review_ready_state()
@@ -370,6 +441,23 @@ class ApprovalValidationV020Test(unittest.TestCase):
         state["discovery_baseline"] = build_discovery_baseline(
             state, procedure_complete=True, applicable_surface_classes_complete=True,
         )
+        self.assertEqual(api("validate_approval")(state), [])
+        self.assertEqual(api("approval_metrics")(state)["semantic_change_without_revision_increment"], 0)
+
+    def test_operational_acceptance_timestamp_preserves_commitment_and_approval(self):
+        # Break caught: accepted_at changing a stable DEC hash after the semantic definition and manifest stay exact.
+        state = approved_recommendation_state()
+        before_manifest = api("compute_approval_manifest")(state)
+        before_commitment = api("build_approval_commitment")(state, before_manifest)
+        before_record_hash = api("semantic_record_hashes")(state)["DEC-001"]
+
+        state["objects"]["decisions"][0]["accepted_recommendation"]["accepted_at"] = "2026-08-29T00:01:00Z"
+        after_manifest = api("compute_approval_manifest")(state)
+        after_commitment = api("build_approval_commitment")(state, after_manifest)
+
+        self.assertEqual(after_manifest, before_manifest)
+        self.assertEqual(api("semantic_record_hashes")(state)["DEC-001"], before_record_hash)
+        self.assertEqual(after_commitment, before_commitment)
         self.assertEqual(api("validate_approval")(state), [])
         self.assertEqual(api("approval_metrics")(state)["semantic_change_without_revision_increment"], 0)
 
