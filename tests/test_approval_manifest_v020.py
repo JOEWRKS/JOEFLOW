@@ -78,8 +78,14 @@ def approved_state():
     return state
 
 
-def approved_recommendation_state():
+def approved_recommendation_state(*, reasoning_evidence_id="EVD-900"):
     state = review_ready_state()
+    if reasoning_evidence_id != "EVD-900":
+        state["evidence"].append(evidence_record(
+            reasoning_evidence_id,
+            source_kind="DOCUMENTED_INTENT",
+            authority_classes=["INTENT"],
+        ))
     unknown = unknown_record(
         status="RESOLVED",
         classification="NON_MATERIAL",
@@ -88,7 +94,7 @@ def approved_recommendation_state():
     unknown.update({
         "recommendation": {
             "recommended_option": "OPT-A",
-            "reasoning_refs": ["EVD-900"],
+            "reasoning_refs": [reasoning_evidence_id],
             "tradeoffs": ["The current behavior remains stable."],
             "confidence": "HIGH",
         },
@@ -465,6 +471,39 @@ class ApprovalValidationV020Test(unittest.TestCase):
         self.assertEqual(api("validate_approval")(state), [])
         self.assertEqual(api("approval_metrics")(state)["semantic_change_without_revision_increment"], 0)
 
+    def test_accepted_recommendation_evidence_drift_stales_manifest_and_approval(self):
+        # Break caught: accepted reasoning claim/version/hash drift preserving an exact prior approval.
+        state = approved_recommendation_state(reasoning_evidence_id="EVD-001")
+        before_definition = api("definition_digest")(state)
+        before_manifest = api("approval_manifest_digest")(
+            api("compute_approval_manifest")(state)
+        )
+
+        for field, value in (
+            ("claim", "Changed recommendation evidence."),
+            ("observed_version", "v2"),
+            ("content_hash", "sha256:two"),
+        ):
+            candidate = copy.deepcopy(state)
+            evidence = next(
+                record for record in candidate["evidence"] if record["id"] == "EVD-001"
+            )
+            evidence[field] = value
+            candidate["discovery_baseline"] = build_discovery_baseline(
+                candidate, procedure_complete=True,
+                applicable_surface_classes_complete=True,
+            )
+
+            self.assertNotEqual(api("definition_digest")(candidate), before_definition, field)
+            self.assertNotEqual(
+                api("approval_manifest_digest")(api("compute_approval_manifest")(candidate)),
+                before_manifest,
+                field,
+            )
+            codes = self.codes(candidate)
+            self.assertIn("stale_approval", codes, field)
+            self.assertIn("missing_or_stale_approval_manifest", codes, field)
+
     def test_previous_approved_record_must_remain_even_if_evidence_is_no_longer_consumed(self):
         # Break caught: deleting an approved stable ID being treated as implicit retirement.
         revision_one = review_ready_state()
@@ -492,6 +531,70 @@ class ApprovalValidationV020Test(unittest.TestCase):
         revision_two["evidence"] = [record for record in revision_two["evidence"] if record["id"] != "EVD-001"]
         self.assertEqual(api("approval_metrics")(revision_two)["approved_record_missing_from_state"], 1)
         self.assertIn("approved_record_missing_from_state", self.codes(revision_two))
+
+    def test_all_prior_valid_commitments_preserve_consumed_then_unconsumed_evidence(self):
+        # Break caught: a deletion guard forgetting IDs committed before the latest prior revision.
+        revision_one = review_ready_state()
+        revision_one["evidence"].append(evidence_record(
+            "EVD-001", source_kind="DOCUMENTED_INTENT", authority_classes=["INTENT"],
+        ))
+        revision_one["objects"]["decisions"] = [{
+            "id": "DEC-001", "status": "CURRENT", "statement": "Use the confirmed source.",
+            "decision_type": "PRODUCT_POLICY", "resolution_mode": "EVIDENCE",
+            "decision_authority": "EVIDENCE_RESOLVABLE", "source_unknown_refs": [],
+            "evidence_refs": ["EVD-001"], "materiality": materiality(), "affects": [],
+            "decided_by": "AGENT", "accepted_recommendation": None,
+        }]
+        establish_current_baseline(revision_one)
+        manifest_one = api("compute_approval_manifest")(revision_one)
+        commitment_one = api("build_approval_commitment")(revision_one, manifest_one)
+        self.assertIn("EVD-001", commitment_one["record_hashes"])
+
+        revision_two = copy.deepcopy(revision_one)
+        revision_two["project"]["definition_revision"] = 2
+        revision_two["objects"]["decisions"][0]["status"] = "STALE"
+        revision_two["approval_history"] = [commitment_one]
+        establish_current_baseline(revision_two)
+        manifest_two = api("compute_approval_manifest")(revision_two)
+        commitment_two = api("build_approval_commitment")(revision_two, manifest_two)
+        self.assertNotIn("EVD-001", commitment_two["record_hashes"])
+
+        revision_three = copy.deepcopy(revision_two)
+        revision_three["project"]["definition_revision"] = 3
+        revision_three["approval_history"] = [commitment_one, commitment_two]
+        revision_three["evidence"] = [
+            record for record in revision_three["evidence"] if record["id"] != "EVD-001"
+        ]
+        establish_current_baseline(revision_three)
+
+        self.assertEqual(
+            api("approval_metrics")(revision_three)["approved_record_missing_from_state"],
+            1,
+        )
+        self.assertIn("approved_record_missing_from_state", self.codes(revision_three))
+
+    def test_malformed_current_and_future_commitments_are_not_deletion_authority(self):
+        # Break caught: malformed or non-prior history inventing stable IDs the current state must retain.
+        state = review_ready_state()
+        state["project"]["definition_revision"] = 3
+        establish_current_baseline(state)
+        manifest = api("compute_approval_manifest")(state)
+        valid_shape = api("build_approval_commitment")(state, manifest)
+        current = copy.deepcopy(valid_shape)
+        current["record_hashes"]["EVD-GHOST"] = "0" * 64
+        future = copy.deepcopy(valid_shape)
+        future["revision"] = 4
+        future["record_hashes"]["EVD-FUTURE"] = "1" * 64
+        malformed_prior = {
+            "revision": 2,
+            "record_hashes": {"EVD-MALFORMED": "2" * 64},
+        }
+        state["approval_history"] = [malformed_prior, current, future]
+
+        self.assertEqual(
+            api("approval_metrics")(state)["approved_record_missing_from_state"],
+            0,
+        )
 
     def test_schema_and_template_freeze_two_exact_approval_layers(self):
         # Break caught: schema accepting open-ended approval/history objects or the shared template becoming pre-approved.

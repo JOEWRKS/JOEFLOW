@@ -195,7 +195,7 @@ def _is_empty_semantic_value(value: object) -> bool:
 
 def _verify_basis_record(record_type: str, record: dict[str, object], root: str) -> None:
     if record_type == "SURF":
-        if root != "status" or record.get("status") not in {"IN_SCOPE", "OUT_OF_SCOPE"}:
+        if record.get("status") not in {"IN_SCOPE", "OUT_OF_SCOPE"}:
             raise BindingError("ineligible_basis_authority", record.get("id"))
         return
     if record.get("status") != "CURRENT":
@@ -287,8 +287,10 @@ def binding_contract_identity() -> dict[str, dict[str, str]]:
 _CORE_COVERAGE_CELL_KEYS = {
     "status", "authority_bindings", "unknown_refs", "basis_bindings", "rationale",
 }
+_CORE_COVERAGE_ROW_KEYS = {"feature_id", "cells"}
 _SPECIALIST_COVERAGE_CELL_KEYS = _CORE_COVERAGE_CELL_KEYS
 _UX_COVERAGE_CELL_KEYS = _CORE_COVERAGE_CELL_KEYS
+_UX_COVERAGE_ROW_KEYS = {"screen_id", "states", "actions"}
 
 
 def _coverage_error(code: str, message: str, path: str) -> dict[str, str]:
@@ -386,6 +388,7 @@ def _product_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, 
 
     coverage = state.get("coverage")
     rows = coverage if isinstance(coverage, list) else []
+    material_targets = set(_material_core_targets(state))
     by_target: dict[str, list[tuple[int, dict[str, object]]]] = {}
     for position, row in enumerate(rows):
         if isinstance(row, dict) and isinstance(row.get("feature_id"), str):
@@ -397,6 +400,21 @@ def _product_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, 
             errors.append(_coverage_error("invalid_core_coverage_row", "Core coverage rows must be objects", row_path))
             metric_cells["core_coverage_gaps"].add(row_path)
             return
+        if set(row) != _CORE_COVERAGE_ROW_KEYS or not isinstance(row.get("feature_id"), str):
+            errors.append(_coverage_error(
+                "invalid_core_coverage_row",
+                "Core coverage rows require exactly feature_id and cells",
+                row_path,
+            ))
+            metric_cells["core_coverage_gaps"].add(row_path)
+            return
+        if row["feature_id"] not in material_targets:
+            errors.append(_coverage_error(
+                "core_coverage_target_mismatch",
+                "Core coverage rows may target only current recomputed-MATERIAL requirements",
+                f"{row_path}.feature_id",
+            ))
+            metric_cells["core_coverage_gaps"].add(row_path)
         cells = row.get("cells")
         if not isinstance(cells, dict) or set(cells) != set(core_types):
             errors.append(_coverage_error("core_coverage_axis_inventory_mismatch", "Core cells must equal the frozen 20-axis inventory", f"coverage[{position}].cells"))
@@ -444,7 +462,7 @@ def _product_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, 
     for position, row in enumerate(rows):
         validate_core_row(position, row)
 
-    for target in _material_core_targets(state):
+    for target in sorted(material_targets):
         target_rows = by_target.get(target, [])
         target_path = f"coverage.{target}"
         if not target_rows:
@@ -615,7 +633,7 @@ def _ux_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]]
             errors.append(_coverage_error("invalid_ux_coverage_row", "UX coverage rows must be objects", row_path))
             metric_cells["ux_coverage_gaps"].add(row_path)
             return
-        if set(row) != {"screen_id", "states", "actions"}:
+        if set(row) != _UX_COVERAGE_ROW_KEYS:
             errors.append(_coverage_error("invalid_ux_coverage_row", "UX coverage rows require exactly screen_id, states, and actions", row_path))
             metric_cells["ux_coverage_gaps"].add(row_path)
         validate_axes(
@@ -646,7 +664,7 @@ def _ux_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]]
                 "screen_action_inventory_gaps",
             )
         screen_id = row.get("screen_id")
-        target = _screen_records(state).get(screen_id) if isinstance(screen_id, str) else None
+        target = _current_screen_targets(state).get(screen_id) if isinstance(screen_id, str) else None
         if target is None:
             errors.append(_coverage_error("invalid_ux_coverage_row", "UX coverage rows must reference a canonical screen", f"{row_path}.screen_id"))
             metric_cells["ux_coverage_gaps"].add(row_path)
@@ -687,6 +705,15 @@ _GRAPH_AUTHORITY_TYPES = {
 _SURFACE_TRACE_TYPES = {"REQ", "RULE", "FLOW", "DATA", "INT"}
 _ORPHAN_EXCEPTIONS = {"GOAL", "USR", "TASK"}
 _SEMANTIC_SINKS = {"SINK:CORE", "SINK:GRILL", "SINK:UX", "SINK:TASK"}
+_GRAPH_REFERENCE_FIELDS = {
+    "DEC": (("affects", _GRAPH_AUTHORITY_TYPES),),
+    "RULE": (("applies_to", _GRAPH_AUTHORITY_TYPES),),
+    "FLOW": (("goal_refs", {"GOAL"}),),
+    "SCR": (("requirement_refs", {"REQ"}),),
+    "STATE": (("owner_refs", _GRAPH_AUTHORITY_TYPES),),
+    "AC": (("requirement_refs", {"REQ"}),),
+    "TASK": (("implements", {"REQ"}), ("acceptance_refs", {"AC"})),
+}
 
 
 def _current_authority_index(
@@ -703,6 +730,82 @@ def _current_authority_index(
             else record.get("status") not in {"SUPERSEDED", "RETIRED"}
         )
     }
+
+
+def _authority_graph_reference_analysis(
+    state: dict[str, object],
+) -> tuple[list[dict[str, str]], dict[str, int]]:
+    """Validate every declared Task 4 graph reference before invalid edges are omitted."""
+    try:
+        all_records = canonical_record_index(state)
+        current_records = _current_authority_index(state)
+    except BindingError:
+        return [], {"invalid_authority_graph_reference": 0}
+    errors: list[dict[str, str]] = []
+    invalid_paths: set[str] = set()
+
+    def validate_refs(
+        refs: object, *, expected_types: set[str], path: str,
+    ) -> None:
+        if not isinstance(refs, list):
+            return
+        for position, reference in enumerate(refs):
+            reference_path = f"{path}[{position}]"
+            target = all_records.get(reference) if isinstance(reference, str) else None
+            if target is None:
+                code = "missing_authority_graph_reference"
+                message = "typed authority graph reference must resolve to a canonical record"
+            elif target[0] not in expected_types:
+                code = "invalid_authority_graph_reference_type"
+                message = "typed authority graph reference has an invalid target type"
+            elif reference not in current_records:
+                code = "historical_authority_graph_reference"
+                message = "typed authority graph reference must target current authority"
+            else:
+                continue
+            invalid_paths.add(reference_path)
+            errors.append(_coverage_error(code, message, reference_path))
+
+    objects = state.get("objects")
+    if isinstance(objects, dict):
+        for group, record_type in _OBJECT_TYPES.items():
+            fields = _GRAPH_REFERENCE_FIELDS.get(record_type)
+            records = objects.get(group)
+            if fields is None or not isinstance(records, list):
+                continue
+            for position, record in enumerate(records):
+                if not isinstance(record, dict) or record.get("status") != "CURRENT":
+                    continue
+                for field, expected_types in fields:
+                    validate_refs(
+                        record.get(field), expected_types=expected_types,
+                        path=f"objects.{group}[{position}].{field}",
+                    )
+
+    manifest = state.get("surface_manifest")
+    surfaces = manifest.get("records") if isinstance(manifest, dict) else None
+    if isinstance(surfaces, list):
+        for position, record in enumerate(surfaces):
+            if (
+                not isinstance(record, dict)
+                or record.get("status") in {"SUPERSEDED", "RETIRED"}
+            ):
+                continue
+            validate_refs(
+                record.get("authority_refs"), expected_types=_SURFACE_TRACE_TYPES,
+                path=f"surface_manifest.records[{position}].authority_refs",
+            )
+    return errors, {"invalid_authority_graph_reference": len(invalid_paths)}
+
+
+def validate_authority_graph_references(
+    state: dict[str, object],
+) -> list[dict[str, str]]:
+    return _authority_graph_reference_analysis(state)[0]
+
+
+def authority_graph_reference_metrics(state: dict[str, object]) -> dict[str, int]:
+    return _authority_graph_reference_analysis(state)[1]
 
 
 def _positive_binding_ids(
@@ -756,7 +859,19 @@ def _exact_binding_sinks(state: dict[str, object]) -> dict[str, set[str]]:
 
     coverage = state.get("coverage")
     if isinstance(coverage, list):
+        material_targets = set(_material_core_targets(state))
+        rows_by_target: dict[str, list[dict[str, object]]] = {}
         for row in coverage:
+            if isinstance(row, dict) and isinstance(row.get("feature_id"), str):
+                rows_by_target.setdefault(row["feature_id"], []).append(row)
+        qualified_rows = [
+            rows_for_target[0]
+            for target, rows_for_target in rows_by_target.items()
+            if target in material_targets
+            and len(rows_for_target) == 1
+            and set(rows_for_target[0]) == _CORE_COVERAGE_ROW_KEYS
+        ]
+        for row in qualified_rows:
             cells = row.get("cells") if isinstance(row, dict) else None
             if not isinstance(cells, dict):
                 continue
@@ -803,9 +918,19 @@ def _exact_binding_sinks(state: dict[str, object]) -> dict[str, set[str]]:
     }
     ux_coverage = state.get("ux_coverage")
     if isinstance(ux_coverage, list):
+        current_screens = set(_current_screen_targets(state))
+        rows_by_screen: dict[str, list[dict[str, object]]] = {}
         for row in ux_coverage:
-            if not isinstance(row, dict):
-                continue
+            if isinstance(row, dict) and isinstance(row.get("screen_id"), str):
+                rows_by_screen.setdefault(row["screen_id"], []).append(row)
+        qualified_rows = [
+            rows_for_screen[0]
+            for screen_id, rows_for_screen in rows_by_screen.items()
+            if screen_id in current_screens
+            and len(rows_for_screen) == 1
+            and set(rows_for_screen[0]) == _UX_COVERAGE_ROW_KEYS
+        ]
+        for row in qualified_rows:
             state_cells = row.get("states")
             if isinstance(state_cells, dict):
                 for axis, cell in state_cells.items():

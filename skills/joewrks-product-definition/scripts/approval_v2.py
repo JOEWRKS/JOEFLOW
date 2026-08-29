@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from authority_binding_v2 import (
+    authority_graph_reference_metrics,
     authority_consumption_metrics,
     canonical_json,
     canonical_record_index,
@@ -187,6 +188,14 @@ def consumed_evidence_ids(state: dict[str, object]) -> list[str]:
                 and record.get("resolution_mode") in {"EVIDENCE", "EXTERNAL_CONSTRAINT"}
             ):
                 add(record.get("evidence_refs"))
+            if (
+                isinstance(record, dict)
+                and record.get("status") == "RESOLVED"
+                and record.get("resolution_mode") == "USER_ACCEPTED_RECOMMENDATION"
+            ):
+                recommendation = record.get("recommendation")
+                if isinstance(recommendation, dict):
+                    add(recommendation.get("reasoning_refs"))
 
     manifest = state.get("surface_manifest")
     records = manifest.get("records") if isinstance(manifest, dict) else None
@@ -481,6 +490,7 @@ def _semantic_product_readiness_metrics(state: dict[str, object]) -> dict[str, i
         **grill_pack_metrics(state),
         **product_binding_metrics(state),
         **ux_binding_metrics(state),
+        **authority_graph_reference_metrics(state),
         **authority_consumption_metrics(state),
     }
 
@@ -501,14 +511,28 @@ def _history_metrics(state: dict[str, object]) -> dict[str, int]:
         except (KeyError, TypeError, ValueError):
             semantic_change = 1
 
-    previous = previous_approval_commitment(state)
     missing = 0
-    if previous is not None and isinstance(previous.get("record_hashes"), dict):
+    if isinstance(revision, int) and not isinstance(revision, bool):
+        history = _history(state)
+        revision_counts: dict[int, int] = {}
+        for entry in history:
+            entry_revision = entry.get("revision")
+            if isinstance(entry_revision, int) and not isinstance(entry_revision, bool):
+                revision_counts[entry_revision] = revision_counts.get(entry_revision, 0) + 1
+        committed_ids = {
+            record_id
+            for entry in history
+            if _valid_commitment(entry)
+            and isinstance(entry.get("revision"), int)
+            and entry["revision"] < revision
+            and revision_counts.get(entry["revision"]) == 1
+            for record_id in entry["record_hashes"]
+        }
         try:
             current_ids = set(canonical_record_index(state))
         except (TypeError, ValueError):
             current_ids = set()
-        missing = sum(record_id not in current_ids for record_id in previous["record_hashes"])
+        missing = sum(record_id not in current_ids for record_id in committed_ids)
     return {
         "semantic_change_without_revision_increment": semantic_change,
         "approved_record_missing_from_state": missing,

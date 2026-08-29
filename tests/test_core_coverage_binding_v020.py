@@ -178,6 +178,54 @@ class CoreCoverageBindingV020Test(unittest.TestCase):
         self.assertIn("invalid_core_coverage_cell", {error["code"] for error in errors})
         self.assertEqual(product_binding_metrics(state)["coverage_without_authority"], 1)
 
+    def test_core_row_identities_exactly_equal_current_material_requirements(self):
+        # Break caught: unknown, historical, or non-material rows joining the canonical Core row set.
+        base = state_with_authorities()
+        base["coverage"] = [exact_core_coverage(base)]
+        candidates = []
+
+        unknown = copy.deepcopy(base)
+        orphan = exact_core_coverage(unknown)
+        orphan["feature_id"] = "REQ-999"
+        unknown["coverage"].append(orphan)
+        candidates.append(unknown)
+
+        historical = copy.deepcopy(base)
+        old_requirement = material_requirement()
+        old_requirement.update({"id": "REQ-002", "status": "STALE"})
+        historical["objects"]["requirements"].append(old_requirement)
+        old_row = exact_core_coverage(historical)
+        old_row["feature_id"] = "REQ-002"
+        historical["coverage"].append(old_row)
+        candidates.append(historical)
+
+        non_material = copy.deepcopy(base)
+        non_material_requirement = material_requirement()
+        non_material_requirement.update({
+            "id": "REQ-003",
+            "materiality": materiality(classification="NON_MATERIAL"),
+        })
+        non_material["objects"]["requirements"].append(non_material_requirement)
+        non_material_row = exact_core_coverage(non_material)
+        non_material_row["feature_id"] = "REQ-003"
+        non_material["coverage"].append(non_material_row)
+        candidates.append(non_material)
+
+        for candidate in candidates:
+            with self.subTest(feature_id=candidate["coverage"][-1]["feature_id"]):
+                self.assertIn("core_coverage_target_mismatch", self.codes(candidate))
+                self.assertEqual(product_binding_metrics(candidate)["core_coverage_gaps"], 1)
+
+    def test_core_row_requires_exact_feature_and_cells_keys(self):
+        # Break caught: an extra row key allowing a noncanonical Core row shape into proof.
+        state = state_with_authorities()
+        row = exact_core_coverage(state)
+        row["opaque"] = True
+        state["coverage"] = [row]
+
+        self.assertIn("invalid_core_coverage_row", self.codes(state))
+        self.assertEqual(product_binding_metrics(state)["core_coverage_gaps"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -104,6 +104,16 @@ VALID_RECORDS = {
 }
 
 
+REFERENCE_DEPENDENCIES = {
+    "rules": ("requirements",),
+    "flows": ("goals",),
+    "screens": ("requirements",),
+    "states": ("requirements",),
+    "acceptance_criteria": ("requirements",),
+    "tasks": ("requirements", "acceptance_criteria"),
+}
+
+
 class StateV020FoundationTest(unittest.TestCase):
     def invoke(self, kind, state):
         with tempfile.TemporaryDirectory() as directory:
@@ -373,6 +383,10 @@ class StateV020FoundationTest(unittest.TestCase):
             with self.subTest(group=group):
                 state = foundation_state()
                 state["objects"][group] = [copy.deepcopy(record)]
+                for dependency_group in REFERENCE_DEPENDENCIES.get(group, ()):
+                    state["objects"][dependency_group] = [
+                        copy.deepcopy(VALID_RECORDS[dependency_group])
+                    ]
                 if group == "decisions":
                     state["objects"]["unknowns"] = [resolved_decision_source()]
                 if group == "screens":
@@ -586,10 +600,31 @@ class StateV020FoundationTest(unittest.TestCase):
         })
         dependent = copy.deepcopy(VALID_RECORDS["tasks"])
         state["objects"]["requirements"] = [retired]
+        state["objects"]["acceptance_criteria"] = [
+            copy.deepcopy(VALID_RECORDS["acceptance_criteria"])
+        ]
         state["objects"]["tasks"] = [dependent]
         before = copy.deepcopy(state)
 
-        self.assertEqual(validate_state_v2(state), [])
+        graph_errors = [
+            error for error in validate_state_v2(state)
+            if error["code"] == "historical_authority_graph_reference"
+        ]
+        self.assertEqual(
+            graph_errors,
+            [
+                {
+                    "code": "historical_authority_graph_reference",
+                    "message": "typed authority graph reference must target current authority",
+                    "path": "objects.acceptance_criteria[0].requirement_refs[0]",
+                },
+                {
+                    "code": "historical_authority_graph_reference",
+                    "message": "typed authority graph reference must target current authority",
+                    "path": "objects.tasks[0].implements[0]",
+                },
+            ],
+        )
         self.assertEqual(state, before)
         self.assertEqual(state["objects"]["tasks"][0]["status"], "CURRENT")
 

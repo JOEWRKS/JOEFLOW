@@ -5,6 +5,7 @@ from typing import Any
 from authority_binding_v2 import (
     BindingError,
     binding_contract_identity,
+    validate_authority_graph_references,
     validate_product_coverage_bindings,
     validate_ux_coverage_bindings,
 )
@@ -167,6 +168,7 @@ SEMANTIC_READINESS_BLOCKING_METRICS = frozenset({
     "unconsumed_material_decision",
     "requirement_acceptance_gaps",
     "task_mapping_gaps",
+    "invalid_authority_graph_reference",
     "semantic_change_without_revision_increment",
     "approved_record_missing_from_state",
     "minimum_definition_gaps",
@@ -1123,6 +1125,7 @@ def _validate_state_v2(
     errors.extend(validate_grill_coverage(state))
     errors.extend(validate_product_coverage_bindings(state))
     errors.extend(validate_ux_coverage_bindings(state))
+    errors.extend(validate_authority_graph_references(state))
     errors.extend(validate_discovery_baseline(
         state, check_freshness=check_discovery_baseline,
     ))
@@ -1167,15 +1170,38 @@ def _approval_control_matches(
 
 def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:
     errors = validate_state_v2(state)
-    unknown_metrics = grill_unknown_metrics(state)
-    readiness = semantic_readiness_metrics(state)
-    approval = approval_metrics(state)
-    metrics = {
-        **readiness,
-        **approval,
-        "deferred_unknowns": unknown_metrics["deferred_unknowns"],
-    }
-    current_definition_digest = _current_semantic_digest(state)
+    metrics: dict[str, int] = {}
+    projection_unsafe = False
+
+    def unsafe_projection(stage: str) -> None:
+        nonlocal projection_unsafe
+        projection_unsafe = True
+        errors.append(_error(
+            "unsafe_semantic_projection",
+            f"structural validation prevents safe {stage} projection",
+            stage,
+        ))
+
+    try:
+        unknown_metrics = grill_unknown_metrics(state)
+        metrics["deferred_unknowns"] = unknown_metrics["deferred_unknowns"]
+    except (BindingError, KeyError, TypeError, ValueError):
+        unsafe_projection("unknown_metrics")
+    try:
+        metrics.update(semantic_readiness_metrics(state))
+    except (BindingError, KeyError, TypeError, ValueError):
+        unsafe_projection("semantic_readiness_metrics")
+    try:
+        metrics.update(approval_metrics(state))
+    except (BindingError, KeyError, TypeError, ValueError):
+        unsafe_projection("approval_metrics")
+    try:
+        current_definition_digest = definition_digest(state)
+    except (BindingError, KeyError, TypeError, ValueError):
+        current_definition_digest = None
+        unsafe_projection("definition_digest")
+    if projection_unsafe:
+        current_definition_digest = None
     closed = (
         not errors
         and _approval_control_matches(state, current_definition_digest)

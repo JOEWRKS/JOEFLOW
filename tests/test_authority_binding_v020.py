@@ -216,6 +216,43 @@ class AuthorityBindingTest(unittest.TestCase):
         binding = make_authority_binding(state, "EVD-001", "/claim")
         verify_authority_binding(state, binding, allowed_types={"EVD"}, semantic_roots={"EVD": {"claim"}}, basis=True)
 
+    def test_every_contract_declared_surface_basis_root_uses_separate_disposition_gate(self):
+        # Break caught: runtime accepting only /status although the frozen contract declares four SURF roots.
+        state = foundation_state()
+        surface = surface_record("SURF-001", status="OUT_OF_SCOPE", classification="NON_MATERIAL")
+        surface.update({
+            "rationale": "The user explicitly excluded this surface.",
+            "intent_classification": "AUTHORITATIVE",
+        })
+        state["surface_manifest"]["records"] = [surface]
+        roots = set(load_binding_contracts()["product"]["basis_semantic_roots"]["SURF"])
+        self.assertEqual(roots, {"status", "kind", "rationale", "intent_classification"})
+
+        for root in sorted(roots):
+            with self.subTest(root=root):
+                verify_authority_binding(
+                    state,
+                    make_authority_binding(state, "SURF-001", f"/{root}"),
+                    allowed_types={"SURF"},
+                    semantic_roots={"SURF": roots},
+                    basis=True,
+                )
+
+        for disposition in ("OPEN", "SUPERSEDED", "RETIRED"):
+            invalid = copy.deepcopy(state)
+            invalid["surface_manifest"]["records"][0]["status"] = disposition
+            with self.subTest(disposition=disposition):
+                self.assert_binding_error(
+                    "ineligible_basis_authority",
+                    lambda invalid=invalid: verify_authority_binding(
+                        invalid,
+                        make_authority_binding(invalid, "SURF-001", "/kind"),
+                        allowed_types={"SURF"},
+                        semantic_roots={"SURF": roots},
+                        basis=True,
+                    ),
+                )
+
     def test_nan_is_not_canonical_json(self):
         # Break caught: platform-specific NaN JSON tokens becoming portable authority hashes.
         with self.assertRaises(ValueError):

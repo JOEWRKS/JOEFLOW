@@ -134,6 +134,47 @@ def core_state(*, with_mapping=True):
 
 
 class AuthorityConsumptionGraphV020Test(unittest.TestCase):
+    def test_invalid_graph_references_are_structured_validation_blockers(self):
+        # Break caught: wrong-type, missing, or historical typed graph targets being silently omitted.
+        base = foundation_state()
+        base["objects"]["requirements"] = [requirement()]
+        base["objects"]["goals"] = [{
+            "id": "GOAL-001", "status": "CURRENT", "statement": "Ship safely.",
+        }]
+        base["objects"]["flows"] = [{
+            "id": "FLOW-001", "status": "CURRENT", "goal_refs": ["GOAL-001"],
+            "entry": "Open editor.", "preconditions": [], "paths": [], "outcomes": [],
+        }]
+        cases = []
+
+        wrong_type = copy.deepcopy(base)
+        wrong_type["objects"]["flows"][0]["goal_refs"] = ["REQ-001"]
+        cases.append((wrong_type, "invalid_authority_graph_reference_type"))
+
+        missing = copy.deepcopy(base)
+        missing["objects"]["flows"][0]["goal_refs"] = ["GOAL-999"]
+        cases.append((missing, "missing_authority_graph_reference"))
+
+        historical = copy.deepcopy(base)
+        historical["objects"]["goals"].append({
+            "id": "GOAL-002", "status": "SUPERSEDED", "statement": "Old goal.",
+            "superseded_by": "GOAL-001",
+        })
+        historical["objects"]["flows"][0]["goal_refs"] = ["GOAL-002"]
+        cases.append((historical, "historical_authority_graph_reference"))
+
+        for candidate, code in cases:
+            with self.subTest(code=code):
+                errors = validation.validate_state_v2(candidate)
+                matching = [error for error in errors if error["code"] == code]
+                self.assertEqual(len(matching), 1)
+                self.assertEqual(matching[0]["path"], "objects.flows[0].goal_refs[0]")
+                self.assertEqual(
+                    semantic_readiness_metrics(candidate)["invalid_authority_graph_reference"],
+                    1,
+                )
+                self.assertFalse(validation.evaluate_closure_v2(candidate)["closed"])
+
     def test_decision_rule_and_exact_core_binding_form_a_transitive_sink_path(self):
         # Break caught: reverse RULE.applies_to edges or exact Core bindings failing to consume a material decision transitively.
         state = core_state()
@@ -286,6 +327,61 @@ class AuthorityConsumptionGraphV020Test(unittest.TestCase):
         self.assertEqual(graph["REQ-001"], set())
         self.assertEqual(authority_consumption_metrics(state)["orphan_material_authority"], 1)
 
+    def test_orphan_and_duplicate_core_rows_cannot_create_semantic_sinks(self):
+        # Break caught: a valid-looking noncanonical or duplicate Core row consuming material authority.
+        base = core_state()
+        base["objects"]["decisions"] = [decision(affects=["RULE-002"])]
+        base["objects"]["rules"].append({
+            "id": "RULE-002", "status": "CURRENT",
+            "statement": "Only reviewed changes may proceed.", "applies_to": [],
+        })
+
+        orphan = copy.deepcopy(base)
+        orphan_row = copy.deepcopy(orphan["coverage"][0])
+        orphan_row["feature_id"] = "REQ-999"
+        orphan_row["cells"]["actor"] = covered_cell(orphan, "RULE-002", "/statement")
+        orphan["coverage"].append(orphan_row)
+        self.assertNotIn("SINK:CORE", build_authority_consumption_graph(orphan)["RULE-002"])
+
+        duplicate = copy.deepcopy(base)
+        second = copy.deepcopy(duplicate["coverage"][0])
+        second["cells"]["actor"] = covered_cell(duplicate, "RULE-002", "/statement")
+        duplicate["coverage"].append(second)
+        self.assertNotIn("SINK:CORE", build_authority_consumption_graph(duplicate)["RULE-002"])
+
+    def test_orphan_noncurrent_and_duplicate_ux_rows_cannot_create_semantic_sinks(self):
+        # Break caught: a noncanonical UX row consuming authority even though its target/cardinality is invalid.
+        base = state_with_authorities()
+        base["objects"]["rules"].append({
+            "id": "RULE-002", "status": "CURRENT",
+            "statement": "Only reviewed changes may proceed.", "applies_to": [],
+        })
+        base["ux_coverage"] = [exact_ux_row(base)]
+
+        orphan = copy.deepcopy(base)
+        orphan_row = exact_ux_row(orphan)
+        orphan_row["screen_id"] = "SCR-999"
+        orphan_row["states"]["empty"] = covered_cell(orphan, "RULE-002", "/statement")
+        orphan["ux_coverage"].append(orphan_row)
+        self.assertNotIn("SINK:UX", build_authority_consumption_graph(orphan)["RULE-002"])
+
+        noncurrent = copy.deepcopy(base)
+        noncurrent["objects"]["screens"].append({
+            "id": "SCR-002", "status": "STALE", "purpose": "Old editor.",
+            "interaction_mode": "INTERACTIVE", "major_actions": ["submit"],
+        })
+        stale_row = exact_ux_row(noncurrent)
+        stale_row["screen_id"] = "SCR-002"
+        stale_row["states"]["empty"] = covered_cell(noncurrent, "RULE-002", "/statement")
+        noncurrent["ux_coverage"].append(stale_row)
+        self.assertNotIn("SINK:UX", build_authority_consumption_graph(noncurrent)["RULE-002"])
+
+        duplicate = copy.deepcopy(base)
+        duplicate_row = exact_ux_row(duplicate)
+        duplicate_row["states"]["empty"] = covered_cell(duplicate, "RULE-002", "/statement")
+        duplicate["ux_coverage"].append(duplicate_row)
+        self.assertNotIn("SINK:UX", build_authority_consumption_graph(duplicate)["RULE-002"])
+
 
 class RequirementDeliveryGateV020Test(unittest.TestCase):
     def test_missing_acceptance_and_task_each_count_the_requirement_once(self):
@@ -391,6 +487,7 @@ class SemanticReadinessV020Test(unittest.TestCase):
             "unconsumed_material_decision": 0,
             "requirement_acceptance_gaps": 0,
             "task_mapping_gaps": 0,
+            "invalid_authority_graph_reference": 0,
             "semantic_change_without_revision_increment": 0,
             "approved_record_missing_from_state": 0,
             "minimum_definition_gaps": 2,

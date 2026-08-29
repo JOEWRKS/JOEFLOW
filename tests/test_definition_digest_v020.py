@@ -239,6 +239,80 @@ class DefinitionDigestV020Test(unittest.TestCase):
 
         self.assertEqual(api("definition_digest")(state), before)
 
+    def test_only_accepted_recommendation_reasoning_evidence_is_consumed(self):
+        # Break caught: accepted recommendation evidence omitted, or unaccepted recommendation evidence over-consumed.
+        state = foundation_state()
+        state["evidence"] = evidence_with_grill_basis(*[
+            evidence_record(
+                evidence_id,
+                source_kind="DOCUMENTED_INTENT",
+                authority_classes=["INTENT"],
+            )
+            for evidence_id in ("EVD-001", "EVD-002", "EVD-003")
+        ])
+        accepted = unknown_record(
+            "UNK-001", status="RESOLVED", classification="NON_MATERIAL",
+            decision_authority="USER_CONFIRMATION",
+        )
+        accepted.update({
+            "recommendation": {
+                "recommended_option": "OPT-A", "reasoning_refs": ["EVD-001", "REQ-001"],
+                "tradeoffs": ["The current behavior remains stable."], "confidence": "HIGH",
+            },
+            "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+            "resolution_summary": "The user accepted the recommendation.",
+        })
+        unaccepted = unknown_record(
+            "UNK-002", decision_authority="USER_CONFIRMATION",
+        )
+        unaccepted["recommendation"] = {
+            "recommended_option": "OPT-A", "reasoning_refs": ["EVD-002"],
+            "tradeoffs": ["The current behavior remains stable."], "confidence": "HIGH",
+        }
+        historical = copy.deepcopy(accepted)
+        historical.update({
+            "id": "UNK-003", "status": "RETIRED", "recommendation": {
+                **accepted["recommendation"], "reasoning_refs": ["EVD-003"],
+            },
+        })
+        state["objects"]["unknowns"] = [accepted, unaccepted, historical]
+
+        self.assertEqual(api("consumed_evidence_ids")(state), ["EVD-001", "EVD-900"])
+
+    def test_accepted_recommendation_evidence_claim_version_and_hash_change_definition_digest(self):
+        # Break caught: recommendation reasoning authority drifting behind a stable semantic definition.
+        state = foundation_state()
+        source = evidence_record(
+            "EVD-001", source_kind="DOCUMENTED_INTENT", authority_classes=["INTENT"],
+        )
+        source.update({"observed_version": "v1", "content_hash": "sha256:one"})
+        state["evidence"] = evidence_with_grill_basis(source)
+        accepted = unknown_record(
+            status="RESOLVED", classification="NON_MATERIAL",
+            decision_authority="USER_CONFIRMATION",
+        )
+        accepted.update({
+            "recommendation": {
+                "recommended_option": "OPT-A", "reasoning_refs": ["EVD-001"],
+                "tradeoffs": ["The current behavior remains stable."], "confidence": "HIGH",
+            },
+            "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+            "resolution_summary": "The user accepted the recommendation.",
+        })
+        state["objects"]["unknowns"] = [accepted]
+        establish_current_baseline(state)
+        before = api("definition_digest")(state)
+
+        for field, value in (
+            ("claim", "Changed recommendation evidence."),
+            ("observed_version", "v2"),
+            ("content_hash", "sha256:two"),
+        ):
+            candidate = copy.deepcopy(state)
+            candidate["evidence"][0][field] = value
+            establish_current_baseline(candidate)
+            self.assertNotEqual(api("definition_digest")(candidate), before, field)
+
 
 if __name__ == "__main__":
     unittest.main()

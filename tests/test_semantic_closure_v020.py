@@ -1,5 +1,8 @@
 import copy
+import json
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -10,6 +13,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 from approval_v2 import (  # noqa: E402
     approval_manifest_digest,
+    build_approval_commitment,
     compute_approval_manifest,
     definition_digest,
     validate_approval,
@@ -340,7 +344,7 @@ def literal_ready_state():
 # builder is called by the fixture. These constants are replaced only when semantics change.
 LITERAL_APPROVAL = {
     "definition_digest": "dd1a16a678b431fc971d65e61eef77b68edef26c33b8d5891f3f9b5f888d8876",
-    "manifest_digest": "6d42f238fbc862d2a566f8d3dab00432698b24b5d27db77ee54d6d233a5b2f5b",
+    "manifest_digest": "dd1e837be6e1b79048905773b1563a2f8c07aa9f47bb7e1c0e5fc99b3e32b222",
     "record_hashes": {
         "AC-001": "6069e0f4208eb32433664c1414c3b226b9681fc9c3f2a47910be624dd4e227e4",
         "DATA-001": "afeb0f9a9e6e4dc51dba97efb88343b87b3a0996d73b6c31c3e568d391142844",
@@ -381,6 +385,23 @@ def literal_approved_state():
         "approved_definition_digest": LITERAL_APPROVAL["definition_digest"],
         "approved_manifest_digest": LITERAL_APPROVAL["manifest_digest"],
         "approved_at": "2026-08-29T00:00:00Z", "approved_by": "user",
+    }
+    state["project"]["definition_status"] = "CLOSED"
+    return state
+
+
+def approve_current_state(state):
+    """Install an exact current approval after a regression deliberately changes semantics."""
+    manifest = compute_approval_manifest(state)
+    commitment = build_approval_commitment(state, manifest)
+    state["approval_history"] = [commitment]
+    state["approval"] = {
+        "status": "APPROVED",
+        "approved_revision": state["project"]["definition_revision"],
+        "approved_definition_digest": commitment["definition_digest"],
+        "approved_manifest_digest": commitment["manifest_digest"],
+        "approved_at": "2026-08-29T00:00:00Z",
+        "approved_by": "user",
     }
     state["project"]["definition_status"] = "CLOSED"
     return state
@@ -566,6 +587,114 @@ class SemanticClosureV020Test(unittest.TestCase):
         consumed_result = evaluate_closure_v2(consumed)
         self.assertFalse(consumed_result["closed"])
         self.assertGreater(consumed_result["metrics"]["stale_approval"], 0)
+
+    def test_orphan_core_row_cannot_be_the_only_semantic_sink_for_material_authority(self):
+        # Break caught: an orphan REQ row hiding an otherwise unconsumed material Decision/Rule chain.
+        state = literal_ready_state()
+        state["objects"]["decisions"][0]["affects"] = ["RULE-002"]
+        state["objects"]["unknowns"][0]["affects"] = ["RULE-002"]
+        state["objects"]["rules"].append({
+            "id": "RULE-002", "status": "CURRENT",
+            "statement": "Only reviewed requests may proceed.", "applies_to": [],
+        })
+        state["coverage"][0]["cells"]["boundary"] = covered(
+            "RULE-001", "/statement", "Only valid requests may be submitted.",
+        )
+        state["ux_coverage"][0]["states"]["permission_denied"] = covered(
+            "RULE-001", "/statement", "Only valid requests may be submitted.",
+        )
+        for axis in ("permission", "destructive_confirmation"):
+            state["ux_coverage"][0]["actions"][0]["cells"][axis] = covered(
+                "RULE-001", "/statement", "Only valid requests may be submitted.",
+            )
+        orphan = copy.deepcopy(state["coverage"][0])
+        orphan["feature_id"] = "REQ-999"
+        orphan["cells"]["actor"] = covered(
+            "RULE-002", "/statement", "Only reviewed requests may proceed.",
+        )
+        state["coverage"].append(orphan)
+        approve_current_state(state)
+
+        result = self.assert_blocked(
+            state, metric="orphan_material_authority", code="core_coverage_target_mismatch",
+        )
+        self.assertGreater(result["metrics"]["core_coverage_gaps"], 0)
+
+    def test_invalid_graph_references_cannot_close_after_fresh_exact_approval(self):
+        # Break caught: typed graph references being dropped while every remaining Closure gate is zero.
+        cases = []
+
+        wrong_type = literal_ready_state()
+        wrong_type["objects"]["flows"][0]["goal_refs"] = ["REQ-001"]
+        cases.append((wrong_type, "invalid_authority_graph_reference_type"))
+
+        missing = literal_ready_state()
+        missing["objects"]["flows"][0]["goal_refs"] = ["GOAL-999"]
+        cases.append((missing, "missing_authority_graph_reference"))
+
+        historical = literal_ready_state()
+        historical["objects"]["goals"].append({
+            "id": "GOAL-002", "status": "SUPERSEDED", "statement": "Old goal.",
+            "superseded_by": "GOAL-001",
+        })
+        historical["objects"]["flows"][0]["goal_refs"] = ["GOAL-002"]
+        cases.append((historical, "historical_authority_graph_reference"))
+
+        for state, code in cases:
+            with self.subTest(code=code):
+                approve_current_state(state)
+                self.assert_blocked(
+                    state, metric="invalid_authority_graph_reference", code=code,
+                )
+
+    def test_structurally_invalid_duplicate_index_returns_contained_evaluator_result(self):
+        # Break caught: ordinary duplicate-ID findings being followed by an uncaught BindingError.
+        state = literal_approved_state()
+        state["objects"]["goals"].append(copy.deepcopy(state["objects"]["goals"][0]))
+        state["coverage"][0]["cells"]["actor"]["authority_bindings"] = [{
+            "record_id": "USR-001",
+        }]
+
+        result = evaluate_closure_v2(state)
+
+        self.assertFalse(result["closed"])
+        self.assertIsNone(result["definition_digest"])
+        self.assertIn("duplicate_id", error_codes(result))
+        self.assertIn("invalid_authority_binding_shape", error_codes(result))
+        self.assertIn("unsafe_semantic_projection", error_codes(result))
+        self.assertIn("deferred_unknowns", result["metrics"])
+        self.assertNotIn("orphan_material_authority", result["metrics"])
+        self.assertTrue(
+            all(set(error) == {"code", "message", "path"} for error in result["errors"])
+        )
+
+    def test_official_closure_cli_returns_json_for_duplicate_and_malformed_binding_state(self):
+        # Break caught: validate_closure.py emitting a traceback instead of its stable JSON result contract.
+        state = literal_approved_state()
+        state["objects"]["goals"].append(copy.deepcopy(state["objects"]["goals"][0]))
+        state["coverage"][0]["cells"]["actor"]["authority_bindings"] = [{
+            "record_id": "USR-001",
+        }]
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            path.write_text(json.dumps(state), encoding="utf-8")
+            completed = subprocess.run(
+                [sys.executable, str(SCRIPTS / "validate_closure.py"), str(path)],
+                capture_output=True, text=True, check=False,
+            )
+
+        self.assertEqual(completed.returncode, 1, completed.stderr)
+        self.assertEqual(completed.stderr, "")
+        payload = json.loads(completed.stdout)
+        self.assertEqual(payload["validator"], "closure")
+        self.assertFalse(payload["closed"])
+        self.assertIsNone(payload["definition_digest"])
+        self.assertIn("duplicate_id", {error["code"] for error in payload["errors"]})
+        self.assertIn(
+            "invalid_authority_binding_shape",
+            {error["code"] for error in payload["errors"]},
+        )
 
 
 if __name__ == "__main__":
