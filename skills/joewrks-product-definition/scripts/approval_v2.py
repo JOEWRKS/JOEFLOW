@@ -16,7 +16,7 @@ from authority_binding_v2 import (
 )
 from discovery_v2 import validate_discovery_baseline
 from grill_v2 import compile_active_grill_packs, grill_pack_metrics, grill_unknown_metrics
-from materiality_v2 import is_high_risk, validate_materiality_classification
+from materiality_v2 import classify_materiality, is_high_risk, validate_materiality_classification
 
 
 MANIFEST_SCHEMA_VERSION = "joewrks.approval-manifest/1.0"
@@ -515,13 +515,87 @@ def _history_metrics(state: dict[str, object]) -> dict[str, int]:
     }
 
 
+def _minimum_definition_metrics(state: dict[str, object]) -> dict[str, int]:
+    objects = state.get("objects")
+    objects = objects if isinstance(objects, dict) else {}
+    goals = objects.get("goals")
+    requirements = objects.get("requirements")
+    screens = objects.get("screens")
+    surface_manifest = state.get("surface_manifest")
+    surfaces = surface_manifest.get("records") if isinstance(surface_manifest, dict) else None
+    current_goal_exists = isinstance(goals, list) and any(
+        isinstance(record, dict) and record.get("status") == "CURRENT"
+        for record in goals
+    )
+    current_material_requirements: list[dict[str, object]] = []
+    if isinstance(requirements, list):
+        for record in requirements:
+            materiality = record.get("materiality") if isinstance(record, dict) else None
+            if not (
+                isinstance(record, dict)
+                and record.get("status") == "CURRENT"
+                and isinstance(materiality, dict)
+            ):
+                continue
+            try:
+                if classify_materiality(materiality) == "MATERIAL":
+                    current_material_requirements.append(record)
+            except (KeyError, TypeError, ValueError):
+                continue
+
+    surface_gaps = 0
+    required_screen_gaps = 0
+    for requirement in current_material_requirements:
+        requirement_id = requirement.get("id")
+        surface_bound = isinstance(surfaces, list) and any(
+            isinstance(surface, dict)
+            and surface.get("status") == "IN_SCOPE"
+            and isinstance(surface.get("authority_refs"), list)
+            and requirement_id in surface["authority_refs"]
+            for surface in surfaces
+        )
+        surface_gaps += int(not surface_bound)
+        if requirement.get("ui_required") is True:
+            screen_bound = isinstance(screens, list) and any(
+                isinstance(screen, dict)
+                and screen.get("status") == "CURRENT"
+                and isinstance(screen.get("requirement_refs"), list)
+                and requirement_id in screen["requirement_refs"]
+                for screen in screens
+            )
+            required_screen_gaps += int(not screen_bound)
+
+    baseline = state.get("discovery_baseline")
+    procedure_complete = (
+        isinstance(baseline, dict)
+        and baseline.get("status") == "CURRENT"
+        and baseline.get("procedure_complete") is True
+        and baseline.get("applicable_surface_classes_complete") is True
+        and baseline.get("active_grill_packs_complete") is True
+        and baseline.get("unknown_unknown_exhaustiveness_claimed") is False
+    )
+    return {
+        "minimum_definition_gaps": int(not current_goal_exists) + int(
+            not current_material_requirements
+        ) + surface_gaps + required_screen_gaps,
+        "discovery_procedure_gaps": int(not procedure_complete),
+    }
+
+
 def semantic_readiness_metrics(state: dict[str, object]) -> dict[str, int]:
     """Return semantic blockers shared by review compilation and public validation."""
-    return {**_semantic_product_readiness_metrics(state), **_history_metrics(state)}
+    return {
+        **_semantic_product_readiness_metrics(state),
+        **_history_metrics(state),
+        **_minimum_definition_metrics(state),
+    }
 
 
 def _semantic_closure_summary(state: dict[str, object]) -> dict[str, int]:
-    metrics = _semantic_product_readiness_metrics(state)
+    metrics = {
+        **_semantic_product_readiness_metrics(state),
+        **_minimum_definition_metrics(state),
+    }
     return {"semantic_readiness_blockers": sum(metrics.values()), **metrics}
 
 

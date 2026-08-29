@@ -376,7 +376,7 @@ class SurfaceManifestV020Test(unittest.TestCase):
         state["objects"]["unknowns"] = [unknown_record()]
 
         metrics = evaluate_closure_v2(state)["metrics"]
-        self.assertEqual(metrics["semantic_closure_not_implemented"], 1)
+        self.assertNotIn("semantic_closure_not_implemented", metrics)
         self.assertEqual(metrics["open_material_surfaces"], 1)
         self.assertEqual(metrics["unbound_material_surfaces"], 1)
 

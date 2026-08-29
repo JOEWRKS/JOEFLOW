@@ -8,7 +8,14 @@ from authority_binding_v2 import (
     validate_product_coverage_bindings,
     validate_ux_coverage_bindings,
 )
-from approval_v2 import semantic_readiness_metrics, validate_approval
+from approval_v2 import (
+    approval_manifest_digest,
+    approval_metrics,
+    compute_approval_manifest,
+    definition_digest,
+    semantic_readiness_metrics,
+    validate_approval,
+)
 from discovery_v2 import validate_discovery_baseline
 from grill_v2 import (
     grill_unknown_metrics,
@@ -122,6 +129,62 @@ _RISK_FLAG_KEYS = {
     "data_loss", "external_commitment",
 }
 _MEANINGLESS = {"none", "false", "n/a", "na", "later", "tbd"}
+
+SEMANTIC_READINESS_BLOCKING_METRICS = frozenset({
+    "open_material_surfaces",
+    "unbound_material_surfaces",
+    "unresolved_material_contradictions",
+    "stale_selected_authority",
+    "stale_consumed_evidence",
+    "discovery_baseline_gaps",
+    "unassessed_materiality",
+    "open_material_unknowns",
+    "blocked_material_unknowns",
+    "unresolved_unknown_provenance",
+    "invalid_resolution_authority",
+    "unauthorized_agent_decisions",
+    "missing_required_user_decisions",
+    "active_grill_pack_gaps",
+    "unresolved_pack_axes",
+    "umbrella_unknown_compression",
+    "pack_materiality_floor_violations",
+    "invalid_authority_binding",
+    "stale_authority_binding",
+    "coverage_without_authority",
+    "open_coverage_without_unknown",
+    "unjustified_na_without_basis",
+    "invalid_coverage_authority_type",
+    "core_coverage_gaps",
+    "specialist_binding_gaps",
+    "ux_coverage_gaps",
+    "screen_state_gaps",
+    "screen_action_inventory_gaps",
+    "ux_invalid_authority_binding",
+    "ux_stale_authority_binding",
+    "ux_open_without_unknown",
+    "ux_unjustified_na",
+    "orphan_material_authority",
+    "unconsumed_material_decision",
+    "requirement_acceptance_gaps",
+    "task_mapping_gaps",
+    "semantic_change_without_revision_increment",
+    "approved_record_missing_from_state",
+    "minimum_definition_gaps",
+    "discovery_procedure_gaps",
+})
+
+APPROVAL_BLOCKING_METRICS = frozenset({
+    "missing_user_approval",
+    "stale_approval",
+    "missing_or_stale_approval_manifest",
+    "approval_history_gaps",
+    "semantic_change_without_revision_increment",
+    "approved_record_missing_from_state",
+})
+
+CLOSURE_BLOCKING_METRICS = (
+    SEMANTIC_READINESS_BLOCKING_METRICS | APPROVAL_BLOCKING_METRICS
+)
 
 
 def _error(code: str, message: str, path: str) -> dict[str, str]:
@@ -1071,15 +1134,56 @@ def validate_state_v2(state: dict[str, Any]) -> list[dict[str, str]]:
     return _validate_state_v2(state, check_discovery_baseline=True)
 
 
+def _current_semantic_digest(state: dict[str, Any]) -> str | None:
+    try:
+        return definition_digest(state)
+    except (BindingError, KeyError, TypeError, ValueError):
+        return None
+
+
+def _approval_control_matches(
+    state: dict[str, Any], current_definition_digest: str | None,
+) -> bool:
+    project = state.get("project")
+    approval = state.get("approval")
+    if not isinstance(project, dict) or not isinstance(approval, dict):
+        return False
+    if (
+        project.get("definition_status") != "CLOSED"
+        or approval.get("status") != "APPROVED"
+        or approval.get("approved_revision") != project.get("definition_revision")
+        or current_definition_digest is None
+        or approval.get("approved_definition_digest") != current_definition_digest
+    ):
+        return False
+    try:
+        current_manifest_digest = approval_manifest_digest(
+            compute_approval_manifest(state)
+        )
+    except (BindingError, KeyError, TypeError, ValueError):
+        return False
+    return approval.get("approved_manifest_digest") == current_manifest_digest
+
+
 def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:
+    errors = validate_state_v2(state)
     unknown_metrics = grill_unknown_metrics(state)
+    readiness = semantic_readiness_metrics(state)
+    approval = approval_metrics(state)
+    metrics = {
+        **readiness,
+        **approval,
+        "deferred_unknowns": unknown_metrics["deferred_unknowns"],
+    }
+    current_definition_digest = _current_semantic_digest(state)
+    closed = (
+        not errors
+        and _approval_control_matches(state, current_definition_digest)
+        and all(metrics.get(name, 0) == 0 for name in CLOSURE_BLOCKING_METRICS)
+    )
     return {
-        "errors": validate_state_v2(state),
-        "metrics": {
-            "semantic_closure_not_implemented": 1,
-            **semantic_readiness_metrics(state),
-            "deferred_unknowns": unknown_metrics["deferred_unknowns"],
-        },
-        "closed": False,
-        "definition_digest": None,
+        "errors": errors,
+        "metrics": metrics,
+        "closed": closed,
+        "definition_digest": current_definition_digest,
     }

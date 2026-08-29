@@ -146,8 +146,8 @@ class StateV020FoundationTest(unittest.TestCase):
 
         closure = evaluate_closure_v2(template)
         self.assertFalse(closure["closed"])
-        self.assertIsNone(closure["definition_digest"])
-        self.assertEqual(closure["metrics"]["semantic_closure_not_implemented"], 1)
+        self.assertRegex(closure["definition_digest"], r"^[0-9a-f]{64}$")
+        self.assertNotIn("semantic_closure_not_implemented", closure["metrics"])
 
         for token in (
             "LEGACY_CLOSURE",
@@ -285,18 +285,19 @@ class StateV020FoundationTest(unittest.TestCase):
         self.assertTrue(payload["valid"])
         self.assertEqual(payload["errors"], [])
 
-    def test_v2_closure_is_explicitly_not_implemented(self):
+    def test_incomplete_open_v2_state_exposes_digest_but_cannot_close(self):
         result = evaluate_closure_v2(foundation_state())
         code, payload = self.invoke("closure", foundation_state())
 
         self.assertEqual(result["errors"], [])
         self.assertFalse(result["closed"])
-        self.assertIsNone(result["definition_digest"])
-        self.assertEqual(result["metrics"]["semantic_closure_not_implemented"], 1)
+        self.assertRegex(result["definition_digest"], r"^[0-9a-f]{64}$")
+        self.assertNotIn("semantic_closure_not_implemented", result["metrics"])
+        self.assertGreater(result["metrics"]["minimum_definition_gaps"], 0)
         self.assertEqual(code, 1, payload)
         self.assertFalse(payload["closed"])
-        self.assertIsNone(payload["definition_digest"])
-        self.assertEqual(payload["metrics"]["semantic_closure_not_implemented"], 1)
+        self.assertEqual(payload["definition_digest"], result["definition_digest"])
+        self.assertNotIn("semantic_closure_not_implemented", payload["metrics"])
 
     def test_unassessed_materiality_counts_each_invalid_canonical_record_once(self):
         state = foundation_state()

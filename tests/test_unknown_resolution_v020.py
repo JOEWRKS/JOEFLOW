@@ -968,7 +968,7 @@ class UnknownResolutionV020Test(unittest.TestCase):
             "invalid_resolution_authority", "unauthorized_agent_decisions",
         ):
             self.assertIn(field, metrics)
-        self.assertEqual(metrics["semantic_closure_not_implemented"], 1)
+        self.assertNotIn("semantic_closure_not_implemented", metrics)
         self.assertEqual(metrics["open_material_unknowns"], 1)
         self.assertEqual(metrics["blocked_material_unknowns"], 1)
         self.assertEqual(metrics["deferred_unknowns"], 1)

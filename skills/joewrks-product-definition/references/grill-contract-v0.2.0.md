@@ -26,7 +26,8 @@ The binding M3 statements are:
 - Core Grill is always active; specialist Grill Packs activate from product
   topology, not agent discretion.
 - Pack identity/version/digest are committed into the discovery baseline.
-- M3 still does not provide exact semantic Coverage Binding or Semantic Closure.
+- M3 itself did not provide exact semantic Coverage Binding or Semantic Closure;
+  M4 adds those layers without redefining the M3 Grill policy below.
 
 ## Internal discovery and user interruption
 
@@ -99,8 +100,12 @@ These counts are independent and may intentionally overlap for the same record o
 `UNKNOWN_UNKNOWN_EXHAUSTIVENESS_NOT_CLAIMED` remains immutable: broad internal
 discovery is not proof that future unknowns are impossible.
 
-`SEMANTIC_CLOSURE_NOT_AVAILABLE_IN_M3`: M3 still does not provide exact semantic
-Coverage Binding or Semantic Closure. Closure remains false, the definition
-digest remains null, and `semantic_closure_not_implemented = 1`. Coverage to
-Authority pointer/hash proof, UX Binding, Approval Manifest authority, downstream
-2.0, and full migration/adoption remain later milestones.
+`SEMANTIC_CLOSURE_NOT_AVAILABLE_IN_M3` records the historical M3 boundary: M3
+did not provide exact Coverage Binding, UX Binding, or informed approval. M4 now
+adds those three layers and the actual Product Definition Closure evaluator; see
+the [M4 Semantic Freeze contract](semantic-freeze-contract-v0.2.0.md).
+
+M4 preserves every Materiality, unknown-resolution, selective-question, pack
+activation, pack identity, axis-origin, and discovery-baseline rule in this M3
+contract. Downstream 2.0 and full migration/adoption still remain later
+milestones.

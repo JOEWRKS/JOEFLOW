@@ -29,6 +29,7 @@ from tests.v020_support import (  # noqa: E402
     review_ready_state,
     unknown_record,
 )
+from tests.test_semantic_closure_v020 import literal_ready_state  # noqa: E402
 
 
 def api(name):
@@ -279,8 +280,11 @@ class ApprovalManifestV020Test(unittest.TestCase):
 
     def test_review_builder_requires_ready_unapproved_current_zero_blocker_state(self):
         # Break caught: the user-facing compiler producing an approval packet for stale, blocked, or already-approved input.
-        ready = review_ready_state()
+        ready = literal_ready_state()
         self.assertEqual(api("build_approval_manifest_for_review")(ready), api("compute_approval_manifest")(ready))
+
+        with self.assertRaises(ValueError):
+            api("build_approval_manifest_for_review")(review_ready_state())
 
         wrong_status = copy.deepcopy(ready)
         wrong_status["project"]["definition_status"] = "OPEN"
@@ -308,7 +312,7 @@ class ApprovalManifestV020Test(unittest.TestCase):
 
     def test_read_only_cli_emits_compact_packet_and_never_fabricates_approval_time(self):
         # Break caught: CLI mutating state, pretty/noncanonical output, or silently authoring a user approval timestamp.
-        state = review_ready_state()
+        state = literal_ready_state()
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "state.json"
             original = json.dumps(state, ensure_ascii=False, indent=2)

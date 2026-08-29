@@ -20,7 +20,7 @@ class SkillPackageTest(unittest.TestCase):
             "references/ux-state-taxonomy.md", "references/failure-recovery-taxonomy.md",
             "references/artifact-dependency-graph.md", "references/closure-gate.md",
             "references/figma-make-handoff.md", "references/discovery-contract-v0.2.0.md",
-            "references/grill-contract-v0.2.0.md",
+            "references/grill-contract-v0.2.0.md", "references/semantic-freeze-contract-v0.2.0.md",
             "references/grill-packs/grill-pack.schema.json",
             "references/grill-packs/core.json", "references/grill-packs/auth.json",
             "references/grill-packs/money.json", "references/grill-packs/file-upload.json",

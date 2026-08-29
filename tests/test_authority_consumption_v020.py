@@ -393,10 +393,12 @@ class SemanticReadinessV020Test(unittest.TestCase):
             "task_mapping_gaps": 0,
             "semantic_change_without_revision_increment": 0,
             "approved_record_missing_from_state": 0,
+            "minimum_definition_gaps": 2,
+            "discovery_procedure_gaps": 1,
         })
 
-    def test_evaluator_preserves_deferred_information_and_m3_closure_guard(self):
-        # Break caught: readiness aggregation either blocking on valid deferral or implementing Closure before Task 6.
+    def test_evaluator_preserves_deferred_information_without_making_it_a_blocker(self):
+        # Break caught: readiness aggregation incorrectly making valid user-accepted deferral blocking.
         state = foundation_state()
         deferred = {
             "id": "UNK-001", "status": "DEFERRED", "question": "Later?",
@@ -426,7 +428,7 @@ class SemanticReadinessV020Test(unittest.TestCase):
         self.assertEqual(readiness["semantic_change_without_revision_increment"], 0)
         self.assertEqual(readiness["approved_record_missing_from_state"], 0)
         self.assertEqual(result["metrics"]["deferred_unknowns"], 1)
-        self.assertEqual(result["metrics"]["semantic_closure_not_implemented"], 1)
+        self.assertNotIn("semantic_closure_not_implemented", result["metrics"])
         self.assertFalse(result["closed"])
 
 
