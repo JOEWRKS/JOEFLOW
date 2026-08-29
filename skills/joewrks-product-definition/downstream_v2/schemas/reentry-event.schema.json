@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "joewrks.product-definition-reentry/1.0",
+  "type": "object",
+  "required": ["schema_version", "event_id", "event_type", "source_definition_digest", "source_contract_hash", "affected_authority_ids", "affected_action_ids", "affected_lifecycle_ids", "evidence_refs", "halt_scope", "candidate_unknown", "recommended_action"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "joewrks.product-definition-reentry/1.0"},
+    "event_id": {"type": "string", "pattern": "^REENTRY-[0-9a-f]{24}$"},
+    "event_type": {"enum": ["AMBIGUITY_FOUND", "CONTRACT_CONFLICT", "OUT_OF_SCOPE_REQUEST"]},
+    "source_definition_digest": {"$ref": "#/$defs/hash"},
+    "source_contract_hash": {"oneOf": [{"$ref": "#/$defs/hash"}, {"type": "null"}]},
+    "affected_authority_ids": {"$ref": "#/$defs/ids"},
+    "affected_action_ids": {"$ref": "#/$defs/ids"},
+    "affected_lifecycle_ids": {"$ref": "#/$defs/ids"},
+    "evidence_refs": {"$ref": "#/$defs/ids"},
+    "halt_scope": {
+      "type": "object",
+      "required": ["mode", "action_ids", "lifecycle_ids"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {"const": "AFFECTED_ONLY"},
+        "action_ids": {"$ref": "#/$defs/ids"},
+        "lifecycle_ids": {"$ref": "#/$defs/ids"}
+      }
+    },
+    "candidate_unknown": {
+      "type": "object",
+      "required": ["suggested_question", "why_it_matters", "required_authority_class", "affected_ids"],
+      "additionalProperties": false,
+      "properties": {
+        "suggested_question": {"type": "string", "pattern": ".*\\S.*"},
+        "why_it_matters": {"type": "string", "pattern": ".*\\S.*"},
+        "required_authority_class": {"enum": ["FACTUAL", "INTENT", "CONSTRAINT", "BEHAVIORAL", "PREFERENCE"]},
+        "affected_ids": {"$ref": "#/$defs/nonEmptyIds"}
+      }
+    },
+    "recommended_action": {"const": "REENTER_PRODUCT_DEFINITION"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ids": {"type": "array", "items": {"type": "string", "pattern": ".*\\S.*"}},
+    "nonEmptyIds": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": ".*\\S.*"}}
+  }
+}

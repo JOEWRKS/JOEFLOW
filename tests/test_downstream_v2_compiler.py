@@ -240,7 +240,13 @@ class CompilerTests(unittest.TestCase):
         self.assertEqual(gap["required_expectation"], "DETERMINISTIC_REQUIRED")
         self.assertEqual(gap["required_authority_class"], "INTENT")
         self.assertNotIn(gap["field_path"], result["semantic_debt"]["review_required_fields"])
-        self.assertEqual(result["reentry_events"], [])
+        self.assertTrue(result["reentry_events"])
+        self.assertTrue(all(
+            event["event_type"] == "AMBIGUITY_FOUND"
+            and event["halt_scope"]["action_ids"] == ["submit-request"]
+            and event["halt_scope"]["lifecycle_ids"] == []
+            for event in result["reentry_events"]
+        ))
 
     def test_unresolved_field_returns_exact_gap_without_materializing_contract(self):
         changed = copy.deepcopy(self.definition)

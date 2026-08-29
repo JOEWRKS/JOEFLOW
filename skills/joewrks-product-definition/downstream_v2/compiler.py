@@ -22,6 +22,7 @@ from .seeds import (
     source_seed_index,
     source_seed_inventory_digest,
 )
+from .reentry import build_reentry_events
 from .semantic_debt import semantic_debt_report
 
 
@@ -164,11 +165,19 @@ def _gap(
 ) -> dict[str, object]:
     detail = error.detail if isinstance(error, SemanticGap) and isinstance(error.detail, dict) else {}
     reason = detail.get("description") if isinstance(detail.get("description"), str) else str(error)
+    if detail:
+        gap_type = detail.get("gap_type", "AMBIGUITY_FOUND")
+    else:
+        gap_type = (
+            "CONTRACT_CONFLICT"
+            if reason in {"UNKNOWN_SOURCE_SEED", "SOURCE_SEED_NOT_PERMITTED"}
+            else "AMBIGUITY_FOUND"
+        )
     return {
         "code": "SEMANTIC_AUTHORITY_GAP",
         "field_path": path,
         "reason": reason,
-        "gap_type": detail.get("gap_type", "CONTRACT_CONFLICT"),
+        "gap_type": gap_type,
         "required_expectation": policy["expectation"],
         "required_authority_class": detail.get(
             "required_authority_class", policy["required_authority_class"]
@@ -256,7 +265,12 @@ def compile_handoff_definition(
             "contract": None,
             "semantic_debt": debt,
             "gaps": copy.deepcopy(debt["authority_gaps"]),
-            "reentry_events": [],
+            "reentry_events": build_reentry_events(
+                source_authority=authority,
+                definition=definition,
+                gaps=debt["authority_gaps"],
+                source_contract_hash=None,
+            ),
         }
 
     consumed_refs = sorted({
