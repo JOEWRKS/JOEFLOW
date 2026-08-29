@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from grill_v2 import load_grill_packs
 from materiality_v2 import classify_materiality
 
 
@@ -757,15 +758,19 @@ def _exact_binding_sinks(state: dict[str, object]) -> dict[str, set[str]]:
     if isinstance(coverage, list):
         for row in coverage:
             cells = row.get("cells") if isinstance(row, dict) else None
-            if not isinstance(cells, dict) or set(cells) != set(core_types):
+            if not isinstance(cells, dict):
                 continue
-            for axis, allowed_types in core_types.items():
+            for axis, cell in cells.items():
+                allowed_types = core_types.get(axis)
+                if allowed_types is None:
+                    continue
                 for record_id in _positive_binding_ids(
-                    state, cells[axis], status="COVERED",
+                    state, cell, status="COVERED",
                     allowed_types=allowed_types, semantic_roots=product_roots,
                 ):
                     sinks.setdefault(record_id, set()).add("SINK:CORE")
 
+    grill_packs = load_grill_packs()
     grill_coverage = state.get("grill_coverage")
     if isinstance(grill_coverage, list):
         for row in grill_coverage:
@@ -775,7 +780,10 @@ def _exact_binding_sinks(state: dict[str, object]) -> dict[str, set[str]]:
             if not isinstance(axes, dict):
                 continue
             allowed_types = specialist_types[row["pack_id"]]
-            for cell in axes.values():
+            defined_axes = {axis["id"] for axis in grill_packs[row["pack_id"]]["axes"]}
+            for axis, cell in axes.items():
+                if axis not in defined_axes:
+                    continue
                 for record_id in _positive_binding_ids(
                     state, cell, status="ADDRESSED",
                     allowed_types=allowed_types, semantic_roots=product_roots,

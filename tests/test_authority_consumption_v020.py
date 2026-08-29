@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "skills" / "joewrks-product-definition" / "scripts"))
 
 import authority_binding_v2 as binding  # noqa: E402
+import grill_v2 as grill  # noqa: E402
 import state_validation_v2 as validation  # noqa: E402
 from tests.test_grill_binding_v020 import specialist_state  # noqa: E402
 from tests.test_ux_binding_v020 import exact_ux_row, state_with_authorities  # noqa: E402
@@ -241,6 +242,32 @@ class AuthorityConsumptionGraphV020Test(unittest.TestCase):
         graph = build_authority_consumption_graph(state)
 
         self.assertIn("SINK:UX", graph["SCR-001"])
+
+    def test_valid_known_core_cell_remains_a_sink_when_row_inventory_is_incomplete(self):
+        # Break caught: one Core inventory gap discarding exact sinks from every supplied known axis.
+        state = core_state()
+        del state["coverage"][0]["cells"]["analytics"]
+
+        graph = build_authority_consumption_graph(state)
+
+        self.assertIn("SINK:CORE", graph["RULE-001"])
+        self.assertEqual(binding.product_binding_metrics(state)["core_coverage_gaps"], 1)
+
+    def test_undefined_specialist_axis_cannot_create_a_grill_sink(self):
+        # Break caught: a positive exact cell under an undefined pack axis becoming semantic delivery proof.
+        state = specialist_state()
+        state["grill_coverage"][0]["axes"]["undefined_axis"] = {
+            "status": "ADDRESSED",
+            "authority_bindings": [
+                binding.make_authority_binding(state, "RULE-900", "/statement")
+            ],
+            "unknown_refs": [], "basis_bindings": [], "rationale": None,
+        }
+
+        graph = build_authority_consumption_graph(state)
+
+        self.assertNotIn("SINK:GRILL", graph["RULE-900"])
+        self.assertEqual(grill.grill_pack_metrics(state)["active_grill_pack_gaps"], 1)
 
     def test_surface_authority_refs_are_scope_trace_not_terminal_consumption(self):
         # Break caught: a SURF.authority_refs trace being mistaken for delivery proof.
