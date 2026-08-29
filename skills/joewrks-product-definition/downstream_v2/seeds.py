@@ -7,6 +7,10 @@ from .authority import DownstreamV2Error, require_closed_authority, sha256_json
 
 _SEED_KEYS = {"seed_key", "location", "record_id", "record_type", "pointer", "value_sha256", "source_status", "value"}
 _LOCATION_KEYS = {"scope", "owner_ref", "axis", "pack_id", "action_key"}
+_OBJECT_CONTAINERS = (
+    "goals", "users", "requirements", "unknowns", "decisions", "rules", "flows",
+    "screens", "states", "data", "integrations", "acceptance_criteria", "tasks",
+)
 
 
 def _fail(code: str, detail: object):
@@ -124,6 +128,20 @@ def _location_bindings(state, location):
     return matches[0]
 
 
+def _raw_record_id_count(state, record_id):
+    objects = state.get("objects") if isinstance(state, dict) else None
+    containers = [state.get("evidence"), state.get("contradictions")] if isinstance(state, dict) else []
+    if isinstance(objects, dict):
+        containers.extend(objects.get(name) for name in _OBJECT_CONTAINERS)
+    surface_manifest = state.get("surface_manifest") if isinstance(state, dict) else None
+    containers.append(surface_manifest.get("records") if isinstance(surface_manifest, dict) else None)
+    return sum(
+        isinstance(record, dict) and record.get("id") == record_id
+        for container in containers if isinstance(container, list)
+        for record in container
+    )
+
+
 def verify_source_seed(state: dict[str, object], seed: dict[str, object]) -> dict[str, object]:
     """Verify one stored seed against current source authority and semantic location."""
     try:
@@ -134,6 +152,8 @@ def verify_source_seed(state: dict[str, object], seed: dict[str, object]) -> dic
         binding = {"record_id": seed["record_id"], "pointer": seed["pointer"], "value_sha256": seed["value_sha256"]}
         if sum(item == binding for item in bindings) != 1:
             _fail("SOURCE_SEED_BINDING_DRIFT", location)
+        if _raw_record_id_count(state, seed["record_id"]) != 1:
+            _fail("SOURCE_SEED_RECORD_CARDINALITY", seed["record_id"])
         index = canonical_record_index(state)
         expected = _binding_seed(index, location, binding)
         if expected != seed:

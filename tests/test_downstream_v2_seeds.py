@@ -96,6 +96,14 @@ class SourceSeedTests(unittest.TestCase):
         wrong_pack["location"]["pack_id"] = "GRILL-CORE-1"
         self.assert_seed_invalid(state, wrong_pack)
 
+    def test_verification_rejects_a_record_id_duplicated_in_another_canonical_container(self):
+        state = closed_v2_state()
+        seed = source_seed_by_location(
+            build_source_seed_inventory(state), scope="CORE", owner_ref="REQ-001", axis="happy_path",
+        )
+        state["objects"]["goals"].append(copy.deepcopy(state["objects"]["requirements"][0]))
+        self.assert_seed_invalid(state, seed)
+
     def test_distinct_semantic_locations_keep_distinct_keys_for_one_binding(self):
         seeds = build_source_seed_inventory(closed_v2_state())
         precondition = source_seed_by_location(seeds, scope="CORE", owner_ref="REQ-001", axis="precondition")
