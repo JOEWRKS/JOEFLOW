@@ -424,6 +424,15 @@ class ContractHashTests(unittest.TestCase):
         self.assertGreaterEqual(contract["source_authority"]["approved_revision"], 1)
         self.assertEqual(validate_action_contract_v2(contract), [])
 
+    def test_non_object_contracts_return_structured_validation_errors(self):
+        expected = [{"path": "/", "message": "contract must be an object"}]
+        for malformed in (None, []):
+            with self.subTest(contract=malformed):
+                first = validate_action_contract_v2(malformed)
+                second = validate_action_contract_v2(copy.deepcopy(malformed))
+                self.assertEqual(first, expected)
+                self.assertEqual(second, first)
+
     def test_frozen_product_and_ux_binding_identities_are_required_after_rehash(self):
         contract = self.contract()
         self.assertEqual(validate_action_contract_v2(contract), [])
