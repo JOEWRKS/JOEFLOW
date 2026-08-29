@@ -4,16 +4,13 @@ from typing import Any
 
 from authority_binding_v2 import (
     BindingError,
-    authority_consumption_metrics,
     binding_contract_identity,
-    product_binding_metrics,
-    ux_binding_metrics,
     validate_product_coverage_bindings,
     validate_ux_coverage_bindings,
 )
+from approval_v2 import semantic_readiness_metrics, validate_approval
 from discovery_v2 import validate_discovery_baseline
 from grill_v2 import (
-    grill_pack_metrics,
     grill_unknown_metrics,
     validate_decision_authority_policy,
     validate_grill_coverage,
@@ -764,50 +761,6 @@ def _validate_contradictions(
     return errors
 
 
-def _contradiction_metrics(state: dict[str, Any]) -> dict[str, int]:
-    evidence_index = _collect_evidence(state)
-    contradictions = state.get("contradictions")
-    if not isinstance(contradictions, list):
-        return {"unresolved_material_contradictions": 0, "stale_selected_authority": 0}
-    records = [record for record in contradictions if isinstance(record, dict)]
-    return {
-        "unresolved_material_contradictions": sum(
-            record.get("status") == "OPEN"
-            and isinstance(record.get("materiality"), dict)
-            and record["materiality"].get("classification") == "MATERIAL"
-            for record in records
-        ),
-        "stale_selected_authority": sum(
-            isinstance(reference, str)
-            and (evidence := evidence_index.get(reference)) is not None
-            and evidence.get("status") != "CURRENT"
-            for record in records
-            for reference in (
-                record["selected_authority_refs"]
-                if isinstance(record.get("selected_authority_refs"), list)
-                else []
-            )
-        ),
-    }
-
-
-def _surface_metrics(state: dict[str, Any]) -> dict[str, int]:
-    id_index, _ = _collect_ids(state)
-    records = _collect_surfaces(state).values()
-    material_surfaces = [
-        record for record in records
-        if isinstance(record.get("materiality"), dict)
-        and record["materiality"].get("classification") == "MATERIAL"
-    ]
-    return {
-        "open_material_surfaces": sum(record.get("status") == "OPEN" for record in material_surfaces),
-        "unbound_material_surfaces": sum(
-            record.get("status") == "IN_SCOPE" and not _surface_has_current_authority(record, id_index)
-            for record in material_surfaces
-        ),
-    }
-
-
 def _validate_materiality_shape(value: Any, path: str) -> list[dict[str, str]]:
     if not isinstance(value, dict) or set(value) != _MATERIALITY_KEYS:
         return [_error("invalid_materiality", "materiality fields do not match the M1 contract", path)]
@@ -842,30 +795,6 @@ def _validate_materiality(value: Any, path: str) -> list[dict[str, str]]:
             path,
         ))
     return errors
-
-
-def _unassessed_materiality_count(state: dict[str, Any]) -> int:
-    records: list[Any] = []
-    objects = state.get("objects")
-    if isinstance(objects, dict):
-        for group in ("requirements", "unknowns", "decisions"):
-            group_records = objects.get(group)
-            if isinstance(group_records, list):
-                records.extend(group_records)
-    surface_manifest = state.get("surface_manifest")
-    surface_records = (
-        surface_manifest.get("records") if isinstance(surface_manifest, dict) else None
-    )
-    if isinstance(surface_records, list):
-        records.extend(surface_records)
-    contradictions = state.get("contradictions")
-    if isinstance(contradictions, list):
-        records.extend(contradictions)
-    return sum(
-        not isinstance(record, dict)
-        or bool(_validate_materiality(record.get("materiality"), "materiality"))
-        for record in records
-    )
 
 
 def _validate_typed_semantic_minima(state: dict[str, Any]) -> list[dict[str, str]]:
@@ -1047,32 +976,6 @@ def _validate_stale_consumed_evidence(state: dict[str, Any]) -> list[dict[str, s
     return errors
 
 
-def _stale_consumed_evidence_count(state: dict[str, Any]) -> int:
-    evidence_index = _collect_evidence(state)
-    consumed: list[Any] = []
-    for group, _, record in _iter_records(state):
-        if group == "decisions" and isinstance(record, dict) and record.get("status") == "CURRENT":
-            consumed.extend(record.get("evidence_refs", []) if isinstance(record.get("evidence_refs"), list) else [])
-    surface_manifest = state.get("surface_manifest")
-    records = surface_manifest.get("records") if isinstance(surface_manifest, dict) else None
-    if isinstance(records, list):
-        for record in records:
-            status = record.get("status") if isinstance(record, dict) else None
-            if (
-                isinstance(record, dict)
-                and isinstance(status, str)
-                and status not in {"SUPERSEDED", "RETIRED"}
-            ):
-                consumed.extend(record.get("evidence_refs", []) if isinstance(record.get("evidence_refs"), list) else [])
-    return sum(
-        isinstance(reference, str)
-        and (evidence := evidence_index.get(reference)) is not None
-        and isinstance(evidence.get("status"), str)
-        and evidence.get("status") in STALE_CONSUMED_EVIDENCE_STATUSES
-        for reference in consumed
-    )
-
-
 def _validate_state_v2(
     state: dict[str, Any], *, check_discovery_baseline: bool,
 ) -> list[dict[str, str]]:
@@ -1160,35 +1063,12 @@ def _validate_state_v2(
     errors.extend(validate_discovery_baseline(
         state, check_freshness=check_discovery_baseline,
     ))
+    errors.extend(validate_approval(state))
     return errors
 
 
 def validate_state_v2(state: dict[str, Any]) -> list[dict[str, str]]:
     return _validate_state_v2(state, check_discovery_baseline=True)
-
-
-def semantic_readiness_metrics(state: dict[str, object]) -> dict[str, int]:
-    """Return all presently implemented M1-M4 non-approval blockers."""
-    unknown_metrics = grill_unknown_metrics(state)
-    return {
-        **_surface_metrics(state),
-        **_contradiction_metrics(state),
-        "stale_consumed_evidence": _stale_consumed_evidence_count(state),
-        "discovery_baseline_gaps": int(
-            isinstance(state.get("discovery_baseline"), dict)
-            and state["discovery_baseline"].get("status") != "CURRENT"
-        ),
-        "unassessed_materiality": _unassessed_materiality_count(state),
-        **{
-            name: count
-            for name, count in unknown_metrics.items()
-            if name != "deferred_unknowns"
-        },
-        **grill_pack_metrics(state),
-        **product_binding_metrics(state),
-        **ux_binding_metrics(state),
-        **authority_consumption_metrics(state),
-    }
 
 
 def evaluate_closure_v2(state: dict[str, Any]) -> dict[str, Any]:

@@ -353,7 +353,7 @@ class RequirementDeliveryGateV020Test(unittest.TestCase):
 
 class SemanticReadinessV020Test(unittest.TestCase):
     def test_readiness_is_the_literal_present_non_approval_metric_contract(self):
-        # Break caught: an implemented M1-M4 blocker, deferred count, or fake Task 5 history metric entering/leaving readiness silently.
+        # Break caught: an implemented M1-M4 blocker or deferred count entering/leaving readiness silently.
         self.assertEqual(semantic_readiness_metrics(foundation_state()), {
             "open_material_surfaces": 0,
             "unbound_material_surfaces": 0,
@@ -391,6 +391,8 @@ class SemanticReadinessV020Test(unittest.TestCase):
             "unconsumed_material_decision": 0,
             "requirement_acceptance_gaps": 0,
             "task_mapping_gaps": 0,
+            "semantic_change_without_revision_increment": 0,
+            "approved_record_missing_from_state": 0,
         })
 
     def test_evaluator_preserves_deferred_information_and_m3_closure_guard(self):
@@ -421,7 +423,8 @@ class SemanticReadinessV020Test(unittest.TestCase):
         result = validation.evaluate_closure_v2(state)
 
         self.assertNotIn("deferred_unknowns", readiness)
-        self.assertNotIn("semantic_change_without_revision_increment", readiness)
+        self.assertEqual(readiness["semantic_change_without_revision_increment"], 0)
+        self.assertEqual(readiness["approved_record_missing_from_state"], 0)
         self.assertEqual(result["metrics"]["deferred_unknowns"], 1)
         self.assertEqual(result["metrics"]["semantic_closure_not_implemented"], 1)
         self.assertFalse(result["closed"])

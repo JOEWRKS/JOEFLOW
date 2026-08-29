@@ -29,6 +29,7 @@ class SkillPackageTest(unittest.TestCase):
             "scripts/discovery_v2.py", "scripts/build_discovery_baseline.py",
             "scripts/materiality_v2.py", "scripts/grill_v2.py", "scripts/next_product_question.py",
             "scripts/authority_binding_v2.py", "scripts/authority_binding_value.py",
+            "scripts/approval_v2.py", "scripts/build_approval_manifest.py",
             "references/binding-contracts/binding-contract.schema.json",
             "references/binding-contracts/product-coverage-binding-v1.json",
             "references/binding-contracts/ux-coverage-binding-v1.json",
@@ -41,7 +42,7 @@ class SkillPackageTest(unittest.TestCase):
         self.assertEqual(missing, [])
 
     def test_validator_scripts_only_import_standard_library_or_sibling_module(self):
-        allowed = {"__future__", "copy", "hashlib", "json", "pathlib", "re", "sys", "typing", "migration_v2", "state_contract_dispatch", "state_validation", "state_validation_v2", "discovery_v2", "materiality_v2", "grill_v2", "authority_binding_v2"}
+        allowed = {"__future__", "copy", "datetime", "hashlib", "json", "pathlib", "re", "sys", "typing", "migration_v2", "state_contract_dispatch", "state_validation", "state_validation_v2", "discovery_v2", "materiality_v2", "grill_v2", "authority_binding_v2", "approval_v2"}
         imports = set()
         for script in (SKILL / "scripts").glob("*.py"):
             tree = ast.parse(script.read_text(encoding="utf-8"))

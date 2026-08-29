@@ -70,6 +70,24 @@ def foundation_state():
     }
 
 
+def establish_current_baseline(state, *, procedure_complete=True, applicable_surface_classes_complete=True):
+    """Install the real deterministic M3 baseline and return the same state."""
+    from discovery_v2 import build_discovery_baseline
+
+    state["discovery_baseline"] = build_discovery_baseline(
+        state,
+        procedure_complete=procedure_complete,
+        applicable_surface_classes_complete=applicable_surface_classes_complete,
+    )
+    return state
+
+
+def review_ready_state():
+    state = foundation_state()
+    state["project"]["definition_status"] = "READY_FOR_REVIEW"
+    return establish_current_baseline(state)
+
+
 def evidence_record(
     evidence_id="EVD-001",
     *,
