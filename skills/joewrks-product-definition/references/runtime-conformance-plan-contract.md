@@ -8,7 +8,7 @@
 
 Every materialized plan binds the semantic contract hash, approved definition digest, product slug, frozen runtime-responsibility/1.0 digest, planner identity, and supplied review artifact identities. `review_commitments.output_hash` is the canonical SHA-256 of the complete validated review output, including that output's own normative `output_hash` field. Review completion never changes `reliability_status = NOT_MEASURED`.
 
-Runtime field references preserve every valid action-conformance/2.1 identifier by UTF-8 percent-encoding its item-ID path segment. Published plans use only this canonical, unambiguous form; slash, whitespace, percent, and non-ASCII identifier bytes are encoded as uppercase `%HH` triplets. Draft references are normalized against the exact supplied contract and never change the source action or lifecycle identity.
+Runtime field references preserve every valid action-conformance/2.1 identifier by UTF-8 percent-encoding its item-ID path segment. Published plans use only this canonical, unambiguous form; slash, whitespace, percent, and non-ASCII identifier bytes are encoded as uppercase `%HH` triplets, while unreserved bytes remain literal and cannot be over-encoded. Draft references are normalized against the exact supplied contract and never change the source action or lifecycle identity.
 
 ## Frozen coverage profile
 

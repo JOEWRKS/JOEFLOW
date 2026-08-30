@@ -12,7 +12,10 @@ for path in (PACKAGE_ROOT, SCRIPTS):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from downstream.schema_validation import validate_instance  # noqa: E402
+from downstream.schema_validation import (  # noqa: E402
+    SchemaValidationError,
+    validate_instance,
+)
 from downstream_v2.authority import sha256_json  # noqa: E402
 from downstream_v2.compiler import compile_handoff_definition  # noqa: E402
 from downstream_v2.semantic_review import (  # noqa: E402
@@ -23,6 +26,11 @@ from downstream_v2.semantic_review.package import (  # noqa: E402
     validate_semantic_review_package as validate_semantic_review_package_v20,
 )
 from downstream_v21.compiler import compile_handoff_definition_v21  # noqa: E402
+from downstream_v21.contracts import (  # noqa: E402
+    artifact_hash_v21,
+    semantic_contract_hash_v21,
+    validate_action_contract_v21,
+)
 from downstream_v21.identity import SEMANTIC_REVIEW_VERSION  # noqa: E402
 from downstream_v21.semantic_review import (  # noqa: E402
     RELIABILITY_STATUS,
@@ -79,6 +87,44 @@ def reviewed_output(package, verdict="CONFIRMED_INTERPRETATION"):
 def rehash(value, hash_key):
     value.pop(hash_key, None)
     value[hash_key] = sha256_json(value)
+
+
+def contract_with_action_ids(contract, action_ids):
+    rebound = copy.deepcopy(contract)
+    original_id = rebound["actions"][0]["action_id"]
+    template = rebound["actions"][0]
+    rebound["actions"] = []
+    for action_id in sorted(action_ids):
+        action = copy.deepcopy(template)
+        action["action_id"] = action_id
+        rebound["actions"].append(action)
+    debt = rebound["semantic_debt"]
+    for prefix in (
+        "direct_authority",
+        "machine_derived",
+        "review_required",
+    ):
+        original_paths = debt[f"{prefix}_fields"]
+        action_paths = [
+            path
+            for path in original_paths
+            if path.startswith(f"actions/{original_id}/")
+        ]
+        lifecycle_paths = [
+            path for path in original_paths if not path.startswith("actions/")
+        ]
+        rebound_paths = lifecycle_paths + [
+            path.replace(f"actions/{original_id}/", f"actions/{action_id}/")
+            for action_id in action_ids
+            for path in action_paths
+        ]
+        debt[f"{prefix}_fields"] = sorted(rebound_paths)
+        debt[f"{prefix}_count"] = len(rebound_paths)
+    rebound["semantic_contract_hash"] = semantic_contract_hash_v21(rebound)
+    rebound["artifact_hash"] = artifact_hash_v21(rebound)
+    if validate_action_contract_v21(rebound):
+        raise AssertionError("test helper produced an invalid action-conformance/2.1")
+    return rebound
 
 
 class SemanticReviewV21Tests(unittest.TestCase):
@@ -145,6 +191,33 @@ class SemanticReviewV21Tests(unittest.TestCase):
         )
         rehash(forged, "package_hash")
         self.assertTrue(validate_semantic_review_package_v21(forged))
+
+    def test_review_21_canonicalizes_paths_for_valid_special_action_id(self):
+        contract = contract_with_action_ids(
+            self.review_contract,
+            ["submit/request with space"],
+        )
+        original_contract = copy.deepcopy(contract)
+        try:
+            package = build_semantic_review_package_v21(contract)
+        except ValueError as error:
+            self.fail(f"valid action ID cannot cross semantic review: {error}")
+        self.assertEqual(contract, original_contract)
+        self.assertEqual(validate_semantic_review_package_v21(package), [])
+        validate_instance(package, INPUT_SCHEMA)
+        self.assertEqual(
+            [item["field_path"] for item in package["review_obligations"]],
+            [
+                "actions/submit%2Frequest%20with%20space/visible_error",
+                "actions/submit%2Frequest%20with%20space/visible_success",
+            ],
+        )
+        overencoded = copy.deepcopy(package)
+        overencoded["review_obligations"][0]["field_path"] = (
+            "actions/%73ubmit-request/visible_error"
+        )
+        with self.assertRaises(SchemaValidationError):
+            validate_instance(overencoded, INPUT_SCHEMA)
 
     def test_review_21_keeps_exact_seed_provenance_and_value_hash(self):
         package = self.package()

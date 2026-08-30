@@ -2,11 +2,11 @@
 
 import copy
 import re
-from urllib.parse import quote
 
 from downstream_v2.authority import sha256_json
 
 from .contracts import validate_action_contract_v21
+from .field_refs import canonical_field_ref, encode_item_id
 from .identity import ACTION_CONTRACT_VERSION, RUNTIME_PLAN_VERSION, RUNTIME_PROFILE_ID
 from .runtime_profile import (
     load_runtime_responsibility_profile,
@@ -63,16 +63,12 @@ def _fail(code: str):
     raise ValueError(code)
 
 
-def _encoded_item_id(item_id: str) -> str:
-    return quote(item_id, safe="", encoding="utf-8", errors="surrogatepass")
-
-
 def _runtime_field_ref(collection: str, item_id: str, field_name: str) -> str:
-    return f"{collection}/{_encoded_item_id(item_id)}/{field_name}"
+    return canonical_field_ref(collection, item_id, field_name)
 
 
 def _runtime_item_prefix(collection: str, item_id: str) -> str:
-    return f"{collection}/{_encoded_item_id(item_id)}/"
+    return f"{collection}/{encode_item_id(item_id)}/"
 
 
 def _require_contract(contract: object) -> dict[str, object]:
@@ -718,14 +714,8 @@ def materialize_runtime_plan(
     commitments, confirmed_paths = _review_state(
         contract, review_package, review_output
     )
-    confirmed_paths = {
-        _canonical_field_ref(
-            path,
-            field_index=field_index,
-            raw_aliases=raw_aliases,
-        )
-        for path in confirmed_paths
-    }
+    if any(path not in field_index for path in confirmed_paths):
+        _fail("INVALID_CONTRACT_FIELD_REFERENCE")
     actions = _normalize_collection(
         draft["actions"],
         collection="actions",

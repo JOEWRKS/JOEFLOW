@@ -29,7 +29,10 @@ from downstream_v21.semantic_review import (  # noqa: E402
 )
 from tests.downstream_v21_support import closed_v2_state  # noqa: E402
 from tests.test_downstream_v21_compiler import complete_definition_v21  # noqa: E402
-from tests.test_downstream_v21_semantic_review import reviewed_output  # noqa: E402
+from tests.test_downstream_v21_semantic_review import (  # noqa: E402
+    contract_with_action_ids,
+    reviewed_output,
+)
 
 
 try:
@@ -677,6 +680,159 @@ class RuntimePlanV21Tests(unittest.TestCase):
             transition["to_state_source"]["contract_field_path"],
             f"lifecycles/{encoded_lifecycle}/allowed_transitions",
         )
+
+    def test_review_bearing_special_identifier_supports_all_review_states(self):
+        contract = contract_with_action_ids(
+            self.review_contract,
+            ["submit/request with space"],
+        )
+        draft = complete_runtime_draft(contract)
+        original_contract = copy.deepcopy(contract)
+        original_draft = copy.deepcopy(draft)
+        try:
+            package = build_semantic_review_package_v21(contract)
+            original_package = copy.deepcopy(package)
+            pending_without_package = runtime_plan.materialize_runtime_plan(
+                contract,
+                draft,
+            )
+            pending_with_package = runtime_plan.materialize_runtime_plan(
+                contract,
+                draft,
+                review_package=package,
+            )
+            output = reviewed_output(package)
+            original_output = copy.deepcopy(output)
+            confirmed = runtime_plan.materialize_runtime_plan(
+                contract,
+                draft,
+                review_package=package,
+                review_output=output,
+            )
+        except ValueError as error:
+            self.fail(f"valid review-bearing action ID cannot materialize: {error}")
+
+        self.assertEqual(contract, original_contract)
+        self.assertEqual(draft, original_draft)
+        self.assertEqual(package, original_package)
+        self.assertEqual(output, original_output)
+        self.assertEqual(
+            pending_without_package["review_commitments"]["completion"],
+            "PENDING",
+        )
+        self.assertEqual(
+            pending_with_package["review_commitments"]["completion"],
+            "PENDING",
+        )
+        self.assertEqual(
+            confirmed["review_commitments"]["completion"],
+            "REVIEW_OUTPUT_RECORDED",
+        )
+        schema = json.loads(
+            (
+                PACKAGE_ROOT
+                / "downstream_v21"
+                / "schemas"
+                / "runtime-conformance-plan.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        for plan in (pending_without_package, pending_with_package, confirmed):
+            self.assertEqual(
+                runtime_plan.validate_runtime_plan(
+                    plan,
+                    contract,
+                    review_package=(
+                        package if plan is not pending_without_package else None
+                    ),
+                    review_output=(output if plan is confirmed else None),
+                ),
+                [],
+            )
+            validate_instance(plan, schema)
+
+    def test_percent_looking_identifiers_keep_confirmed_review_paths_owned(self):
+        contract = contract_with_action_ids(
+            self.review_contract,
+            ["a%2Fb", "a%252Fb"],
+        )
+        draft = complete_runtime_draft(contract)
+        package = build_semantic_review_package_v21(contract)
+        original_contract = copy.deepcopy(contract)
+        original_draft = copy.deepcopy(draft)
+        original_package = copy.deepcopy(package)
+        pending = runtime_plan.materialize_runtime_plan(
+            contract,
+            draft,
+            review_package=package,
+        )
+        output = reviewed_output(package)
+        original_output = copy.deepcopy(output)
+        try:
+            confirmed = runtime_plan.materialize_runtime_plan(
+                contract,
+                draft,
+                review_package=package,
+                review_output=output,
+            )
+        except ValueError as error:
+            self.fail(f"confirmed review field ownership is ambiguous: {error}")
+
+        self.assertEqual(pending["review_commitments"]["completion"], "PENDING")
+        self.assertEqual(
+            confirmed["review_commitments"]["completion"],
+            "REVIEW_OUTPUT_RECORDED",
+        )
+        self.assertEqual(
+            {item["field_path"] for item in package["review_obligations"]},
+            {
+                "actions/a%252Fb/visible_error",
+                "actions/a%252Fb/visible_success",
+                "actions/a%25252Fb/visible_error",
+                "actions/a%25252Fb/visible_success",
+            },
+        )
+        self.assertEqual(
+            runtime_plan.validate_runtime_plan(
+                confirmed,
+                contract,
+                review_package=package,
+                review_output=output,
+            ),
+            [],
+        )
+        schema = json.loads(
+            (
+                PACKAGE_ROOT
+                / "downstream_v21"
+                / "schemas"
+                / "runtime-conformance-plan.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        validate_instance(pending, schema)
+        validate_instance(confirmed, schema)
+        self.assertEqual(contract, original_contract)
+        self.assertEqual(draft, original_draft)
+        self.assertEqual(package, original_package)
+        self.assertEqual(output, original_output)
+
+    def test_schema_rejects_overencoded_unreserved_item_id_segment(self):
+        plan = self.materialize()
+        overencoded = copy.deepcopy(plan)
+        refs = overencoded["coverage_summary"]["runtime_critical_field_refs"]
+        refs[refs.index("actions/submit-request/actor")] = (
+            "actions/%73ubmit-request/actor"
+        )
+        self.assertTrue(runtime_plan.validate_runtime_plan(overencoded, self.contract))
+        schema = json.loads(
+            (
+                PACKAGE_ROOT
+                / "downstream_v21"
+                / "schemas"
+                / "runtime-conformance-plan.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        with self.assertRaises(SchemaValidationError):
+            validate_instance(overencoded, schema)
 
     def test_validate_runtime_plan_rejects_identity_or_case_weakening(self):
         plan = self.materialize()

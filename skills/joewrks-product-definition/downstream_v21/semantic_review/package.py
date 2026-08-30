@@ -6,6 +6,7 @@ import re
 from downstream_v2.authority import sha256_json
 
 from ..contracts import validate_action_contract_v21
+from ..field_refs import canonical_field_ref, parse_canonical_field_ref
 from ..identity import ACTION_CONTRACT_VERSION, SEMANTIC_REVIEW_VERSION
 from ..responsibility import (
     load_responsibility_profile_v21,
@@ -14,7 +15,6 @@ from ..responsibility import (
 
 
 RELIABILITY_STATUS = "NOT_MEASURED"
-_FIELD_PATH = re.compile(r"^(actions|lifecycles)/([^/\s]+)/([^/\s]+)$")
 _HASH = re.compile(r"^[0-9a-f]{64}$")
 _SEED_KEY = re.compile(r"^SEED-[0-9a-f]{24}$")
 _SCOPE_REF = re.compile(r"^(?:REQ|SURF|SCR)-[^\s]+$")
@@ -74,12 +74,10 @@ def _valid_profile(profile: object) -> bool:
 
 
 def _permitted_review_field(field_path: object) -> bool:
-    if not isinstance(field_path, str):
+    try:
+        collection, _item_id, field_name = parse_canonical_field_ref(field_path)
+    except ValueError:
         return False
-    match = _FIELD_PATH.fullmatch(field_path)
-    if match is None:
-        return False
-    collection, _item_id, field_name = match.groups()
     group_name = "action_fields" if collection == "actions" else "lifecycle_fields"
     profile = load_responsibility_profile_v21()
     entry = profile[group_name].get(field_name)
@@ -156,7 +154,11 @@ def _review_fields(contract: dict[str, object]):
         for item in contract[collection]:
             for field_name, field in item["fields"].items():
                 if field["derivation"]["kind"] == "REVIEW_REQUIRED":
-                    yield f"{collection}/{item[id_key]}/{field_name}", field
+                    yield (
+                        f"{collection}/{item[id_key]}/{field_name}",
+                        canonical_field_ref(collection, item[id_key], field_name),
+                        field,
+                    )
 
 
 def _require_contract(contract: object) -> dict[str, object]:
@@ -312,11 +314,18 @@ def build_semantic_review_package_v21(
 ) -> dict[str, object] | None:
     """Build the review-only projection of a valid action-conformance/2.1."""
     contract = _require_contract(contract)
-    review_fields = sorted(_review_fields(contract), key=lambda item: item[0])
+    review_fields = list(_review_fields(contract))
     expected_paths = contract["semantic_debt"]["review_required_fields"]
-    if [path for path, _field in review_fields] != expected_paths:
+    raw_paths = sorted(
+        raw_path for raw_path, _field_path, _field in review_fields
+    )
+    if raw_paths != expected_paths:
         raise ValueError("INVALID_ACTION_CONTRACT_V21")
-    if any(not _permitted_review_field(path) for path, _field in review_fields):
+    review_fields.sort(key=lambda item: item[1])
+    if any(
+        not _permitted_review_field(field_path)
+        for _raw_path, field_path, _field in review_fields
+    ):
         raise ValueError("INVALID_ACTION_CONTRACT_V21")
     if not review_fields:
         return None
@@ -325,7 +334,7 @@ def build_semantic_review_package_v21(
         seed["seed_key"]: seed for seed in contract["source_seed_inventory"]
     }
     obligations = []
-    for field_path, field in review_fields:
+    for _raw_path, field_path, field in review_fields:
         refs = list(field["source_seed_refs"])
         proposed_value_hash = sha256_json(field["value"])
         identity = {

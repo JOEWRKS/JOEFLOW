@@ -41,6 +41,8 @@ ordered exact source seed references and complete seed snapshots
 deterministic obligation and package hashes
 ```
 
+Review field paths preserve the exact action or lifecycle identity by using the same canonical UTF-8 percent-encoded item-ID segment as runtime-conformance-plan/1.0. Unreserved bytes remain literal; all other bytes use uppercase `%HH` triplets. Over-encoded unreserved bytes, lowercase triplets, raw slash or whitespace, and invalid UTF-8 byte sequences are not canonical review paths.
+
 Each seed snapshot retains its location, source record, pointer, value hash, current status, and exact value. Review cannot add Product Definition authority or read authority outside the consumed action contract.
 
 ## Output and completion
