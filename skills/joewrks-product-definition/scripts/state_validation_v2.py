@@ -594,7 +594,13 @@ def _validate_evidence(state: dict[str, Any]) -> list[dict[str, str]]:
         return []
 
     evidence_index = _collect_evidence(state)
-    consumed = set(consumed_evidence_ids(state))
+    try:
+        consumed = set(consumed_evidence_ids(state))
+    except (KeyError, TypeError, ValueError):
+        # Cross-link validation owns malformed semantic containers. Evidence
+        # validation must still return findings instead of raising while those
+        # containers are being diagnosed.
+        consumed = set()
     errors: list[dict[str, str]] = []
     allowed_fields = {
         "id", "status", "source_kind", "locator", "claim", "confidence",
