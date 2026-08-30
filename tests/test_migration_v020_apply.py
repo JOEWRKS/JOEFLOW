@@ -1364,6 +1364,49 @@ class MigrationApplyTest(unittest.TestCase):
             },
         )
 
+    def test_normal_validation_recomputes_archived_source_record_hash(self):
+        candidate, _ = self.candidate_for()
+        candidate["migration"]["legacy_records"][0]["source_record"][
+            "status"
+        ] = "STALE"
+
+        self.assertIn(
+            "migration_source_record_hash_mismatch",
+            {error["code"] for error in validate_state_v2(candidate)},
+        )
+
+    def test_normal_validation_recomputes_gap_keys_and_gap_order(self):
+        candidate, _ = self.candidate_for()
+        gaps = candidate["migration"]["reconciliation_gaps"]
+        first_key, first_gap = next(iter(gaps.items()))
+        wrong_key = "gap:" + ("0" * 24)
+        if wrong_key == first_key:
+            wrong_key = "gap:" + ("1" * 24)
+        gaps[wrong_key] = gaps.pop(first_key)
+        candidate["migration"]["reconciliation_gaps"] = {
+            key: value for key, value in reversed(list(gaps.items()))
+        }
+
+        codes = {error["code"] for error in validate_state_v2(candidate)}
+        self.assertIn("migration_gap_key_mismatch", codes)
+        self.assertIn("migration_gap_order_mismatch", codes)
+        self.assertEqual(first_gap["reason_code"], "MISSING_V2_SEMANTIC_AUTHORITY")
+
+    def test_normal_validation_recomputes_archive_and_id_inventories(self):
+        candidate, _ = self.candidate_for()
+        migration = candidate["migration"]
+        migration["legacy_records"][0], migration["legacy_records"][1] = (
+            migration["legacy_records"][1],
+            migration["legacy_records"][0],
+        )
+        migration["preserved_ids"] = migration["preserved_ids"][1:]
+        archived_id = migration["legacy_records"][0]["source_id"]
+        migration["promoted_ids"] = [archived_id]
+
+        codes = {error["code"] for error in validate_state_v2(candidate)}
+        self.assertIn("migration_archive_order_mismatch", codes)
+        self.assertIn("migration_id_inventory_mismatch", codes)
+
     def test_apply_writes_nothing_when_integrity_verification_fails(self):
         state = self.explicit_semantics_state()
         state["objects"]["rules"][0]["applies_to"] = ["REQ-999"]

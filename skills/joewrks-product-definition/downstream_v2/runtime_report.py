@@ -11,6 +11,7 @@ from downstream.schema_validation import SchemaValidationError, validate_instanc
 
 from .runtime import (
     RuntimeVerificationError,
+    canonical_runtime_evidence,
     contained_runtime_error_result,
     required_lifecycle_cases,
     semantic_value,
@@ -422,6 +423,17 @@ def build_runtime_conformance_report(
     semantic_assurance: dict[str, object],
 ) -> dict[str, object]:
     """Build a full-contract or partial-probe report without broadening its claim."""
+    report_inputs = canonical_runtime_evidence({
+        "audit_result": audit_result,
+        "action_results": action_results,
+        "lifecycle_results": lifecycle_results,
+        "semantic_assurance": semantic_assurance,
+    })
+    assert isinstance(report_inputs, dict)
+    audit_result = report_inputs["audit_result"]
+    action_results = report_inputs["action_results"]
+    lifecycle_results = report_inputs["lifecycle_results"]
+    semantic_assurance = report_inputs["semantic_assurance"]
     action_execution_errors: list[dict[str, object]] = []
     try:
         expected_source_contract = source_contract_identity(contract)
@@ -575,6 +587,7 @@ def build_runtime_conformance_report(
     }
     return {
         "report_schema_version": RUNTIME_REPORT_VERSION,
+        "report_inputs": report_inputs,
         "source_contract": source_contract,
         "verification_scope": verification_scope,
         "contract_dependency_status": dependency_status,
@@ -631,6 +644,22 @@ def validate_runtime_conformance_report(
         validate_instance(report, _REPORT_SCHEMA)
     except (SchemaValidationError, TypeError, ValueError, RecursionError) as error:
         raise _runtime_report_invalid(str(error)) from error
+
+    inputs = report["report_inputs"]
+    try:
+        expected_report = build_runtime_conformance_report(
+            contract,
+            inputs["audit_result"],
+            inputs["action_results"],
+            inputs["lifecycle_results"],
+            inputs["semantic_assurance"],
+        )
+    except (KeyError, TypeError, ValueError, AttributeError, RecursionError) as error:
+        raise _runtime_report_invalid("preserved report inputs are invalid") from error
+    if _canonical(report) != _canonical(expected_report):
+        raise _runtime_report_invalid(
+            "report does not exactly match its preserved bounded inputs"
+        )
 
     try:
         expected_source_contract = source_contract_identity(contract)

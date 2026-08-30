@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import json
+import re
 from typing import Any
 
 from authority_binding_v2 import (
@@ -13,6 +16,7 @@ from approval_v2 import (
     approval_manifest_digest,
     approval_metrics,
     compute_approval_manifest,
+    consumed_evidence_ids,
     definition_digest,
     semantic_readiness_metrics,
     validate_approval,
@@ -114,6 +118,10 @@ MIGRATION_LEGACY_RECORD_FIELDS = {
 MIGRATION_GAP_FIELDS = {
     "source_id", "source_path", "missing_v2_fields", "reason_code",
 }
+_GIT_OBJECT_COMMITMENT = re.compile(
+    r"^git-(?:commit|tree|blob):[0-9a-f]{40}$"
+)
+_SOURCE_BYTE_COMMITMENT = re.compile(r"^(?:sha256|source-bytes):[0-9a-f]{64}$")
 
 _LIFECYCLE_FIELDS = {"superseded_by", "retired_by", "retired_at_revision", "retirement_reason"}
 _TEXT_FIELDS = {
@@ -230,6 +238,34 @@ def _is_sha256(value: Any) -> bool:
     )
 
 
+def _canonical_sha256(value: Any) -> str:
+    return hashlib.sha256(json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
+
+
+def _repository_backed_intent(record: dict[str, Any]) -> bool:
+    if record.get("source_kind") not in {"DOCUMENTED_INTENT", "HISTORICAL_DECISION"}:
+        return False
+    locator = record.get("locator")
+    return (
+        isinstance(locator, str)
+        and "://" not in locator
+        and not locator.startswith("user-decision/")
+        and ("/" in locator or "." in locator.split("#", 1)[0])
+    )
+
+
+def _exact_repository_commitment(value: Any) -> bool:
+    return isinstance(value, str) and bool(
+        _GIT_OBJECT_COMMITMENT.fullmatch(value)
+        or _SOURCE_BYTE_COMMITMENT.fullmatch(value)
+    )
+
+
 def _validate_migration_metadata(state: dict[str, Any]) -> list[dict[str, str]]:
     migration = state.get("migration")
     if not isinstance(migration, dict):
@@ -314,6 +350,27 @@ def _validate_migration_metadata(state: dict[str, Any]) -> list[dict[str, str]]:
                 errors.append(_error(
                     "schema_error", "legacy archive entry has invalid shape", path
                 ))
+                continue
+            if record["source_record_sha256"] != _canonical_sha256(record["source_record"]):
+                errors.append(_error(
+                    "migration_source_record_hash_mismatch",
+                    "legacy archive source_record_sha256 must match the exact source record",
+                    f"{path}.source_record_sha256",
+                ))
+        expected_archive_order = sorted(
+            legacy_records,
+            key=lambda record: (
+                str(record.get("source_id") or ""),
+                str(record.get("source_group") or ""),
+                str(record.get("source_record_sha256") or ""),
+            ) if isinstance(record, dict) else ("", "", ""),
+        )
+        if legacy_records != expected_archive_order:
+            errors.append(_error(
+                "migration_archive_order_mismatch",
+                "migration.legacy_records must use deterministic archive ordering",
+                "migration.legacy_records",
+            ))
 
     gaps = migration.get("reconciliation_gaps")
     if not isinstance(gaps, dict):
@@ -322,6 +379,12 @@ def _validate_migration_metadata(state: dict[str, Any]) -> list[dict[str, str]]:
             "migration.reconciliation_gaps",
         ))
     else:
+        if list(gaps) != sorted(gaps):
+            errors.append(_error(
+                "migration_gap_order_mismatch",
+                "migration.reconciliation_gaps must use deterministic key order",
+                "migration.reconciliation_gaps",
+            ))
         for key, gap in gaps.items():
             path = f"migration.reconciliation_gaps.{key}"
             valid_key = (
@@ -346,6 +409,14 @@ def _validate_migration_metadata(state: dict[str, Any]) -> list[dict[str, str]]:
                 errors.append(_error(
                     "schema_error", "reconciliation gap has invalid shape", path
                 ))
+                continue
+            expected_key = f"gap:{_canonical_sha256(gap)[:24]}"
+            if key != expected_key:
+                errors.append(_error(
+                    "migration_gap_key_mismatch",
+                    "reconciliation gap key must match its canonical metadata",
+                    path,
+                ))
     gap_count = migration.get("reconciliation_gap_count")
     if (
         not isinstance(gap_count, int)
@@ -357,6 +428,42 @@ def _validate_migration_metadata(state: dict[str, Any]) -> list[dict[str, str]]:
             "schema_error", "migration.reconciliation_gap_count must equal gap count",
             "migration.reconciliation_gap_count",
         ))
+
+    if isinstance(legacy_records, list):
+        archived_ids = [
+            record.get("source_id")
+            for record in legacy_records
+            if isinstance(record, dict) and isinstance(record.get("source_id"), str)
+        ]
+        promoted_ids = migration.get("promoted_ids")
+        preserved_ids = migration.get("preserved_ids")
+        generated_ids = migration.get("generated_ids")
+        objects = state.get("objects")
+        canonical_ids = {
+            record.get("id")
+            for records in objects.values()
+            for record in records
+            if isinstance(record, dict) and isinstance(record.get("id"), str)
+        } if isinstance(objects, dict) and all(
+            isinstance(records, list) for records in objects.values()
+        ) else set()
+        if (
+            len(archived_ids) != len(set(archived_ids))
+            or not all(
+                isinstance(values, list)
+                for values in (promoted_ids, preserved_ids, generated_ids)
+            )
+            or set(preserved_ids or []) != set(promoted_ids or []) | set(archived_ids)
+            or bool(set(promoted_ids or []) & set(archived_ids))
+            or bool(set(generated_ids or []) & set(preserved_ids or []))
+            or not set(promoted_ids or []).issubset(canonical_ids)
+            or not set(generated_ids or []).issubset(canonical_ids)
+        ):
+            errors.append(_error(
+                "migration_id_inventory_mismatch",
+                "preserved, promoted, generated, and archived ID inventories are inconsistent",
+                "migration",
+            ))
     return errors
 
 
@@ -487,6 +594,7 @@ def _validate_evidence(state: dict[str, Any]) -> list[dict[str, str]]:
         return []
 
     evidence_index = _collect_evidence(state)
+    consumed = set(consumed_evidence_ids(state))
     errors: list[dict[str, str]] = []
     allowed_fields = {
         "id", "status", "source_kind", "locator", "claim", "confidence",
@@ -532,6 +640,20 @@ def _validate_evidence(state: dict[str, Any]) -> list[dict[str, str]]:
         )
         if not shape_valid:
             errors.append(_error("invalid_evidence_shape", "invalid evidence semantic shape", path))
+
+        if (
+            evidence_id in consumed
+            and _repository_backed_intent(record)
+            and (
+                not _exact_repository_commitment(record.get("observed_version"))
+                or not _exact_repository_commitment(record.get("content_hash"))
+            )
+        ):
+            errors.append(_error(
+                "consumed_repository_evidence_unbound",
+                "consumed repository intent requires exact source version and content commitments",
+                path,
+            ))
 
         if isinstance(source_kind, str) and source_kind in SOURCE_KIND_CAPABILITIES and isinstance(authority_classes, list):
             if any(

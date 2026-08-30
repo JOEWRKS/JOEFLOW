@@ -321,6 +321,54 @@ class RuntimeAggregateReportTest(unittest.TestCase):
             runtime_report.validate_runtime_conformance_report(report, contract)
         self.assertEqual(raised.exception.code, "RUNTIME_REPORT_INVALID")
 
+    def test_total_report_validator_rejects_removed_nonexecutable_action_inventory_error(self):
+        contract = runtime_contract()
+        contract["actions"].append({
+            "action_id": "non-executable-action",
+            "fields": {
+                "test_obligations": {
+                    "value": "Prose is not an executable obligation inventory."
+                }
+            },
+        })
+        refresh_semantic_hash(contract)
+        report = build(
+            contract=contract,
+            action_results=full_action_results(contract),
+        )
+        self.assertTrue(report["contract_execution_errors"])
+
+        forged = copy.deepcopy(report)
+        forged["contract_execution_errors"] = []
+        forged["action_coverage_status"] = "COMPLETE"
+        forged["coverage_status"] = "COMPLETE"
+        forged["implementation_status"] = "IMPLEMENTATION_CONFORMANT"
+
+        with self.assertRaises(RuntimeVerificationError) as raised:
+            runtime_report.validate_runtime_conformance_report(forged, contract)
+        self.assertEqual(raised.exception.code, "RUNTIME_REPORT_INVALID")
+
+    def test_total_report_validator_rejects_removed_rejected_evidence_error(self):
+        results = full_action_results()
+        rejected = copy.deepcopy(results[0])
+        rejected["evidence_sha256"] = "9" * 64
+        report = build(action_results=[*results, rejected])
+        self.assertTrue(report["evidence_errors"])
+
+        forged = copy.deepcopy(report)
+        forged["evidence_errors"] = []
+        forged["action_coverage_status"] = "COMPLETE"
+        forged["coverage_status"] = "COMPLETE"
+        forged["runtime_status"] = "CONFORMANT"
+        forged["implementation_status"] = "IMPLEMENTATION_CONFORMANT"
+
+        with self.assertRaises(RuntimeVerificationError) as raised:
+            runtime_report.validate_runtime_conformance_report(
+                forged,
+                runtime_contract(),
+            )
+        self.assertEqual(raised.exception.code, "RUNTIME_REPORT_INVALID")
+
     def test_total_report_validator_rejects_noncanonical_detail_values(self):
         report = build()
         report["evidence_errors"] = [{

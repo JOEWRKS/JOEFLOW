@@ -17,6 +17,17 @@ M2 adds evidence, discovered surface, contradiction, reverse-bootstrap, and
 deterministic discovery-baseline authority rules. The authoritative M2 detail
 is the [M2 discovery authority contract](discovery-contract-v0.2.0.md).
 
+When current semantic authority consumes repository-backed
+`DOCUMENTED_INTENT` or `HISTORICAL_DECISION`, that evidence must carry both an
+exact `observed_version` and `content_hash`. Accepted commitments are exact Git
+commit/tree/blob identities (`git-commit:`, `git-tree:`, or `git-blob:` plus the
+40-character object ID) or an exact SHA-256/source-byte commitment. A relative
+repository locator with null or informal commitments is not closure-eligible.
+Changing either commitment changes the consumed-evidence semantic projection,
+so the definition/approval checkpoint must be rebuilt. Current
+`USER_CONFIRMED_INTENT` remains user authority and does not receive fabricated
+repository versions, hashes, or timestamps.
+
 M2 did not remove the M1 Closure guard. `SEMANTIC_CLOSURE_NOT_AVAILABLE_IN_M2`
 records that historical milestone boundary. M4 now supersedes only that
 temporary guard, not M2's evidence and discovery semantics.

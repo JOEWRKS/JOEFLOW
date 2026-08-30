@@ -5,6 +5,7 @@
   "type": "object",
   "required": [
     "report_schema_version",
+    "report_inputs",
     "source_contract",
     "verification_scope",
     "contract_dependency_status",
@@ -34,6 +35,7 @@
   "additionalProperties": false,
   "properties": {
     "report_schema_version": {"const": "joewrks.runtime-conformance-report/1.0"},
+    "report_inputs": {"$ref": "#/$defs/reportInputs"},
     "source_contract": {"$ref": "#/$defs/sourceContract"},
     "verification_scope": {"enum": ["FULL_CONTRACT", "PARTIAL_PROBE"]},
     "contract_dependency_status": {"enum": ["CONFORMANT", "REENTRY_REQUIRED", "DEFINITION_NOT_READY"]},
@@ -61,6 +63,17 @@
     "deduplicated_evidence_count": {"type": "integer", "minimum": 0}
   },
   "$defs": {
+    "reportInputs": {
+      "type": "object",
+      "required": ["audit_result", "action_results", "lifecycle_results", "semantic_assurance"],
+      "additionalProperties": false,
+      "properties": {
+        "audit_result": {},
+        "action_results": {},
+        "lifecycle_results": {},
+        "semantic_assurance": {}
+      }
+    },
     "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "nonblank": {"type": "string", "pattern": ".*\\S.*"},
     "sourceContract": {

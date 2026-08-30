@@ -5,9 +5,19 @@ import unittest
 from pathlib import Path
 
 try:
-    from tests.v020_support import evidence_record, evidence_with_grill_basis, foundation_state
+    from tests.v020_support import (
+        decision_record,
+        evidence_record,
+        evidence_with_grill_basis,
+        foundation_state,
+    )
 except ModuleNotFoundError:
-    from v020_support import evidence_record, evidence_with_grill_basis, foundation_state
+    from v020_support import (
+        decision_record,
+        evidence_record,
+        evidence_with_grill_basis,
+        foundation_state,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -170,6 +180,53 @@ class EvidenceV020Test(unittest.TestCase):
 
         self.assertTrue(state_validation_v2._evidence_can_support(record, "INTENT", for_closure=True))
         self.assertTrue(state_validation_v2._evidence_is_current_closure_eligible(record))
+
+    def test_consumed_repository_intent_requires_exact_version_and_content_commitments(self):
+        for source_kind in ("DOCUMENTED_INTENT", "HISTORICAL_DECISION"):
+            with self.subTest(source_kind=source_kind):
+                record = evidence_record(
+                    source_kind=source_kind,
+                    authority_classes=["INTENT"],
+                    locator="product-definition/example/DECISIONS.md#DEC-001",
+                )
+                state = self.state_with(record)
+                decision = decision_record()
+                decision["evidence_refs"] = [record["id"]]
+                state["objects"]["decisions"] = [decision]
+
+                self.assertIn(
+                    "consumed_repository_evidence_unbound",
+                    self.error_codes(state),
+                )
+
+                record["observed_version"] = "git-blob:" + ("1" * 40)
+                record["content_hash"] = "sha256:" + ("2" * 64)
+                bound = self.state_with(record)
+                bound_decision = decision_record()
+                bound_decision["evidence_refs"] = [record["id"]]
+                bound["objects"]["decisions"] = [bound_decision]
+                self.assertNotIn(
+                    "consumed_repository_evidence_unbound",
+                    self.error_codes(bound),
+                )
+
+    def test_current_user_authority_does_not_fabricate_repository_commitments(self):
+        record = evidence_record(
+            source_kind="USER_CONFIRMED_INTENT",
+            authority_classes=["INTENT"],
+            locator="user-decision/current-conversation",
+        )
+        state = self.state_with(record)
+        decision = decision_record()
+        decision["evidence_refs"] = [record["id"]]
+        state["objects"]["decisions"] = [decision]
+
+        self.assertIsNone(record["observed_version"])
+        self.assertIsNone(record["content_hash"])
+        self.assertNotIn(
+            "consumed_repository_evidence_unbound",
+            self.error_codes(state),
+        )
 
     def test_non_current_evidence_cannot_support_closure_authority(self):
         for status in ("STALE", "SUPERSEDED", "UNAVAILABLE"):

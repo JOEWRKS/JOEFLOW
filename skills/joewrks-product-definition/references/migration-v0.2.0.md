@@ -143,6 +143,16 @@ archive entry contains exactly `source_id`, `source_group`, `source_record`, and
 source IDs. `generated_ids` lists only truthfully complete canonical records
 created by migration; raw migration normally leaves it empty.
 
+Ordinary state `0.2.0` validation rechecks these migration commitments even
+outside `verify_migration_result()`. It recomputes every archived
+`source_record_sha256`, the deterministic archive ordering, every gap key and
+the gap-key order, and the preserved/promoted/generated/archive ID inventory
+relationships. Editing an archived source record without its matching hash, or
+rewriting an inventory while retaining a structurally valid shape, invalidates
+the migrated state. These checks do not make migration metadata semantic
+authority: the complete migration section remains excluded from the definition
+digest and Approval Manifest projection.
+
 ## Reconciliation gaps
 
 `migration.reconciliation_gaps` is an object keyed by
