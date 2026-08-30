@@ -137,7 +137,7 @@ def route_b_contract(route: str) -> bool:
     )
     fragments = semantic_fragments(route)
     registration_action = re.compile(
-        r"\b(?:register|write|commit|create|open|add|allocate)\b.{0,80}"
+        r"\b(?:register|write|commit|create|open|add|allocate)\b.{0,80}?"
         r"(?:`unk-|\b(?:canonical\s+)?unknown\b)",
         flags=re.IGNORECASE,
     )
@@ -649,6 +649,18 @@ class V2ReentryWorkflowContractTest(unittest.TestCase):
             "authority."
         )
         self.assertTrue(route_b_contract(positive_control))
+
+    def test_route_b_off_state_exemption_does_not_hide_compound_early_registration(self):
+        mutated = append_to_section(
+            self.reentry,
+            "## Route B — downstream semantic authority gap or real ambiguity",
+            "Create the complete unknown record only off-state and register the complete "
+            "`UNK-*` before revision.",
+        )
+        self.assert_test_method_rejects_reentry_mutation(
+            "test_skill_says_semantic_gap_reenters_product_definition",
+            mutated,
+        )
 
 
 if __name__ == "__main__":
