@@ -1,0 +1,907 @@
+{
+  "definition_schema_version": "joewrks.handoff-definition/2.0",
+  "product_slug": "client-feedback-portal-dogfood-v2",
+  "actions": [
+    {
+      "action_id": "create_pin",
+      "authority_scope_refs": [
+        "REQ-005",
+        "REQ-006",
+        "SCR-007",
+        "SURF-001",
+        "SURF-002",
+        "SURF-003",
+        "SURF-004"
+      ],
+      "ux_action_locator": {
+        "screen_ref": "SCR-007",
+        "action_key": "create_pin"
+      },
+      "fields": {
+        "actor": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-85cdd056577c5a7b55b59c5a"
+        },
+        "authentication": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-4cbfe193013a6e770e85bfad"
+        },
+        "relationship_predicate": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-4cbfe193013a6e770e85bfad"
+        },
+        "object_binding": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-9bc1d14cf6b04ecc643c5d0e"
+        },
+        "concurrency": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-397fe785723981fce974950f"
+        },
+        "preconditions": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-4ec3e5da36dddb73d4544042"
+        },
+        "allowed_current_states": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-9d8c7d713523a75ee77e6aaf"
+        },
+        "forbidden_states": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-9d8c7d713523a75ee77e6aaf"
+        },
+        "input_invariants": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies the action inputs and validation in declarative text, but the frozen handoff can consume no bound executable invariant array without a new exact authority representation.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-005"
+          ]
+        },
+        "command": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-703fa04cffb79a6996405486"
+        },
+        "expected_domain_mutation": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-441e8d3e0a46b5b803894757"
+        },
+        "forbidden_mutations": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-441e8d3e0a46b5b803894757"
+        },
+        "default_result": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies successful behavior in declarative text, but no permitted bound value is an executable runtime result class.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-005"
+          ]
+        },
+        "result_expectations": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies state, history, and side effects in declarative text, but no permitted bound value is the five-component runtime expectation map.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-005"
+          ]
+        },
+        "version_result": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-8e7aac0dd759f9a61b8b707c"
+        },
+        "history_result": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-8e7aac0dd759f9a61b8b707c"
+        },
+        "business_side_effects": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-441e8d3e0a46b5b803894757"
+        },
+        "delivery_effects": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0bf67ccb1c8d96cfa8101bb1"
+        },
+        "idempotency": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-397fe785723981fce974950f"
+        },
+        "rejection": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-07c3ee5fc8648b578e618f5b"
+        },
+        "recovery": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0242ad08eddfa7b2b4235a8a"
+        },
+        "visible_success": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-41684fac7ad6bc4a99009bde"
+        },
+        "visible_error": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-07c3ee5fc8648b578e618f5b"
+        },
+        "superseded_rules": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-aa3ec9cf362e8a4a27e2c217"
+        },
+        "test_obligations": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved acceptance authority is declarative text and does not bind the unique stable test-ID array required for full-contract runtime coverage.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-005"
+          ]
+        },
+        "trace": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-ba5ac85922b87e8fb415dab0"
+        }
+      }
+    },
+    {
+      "action_id": "reply_thread",
+      "authority_scope_refs": [
+        "REQ-005",
+        "REQ-006",
+        "SCR-007",
+        "SURF-001",
+        "SURF-002",
+        "SURF-003",
+        "SURF-004"
+      ],
+      "ux_action_locator": {
+        "screen_ref": "SCR-007",
+        "action_key": "reply_thread"
+      },
+      "fields": {
+        "actor": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "Approved authority permits both Designer and Client Reviewer to reply, but the frozen DIRECT_REQUIRED actor field accepts only one bound source seed and cannot losslessly combine both actors.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-003",
+            "EVD-006"
+          ]
+        },
+        "authentication": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-4cbfe193013a6e770e85bfad"
+        },
+        "relationship_predicate": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-4cbfe193013a6e770e85bfad"
+        },
+        "object_binding": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-9bc1d14cf6b04ecc643c5d0e"
+        },
+        "concurrency": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-1692318ef26860b453b43d5f"
+        },
+        "preconditions": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-5a524cd8a1dd937588d26e71"
+        },
+        "allowed_current_states": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-9d8c7d713523a75ee77e6aaf"
+        },
+        "forbidden_states": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-9d8c7d713523a75ee77e6aaf"
+        },
+        "input_invariants": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies the action inputs and validation in declarative text, but the frozen handoff can consume no bound executable invariant array without a new exact authority representation.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-005"
+          ]
+        },
+        "command": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-703fa04cffb79a6996405486"
+        },
+        "expected_domain_mutation": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-349df48d9ee4d3c2cc647c87"
+        },
+        "forbidden_mutations": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-441e8d3e0a46b5b803894757"
+        },
+        "default_result": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies successful behavior in declarative text, but no permitted bound value is an executable runtime result class.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-005"
+          ]
+        },
+        "result_expectations": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies state, history, and side effects in declarative text, but no permitted bound value is the five-component runtime expectation map.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-005"
+          ]
+        },
+        "version_result": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-8e7aac0dd759f9a61b8b707c"
+        },
+        "history_result": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-8e7aac0dd759f9a61b8b707c"
+        },
+        "business_side_effects": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-441e8d3e0a46b5b803894757"
+        },
+        "delivery_effects": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0bf67ccb1c8d96cfa8101bb1"
+        },
+        "idempotency": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-397fe785723981fce974950f"
+        },
+        "rejection": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-4cbfe193013a6e770e85bfad"
+        },
+        "recovery": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0242ad08eddfa7b2b4235a8a"
+        },
+        "visible_success": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-2383c2533e4e5ad83e8b8b2d"
+        },
+        "visible_error": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-276e712f11f6a6869f367df0"
+        },
+        "superseded_rules": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-aa3ec9cf362e8a4a27e2c217"
+        },
+        "test_obligations": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved acceptance authority is declarative text and does not bind the unique stable test-ID array required for full-contract runtime coverage.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-005"
+          ]
+        },
+        "trace": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-ba5ac85922b87e8fb415dab0"
+        }
+      }
+    },
+    {
+      "action_id": "resend_review_request",
+      "authority_scope_refs": [
+        "REQ-005",
+        "SCR-006",
+        "SURF-001",
+        "SURF-003",
+        "SURF-005"
+      ],
+      "ux_action_locator": {
+        "screen_ref": "SCR-006",
+        "action_key": "resend_review_request"
+      },
+      "fields": {
+        "actor": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-65b2a6c9b4932974b3b60496"
+        },
+        "authentication": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-054462d0f596a2e1ca7c5bad"
+        },
+        "relationship_predicate": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-054462d0f596a2e1ca7c5bad"
+        },
+        "object_binding": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-395deb892b1e56c9d669ddd3"
+        },
+        "concurrency": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-026030cdfb94a1dc368cd238"
+        },
+        "preconditions": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0addb4b3928635f58c21ed23"
+        },
+        "allowed_current_states": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-6ae1f6f0f93c8e63a9327f77"
+        },
+        "forbidden_states": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0b95ee1025e80030eb8d4aed"
+        },
+        "input_invariants": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies the action inputs and validation in declarative text, but the frozen handoff can consume no bound executable invariant array without a new exact authority representation.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-017"
+          ]
+        },
+        "command": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-3aaa879002f14fce86721377"
+        },
+        "expected_domain_mutation": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0ee3ade4bc02c73a374ad8da"
+        },
+        "forbidden_mutations": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0b95ee1025e80030eb8d4aed"
+        },
+        "default_result": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies successful behavior in declarative text, but no permitted bound value is an executable runtime result class.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-017"
+          ]
+        },
+        "result_expectations": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies state, history, and side effects in declarative text, but no permitted bound value is the five-component runtime expectation map.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-017"
+          ]
+        },
+        "version_result": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-6ae1f6f0f93c8e63a9327f77"
+        },
+        "history_result": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-395deb892b1e56c9d669ddd3"
+        },
+        "business_side_effects": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0ee3ade4bc02c73a374ad8da"
+        },
+        "delivery_effects": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0ee3ade4bc02c73a374ad8da"
+        },
+        "idempotency": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0ee3ade4bc02c73a374ad8da"
+        },
+        "rejection": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-054462d0f596a2e1ca7c5bad"
+        },
+        "recovery": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-08775acc76ac4b5097b0ed14"
+        },
+        "visible_success": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0154fce39c180e44109a6f33"
+        },
+        "visible_error": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-3b6a182fe085e1ffac13e56e"
+        },
+        "superseded_rules": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0b95ee1025e80030eb8d4aed"
+        },
+        "test_obligations": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved acceptance authority is declarative text and does not bind the unique stable test-ID array required for full-contract runtime coverage.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-017"
+          ]
+        },
+        "trace": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0154fce39c180e44109a6f33"
+        }
+      }
+    },
+    {
+      "action_id": "resolve_thread",
+      "authority_scope_refs": [
+        "REQ-005",
+        "REQ-006",
+        "SCR-007",
+        "SURF-001",
+        "SURF-002",
+        "SURF-003",
+        "SURF-004"
+      ],
+      "ux_action_locator": {
+        "screen_ref": "SCR-007",
+        "action_key": "resolve_thread"
+      },
+      "fields": {
+        "actor": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-65b2a6c9b4932974b3b60496"
+        },
+        "authentication": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-4cbfe193013a6e770e85bfad"
+        },
+        "relationship_predicate": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-4cbfe193013a6e770e85bfad"
+        },
+        "object_binding": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-9bc1d14cf6b04ecc643c5d0e"
+        },
+        "concurrency": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-397fe785723981fce974950f"
+        },
+        "preconditions": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-27a90b91e3dbb5b4262f564a"
+        },
+        "allowed_current_states": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-9d8c7d713523a75ee77e6aaf"
+        },
+        "forbidden_states": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-9d8c7d713523a75ee77e6aaf"
+        },
+        "input_invariants": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies the action inputs and validation in declarative text, but the frozen handoff can consume no bound executable invariant array without a new exact authority representation.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-005"
+          ]
+        },
+        "command": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-3a424f9ee3b29885cc1a4ae4"
+        },
+        "expected_domain_mutation": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-441e8d3e0a46b5b803894757"
+        },
+        "forbidden_mutations": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-441e8d3e0a46b5b803894757"
+        },
+        "default_result": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies successful behavior in declarative text, but no permitted bound value is an executable runtime result class.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-005"
+          ]
+        },
+        "result_expectations": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies state, history, and side effects in declarative text, but no permitted bound value is the five-component runtime expectation map.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-005"
+          ]
+        },
+        "version_result": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-8e7aac0dd759f9a61b8b707c"
+        },
+        "history_result": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-8e7aac0dd759f9a61b8b707c"
+        },
+        "business_side_effects": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-441e8d3e0a46b5b803894757"
+        },
+        "delivery_effects": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0bf67ccb1c8d96cfa8101bb1"
+        },
+        "idempotency": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-397fe785723981fce974950f"
+        },
+        "rejection": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-4cbfe193013a6e770e85bfad"
+        },
+        "recovery": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0242ad08eddfa7b2b4235a8a"
+        },
+        "visible_success": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-241c81dc3215aff557671dda"
+        },
+        "visible_error": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-276e712f11f6a6869f367df0"
+        },
+        "superseded_rules": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-aa3ec9cf362e8a4a27e2c217"
+        },
+        "test_obligations": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved acceptance authority is declarative text and does not bind the unique stable test-ID array required for full-contract runtime coverage.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-005"
+          ]
+        },
+        "trace": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-ba5ac85922b87e8fb415dab0"
+        }
+      }
+    },
+    {
+      "action_id": "revoke_review_link",
+      "authority_scope_refs": [
+        "REQ-005",
+        "SCR-006",
+        "SURF-001",
+        "SURF-003",
+        "SURF-005"
+      ],
+      "ux_action_locator": {
+        "screen_ref": "SCR-006",
+        "action_key": "revoke_review_link"
+      },
+      "fields": {
+        "actor": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-65b2a6c9b4932974b3b60496"
+        },
+        "authentication": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-054462d0f596a2e1ca7c5bad"
+        },
+        "relationship_predicate": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-054462d0f596a2e1ca7c5bad"
+        },
+        "object_binding": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-395deb892b1e56c9d669ddd3"
+        },
+        "concurrency": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-2d03ac0d8a3c4f59c74f52cf"
+        },
+        "preconditions": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0addb4b3928635f58c21ed23"
+        },
+        "allowed_current_states": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-6ae1f6f0f93c8e63a9327f77"
+        },
+        "forbidden_states": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0b95ee1025e80030eb8d4aed"
+        },
+        "input_invariants": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies the action inputs and validation in declarative text, but the frozen handoff can consume no bound executable invariant array without a new exact authority representation.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-017"
+          ]
+        },
+        "command": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-2ad1195474ed66499940a6c5"
+        },
+        "expected_domain_mutation": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0ee3ade4bc02c73a374ad8da"
+        },
+        "forbidden_mutations": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0b95ee1025e80030eb8d4aed"
+        },
+        "default_result": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies successful behavior in declarative text, but no permitted bound value is an executable runtime result class.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-017"
+          ]
+        },
+        "result_expectations": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies state, history, and side effects in declarative text, but no permitted bound value is the five-component runtime expectation map.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-017"
+          ]
+        },
+        "version_result": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-6ae1f6f0f93c8e63a9327f77"
+        },
+        "history_result": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-395deb892b1e56c9d669ddd3"
+        },
+        "business_side_effects": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0ee3ade4bc02c73a374ad8da"
+        },
+        "delivery_effects": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0ee3ade4bc02c73a374ad8da"
+        },
+        "idempotency": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0ee3ade4bc02c73a374ad8da"
+        },
+        "rejection": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-054462d0f596a2e1ca7c5bad"
+        },
+        "recovery": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-34185d0c430920796c927a2b"
+        },
+        "visible_success": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0154fce39c180e44109a6f33"
+        },
+        "visible_error": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-192daff597cf35694c577113"
+        },
+        "superseded_rules": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0b95ee1025e80030eb8d4aed"
+        },
+        "test_obligations": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved acceptance authority is declarative text and does not bind the unique stable test-ID array required for full-contract runtime coverage.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-017"
+          ]
+        },
+        "trace": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0154fce39c180e44109a6f33"
+        }
+      }
+    },
+    {
+      "action_id": "send_review_request",
+      "authority_scope_refs": [
+        "REQ-005",
+        "SCR-006",
+        "SURF-001",
+        "SURF-003",
+        "SURF-005"
+      ],
+      "ux_action_locator": {
+        "screen_ref": "SCR-006",
+        "action_key": "send_review_request"
+      },
+      "fields": {
+        "actor": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-65b2a6c9b4932974b3b60496"
+        },
+        "authentication": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-054462d0f596a2e1ca7c5bad"
+        },
+        "relationship_predicate": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-054462d0f596a2e1ca7c5bad"
+        },
+        "object_binding": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-395deb892b1e56c9d669ddd3"
+        },
+        "concurrency": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-292e7e1923f7f2e42c5c184b"
+        },
+        "preconditions": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0addb4b3928635f58c21ed23"
+        },
+        "allowed_current_states": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-6ae1f6f0f93c8e63a9327f77"
+        },
+        "forbidden_states": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0b95ee1025e80030eb8d4aed"
+        },
+        "input_invariants": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies the action inputs and validation in declarative text, but the frozen handoff can consume no bound executable invariant array without a new exact authority representation.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-017"
+          ]
+        },
+        "command": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-3aaa879002f14fce86721377"
+        },
+        "expected_domain_mutation": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0d5398e75a26335fdce539ff"
+        },
+        "forbidden_mutations": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0b95ee1025e80030eb8d4aed"
+        },
+        "default_result": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies successful behavior in declarative text, but no permitted bound value is an executable runtime result class.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-017"
+          ]
+        },
+        "result_expectations": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved authority specifies state, history, and side effects in declarative text, but no permitted bound value is the five-component runtime expectation map.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-017"
+          ]
+        },
+        "version_result": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-6ae1f6f0f93c8e63a9327f77"
+        },
+        "history_result": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-395deb892b1e56c9d669ddd3"
+        },
+        "business_side_effects": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0ee3ade4bc02c73a374ad8da"
+        },
+        "delivery_effects": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0ee3ade4bc02c73a374ad8da"
+        },
+        "idempotency": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0ee3ade4bc02c73a374ad8da"
+        },
+        "rejection": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-054462d0f596a2e1ca7c5bad"
+        },
+        "recovery": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-6049bb571eb9f7bf81df3062"
+        },
+        "visible_success": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0154fce39c180e44109a6f33"
+        },
+        "visible_error": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-3b6a182fe085e1ffac13e56e"
+        },
+        "superseded_rules": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0b95ee1025e80030eb8d4aed"
+        },
+        "test_obligations": {
+          "kind": "UNRESOLVED",
+          "gap_type": "CONTRACT_CONFLICT",
+          "description": "The approved acceptance authority is declarative text and does not bind the unique stable test-ID array required for full-contract runtime coverage.",
+          "required_authority_class": "INTENT",
+          "evidence_refs": [
+            "EVD-006",
+            "EVD-015",
+            "EVD-017"
+          ]
+        },
+        "trace": {
+          "kind": "DIRECT_AUTHORITY",
+          "source_seed_ref": "SEED-0154fce39c180e44109a6f33"
+        }
+      }
+    }
+  ],
+  "lifecycles": []
+}

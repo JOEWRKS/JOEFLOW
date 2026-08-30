@@ -514,6 +514,14 @@ def load_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def phase_a_review_projection(state):
+    projection = deepcopy(state)
+    projection["project"]["definition_status"] = "READY_FOR_REVIEW"
+    projection["approval"] = {"status": "UNAPPROVED"}
+    projection["approval_history"] = []
+    return projection
+
+
 def legacy_ids(state):
     return sorted(
         record["id"]
@@ -784,7 +792,7 @@ class CoreSemanticClosureV2M6DogfoodTrackBTest(unittest.TestCase):
         ):
             self.assertTrue(record["materiality"]["risk_flags"]["security"], record["id"])
 
-        manifest = build_approval_manifest_for_review(state)
+        manifest = build_approval_manifest_for_review(phase_a_review_projection(state))
         self.assertEqual(
             [row["id"] for row in manifest["high_risk_decisions"]],
             ["DEC-001", "DEC-008", "DEC-012", "DEC-013", "DEC-043"],
@@ -841,20 +849,21 @@ class CoreSemanticClosureV2M6DogfoodTrackBTest(unittest.TestCase):
         required = (STATE_PATH, MANIFEST_PATH, EVIDENCE_MAP_PATH, RUNBOOK_PATH)
         self.assertEqual([path for path in required if not path.is_file()], [])
         state = load_json(STATE_PATH)
+        review_state = phase_a_review_projection(state)
         manifest = load_json(MANIFEST_PATH)
-        self.assertEqual(state["project"]["definition_status"], "READY_FOR_REVIEW")
-        self.assertEqual(state["approval"], {"status": "UNAPPROVED"})
-        self.assertEqual(state["approval_history"], [])
-        self.assertEqual(validate_state_v2(state), [])
-        self.assertEqual(sum(semantic_readiness_metrics(state).values()), 0)
-        self.assertEqual(build_approval_manifest_for_review(state), manifest)
-        self.assertEqual(definition_digest(state), EXPECTED_DEFINITION_DIGEST)
+        self.assertEqual(review_state["project"]["definition_status"], "READY_FOR_REVIEW")
+        self.assertEqual(review_state["approval"], {"status": "UNAPPROVED"})
+        self.assertEqual(review_state["approval_history"], [])
+        self.assertEqual(validate_state_v2(review_state), [])
+        self.assertEqual(sum(semantic_readiness_metrics(review_state).values()), 0)
+        self.assertEqual(build_approval_manifest_for_review(review_state), manifest)
+        self.assertEqual(definition_digest(review_state), EXPECTED_DEFINITION_DIGEST)
         self.assertEqual(approval_manifest_digest(manifest), EXPECTED_MANIFEST_DIGEST)
         self.assertEqual(len(manifest["added"]), EXPECTED_ADDED_COUNT)
         self.assertEqual(manifest["changed"], [])
         self.assertEqual(manifest["superseded"], [])
         self.assertEqual(manifest["retired"], [])
-        serialized = json.dumps(state, ensure_ascii=False)
+        serialized = json.dumps(review_state, ensure_ascii=False)
         for forbidden in ("approved_by", "approved_at", "timestamp"):
             self.assertNotIn(forbidden, serialized)
 
