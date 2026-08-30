@@ -18,19 +18,21 @@ editing the source. The deterministic result is revision 45, `OPEN`, and
 
 Track A remains OPEN. Its audit is complete, but its full reconciliation is not.
 
-## Track B — bounded native reconciliation stopped for context
+## Track B — bounded native reconciliation ready for review
 
-Track B is `NEEDS_CONTEXT` at `FIELD_LEVEL_UX_AUTHORITY_GAP`. The source
-documents identify every required state and action axis, but do not define the
-behavior of several mandatory cells at field level. The old status-only
-`COVERED` cells cannot be promoted as intent.
+The user supplied both bounded material decisions: no product analytics or
+telemetry for REQ-005/REQ-006, and the uniform field-level interaction policy
+for SCR-006/SCR-007. Both are recorded as current user intent without a
+timestamp and are explicitly not system-wide rules.
 
-The invalid bounded state, evidence map, approval packet, and approval runbook
-were removed. Track B has no current readiness or digest claim. The already
-authorized bounded no-analytics decision is preserved in `README.md`; it does
-not answer the independent interaction-policy gap.
+The bounded revision 1 state is `READY_FOR_REVIEW` and `UNAPPROVED`. Discovery,
+Core and applicable Grill coverage, exact authority binding, state validation,
+and deterministic manifest compilation report zero semantic-readiness blockers.
+Every selected SCR-006/SCR-007 state and action axis is bound to exact semantic
+record fields; destructive confirmation and the two actions with no documented
+notification are exact evidence-based `N/A` cells.
 
 Track B remains separate from the complete Track A audit. It does not trim,
 close, replace, or supersede Track A, and it does not modify the historical
-dogfood directory. Approval and all later work remain prohibited until the
-missing field-level interaction policy receives user authority.
+dogfood directory. Approval, Phase B, Task 6, downstream compilation, runtime
+conformance, and re-entry have not started.

@@ -1,0 +1,5400 @@
+{
+  "schema_version": "0.2.0",
+  "project": {
+    "slug": "client-feedback-portal-dogfood-v2",
+    "definition_status": "READY_FOR_REVIEW",
+    "definition_revision": 1,
+    "bootstrap_mode": "EXISTING_PRODUCT_RECONCILIATION",
+    "closure_contract": {
+      "level": "SEMANTIC_CLOSURE",
+      "product_binding_contract": {
+        "contract_id": "joewrks.product-coverage-binding",
+        "version": "1.0",
+        "digest": "b57459533247de52038aacb158e785c2184edcdd2fa6831f0edc3db713775f3c"
+      },
+      "ux_binding_contract": {
+        "contract_id": "joewrks.ux-coverage-binding",
+        "version": "1.0",
+        "digest": "8fc84057a4a6f0f0ce329a58d11b8e208989800147d703665cea52088de0be0d"
+      }
+    }
+  },
+  "migration": {
+    "mode": "NATIVE"
+  },
+  "evidence": [
+    {
+      "id": "EVD-001",
+      "status": "CURRENT",
+      "source_kind": "DOCUMENTED_INTENT",
+      "locator": "product-definition/client-feedback-portal-dogfood/PRODUCT_DEFINITION.md#objective-roles-and-scope",
+      "claim": "The bounded product scope covers review-link access and exact-Version canvas, pins, and threads for Designer and Client Reviewer actors.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-002",
+      "status": "CURRENT",
+      "source_kind": "HISTORICAL_DECISION",
+      "locator": "product-definition/client-feedback-portal-dogfood/state.json#/objects/decisions/DEC-001,DEC-005,DEC-012,DEC-013,DEC-015",
+      "claim": "User decisions require designated-identity, project-scoped reviewer access, 30-day expiry, one active link, rotation, manual revocation, blocked access after expiry or revocation, and local draft recovery after a new link.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-003",
+      "status": "CURRENT",
+      "source_kind": "HISTORICAL_DECISION",
+      "locator": "product-definition/client-feedback-portal-dogfood/state.json#/objects/decisions/DEC-008,DEC-009",
+      "claim": "User decisions define Client Reviewer-only pin creation, replies by both actors, Designer-only resolution, Reviewer-only automatic reopen, Designer reply without reopen, and prohibition on deleting thread history.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-004",
+      "status": "CURRENT",
+      "source_kind": "HISTORICAL_DECISION",
+      "locator": "product-definition/client-feedback-portal-dogfood/state.json#/objects/decisions/DEC-018,DEC-019",
+      "claim": "User decisions require immediate counterpart email notification for new pins and thread replies without self-notification.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-005",
+      "status": "CURRENT",
+      "source_kind": "HISTORICAL_DECISION",
+      "locator": "product-definition/client-feedback-portal-dogfood/state.json#/objects/decisions/DEC-034",
+      "claim": "User decisions require best-effort local message preservation and idempotent retry by client-generated message attempt ID without duplicate records.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-006",
+      "status": "CURRENT",
+      "source_kind": "DOCUMENTED_INTENT",
+      "locator": "product-definition/client-feedback-portal-dogfood/PRODUCT_DEFINITION.md#traceable-requirements;USER_FLOWS.md#FLOW-005-FLOW-006;SCREEN_SPEC.md#SCR-006-SCR-007;IMPLEMENTATION_PLAN.md#L10-L11",
+      "claim": "The documented screens, flows, acceptance criteria, and tasks trace REQ-005 and REQ-006 through review-link lifecycle and exact-Version thread behavior.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-007",
+      "status": "CURRENT",
+      "source_kind": "DOCUMENTED_INTENT",
+      "locator": "product-definition/client-feedback-portal-dogfood/PRODUCT_DEFINITION.md#traceable-requirements",
+      "claim": "The bounded review-link and thread slice has authentication, asynchronous message recovery, and permission topology; money, file-upload, and destructive-action topology are outside this slice.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-008",
+      "status": "CURRENT",
+      "source_kind": "USER_CONFIRMED_INTENT",
+      "locator": "user-decision/task-5-phase-a-continuation",
+      "claim": "For this bounded M6 existing-product V2 dogfood Product Definition only, product analytics/telemetry is NOT used. REQ-005/REQ-006 review-link access and thread actions emit no analytics events. Introduce no analytics event names, properties, tracking identifiers, analytics retention/access policy, funnels, or success metrics. Existing domain/business history remains ordinary product state/history where already required. Existing email delivery/send status remains ordinary product operational/domain state where already required. Neither is reclassified as analytics telemetry. This is an explicit current user product decision/boundary, not an inference from missing implementation. It is not a permanent system-wide prohibition for future products/revisions.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-009",
+      "status": "CURRENT",
+      "source_kind": "HISTORICAL_DECISION",
+      "locator": "product-definition/client-feedback-portal-dogfood/state.json#/objects/decisions/DEC-006",
+      "claim": "The user decision binds pins and comments to an exact Version, does not copy old pins to a new Version, and allows prior Versions to show their own historical pins and comments.",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "confidence": "DIRECT",
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-010",
+      "status": "CURRENT",
+      "source_kind": "HISTORICAL_DECISION",
+      "locator": "product-definition/client-feedback-portal-dogfood/state.json#/objects/decisions/DEC-031",
+      "claim": "The user decision requires concurrent mutations to be guarded by exact Version ID and expected state revision.",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "confidence": "DIRECT",
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-011",
+      "status": "CURRENT",
+      "source_kind": "HISTORICAL_DECISION",
+      "locator": "product-definition/client-feedback-portal-dogfood/state.json#/objects/decisions/DEC-020",
+      "claim": "The user decision requires an explicit review request to move the exact Version to IN_REVIEW and immediately deliver the active review link by email to the Client Reviewer without Designer self-notification.",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "confidence": "DIRECT",
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-012",
+      "status": "CURRENT",
+      "source_kind": "HISTORICAL_DECISION",
+      "locator": "product-definition/client-feedback-portal-dogfood/state.json#/objects/decisions/DEC-010,DEC-025",
+      "claim": "User decisions require append-only comment and reply history and make an APPROVED exact Version read-only for new pins and replies.",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "confidence": "DIRECT",
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-013",
+      "status": "CURRENT",
+      "source_kind": "DOCUMENTED_INTENT",
+      "locator": "product-definition/client-feedback-portal-dogfood/PRODUCT_DEFINITION.md#non-goals",
+      "claim": "The documented product boundary excludes public anonymous links.",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "confidence": "DIRECT",
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-014",
+      "status": "CURRENT",
+      "source_kind": "DOCUMENTED_INTENT",
+      "locator": "product-definition/client-feedback-portal-dogfood/state.json#/objects/integrations/INT-001/uses",
+      "claim": "The documented bounded transactional-email inventory includes review-request link delivery, new-pin notification, and thread-reply notification; it defines no revocation or thread-resolution email use.",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "confidence": "DIRECT",
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-015",
+      "status": "CURRENT",
+      "source_kind": "USER_CONFIRMED_INTENT",
+      "locator": "user-decision/task-5-phase-a-field-level-interaction-policy",
+      "claim": "For this bounded M6 existing-product V2 dogfood Product Definition only: Loading and Submitting show pending state and never success. Empty shows the screen-specific zero state. Partial shows available authoritative data plus an explicit recovery notice. Completed follows only authoritative confirmation. Cancelled, Cancel, and Back cause no mutation and preserve eligible unsent text. Refresh reloads latest authoritative state. Committed review-link/thread mutations have no direct Undo; recovery uses documented new-link, new-reply, or reopen paths. Offline and Timeout withhold success, preserve eligible input, refresh authoritative state before retry, and must not duplicate mutation or notification. Destructive confirmation is N/A for this bounded fixture. This interaction policy is bounded to this dogfood Product Definition and is not a system-wide rule.",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "confidence": "DIRECT",
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-016",
+      "status": "CURRENT",
+      "source_kind": "HISTORICAL_DECISION",
+      "locator": "product-definition/client-feedback-portal-dogfood/state.json#/objects/decisions/DEC-006,DEC-010,DEC-020,DEC-025,DEC-029,DEC-031,DEC-038;SCREEN_SPEC.md#SCR-006-SCR-007",
+      "claim": "The legacy decisions and screen contract define exact-Version pin placement, approved and archived mutation rejection, expected-revision conflict handling, explicit review-request mutation, Designer session reauthentication, and screen-scoped access and action roles.",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "confidence": "DIRECT",
+      "observed_version": null,
+      "content_hash": null
+    }
+  ],
+  "surface_manifest": {
+    "records": [
+      {
+        "id": "SURF-001",
+        "kind": "FEATURE_AREA",
+        "name": "Review-link access lifecycle",
+        "status": "IN_SCOPE",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "evidence_refs": [
+          "EVD-001",
+          "EVD-002",
+          "EVD-006",
+          "EVD-011",
+          "EVD-013",
+          "EVD-015",
+          "EVD-016"
+        ],
+        "authority_refs": [
+          "REQ-005"
+        ],
+        "unknown_refs": [],
+        "decision_refs": [
+          "DEC-001",
+          "DEC-012",
+          "DEC-013"
+        ],
+        "contradiction_refs": [],
+        "rationale": null,
+        "intent_classification": "AUTHORITATIVE"
+      },
+      {
+        "id": "SURF-002",
+        "kind": "FEATURE_AREA",
+        "name": "Exact-Version canvas, pins, and threads",
+        "status": "IN_SCOPE",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "evidence_refs": [
+          "EVD-001",
+          "EVD-003",
+          "EVD-004",
+          "EVD-005",
+          "EVD-006",
+          "EVD-009",
+          "EVD-010",
+          "EVD-012",
+          "EVD-015",
+          "EVD-016"
+        ],
+        "authority_refs": [
+          "REQ-006"
+        ],
+        "unknown_refs": [],
+        "decision_refs": [
+          "DEC-008",
+          "DEC-034"
+        ],
+        "contradiction_refs": [],
+        "rationale": null,
+        "intent_classification": "AUTHORITATIVE"
+      },
+      {
+        "id": "SURF-003",
+        "kind": "PERMISSION",
+        "name": "Reviewer and Designer scoped permissions",
+        "status": "IN_SCOPE",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "evidence_refs": [
+          "EVD-002",
+          "EVD-003",
+          "EVD-013",
+          "EVD-015",
+          "EVD-016"
+        ],
+        "authority_refs": [
+          "RULE-001",
+          "RULE-020"
+        ],
+        "unknown_refs": [],
+        "decision_refs": [
+          "DEC-001",
+          "DEC-008"
+        ],
+        "contradiction_refs": [],
+        "rationale": null,
+        "intent_classification": "AUTHORITATIVE"
+      },
+      {
+        "id": "SURF-004",
+        "kind": "ASYNC_PROCESS",
+        "name": "Idempotent comment and reply submission recovery",
+        "status": "IN_SCOPE",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "evidence_refs": [
+          "EVD-005"
+        ],
+        "authority_refs": [
+          "RULE-093",
+          "RULE-094",
+          "RULE-095",
+          "RULE-096"
+        ],
+        "unknown_refs": [],
+        "decision_refs": [
+          "DEC-034"
+        ],
+        "contradiction_refs": [],
+        "rationale": null,
+        "intent_classification": "AUTHORITATIVE"
+      }
+    ],
+    "grill_profile": {
+      "AUTH": {
+        "status": "ACTIVE",
+        "surface_refs": [
+          "SURF-001",
+          "SURF-003"
+        ],
+        "unknown_refs": [],
+        "basis_refs": [],
+        "rationale": null
+      },
+      "MONEY": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-007"
+        ],
+        "rationale": "The documented bounded slice contains no topology in this domain."
+      },
+      "FILE_UPLOAD": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-007"
+        ],
+        "rationale": "The documented bounded slice contains no topology in this domain."
+      },
+      "ASYNC": {
+        "status": "ACTIVE",
+        "surface_refs": [
+          "SURF-004"
+        ],
+        "unknown_refs": [],
+        "basis_refs": [],
+        "rationale": null
+      },
+      "PERMISSION": {
+        "status": "ACTIVE",
+        "surface_refs": [
+          "SURF-003"
+        ],
+        "unknown_refs": [],
+        "basis_refs": [],
+        "rationale": null
+      },
+      "DESTRUCTIVE_ACTION": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-007"
+        ],
+        "rationale": "The documented bounded slice contains no topology in this domain."
+      }
+    }
+  },
+  "contradictions": [],
+  "objects": {
+    "goals": [
+      {
+        "id": "GOAL-001",
+        "status": "CURRENT",
+        "statement": "프리랜서 디자이너가 클라이언트와 시안, 시안 위 피드백, 수정본, 승인 상태를 한 웹앱에서 관리할 수 있게 한다."
+      }
+    ],
+    "users": [
+      {
+        "id": "USR-001",
+        "status": "CURRENT",
+        "description": "Workspace Owner / Designer",
+        "actor_kind": "WORKSPACE_OWNER_/_DESIGNER"
+      },
+      {
+        "id": "USR-002",
+        "status": "CURRENT",
+        "description": "Client Reviewer",
+        "actor_kind": "CLIENT_REVIEWER"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "REQ-005",
+        "status": "CURRENT",
+        "statement": "Reviewer access and review-link lifecycle",
+        "scope": "Bounded existing-product reconciliation of Reviewer access and review-link lifecycle.",
+        "ui_required": true,
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        }
+      },
+      {
+        "id": "REQ-006",
+        "status": "CURRENT",
+        "statement": "Exact-Version canvas, pins, and threads",
+        "scope": "Bounded existing-product reconciliation of Exact-Version canvas, pins, and threads.",
+        "ui_required": true,
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        }
+      }
+    ],
+    "unknowns": [
+      {
+        "id": "UNK-001",
+        "status": "RESOLVED",
+        "question": "클라이언트는 공유 시안에 어떤 방식으로 접근하고 신원을 확인해야 하는가?",
+        "why_it_matters": "The answer changes the bounded review-link or thread behavior.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "REQ-005"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "MANUAL",
+          "surface_ref": null,
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "OPEN_RESPONSE_REQUIRED",
+        "options": [],
+        "recommendation": null,
+        "evidence_refs": [
+          "EVD-002"
+        ],
+        "resolved_by": [
+          "DEC-001"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "클라이언트는 계정을 만들지 않고 이메일로 받은 project-scoped magic review link로 접근한다. 링크 하나는 특정 project 하나에만 접근하며 public anonymous share link는 제공하지 않는다.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-005",
+        "status": "RESOLVED",
+        "question": "피드백 댓글에 답글 스레드를 지원할 것인가?",
+        "why_it_matters": "The answer changes the bounded review-link or thread behavior.",
+        "required_authority_class": "INTENT",
+        "question_category": "CORE_FLOW",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "REQ-006"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "MANUAL",
+          "surface_ref": null,
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "OPEN_RESPONSE_REQUIRED",
+        "options": [],
+        "recommendation": null,
+        "evidence_refs": [
+          "EVD-003"
+        ],
+        "resolved_by": [
+          "DEC-008"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "Designer와 Client Reviewer 모두 thread reply를 작성할 수 있다.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-018",
+        "status": "RESOLVED",
+        "question": "네트워크 실패로 comment 또는 reply 제출 결과가 불명확할 때 입력을 어떻게 보존하고 중복 없이 재시도할 것인가?",
+        "why_it_matters": "The answer changes the bounded review-link or thread behavior.",
+        "required_authority_class": "INTENT",
+        "question_category": "CORE_FLOW",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "REQ-006"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "MANUAL",
+          "surface_ref": null,
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "OPEN_RESPONSE_REQUIRED",
+        "options": [],
+        "recommendation": null,
+        "evidence_refs": [
+          "EVD-005"
+        ],
+        "resolved_by": [
+          "DEC-034"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "comment/reply text를 best-effort로 로컬 보존하고 client-generated message attempt ID로 idempotent 조회·재시도한다. 이미 성공했다면 기존 record를 반환하고 duplicate submission을 금지한다.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-021",
+        "status": "RESOLVED",
+        "question": "디자이너는 이미 배포한 공유 링크를 폐기할 수 있는가?",
+        "why_it_matters": "The answer changes the bounded review-link or thread behavior.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "REQ-005"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "MANUAL",
+          "surface_ref": null,
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "OPEN_RESPONSE_REQUIRED",
+        "options": [],
+        "recommendation": null,
+        "evidence_refs": [
+          "EVD-002"
+        ],
+        "resolved_by": [
+          "DEC-013"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "Designer는 active review link를 별도로 수동 revoke할 수 있다.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-031",
+        "status": "RESOLVED",
+        "question": "Client Reviewer가 이미 review 화면을 열어 둔 상태에서 magic review link가 30일 만료 시각을 지나면 현재 세션을 즉시 종료할 것인가?",
+        "why_it_matters": "The answer changes the bounded review-link or thread behavior.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "REQ-005"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "MANUAL",
+          "surface_ref": null,
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "OPEN_RESPONSE_REQUIRED",
+        "options": [],
+        "recommendation": null,
+        "evidence_refs": [
+          "EVD-002"
+        ],
+        "resolved_by": [
+          "DEC-012"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "만료 시 즉시 새 read/write 요청을 차단하고 만료 화면을 표시한다. 작성 중 comment text는 가능한 한 로컬에 보존하지만 서버 제출은 금지하며 Designer가 새 link를 발급한 뒤 복구·재시도할 수 있다.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-034",
+        "status": "RESOLVED",
+        "question": "Client Reviewer가 새 pin comment를 만들면 Designer에게 어떤 채널로 알릴 것인가?",
+        "why_it_matters": "The answer changes the bounded review-link or thread behavior.",
+        "required_authority_class": "INTENT",
+        "question_category": "CORE_FLOW",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "REQ-006"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "MANUAL",
+          "surface_ref": null,
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "OPEN_RESPONSE_REQUIRED",
+        "options": [],
+        "recommendation": null,
+        "evidence_refs": [
+          "EVD-004"
+        ],
+        "resolved_by": [
+          "DEC-018"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "Client Reviewer가 새 pin comment를 만들면 Designer에게 즉시 이메일을 보내고 행동한 Reviewer에게 self-notification은 보내지 않는다.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-036",
+        "status": "RESOLVED",
+        "question": "thread reply가 작성되면 상대 참여자에게 어떤 채널로 알릴 것인가?",
+        "why_it_matters": "The answer changes the bounded review-link or thread behavior.",
+        "required_authority_class": "INTENT",
+        "question_category": "CORE_FLOW",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "REQ-006"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "MANUAL",
+          "surface_ref": null,
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "OPEN_RESPONSE_REQUIRED",
+        "options": [],
+        "recommendation": null,
+        "evidence_refs": [
+          "EVD-004"
+        ],
+        "resolved_by": [
+          "DEC-019"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "thread reply 작성 시 상대 참여자에게 즉시 이메일을 보내고 작성자 자신에게는 보내지 않는다.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-049",
+        "status": "RESOLVED",
+        "question": "Which analytics-events and measurement policy applies to REQ-005 and REQ-006 in this bounded M6 dogfood definition?",
+        "why_it_matters": "The answer controls whether review-link and thread behavior emits product analytics telemetry.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "REQ-005",
+          "REQ-006"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "MANUAL",
+          "surface_ref": null,
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "OPEN_RESPONSE_REQUIRED",
+        "options": [],
+        "recommendation": null,
+        "evidence_refs": [
+          "EVD-008"
+        ],
+        "resolved_by": [
+          "DEC-041"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "For this bounded M6 existing-product V2 dogfood Product Definition only, product analytics/telemetry is NOT used. REQ-005/REQ-006 review-link access and thread actions emit no analytics events. Introduce no analytics event names, properties, tracking identifiers, analytics retention/access policy, funnels, or success metrics. Existing domain/business history remains ordinary product state/history where already required. Existing email delivery/send status remains ordinary product operational/domain state where already required. Neither is reclassified as analytics telemetry. This is an explicit current user product decision/boundary, not an inference from missing implementation. It is not a permanent system-wide prohibition for future products/revisions.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-050",
+        "status": "RESOLVED",
+        "question": "Which field-level loading, zero-state, partial, completion, navigation, refresh, undo, offline, timeout, and destructive-confirmation behavior applies to SCR-006 and SCR-007?",
+        "why_it_matters": "The answer controls exact semantic authority for every selected review-link and thread screen/action cell.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "REQ-005",
+          "REQ-006"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "MANUAL",
+          "surface_ref": null,
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "OPEN_RESPONSE_REQUIRED",
+        "options": [],
+        "recommendation": null,
+        "evidence_refs": [
+          "EVD-015"
+        ],
+        "resolved_by": [
+          "DEC-042"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "For this bounded M6 existing-product V2 dogfood Product Definition only: Loading and Submitting show pending state and never success. Empty shows the screen-specific zero state. Partial shows available authoritative data plus an explicit recovery notice. Completed follows only authoritative confirmation. Cancelled, Cancel, and Back cause no mutation and preserve eligible unsent text. Refresh reloads latest authoritative state. Committed review-link/thread mutations have no direct Undo; recovery uses documented new-link, new-reply, or reopen paths. Offline and Timeout withhold success, preserve eligible input, refresh authoritative state before retry, and must not duplicate mutation or notification. Destructive confirmation is N/A for this bounded fixture. This interaction policy is bounded to this dogfood Product Definition and is not a system-wide rule.",
+        "deferral": null,
+        "blocked_reason": null
+      }
+    ],
+    "decisions": [
+      {
+        "id": "DEC-001",
+        "status": "CURRENT",
+        "statement": "클라이언트 접근은 계정 생성 없는 이메일 기반 project-scoped magic review link 방식으로 한다.",
+        "decision_type": "PRODUCT_POLICY",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-001"
+        ],
+        "evidence_refs": [
+          "EVD-002"
+        ],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-005"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-008",
+        "status": "CURRENT",
+        "statement": "Client Reviewer만 새 pin comment를 생성하고 Designer와 Client Reviewer 모두 thread reply를 작성할 수 있다. Designer가 thread를 RESOLVED로 전환하며 Client Reviewer가 RESOLVED thread에 reply하면 자동 OPEN된다. comment와 thread history 삭제는 금지한다.",
+        "decision_type": "PRODUCT_POLICY",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-005"
+        ],
+        "evidence_refs": [
+          "EVD-003"
+        ],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-006"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-012",
+        "status": "CURRENT",
+        "statement": "magic review link 만료 시 새 read/write 요청을 즉시 차단하고 만료 화면을 표시한다. 작성 중 comment text는 best-effort로 로컬 보존하되 서버 제출을 금지하고 Designer가 새 link를 발급한 뒤 복구·재시도한다.",
+        "decision_type": "PRODUCT_POLICY",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-031"
+        ],
+        "evidence_refs": [
+          "EVD-002"
+        ],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-005"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-013",
+        "status": "CURRENT",
+        "statement": "project당 active review link는 하나만 허용한다. 새 링크 발급 시 기존 active link를 즉시 revoke하고 열린 기존 세션도 다음 요청부터 차단한다. Designer는 active link를 수동 revoke할 수 있다.",
+        "decision_type": "PRODUCT_POLICY",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-021"
+        ],
+        "evidence_refs": [
+          "EVD-002"
+        ],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-005"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-018",
+        "status": "CURRENT",
+        "statement": "Client Reviewer가 새 pin comment를 만들면 Designer에게 즉시 이메일을 보내고 행동한 Reviewer에게 self-notification은 보내지 않는다.",
+        "decision_type": "PRODUCT_POLICY",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-034"
+        ],
+        "evidence_refs": [
+          "EVD-004"
+        ],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-006"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-019",
+        "status": "CURRENT",
+        "statement": "thread reply 작성 시 상대 참여자에게 즉시 이메일을 보내고 작성자 자신에게는 보내지 않는다.",
+        "decision_type": "PRODUCT_POLICY",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-036"
+        ],
+        "evidence_refs": [
+          "EVD-004"
+        ],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-006"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-034",
+        "status": "CURRENT",
+        "statement": "comment/reply text를 best-effort로 로컬 보존하고 client-generated message attempt ID로 idempotent 조회·재시도한다. 이미 성공했다면 기존 record를 반환하고 duplicate submission을 금지한다.",
+        "decision_type": "PRODUCT_POLICY",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-018"
+        ],
+        "evidence_refs": [
+          "EVD-005"
+        ],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-006"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-041",
+        "status": "CURRENT",
+        "statement": "For this bounded M6 existing-product V2 dogfood Product Definition only, product analytics/telemetry is NOT used. REQ-005/REQ-006 review-link access and thread actions emit no analytics events. Introduce no analytics event names, properties, tracking identifiers, analytics retention/access policy, funnels, or success metrics. Existing domain/business history remains ordinary product state/history where already required. Existing email delivery/send status remains ordinary product operational/domain state where already required. Neither is reclassified as analytics telemetry. This is an explicit current user product decision/boundary, not an inference from missing implementation. It is not a permanent system-wide prohibition for future products/revisions.",
+        "decision_type": "PRODUCT_POLICY",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-049"
+        ],
+        "evidence_refs": [
+          "EVD-008"
+        ],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-005",
+          "REQ-006"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-042",
+        "status": "CURRENT",
+        "statement": "For this bounded M6 existing-product V2 dogfood Product Definition only: Loading and Submitting show pending state and never success. Empty shows the screen-specific zero state. Partial shows available authoritative data plus an explicit recovery notice. Completed follows only authoritative confirmation. Cancelled, Cancel, and Back cause no mutation and preserve eligible unsent text. Refresh reloads latest authoritative state. Committed review-link/thread mutations have no direct Undo; recovery uses documented new-link, new-reply, or reopen paths. Offline and Timeout withhold success, preserve eligible input, refresh authoritative state before retry, and must not duplicate mutation or notification. Destructive confirmation is N/A for this bounded fixture. This interaction policy is bounded to this dogfood Product Definition and is not a system-wide rule.",
+        "decision_type": "PRODUCT_POLICY",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-050"
+        ],
+        "evidence_refs": [
+          "EVD-015"
+        ],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-005",
+          "REQ-006"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      }
+    ],
+    "rules": [
+      {
+        "id": "RULE-001",
+        "status": "CURRENT",
+        "statement": "클라이언트는 별도 계정 없이 이메일 magic review link로 접근하되, project에 지정된 Client Reviewer 이메일 신원이 확인되어야 reviewer 권한을 행사할 수 있다.",
+        "applies_to": [
+          "REQ-005"
+        ]
+      },
+      {
+        "id": "RULE-002",
+        "status": "CURRENT",
+        "statement": "각 magic review link의 접근 범위는 정확히 하나의 project로 제한한다.",
+        "applies_to": [
+          "REQ-005"
+        ]
+      },
+      {
+        "id": "RULE-003",
+        "status": "CURRENT",
+        "statement": "public anonymous share link는 생성하거나 제공하지 않는다.",
+        "applies_to": [
+          "REQ-005"
+        ]
+      },
+      {
+        "id": "RULE-014",
+        "status": "CURRENT",
+        "statement": "Feedback is a point pin with a connected comment.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-015",
+        "status": "CURRENT",
+        "statement": "Image pins use normalized x/y; PDF pins use page number and normalized x/y.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-017",
+        "status": "CURRENT",
+        "statement": "이전 Version을 열면 해당 Version의 과거 핀과 comment를 볼 수 있다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-020",
+        "status": "CURRENT",
+        "statement": "Only Client Reviewer creates a new pin; Designer and Client Reviewer may reply.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-021",
+        "status": "CURRENT",
+        "statement": "Only Designer resolves an OPEN comment thread.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-022",
+        "status": "CURRENT",
+        "statement": "Client Reviewer가 RESOLVED thread에 reply하면 해당 thread는 자동으로 OPEN으로 전환된다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-023",
+        "status": "CURRENT",
+        "statement": "Designer는 RESOLVED thread에 보충 reply를 작성할 수 있지만 thread 상태는 RESOLVED로 유지한다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-024",
+        "status": "CURRENT",
+        "statement": "comment, reply, thread history는 삭제하거나 편집할 수 없다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-026",
+        "status": "CURRENT",
+        "statement": "magic review link는 issued_at으로부터 정확히 30일 후 expires_at에 만료되며 만료 시 새 read/write 요청을 즉시 거부한다.",
+        "applies_to": [
+          "REQ-005"
+        ]
+      },
+      {
+        "id": "RULE-027",
+        "status": "CURRENT",
+        "statement": "Expired review-link access shows the expiry screen and blocks new reads/writes.",
+        "applies_to": [
+          "REQ-005"
+        ]
+      },
+      {
+        "id": "RULE-030",
+        "status": "CURRENT",
+        "statement": "각 project에는 active review link가 최대 하나만 존재할 수 있다.",
+        "applies_to": [
+          "REQ-005"
+        ]
+      },
+      {
+        "id": "RULE-031",
+        "status": "CURRENT",
+        "statement": "Designer가 새 review link를 발급하면 해당 project의 기존 active link를 발급과 동시에 REVOKED로 전환한다.",
+        "applies_to": [
+          "REQ-005"
+        ]
+      },
+      {
+        "id": "RULE-032",
+        "status": "CURRENT",
+        "statement": "REVOKED link로 열린 기존 세션은 다음 read/write 요청부터 거부하고 작성 중 comment text는 서버에 제출하지 않는다.",
+        "applies_to": [
+          "REQ-005"
+        ]
+      },
+      {
+        "id": "RULE-033",
+        "status": "CURRENT",
+        "statement": "Only Designer manually revokes the current ACTIVE link.",
+        "applies_to": [
+          "REQ-005"
+        ]
+      },
+      {
+        "id": "RULE-034",
+        "status": "CURRENT",
+        "statement": "link revoke로 차단된 comment 초안은 best-effort로 로컬 보존하며 새 active link 재인증 후 복구하여 명시적으로 재시도할 수 있다.",
+        "applies_to": [
+          "REQ-005"
+        ]
+      },
+      {
+        "id": "RULE-040",
+        "status": "CURRENT",
+        "statement": "Client Reviewer가 새 pin comment를 생성하면 해당 project의 Designer에게 즉시 이메일을 보낸다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-041",
+        "status": "CURRENT",
+        "statement": "새 pin comment를 생성한 Client Reviewer에게는 자기 행동 확인 이메일을 보내지 않는다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-042",
+        "status": "CURRENT",
+        "statement": "Designer가 thread reply를 작성하면 해당 project의 Client Reviewer에게 즉시 이메일을 보낸다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-043",
+        "status": "CURRENT",
+        "statement": "Client Reviewer가 thread reply를 작성하면 해당 project의 Designer에게 즉시 이메일을 보낸다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-044",
+        "status": "CURRENT",
+        "statement": "thread reply 작성자에게는 자기 행동 확인 이메일을 보내지 않는다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-046",
+        "status": "CURRENT",
+        "statement": "Designer review request moves the exact Version from DRAFT to IN_REVIEW and immediately emails the active review link to Client Reviewer.",
+        "applies_to": [
+          "REQ-005"
+        ]
+      },
+      {
+        "id": "RULE-063",
+        "status": "CURRENT",
+        "statement": "APPROVED exact Versions reject new pin comments and all thread replies.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-077",
+        "status": "CURRENT",
+        "statement": "ARCHIVED projects reject new comments, replies, review requests, approvals, and changes requests.",
+        "applies_to": [
+          "REQ-005",
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-084",
+        "status": "CURRENT",
+        "statement": "Concurrent mutation is guarded by exact Version ID and expected state revision.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-093",
+        "status": "CURRENT",
+        "statement": "comment 또는 reply 작성 text는 제출 성공이 확인될 때까지 best-effort로 로컬 보존한다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-094",
+        "status": "CURRENT",
+        "statement": "각 comment/reply 제출 전에 client가 exact Version과 thread 범위의 message attempt ID를 생성한다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-095",
+        "status": "CURRENT",
+        "statement": "동일 message attempt ID의 조회·재시도는 하나의 논리적 submission으로 처리하고 성공 record가 있으면 기존 record를 반환한다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-096",
+        "status": "CURRENT",
+        "statement": "동일 message attempt ID로 duplicate comment 또는 reply record를 생성하지 않는다.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-110",
+        "status": "CURRENT",
+        "statement": "Expired Designer session requires a new email magic-link authentication.",
+        "applies_to": [
+          "REQ-005",
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-119",
+        "status": "CURRENT",
+        "statement": "Review Access Management empty shows no active review link or pending request; Review Canvas empty shows no pins or threads for the exact Version.",
+        "applies_to": [
+          "REQ-005",
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-120",
+        "status": "CURRENT",
+        "statement": "Review Access Management and Review Canvas partial show their available authoritative data plus an explicit recovery notice.",
+        "applies_to": [
+          "REQ-005",
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-122",
+        "status": "CURRENT",
+        "statement": "Cancelled, Cancel, and Back cause no mutation and preserve eligible unsent text.",
+        "applies_to": [
+          "REQ-005",
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-123",
+        "status": "CURRENT",
+        "statement": "Refresh reloads latest authoritative state.",
+        "applies_to": [
+          "REQ-005",
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-124",
+        "status": "CURRENT",
+        "statement": "Committed review-link and thread mutations have no direct Undo; recovery uses documented new-link, new-reply, or reopen paths.",
+        "applies_to": [
+          "REQ-005",
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-125",
+        "status": "CURRENT",
+        "statement": "Offline and Timeout withhold success, preserve eligible input, refresh authoritative state before retry, and do not duplicate mutation or notification.",
+        "applies_to": [
+          "REQ-005",
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-128",
+        "status": "CURRENT",
+        "statement": "Error withholds success and shows the applicable documented access, permission, archive, approved-state, or expected-revision rejection and recovery.",
+        "applies_to": [
+          "REQ-005",
+          "REQ-006"
+        ]
+      },
+      {
+        "id": "RULE-129",
+        "status": "CURRENT",
+        "statement": "Only an authenticated Designer may use Review Access Management actions.",
+        "applies_to": [
+          "REQ-005"
+        ]
+      },
+      {
+        "id": "RULE-130",
+        "status": "CURRENT",
+        "statement": "Designer enters the review canvas with an authenticated session; Client Reviewer enters with an active project-scoped link and designated email identity.",
+        "applies_to": [
+          "REQ-006"
+        ]
+      }
+    ],
+    "flows": [
+      {
+        "id": "FLOW-005",
+        "status": "CURRENT",
+        "goal_refs": [
+          "GOAL-001"
+        ],
+        "entry": "Designer opens Review Access Management for the project.",
+        "preconditions": [
+          "Designer session is authenticated and the project is ACTIVE."
+        ],
+        "paths": [
+          "Designer sends or resends an exact-Version review request, rotates the one active 30-day project link when issuing a new link, or manually revokes it."
+        ],
+        "outcomes": [
+          "Send changes the exact Version from DRAFT to IN_REVIEW and immediately emails the active review link to the Client Reviewer.",
+          "Revoke invalidates the current active review link and its project sessions.",
+          "Resend issues a new active review link and immediately emails it to the Client Reviewer."
+        ]
+      },
+      {
+        "id": "FLOW-006",
+        "status": "CURRENT",
+        "goal_refs": [
+          "GOAL-001"
+        ],
+        "entry": "Designer or Client Reviewer opens the exact-Version review canvas.",
+        "preconditions": [
+          "The actor has current project access and the exact Version is mutable for the requested action."
+        ],
+        "paths": [
+          "Client Reviewer creates an exact-Version pin; Designer or Client Reviewer appends a reply; Designer resolves an OPEN thread."
+        ],
+        "outcomes": [
+          "A valid Client Reviewer pin is stored on the exact Version and immediately notifies the Designer.",
+          "A valid reply appends to the exact-Version thread and immediately notifies the counterpart.",
+          "A valid Designer resolution changes the OPEN exact-Version thread to RESOLVED without notification."
+        ]
+      }
+    ],
+    "screens": [
+      {
+        "id": "SCR-006",
+        "status": "CURRENT",
+        "purpose": "Designer-only Review Access Management for an exact-Version target, designated Reviewer email, one active 30-day link, and send, resend, and revoke outcomes.",
+        "requirement_refs": [
+          "REQ-005"
+        ],
+        "interaction_mode": "INTERACTIVE",
+        "major_actions": [
+          "send_review_request",
+          "revoke_review_link",
+          "resend_review_request"
+        ]
+      },
+      {
+        "id": "SCR-007",
+        "status": "CURRENT",
+        "purpose": "Designer/Client exact-Version review canvas with immutable viewer, exact Version identity and state, pins, thread chronology and history, and role-scoped actions.",
+        "requirement_refs": [
+          "REQ-005",
+          "REQ-006"
+        ],
+        "interaction_mode": "INTERACTIVE",
+        "major_actions": [
+          "create_pin",
+          "reply_thread",
+          "resolve_thread"
+        ]
+      }
+    ],
+    "states": [
+      {
+        "id": "STATE-001",
+        "status": "CURRENT",
+        "owner_refs": [
+          "SCR-007"
+        ],
+        "state_name": "DRAFT | IN_REVIEW | CHANGES_REQUESTED | APPROVED",
+        "conditions": [
+          "Review request changes only the exact Version from DRAFT to IN_REVIEW.",
+          "Expected Version state revision mismatch rejects mutation and shows latest state.",
+          "APPROVED exact Versions allow existing history reads and reject pin/reply mutation."
+        ]
+      },
+      {
+        "id": "STATE-002",
+        "status": "CURRENT",
+        "owner_refs": [
+          "SCR-006",
+          "SCR-007"
+        ],
+        "state_name": "Bounded interaction state",
+        "conditions": [
+          "Loading and Submitting show pending state and never show success.",
+          "Completed and success follow only authoritative confirmation."
+        ]
+      }
+    ],
+    "data": [
+      {
+        "id": "DATA-002",
+        "status": "CURRENT",
+        "name": "Version annotation",
+        "purpose": "Exact-Version pin/thread state: image normalized x/y; PDF page plus normalized x/y; root pin comment; append-only replies; resolution status and history; APPROVED read-only behavior; message-attempt idempotency.",
+        "ownership": "Exact Version"
+      },
+      {
+        "id": "DATA-004",
+        "status": "CURRENT",
+        "name": "magic review link",
+        "purpose": "Project-scoped magic review-link lifecycle: designated Reviewer email identity; one ACTIVE link; 30-day expiry; rotation or manual revoke; lifecycle metadata; global session invalidation; old links are never restored.",
+        "ownership": "Project"
+      },
+      {
+        "id": "DATA-005",
+        "status": "CURRENT",
+        "name": "만료 시 로컬 comment 초안",
+        "purpose": "Designer가 새 active link를 발급하고 reviewer가 재인증한 뒤 로컬 초안을 복구하여 명시적으로 재시도",
+        "ownership": "Client Reviewer local device"
+      },
+      {
+        "id": "DATA-007",
+        "status": "CURRENT",
+        "name": "새 pin comment 이메일 이벤트",
+        "purpose": "New-pin email event: exact Version and pin identity, Client Reviewer actor, Designer recipient, immediate delivery status, and no Reviewer self-notification.",
+        "ownership": "Project notification history"
+      },
+      {
+        "id": "DATA-008",
+        "status": "CURRENT",
+        "name": "thread reply 이메일 이벤트",
+        "purpose": "Thread-reply email event: exact Version, thread and reply identity, actor, counterpart recipient, immediate delivery status, and no author self-notification.",
+        "ownership": "Project notification history"
+      },
+      {
+        "id": "DATA-009",
+        "status": "CURRENT",
+        "name": "Review request email event",
+        "purpose": "Review-request input and effect: project, exact Version, designated Client Reviewer recipient, and active review link; DRAFT to IN_REVIEW plus immediate email and no Designer self-notification.",
+        "ownership": "Exact Version review request"
+      },
+      {
+        "id": "DATA-015",
+        "status": "CURRENT",
+        "name": "message submission attempt",
+        "purpose": "동일 attempt ID는 최대 하나의 successful comment/reply record에 매핑",
+        "ownership": "Exact Version message submission"
+      }
+    ],
+    "integrations": [
+      {
+        "id": "INT-001",
+        "status": "CURRENT",
+        "name": "Transactional email delivery",
+        "purpose": "Transactional email delivery for review requests, new pins, and thread replies with the documented recipient and self-notification exclusions."
+      }
+    ],
+    "acceptance_criteria": [
+      {
+        "id": "AC-005",
+        "status": "CURRENT",
+        "requirement_refs": [
+          "REQ-005"
+        ],
+        "assertion": "Review request changes only the exact Version, sends one 30-day project link, keeps one active link, and expiry/revoke/archive block all sessions without restoring old links."
+      },
+      {
+        "id": "AC-006",
+        "status": "CURRENT",
+        "requirement_refs": [
+          "REQ-006"
+        ],
+        "assertion": "Pins bind normalized coordinates to exact Versions; threads are append-only/idempotent; role-specific resolve/reopen and approved read-only rules hold."
+      }
+    ],
+    "tasks": [
+      {
+        "id": "TASK-004",
+        "status": "CURRENT",
+        "implements": [
+          "REQ-005"
+        ],
+        "acceptance_refs": [
+          "AC-005"
+        ]
+      },
+      {
+        "id": "TASK-005",
+        "status": "CURRENT",
+        "implements": [
+          "REQ-006"
+        ],
+        "acceptance_refs": [
+          "AC-006"
+        ]
+      }
+    ]
+  },
+  "coverage": [
+    {
+      "feature_id": "REQ-005",
+      "cells": {
+        "actor": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "USR-001",
+              "pointer": "/description",
+              "value_sha256": "624f2e31d91936a3e5d301c6824277014139bfc8844d91214d0c8d3fc3097a5e"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "goal": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "GOAL-001",
+              "pointer": "/statement",
+              "value_sha256": "0367aee355d7a2e324a2bd0c458e4c96305dfd76fc1d9b7eab1489135f313197"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "entry_point": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "FLOW-005",
+              "pointer": "/entry",
+              "value_sha256": "7e00e423436888066a82e8e081887a724294dbc26e86521b86212831b9fef97a"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "precondition": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "820ed63409adfe49d9369eaec54903327dcc2bb2927a350df8eb260a7cafc7b4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "happy_path": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "FLOW-005",
+              "pointer": "/paths",
+              "value_sha256": "2110e93d82af6d224a48328fd65f6a7384dff3aa01ac2bf67fe5a9f40196bea3"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "alternative_path": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-032",
+              "pointer": "/statement",
+              "value_sha256": "114c81383b1079b200ae1db752b93564ef47a85f40097c673a5f7a5340f22d6b"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "error": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-026",
+              "pointer": "/statement",
+              "value_sha256": "06570dda6e807aafa4779e9c390c3be595c6434341ef0715ad136c69ef85d3c5"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "recovery": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-034",
+              "pointer": "/statement",
+              "value_sha256": "fee9ced346769e9ed2136821f7c70f630e8d3c81243c8c5ffe019306473442bf"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "permission": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-033",
+              "pointer": "/statement",
+              "value_sha256": "2d615225b26df733bd936be767267e0719faf0f288a6d3e8035daa374d4e4af3"
+            },
+            {
+              "record_id": "RULE-002",
+              "pointer": "/statement",
+              "value_sha256": "ecd1943474f6a932d8871b86fa3aaa437a25f657305e9e016c583304d2950651"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "state": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-001",
+              "pointer": "/conditions",
+              "value_sha256": "934c8a93bc2486ffb994be067d5a5dd3d9d13212f7dab459cfe0daebbd91a12c"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "data": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-004",
+              "pointer": "/purpose",
+              "value_sha256": "eaa0a652d20d4825defb2a66ac9e829b349f3dd041616def14f722c7e490bc69"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "side_effect": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-004",
+              "pointer": "/purpose",
+              "value_sha256": "eaa0a652d20d4825defb2a66ac9e829b349f3dd041616def14f722c7e490bc69"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "notification": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "INT-001",
+              "pointer": "/purpose",
+              "value_sha256": "8b976e6f165942aeb37d8c8656555ce4ce60970d774f89d7953f2d4f3c564e0f"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "validation": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "AC-005",
+              "pointer": "/assertion",
+              "value_sha256": "bbf1f542ab097439ebb7c7b77565dc7a874acbce4e0455cfea6b27036d72f0b2"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "boundary": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-013",
+              "pointer": "/statement",
+              "value_sha256": "c7cb5e8ea9483a4a802e300279f97f46b4ebe3d9763556cc7ea0ec3f7d0891dd"
+            },
+            {
+              "record_id": "RULE-030",
+              "pointer": "/statement",
+              "value_sha256": "4cd072c177ee2eef9ed3b098730bde3bf309a0cd7c08131edf61fa538654ab43"
+            },
+            {
+              "record_id": "RULE-031",
+              "pointer": "/statement",
+              "value_sha256": "826c93cdd04e21d44cd3ab6945b7be002e635577fc038bc99180ef8cae97b027"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "persistence": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-004",
+              "pointer": "/ownership",
+              "value_sha256": "6c6b7df3070f112f2b6d5f2b57cb7bc885e62f52497e4121bb79431d188c7982"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "security": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-003",
+              "pointer": "/statement",
+              "value_sha256": "c44dfaadacc3aaa8cf8516c634ee2032cd7eb3f3e538f569d888f1fe0867d8ae"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "privacy": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-004",
+              "pointer": "/ownership",
+              "value_sha256": "6c6b7df3070f112f2b6d5f2b57cb7bc885e62f52497e4121bb79431d188c7982"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "acceptance": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "AC-005",
+              "pointer": "/assertion",
+              "value_sha256": "bbf1f542ab097439ebb7c7b77565dc7a874acbce4e0455cfea6b27036d72f0b2"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "analytics": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-008",
+              "pointer": "/claim",
+              "value_sha256": "81d8fcd838b9c1b5d37f6b7eda53a8547dbf55ce88d05575b8614ff4f360f7f1"
+            }
+          ],
+          "rationale": "The user explicitly excluded product analytics and telemetry from this bounded slice."
+        }
+      }
+    },
+    {
+      "feature_id": "REQ-006",
+      "cells": {
+        "actor": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "USR-002",
+              "pointer": "/description",
+              "value_sha256": "9d998875496662a63cbf6014c3a19763263e294245ba152e264148f0e6f4d6d8"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "goal": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "GOAL-001",
+              "pointer": "/statement",
+              "value_sha256": "0367aee355d7a2e324a2bd0c458e4c96305dfd76fc1d9b7eab1489135f313197"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "entry_point": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "FLOW-006",
+              "pointer": "/entry",
+              "value_sha256": "c788fdf32c44781d1f204094519c44f1065e707fc187581fc7698551ad955e21"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "precondition": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-017",
+              "pointer": "/statement",
+              "value_sha256": "040548ee325b4e81ecdc29550384f9ec75322a9734dde599e0c7b4fde55974db"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "happy_path": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "FLOW-006",
+              "pointer": "/paths",
+              "value_sha256": "fefb911d5b1574d060c9c19b35371a0639672dd4e0c1cd6af07fc32ae0006655"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "alternative_path": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-023",
+              "pointer": "/statement",
+              "value_sha256": "a8589ca743c8771484608934d4c5eacc50b59ea8a217567d77394fe52409415f"
+            },
+            {
+              "record_id": "RULE-021",
+              "pointer": "/statement",
+              "value_sha256": "28004d468539fdd5edb67a67bb8504e785a89180062c81ec7bd567ba34969d39"
+            },
+            {
+              "record_id": "RULE-022",
+              "pointer": "/statement",
+              "value_sha256": "6945e20f5ed3ecb2cba16d3091adc1aa23115589fdf6913a80a3a48abaf2fea6"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "error": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-084",
+              "pointer": "/statement",
+              "value_sha256": "50cc723ba26d177f8f7b07cd2d65cd92ec76f356cc1e437acfa585f59e1b46a5"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "recovery": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-095",
+              "pointer": "/statement",
+              "value_sha256": "8daf76ba6cf144f1937e7a8baab15a31bf4934acf33c30020e5e32a416aa1704"
+            },
+            {
+              "record_id": "RULE-093",
+              "pointer": "/statement",
+              "value_sha256": "ea8a0041f7612c06a6c6a9d6c5eef4ea6314fcd762658e723c69996a561ddde7"
+            },
+            {
+              "record_id": "RULE-094",
+              "pointer": "/statement",
+              "value_sha256": "23cfef24db3dfa46b57cafd499d9b743889c077c95c1e581aa07ad3ad6e8b4d9"
+            },
+            {
+              "record_id": "RULE-096",
+              "pointer": "/statement",
+              "value_sha256": "b9e75e472a50132581ac6e1803d808d60a3c3b2a885dc9cb140113eae23336e1"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "permission": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-020",
+              "pointer": "/statement",
+              "value_sha256": "9f3dc4ed4432e11099492971222719d0453ea1db9e295926a4eedc26795438b7"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "state": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-001",
+              "pointer": "/conditions",
+              "value_sha256": "934c8a93bc2486ffb994be067d5a5dd3d9d13212f7dab459cfe0daebbd91a12c"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "data": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-002",
+              "pointer": "/purpose",
+              "value_sha256": "d50c6b9adb0ed3d8d90d7e47eb964364d62fd4a717923dac44093020a48214ab"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "side_effect": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-015",
+              "pointer": "/purpose",
+              "value_sha256": "2b341f065f4b0c44f156724674bebb2219123d81f9ab80c6a537368bc11a265a"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "notification": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "INT-001",
+              "pointer": "/purpose",
+              "value_sha256": "8b976e6f165942aeb37d8c8656555ce4ce60970d774f89d7953f2d4f3c564e0f"
+            },
+            {
+              "record_id": "RULE-040",
+              "pointer": "/statement",
+              "value_sha256": "3587fcf57b35432cd95fbe47c41b4cd022b50a4b47e7c9fbc2af7c8a9fa94f27"
+            },
+            {
+              "record_id": "RULE-041",
+              "pointer": "/statement",
+              "value_sha256": "be1e3967a6bb450d8fb552368ff1c305c43247cc694addb5ee8658b9c02246df"
+            },
+            {
+              "record_id": "RULE-042",
+              "pointer": "/statement",
+              "value_sha256": "bb5bdf58b5d0cc09707d908706e70a2b09ec2ad70ddc4c5b1075de94854b931f"
+            },
+            {
+              "record_id": "RULE-043",
+              "pointer": "/statement",
+              "value_sha256": "33a66492a5cf8bb6eadc5a146b36c08886dbba0a94b9f9dc449dd970a8b66ab0"
+            },
+            {
+              "record_id": "RULE-044",
+              "pointer": "/statement",
+              "value_sha256": "15b0d9485b2518ee1ddb4f6d7292617219d87a720e01456cb5eedd548eaad6b0"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "validation": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "AC-006",
+              "pointer": "/assertion",
+              "value_sha256": "8ef57583ed81d6bb0ccd53db4709eba164b306d86a51abcff02187013a3b4a15"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "boundary": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-008",
+              "pointer": "/statement",
+              "value_sha256": "ae54067d91cea29401c2f51ec2d9e2a5ff3a825039cec96f958d2df8ac315237"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "persistence": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-002",
+              "pointer": "/ownership",
+              "value_sha256": "42eebd890fd2f713b4732811dc07a95c744e6ec699acabb5ffacf76fc738660d"
+            },
+            {
+              "record_id": "RULE-024",
+              "pointer": "/statement",
+              "value_sha256": "69224cf48c841cea2b2f30ac8e6ca218b6285221a2bbacfcf209c76012451211"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "security": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-084",
+              "pointer": "/statement",
+              "value_sha256": "50cc723ba26d177f8f7b07cd2d65cd92ec76f356cc1e437acfa585f59e1b46a5"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "privacy": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-015",
+              "pointer": "/ownership",
+              "value_sha256": "3c4d374548e9cf55504cbe3dd3fd9b54c4914a1d48fe431d2cbb762a6d6d0999"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "acceptance": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "AC-006",
+              "pointer": "/assertion",
+              "value_sha256": "8ef57583ed81d6bb0ccd53db4709eba164b306d86a51abcff02187013a3b4a15"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "analytics": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-008",
+              "pointer": "/claim",
+              "value_sha256": "81d8fcd838b9c1b5d37f6b7eda53a8547dbf55ce88d05575b8614ff4f360f7f1"
+            }
+          ],
+          "rationale": "The user explicitly excluded product analytics and telemetry from this bounded slice."
+        }
+      }
+    }
+  ],
+  "ux_coverage": [
+    {
+      "screen_id": "SCR-006",
+      "states": {
+        "default": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "SCR-006",
+              "pointer": "/purpose",
+              "value_sha256": "fd66da794cc52add22f62b8fb4f665a88dbb53f2a16448f7dc7e01caddcf11ae"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "loading": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-002",
+              "pointer": "/conditions/0",
+              "value_sha256": "4ddde701407697ce6ddc81033702bcb82fcf92fb70997539e0258980ef6dc7b9"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "empty": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-119",
+              "pointer": "/statement",
+              "value_sha256": "c34df7874187b628f9f1923fb0f47391439fceb7373520eb1a92ae5b66bc6c4f"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "partial": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-120",
+              "pointer": "/statement",
+              "value_sha256": "1def6ba86a049f4822c2ac23401ee241990af82e049f985fc2bca8e94cbbe6b5"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "success": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-002",
+              "pointer": "/conditions/1",
+              "value_sha256": "654ec1ea88dc2a440c6e2472a3264c8523de427c12f80112a4e5facf5d34b8f4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "error": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-128",
+              "pointer": "/statement",
+              "value_sha256": "3f021e83f0a7ee830230fd42f9d74c2866c977870a8d02ad2ec9d58cc8899bff"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "disabled": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-077",
+              "pointer": "/statement",
+              "value_sha256": "b2af71c775995f3937af481dfe0a71eb7689abc433a6a0b6831765fed078f583"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "permission_denied": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-129",
+              "pointer": "/statement",
+              "value_sha256": "f4145d2463b8fd2f3dbf92a5386a323a74bc9d1d58e91a45f38598232dd32da9"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "unauthenticated": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "FLOW-005",
+              "pointer": "/preconditions",
+              "value_sha256": "e6e213717d597dbab89dd5bcdd8e0e96451b7285f57acded45c0c0ddd5de8c9b"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "offline": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-125",
+              "pointer": "/statement",
+              "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "timeout": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-125",
+              "pointer": "/statement",
+              "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "retrying": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-125",
+              "pointer": "/statement",
+              "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "submitting": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-002",
+              "pointer": "/conditions/0",
+              "value_sha256": "4ddde701407697ce6ddc81033702bcb82fcf92fb70997539e0258980ef6dc7b9"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "completed": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-002",
+              "pointer": "/conditions/1",
+              "value_sha256": "654ec1ea88dc2a440c6e2472a3264c8523de427c12f80112a4e5facf5d34b8f4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "cancelled": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-122",
+              "pointer": "/statement",
+              "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "expired": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-027",
+              "pointer": "/statement",
+              "value_sha256": "d3790dea0894d7bb23697b0ffde5ab470997c64bc411c7d3216c2bb761fab59d"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        }
+      },
+      "actions": [
+        {
+          "key": "send_review_request",
+          "cells": {
+            "back": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-122",
+                  "pointer": "/statement",
+                  "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "cancel": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-122",
+                  "pointer": "/statement",
+                  "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "data_mutation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-009",
+                  "pointer": "/purpose",
+                  "value_sha256": "c4085a322ad384419b0aabf12c69bdfe259b8184d9c46d1615d552444f347352"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "destructive_confirmation": {
+              "status": "N/A",
+              "authority_bindings": [],
+              "unknown_refs": [],
+              "basis_bindings": [
+                {
+                  "record_id": "EVD-015",
+                  "pointer": "/claim",
+                  "value_sha256": "2fe8542c9258bd81f300558b8a5471a8597c57055576235f4fc3cd2b152f4e0d"
+                }
+              ],
+              "rationale": "The bounded user decision makes destructive confirmation not applicable."
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "entry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "SCR-006",
+                  "pointer": "/major_actions",
+                  "value_sha256": "094142756278ec123f2b690d62f2b93ef6679cff16fd82d9d8cb01a04378ad33"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "failure": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-128",
+                  "pointer": "/statement",
+                  "value_sha256": "3f021e83f0a7ee830230fd42f9d74c2866c977870a8d02ad2ec9d58cc8899bff"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "input": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-009",
+                  "pointer": "/purpose",
+                  "value_sha256": "c4085a322ad384419b0aabf12c69bdfe259b8184d9c46d1615d552444f347352"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "notification": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "INT-001",
+                  "pointer": "/purpose",
+                  "value_sha256": "8b976e6f165942aeb37d8c8656555ce4ce60970d774f89d7953f2d4f3c564e0f"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "offline": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "permission": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-129",
+                  "pointer": "/statement",
+                  "value_sha256": "f4145d2463b8fd2f3dbf92a5386a323a74bc9d1d58e91a45f38598232dd32da9"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "persistence": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-004",
+                  "pointer": "/purpose",
+                  "value_sha256": "eaa0a652d20d4825defb2a66ac9e829b349f3dd041616def14f722c7e490bc69"
+                },
+                {
+                  "record_id": "DATA-009",
+                  "pointer": "/purpose",
+                  "value_sha256": "c4085a322ad384419b0aabf12c69bdfe259b8184d9c46d1615d552444f347352"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "precondition": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-046",
+                  "pointer": "/statement",
+                  "value_sha256": "4a516e42aa3b9a90e938731d41c57f9a49f1ca5c9183185806854d3f4a2ffe3c"
+                },
+                {
+                  "record_id": "RULE-129",
+                  "pointer": "/statement",
+                  "value_sha256": "f4145d2463b8fd2f3dbf92a5386a323a74bc9d1d58e91a45f38598232dd32da9"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "refresh": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-123",
+                  "pointer": "/statement",
+                  "value_sha256": "3174018efdfeb283aec8308dea6156141be894281a3615b50b740f6982db0b3d"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "retry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "session_expiration": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-110",
+                  "pointer": "/statement",
+                  "value_sha256": "6e981c6ee68f2a671b4bd47c22a7f5263f7fef8ac835cfbf6881e90a1b17b4bb"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "side_effect": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-009",
+                  "pointer": "/purpose",
+                  "value_sha256": "c4085a322ad384419b0aabf12c69bdfe259b8184d9c46d1615d552444f347352"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "submit": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-005",
+                  "pointer": "/paths",
+                  "value_sha256": "2110e93d82af6d224a48328fd65f6a7384dff3aa01ac2bf67fe5a9f40196bea3"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "success": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-005",
+                  "pointer": "/outcomes/0",
+                  "value_sha256": "27f13c7ed3ad35290ab557ba3d0a6298c2f58a0047ccd2eb3b2221cfa717b255"
+                },
+                {
+                  "record_id": "STATE-002",
+                  "pointer": "/conditions/1",
+                  "value_sha256": "654ec1ea88dc2a440c6e2472a3264c8523de427c12f80112a4e5facf5d34b8f4"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "timeout": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "undo": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-124",
+                  "pointer": "/statement",
+                  "value_sha256": "4536bdf820f53f14f3e0e4b35479038f81846706ac7d00bf9886e5f994bb3f6b"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "validation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-046",
+                  "pointer": "/statement",
+                  "value_sha256": "4a516e42aa3b9a90e938731d41c57f9a49f1ca5c9183185806854d3f4a2ffe3c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            }
+          }
+        },
+        {
+          "key": "revoke_review_link",
+          "cells": {
+            "back": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-122",
+                  "pointer": "/statement",
+                  "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "cancel": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-122",
+                  "pointer": "/statement",
+                  "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "data_mutation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-004",
+                  "pointer": "/purpose",
+                  "value_sha256": "eaa0a652d20d4825defb2a66ac9e829b349f3dd041616def14f722c7e490bc69"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "destructive_confirmation": {
+              "status": "N/A",
+              "authority_bindings": [],
+              "unknown_refs": [],
+              "basis_bindings": [
+                {
+                  "record_id": "EVD-015",
+                  "pointer": "/claim",
+                  "value_sha256": "2fe8542c9258bd81f300558b8a5471a8597c57055576235f4fc3cd2b152f4e0d"
+                }
+              ],
+              "rationale": "The bounded user decision makes destructive confirmation not applicable."
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "entry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "SCR-006",
+                  "pointer": "/major_actions",
+                  "value_sha256": "094142756278ec123f2b690d62f2b93ef6679cff16fd82d9d8cb01a04378ad33"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "failure": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-128",
+                  "pointer": "/statement",
+                  "value_sha256": "3f021e83f0a7ee830230fd42f9d74c2866c977870a8d02ad2ec9d58cc8899bff"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "input": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-004",
+                  "pointer": "/purpose",
+                  "value_sha256": "eaa0a652d20d4825defb2a66ac9e829b349f3dd041616def14f722c7e490bc69"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "notification": {
+              "status": "N/A",
+              "authority_bindings": [],
+              "unknown_refs": [],
+              "basis_bindings": [
+                {
+                  "record_id": "EVD-014",
+                  "pointer": "/claim",
+                  "value_sha256": "aab042cca6b6273f2ce88be4bac8341acc64f0504ecdd94014568774b041007f"
+                }
+              ],
+              "rationale": "The documented email inventory defines no notification for this action."
+            },
+            "offline": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "permission": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-129",
+                  "pointer": "/statement",
+                  "value_sha256": "f4145d2463b8fd2f3dbf92a5386a323a74bc9d1d58e91a45f38598232dd32da9"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "persistence": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-004",
+                  "pointer": "/purpose",
+                  "value_sha256": "eaa0a652d20d4825defb2a66ac9e829b349f3dd041616def14f722c7e490bc69"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "precondition": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-033",
+                  "pointer": "/statement",
+                  "value_sha256": "2d615225b26df733bd936be767267e0719faf0f288a6d3e8035daa374d4e4af3"
+                },
+                {
+                  "record_id": "RULE-129",
+                  "pointer": "/statement",
+                  "value_sha256": "f4145d2463b8fd2f3dbf92a5386a323a74bc9d1d58e91a45f38598232dd32da9"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "refresh": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-123",
+                  "pointer": "/statement",
+                  "value_sha256": "3174018efdfeb283aec8308dea6156141be894281a3615b50b740f6982db0b3d"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "retry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "session_expiration": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-110",
+                  "pointer": "/statement",
+                  "value_sha256": "6e981c6ee68f2a671b4bd47c22a7f5263f7fef8ac835cfbf6881e90a1b17b4bb"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "side_effect": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-004",
+                  "pointer": "/purpose",
+                  "value_sha256": "eaa0a652d20d4825defb2a66ac9e829b349f3dd041616def14f722c7e490bc69"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "submit": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-005",
+                  "pointer": "/paths",
+                  "value_sha256": "2110e93d82af6d224a48328fd65f6a7384dff3aa01ac2bf67fe5a9f40196bea3"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "success": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-005",
+                  "pointer": "/outcomes/1",
+                  "value_sha256": "e997c1968d1a927ac27892e3b61575703f84a4029136a9dc6f57a4358baad3be"
+                },
+                {
+                  "record_id": "STATE-002",
+                  "pointer": "/conditions/1",
+                  "value_sha256": "654ec1ea88dc2a440c6e2472a3264c8523de427c12f80112a4e5facf5d34b8f4"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "timeout": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "undo": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-124",
+                  "pointer": "/statement",
+                  "value_sha256": "4536bdf820f53f14f3e0e4b35479038f81846706ac7d00bf9886e5f994bb3f6b"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "validation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-004",
+                  "pointer": "/purpose",
+                  "value_sha256": "eaa0a652d20d4825defb2a66ac9e829b349f3dd041616def14f722c7e490bc69"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            }
+          }
+        },
+        {
+          "key": "resend_review_request",
+          "cells": {
+            "back": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-122",
+                  "pointer": "/statement",
+                  "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "cancel": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-122",
+                  "pointer": "/statement",
+                  "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "data_mutation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-009",
+                  "pointer": "/purpose",
+                  "value_sha256": "c4085a322ad384419b0aabf12c69bdfe259b8184d9c46d1615d552444f347352"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "destructive_confirmation": {
+              "status": "N/A",
+              "authority_bindings": [],
+              "unknown_refs": [],
+              "basis_bindings": [
+                {
+                  "record_id": "EVD-015",
+                  "pointer": "/claim",
+                  "value_sha256": "2fe8542c9258bd81f300558b8a5471a8597c57055576235f4fc3cd2b152f4e0d"
+                }
+              ],
+              "rationale": "The bounded user decision makes destructive confirmation not applicable."
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "entry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "SCR-006",
+                  "pointer": "/major_actions",
+                  "value_sha256": "094142756278ec123f2b690d62f2b93ef6679cff16fd82d9d8cb01a04378ad33"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "failure": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-128",
+                  "pointer": "/statement",
+                  "value_sha256": "3f021e83f0a7ee830230fd42f9d74c2866c977870a8d02ad2ec9d58cc8899bff"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "input": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-009",
+                  "pointer": "/purpose",
+                  "value_sha256": "c4085a322ad384419b0aabf12c69bdfe259b8184d9c46d1615d552444f347352"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "notification": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "INT-001",
+                  "pointer": "/purpose",
+                  "value_sha256": "8b976e6f165942aeb37d8c8656555ce4ce60970d774f89d7953f2d4f3c564e0f"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "offline": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "permission": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-129",
+                  "pointer": "/statement",
+                  "value_sha256": "f4145d2463b8fd2f3dbf92a5386a323a74bc9d1d58e91a45f38598232dd32da9"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "persistence": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-009",
+                  "pointer": "/purpose",
+                  "value_sha256": "c4085a322ad384419b0aabf12c69bdfe259b8184d9c46d1615d552444f347352"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "precondition": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-005",
+                  "pointer": "/preconditions",
+                  "value_sha256": "e6e213717d597dbab89dd5bcdd8e0e96451b7285f57acded45c0c0ddd5de8c9b"
+                },
+                {
+                  "record_id": "RULE-129",
+                  "pointer": "/statement",
+                  "value_sha256": "f4145d2463b8fd2f3dbf92a5386a323a74bc9d1d58e91a45f38598232dd32da9"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "refresh": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-123",
+                  "pointer": "/statement",
+                  "value_sha256": "3174018efdfeb283aec8308dea6156141be894281a3615b50b740f6982db0b3d"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "retry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "session_expiration": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-110",
+                  "pointer": "/statement",
+                  "value_sha256": "6e981c6ee68f2a671b4bd47c22a7f5263f7fef8ac835cfbf6881e90a1b17b4bb"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "side_effect": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-009",
+                  "pointer": "/purpose",
+                  "value_sha256": "c4085a322ad384419b0aabf12c69bdfe259b8184d9c46d1615d552444f347352"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "submit": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-005",
+                  "pointer": "/paths",
+                  "value_sha256": "2110e93d82af6d224a48328fd65f6a7384dff3aa01ac2bf67fe5a9f40196bea3"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "success": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-005",
+                  "pointer": "/outcomes/2",
+                  "value_sha256": "5866bfe510756b505bb6a740f8cde98d2ac5411de29c085831d21b7b1387d408"
+                },
+                {
+                  "record_id": "STATE-002",
+                  "pointer": "/conditions/1",
+                  "value_sha256": "654ec1ea88dc2a440c6e2472a3264c8523de427c12f80112a4e5facf5d34b8f4"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "timeout": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "undo": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-124",
+                  "pointer": "/statement",
+                  "value_sha256": "4536bdf820f53f14f3e0e4b35479038f81846706ac7d00bf9886e5f994bb3f6b"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "validation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-009",
+                  "pointer": "/purpose",
+                  "value_sha256": "c4085a322ad384419b0aabf12c69bdfe259b8184d9c46d1615d552444f347352"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "screen_id": "SCR-007",
+      "states": {
+        "default": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "SCR-007",
+              "pointer": "/purpose",
+              "value_sha256": "7dd4af7b981ad569ff96268e24a3fa1f456de0e59f08a8c0a5b8d82389dc9a00"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "loading": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-002",
+              "pointer": "/conditions/0",
+              "value_sha256": "4ddde701407697ce6ddc81033702bcb82fcf92fb70997539e0258980ef6dc7b9"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "empty": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-119",
+              "pointer": "/statement",
+              "value_sha256": "c34df7874187b628f9f1923fb0f47391439fceb7373520eb1a92ae5b66bc6c4f"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "partial": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-120",
+              "pointer": "/statement",
+              "value_sha256": "1def6ba86a049f4822c2ac23401ee241990af82e049f985fc2bca8e94cbbe6b5"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "success": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-002",
+              "pointer": "/conditions/1",
+              "value_sha256": "654ec1ea88dc2a440c6e2472a3264c8523de427c12f80112a4e5facf5d34b8f4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "error": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-128",
+              "pointer": "/statement",
+              "value_sha256": "3f021e83f0a7ee830230fd42f9d74c2866c977870a8d02ad2ec9d58cc8899bff"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "disabled": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-063",
+              "pointer": "/statement",
+              "value_sha256": "938dc939302ba27a3e102c03c7b3ceb654a985b377aa77086448303c47130ea3"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "permission_denied": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-020",
+              "pointer": "/statement",
+              "value_sha256": "9f3dc4ed4432e11099492971222719d0453ea1db9e295926a4eedc26795438b7"
+            },
+            {
+              "record_id": "RULE-021",
+              "pointer": "/statement",
+              "value_sha256": "28004d468539fdd5edb67a67bb8504e785a89180062c81ec7bd567ba34969d39"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "unauthenticated": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-130",
+              "pointer": "/statement",
+              "value_sha256": "274657aa262ee494a00bc8e381f0bbbc81b9aba4b0f0adc076fcc3b29a0bcea0"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "offline": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-125",
+              "pointer": "/statement",
+              "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "timeout": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-125",
+              "pointer": "/statement",
+              "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "retrying": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-125",
+              "pointer": "/statement",
+              "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "submitting": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-002",
+              "pointer": "/conditions/0",
+              "value_sha256": "4ddde701407697ce6ddc81033702bcb82fcf92fb70997539e0258980ef6dc7b9"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "completed": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-002",
+              "pointer": "/conditions/1",
+              "value_sha256": "654ec1ea88dc2a440c6e2472a3264c8523de427c12f80112a4e5facf5d34b8f4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "cancelled": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-122",
+              "pointer": "/statement",
+              "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "expired": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-027",
+              "pointer": "/statement",
+              "value_sha256": "d3790dea0894d7bb23697b0ffde5ab470997c64bc411c7d3216c2bb761fab59d"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        }
+      },
+      "actions": [
+        {
+          "key": "create_pin",
+          "cells": {
+            "back": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-122",
+                  "pointer": "/statement",
+                  "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "cancel": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-122",
+                  "pointer": "/statement",
+                  "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "data_mutation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-002",
+                  "pointer": "/purpose",
+                  "value_sha256": "d50c6b9adb0ed3d8d90d7e47eb964364d62fd4a717923dac44093020a48214ab"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "destructive_confirmation": {
+              "status": "N/A",
+              "authority_bindings": [],
+              "unknown_refs": [],
+              "basis_bindings": [
+                {
+                  "record_id": "EVD-015",
+                  "pointer": "/claim",
+                  "value_sha256": "2fe8542c9258bd81f300558b8a5471a8597c57055576235f4fc3cd2b152f4e0d"
+                }
+              ],
+              "rationale": "The bounded user decision makes destructive confirmation not applicable."
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "entry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "SCR-007",
+                  "pointer": "/major_actions",
+                  "value_sha256": "8d0d572f777d17c60fe99359a9ccf5668748f420cf3dbfa9ab9aa520ab5a5c37"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "failure": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-128",
+                  "pointer": "/statement",
+                  "value_sha256": "3f021e83f0a7ee830230fd42f9d74c2866c977870a8d02ad2ec9d58cc8899bff"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "input": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-002",
+                  "pointer": "/purpose",
+                  "value_sha256": "d50c6b9adb0ed3d8d90d7e47eb964364d62fd4a717923dac44093020a48214ab"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "notification": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "INT-001",
+                  "pointer": "/purpose",
+                  "value_sha256": "8b976e6f165942aeb37d8c8656555ce4ce60970d774f89d7953f2d4f3c564e0f"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "offline": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "permission": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-020",
+                  "pointer": "/statement",
+                  "value_sha256": "9f3dc4ed4432e11099492971222719d0453ea1db9e295926a4eedc26795438b7"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "persistence": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-002",
+                  "pointer": "/purpose",
+                  "value_sha256": "d50c6b9adb0ed3d8d90d7e47eb964364d62fd4a717923dac44093020a48214ab"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "precondition": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-006",
+                  "pointer": "/preconditions",
+                  "value_sha256": "7f0965dfca8f2cd4309facafdad336c2fa24f18d4be622e351a77d3656f7915e"
+                },
+                {
+                  "record_id": "RULE-020",
+                  "pointer": "/statement",
+                  "value_sha256": "9f3dc4ed4432e11099492971222719d0453ea1db9e295926a4eedc26795438b7"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "refresh": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-123",
+                  "pointer": "/statement",
+                  "value_sha256": "3174018efdfeb283aec8308dea6156141be894281a3615b50b740f6982db0b3d"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "retry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "session_expiration": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-130",
+                  "pointer": "/statement",
+                  "value_sha256": "274657aa262ee494a00bc8e381f0bbbc81b9aba4b0f0adc076fcc3b29a0bcea0"
+                },
+                {
+                  "record_id": "RULE-027",
+                  "pointer": "/statement",
+                  "value_sha256": "d3790dea0894d7bb23697b0ffde5ab470997c64bc411c7d3216c2bb761fab59d"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "side_effect": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-007",
+                  "pointer": "/purpose",
+                  "value_sha256": "bab1f399edbe8cce1a076fb38e76bab2d231f2ec3f95b4878d9a4863224d4cac"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "submit": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-006",
+                  "pointer": "/paths",
+                  "value_sha256": "fefb911d5b1574d060c9c19b35371a0639672dd4e0c1cd6af07fc32ae0006655"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "success": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-006",
+                  "pointer": "/outcomes/0",
+                  "value_sha256": "f9aa7c955b60ff617b1a2ccf323f240f7d61e26da93c07bb4479e70b9f6435bb"
+                },
+                {
+                  "record_id": "STATE-002",
+                  "pointer": "/conditions/1",
+                  "value_sha256": "654ec1ea88dc2a440c6e2472a3264c8523de427c12f80112a4e5facf5d34b8f4"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "timeout": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "undo": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-124",
+                  "pointer": "/statement",
+                  "value_sha256": "4536bdf820f53f14f3e0e4b35479038f81846706ac7d00bf9886e5f994bb3f6b"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "validation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-014",
+                  "pointer": "/statement",
+                  "value_sha256": "20ba063b3ac53a3dc28fb0a7aab5d2db5f67418a383ff688622cf1fcdd5cbe0c"
+                },
+                {
+                  "record_id": "RULE-015",
+                  "pointer": "/statement",
+                  "value_sha256": "6e07b9eeb3786058ef29b2c0f628e60debcc92e46c3d87f3d2fdbad5f8c5c33c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            }
+          }
+        },
+        {
+          "key": "reply_thread",
+          "cells": {
+            "back": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-122",
+                  "pointer": "/statement",
+                  "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "cancel": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-122",
+                  "pointer": "/statement",
+                  "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "data_mutation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-002",
+                  "pointer": "/purpose",
+                  "value_sha256": "d50c6b9adb0ed3d8d90d7e47eb964364d62fd4a717923dac44093020a48214ab"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "destructive_confirmation": {
+              "status": "N/A",
+              "authority_bindings": [],
+              "unknown_refs": [],
+              "basis_bindings": [
+                {
+                  "record_id": "EVD-015",
+                  "pointer": "/claim",
+                  "value_sha256": "2fe8542c9258bd81f300558b8a5471a8597c57055576235f4fc3cd2b152f4e0d"
+                }
+              ],
+              "rationale": "The bounded user decision makes destructive confirmation not applicable."
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "entry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "SCR-007",
+                  "pointer": "/major_actions",
+                  "value_sha256": "8d0d572f777d17c60fe99359a9ccf5668748f420cf3dbfa9ab9aa520ab5a5c37"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "failure": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-128",
+                  "pointer": "/statement",
+                  "value_sha256": "3f021e83f0a7ee830230fd42f9d74c2866c977870a8d02ad2ec9d58cc8899bff"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "input": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-002",
+                  "pointer": "/purpose",
+                  "value_sha256": "d50c6b9adb0ed3d8d90d7e47eb964364d62fd4a717923dac44093020a48214ab"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "notification": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "INT-001",
+                  "pointer": "/purpose",
+                  "value_sha256": "8b976e6f165942aeb37d8c8656555ce4ce60970d774f89d7953f2d4f3c564e0f"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "offline": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "permission": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-020",
+                  "pointer": "/statement",
+                  "value_sha256": "9f3dc4ed4432e11099492971222719d0453ea1db9e295926a4eedc26795438b7"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "persistence": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-002",
+                  "pointer": "/purpose",
+                  "value_sha256": "d50c6b9adb0ed3d8d90d7e47eb964364d62fd4a717923dac44093020a48214ab"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "precondition": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-006",
+                  "pointer": "/preconditions",
+                  "value_sha256": "7f0965dfca8f2cd4309facafdad336c2fa24f18d4be622e351a77d3656f7915e"
+                },
+                {
+                  "record_id": "RULE-020",
+                  "pointer": "/statement",
+                  "value_sha256": "9f3dc4ed4432e11099492971222719d0453ea1db9e295926a4eedc26795438b7"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "refresh": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-123",
+                  "pointer": "/statement",
+                  "value_sha256": "3174018efdfeb283aec8308dea6156141be894281a3615b50b740f6982db0b3d"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "retry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "session_expiration": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-130",
+                  "pointer": "/statement",
+                  "value_sha256": "274657aa262ee494a00bc8e381f0bbbc81b9aba4b0f0adc076fcc3b29a0bcea0"
+                },
+                {
+                  "record_id": "RULE-027",
+                  "pointer": "/statement",
+                  "value_sha256": "d3790dea0894d7bb23697b0ffde5ab470997c64bc411c7d3216c2bb761fab59d"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "side_effect": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-008",
+                  "pointer": "/purpose",
+                  "value_sha256": "f75af33a0ad39b5d5a02713e7bde126325e84be831341c605a70663473a3d888"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "submit": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-006",
+                  "pointer": "/paths",
+                  "value_sha256": "fefb911d5b1574d060c9c19b35371a0639672dd4e0c1cd6af07fc32ae0006655"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "success": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-006",
+                  "pointer": "/outcomes/1",
+                  "value_sha256": "8e43d1ae7e163a8d8260cddfeaa107046b6b16684307b8f06a10c8c0097d5d67"
+                },
+                {
+                  "record_id": "STATE-002",
+                  "pointer": "/conditions/1",
+                  "value_sha256": "654ec1ea88dc2a440c6e2472a3264c8523de427c12f80112a4e5facf5d34b8f4"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "timeout": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "undo": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-124",
+                  "pointer": "/statement",
+                  "value_sha256": "4536bdf820f53f14f3e0e4b35479038f81846706ac7d00bf9886e5f994bb3f6b"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "validation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-020",
+                  "pointer": "/statement",
+                  "value_sha256": "9f3dc4ed4432e11099492971222719d0453ea1db9e295926a4eedc26795438b7"
+                },
+                {
+                  "record_id": "RULE-063",
+                  "pointer": "/statement",
+                  "value_sha256": "938dc939302ba27a3e102c03c7b3ceb654a985b377aa77086448303c47130ea3"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            }
+          }
+        },
+        {
+          "key": "resolve_thread",
+          "cells": {
+            "back": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-122",
+                  "pointer": "/statement",
+                  "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "cancel": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-122",
+                  "pointer": "/statement",
+                  "value_sha256": "0dd1b579223027dfb908c3a5bc501793636e9740c86fcde6ebe9720865602a9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "data_mutation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-002",
+                  "pointer": "/purpose",
+                  "value_sha256": "d50c6b9adb0ed3d8d90d7e47eb964364d62fd4a717923dac44093020a48214ab"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "destructive_confirmation": {
+              "status": "N/A",
+              "authority_bindings": [],
+              "unknown_refs": [],
+              "basis_bindings": [
+                {
+                  "record_id": "EVD-015",
+                  "pointer": "/claim",
+                  "value_sha256": "2fe8542c9258bd81f300558b8a5471a8597c57055576235f4fc3cd2b152f4e0d"
+                }
+              ],
+              "rationale": "The bounded user decision makes destructive confirmation not applicable."
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "entry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "SCR-007",
+                  "pointer": "/major_actions",
+                  "value_sha256": "8d0d572f777d17c60fe99359a9ccf5668748f420cf3dbfa9ab9aa520ab5a5c37"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "failure": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-128",
+                  "pointer": "/statement",
+                  "value_sha256": "3f021e83f0a7ee830230fd42f9d74c2866c977870a8d02ad2ec9d58cc8899bff"
+                },
+                {
+                  "record_id": "RULE-084",
+                  "pointer": "/statement",
+                  "value_sha256": "50cc723ba26d177f8f7b07cd2d65cd92ec76f356cc1e437acfa585f59e1b46a5"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "input": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-002",
+                  "pointer": "/purpose",
+                  "value_sha256": "d50c6b9adb0ed3d8d90d7e47eb964364d62fd4a717923dac44093020a48214ab"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "notification": {
+              "status": "N/A",
+              "authority_bindings": [],
+              "unknown_refs": [],
+              "basis_bindings": [
+                {
+                  "record_id": "EVD-014",
+                  "pointer": "/claim",
+                  "value_sha256": "aab042cca6b6273f2ce88be4bac8341acc64f0504ecdd94014568774b041007f"
+                }
+              ],
+              "rationale": "The documented email inventory defines no notification for this action."
+            },
+            "offline": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "permission": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-021",
+                  "pointer": "/statement",
+                  "value_sha256": "28004d468539fdd5edb67a67bb8504e785a89180062c81ec7bd567ba34969d39"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "persistence": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-002",
+                  "pointer": "/purpose",
+                  "value_sha256": "d50c6b9adb0ed3d8d90d7e47eb964364d62fd4a717923dac44093020a48214ab"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "precondition": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-006",
+                  "pointer": "/preconditions",
+                  "value_sha256": "7f0965dfca8f2cd4309facafdad336c2fa24f18d4be622e351a77d3656f7915e"
+                },
+                {
+                  "record_id": "RULE-021",
+                  "pointer": "/statement",
+                  "value_sha256": "28004d468539fdd5edb67a67bb8504e785a89180062c81ec7bd567ba34969d39"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "refresh": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-123",
+                  "pointer": "/statement",
+                  "value_sha256": "3174018efdfeb283aec8308dea6156141be894281a3615b50b740f6982db0b3d"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "retry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "session_expiration": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-130",
+                  "pointer": "/statement",
+                  "value_sha256": "274657aa262ee494a00bc8e381f0bbbc81b9aba4b0f0adc076fcc3b29a0bcea0"
+                },
+                {
+                  "record_id": "RULE-027",
+                  "pointer": "/statement",
+                  "value_sha256": "d3790dea0894d7bb23697b0ffde5ab470997c64bc411c7d3216c2bb761fab59d"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "side_effect": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-002",
+                  "pointer": "/purpose",
+                  "value_sha256": "d50c6b9adb0ed3d8d90d7e47eb964364d62fd4a717923dac44093020a48214ab"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "submit": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-006",
+                  "pointer": "/paths",
+                  "value_sha256": "fefb911d5b1574d060c9c19b35371a0639672dd4e0c1cd6af07fc32ae0006655"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "success": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-006",
+                  "pointer": "/outcomes/2",
+                  "value_sha256": "21733601afff7a5a170db7870426ad8d0f53985efbe6c21804b15c533bf33bc8"
+                },
+                {
+                  "record_id": "STATE-002",
+                  "pointer": "/conditions/1",
+                  "value_sha256": "654ec1ea88dc2a440c6e2472a3264c8523de427c12f80112a4e5facf5d34b8f4"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "timeout": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-125",
+                  "pointer": "/statement",
+                  "value_sha256": "661424ca7392d4ad0408a51472fc325a88444add2de5242e0fd1ad43b4130fc8"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "undo": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-124",
+                  "pointer": "/statement",
+                  "value_sha256": "4536bdf820f53f14f3e0e4b35479038f81846706ac7d00bf9886e5f994bb3f6b"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "validation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-021",
+                  "pointer": "/statement",
+                  "value_sha256": "28004d468539fdd5edb67a67bb8504e785a89180062c81ec7bd567ba34969d39"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "grill_coverage": [
+    {
+      "target_ref": "SURF-004",
+      "pack_id": "GRILL-ASYNC-1",
+      "pack_version": "1.0",
+      "pack_digest": "04b77aafead01f5287114f4b1cc4376778f0076e2e9a2d05bcd00cfb9ee30465",
+      "axes": {
+        "pending": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-015",
+              "pointer": "/purpose",
+              "value_sha256": "2b341f065f4b0c44f156724674bebb2219123d81f9ab80c6a537368bc11a265a"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "polling": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-005",
+              "pointer": "/claim",
+              "value_sha256": "1761c0329bf60ded9fe875508026a14c86607da5e6688f9278f7590a4934569e"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "timeout": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-093",
+              "pointer": "/statement",
+              "value_sha256": "ea8a0041f7612c06a6c6a9d6c5eef4ea6314fcd762658e723c69996a561ddde7"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "retry": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-095",
+              "pointer": "/statement",
+              "value_sha256": "8daf76ba6cf144f1937e7a8baab15a31bf4934acf33c30020e5e32a416aa1704"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "idempotency": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-094",
+              "pointer": "/statement",
+              "value_sha256": "23cfef24db3dfa46b57cafd499d9b743889c077c95c1e581aa07ad3ad6e8b4d9"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "duplicate_execution": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-096",
+              "pointer": "/statement",
+              "value_sha256": "b9e75e472a50132581ac6e1803d808d60a3c3b2a885dc9cb140113eae23336e1"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "late_completion": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-095",
+              "pointer": "/statement",
+              "value_sha256": "8daf76ba6cf144f1937e7a8baab15a31bf4934acf33c30020e5e32a416aa1704"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "partial_completion": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-015",
+              "pointer": "/purpose",
+              "value_sha256": "2b341f065f4b0c44f156724674bebb2219123d81f9ab80c6a537368bc11a265a"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "cancel": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-005",
+              "pointer": "/claim",
+              "value_sha256": "1761c0329bf60ded9fe875508026a14c86607da5e6688f9278f7590a4934569e"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "reconciliation": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-095",
+              "pointer": "/statement",
+              "value_sha256": "8daf76ba6cf144f1937e7a8baab15a31bf4934acf33c30020e5e32a416aa1704"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        }
+      }
+    },
+    {
+      "target_ref": "SURF-001",
+      "pack_id": "GRILL-AUTH-1",
+      "pack_version": "1.0",
+      "pack_digest": "e938ee7a52a4039d1b636f9dbd113a46bb9a94a616b890687b3c1b30554cb4f6",
+      "axes": {
+        "registration": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "verification": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "820ed63409adfe49d9369eaec54903327dcc2bb2927a350df8eb260a7cafc7b4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "login": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "820ed63409adfe49d9369eaec54903327dcc2bb2927a350df8eb260a7cafc7b4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "logout": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "session_expiry": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-026",
+              "pointer": "/statement",
+              "value_sha256": "06570dda6e807aafa4779e9c390c3be595c6434341ef0715ad136c69ef85d3c5"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "session_renewal": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "password_reset": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "account_recovery": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "revocation": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-033",
+              "pointer": "/statement",
+              "value_sha256": "2d615225b26df733bd936be767267e0719faf0f288a6d3e8035daa374d4e4af3"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "role_change": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "provider_failure": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "duplicate_identity": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "820ed63409adfe49d9369eaec54903327dcc2bb2927a350df8eb260a7cafc7b4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "account_linking": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        }
+      }
+    },
+    {
+      "target_ref": "SURF-003",
+      "pack_id": "GRILL-AUTH-1",
+      "pack_version": "1.0",
+      "pack_digest": "e938ee7a52a4039d1b636f9dbd113a46bb9a94a616b890687b3c1b30554cb4f6",
+      "axes": {
+        "registration": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "verification": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "820ed63409adfe49d9369eaec54903327dcc2bb2927a350df8eb260a7cafc7b4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "login": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "820ed63409adfe49d9369eaec54903327dcc2bb2927a350df8eb260a7cafc7b4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "logout": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "session_expiry": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-026",
+              "pointer": "/statement",
+              "value_sha256": "06570dda6e807aafa4779e9c390c3be595c6434341ef0715ad136c69ef85d3c5"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "session_renewal": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "password_reset": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "account_recovery": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "revocation": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-033",
+              "pointer": "/statement",
+              "value_sha256": "2d615225b26df733bd936be767267e0719faf0f288a6d3e8035daa374d4e4af3"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "role_change": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "provider_failure": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "duplicate_identity": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "820ed63409adfe49d9369eaec54903327dcc2bb2927a350df8eb260a7cafc7b4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "account_linking": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-002",
+              "pointer": "/claim",
+              "value_sha256": "a2f09445c3573dda7dc2ae86cf3802ceeae96f5ab6f08918785eeadf193f1853"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        }
+      }
+    },
+    {
+      "target_ref": "SURF-003",
+      "pack_id": "GRILL-PERMISSION-1",
+      "pack_version": "1.0",
+      "pack_digest": "49759d4e792c225dd125fe2ed71f2b25d32f576571c4ccfa27ab0ef9f8a6497a",
+      "axes": {
+        "role": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "USR-002",
+              "pointer": "/description",
+              "value_sha256": "9d998875496662a63cbf6014c3a19763263e294245ba152e264148f0e6f4d6d8"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "resource_ownership": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-002",
+              "pointer": "/statement",
+              "value_sha256": "ecd1943474f6a932d8871b86fa3aaa437a25f657305e9e016c583304d2950651"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "read": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-026",
+              "pointer": "/statement",
+              "value_sha256": "06570dda6e807aafa4779e9c390c3be595c6434341ef0715ad136c69ef85d3c5"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "write": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-020",
+              "pointer": "/statement",
+              "value_sha256": "9f3dc4ed4432e11099492971222719d0453ea1db9e295926a4eedc26795438b7"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "delete": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-024",
+              "pointer": "/statement",
+              "value_sha256": "69224cf48c841cea2b2f30ac8e6ca218b6285221a2bbacfcf209c76012451211"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "delegation": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-003",
+              "pointer": "/statement",
+              "value_sha256": "c44dfaadacc3aaa8cf8516c634ee2032cd7eb3f3e538f569d888f1fe0867d8ae"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "revocation": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-033",
+              "pointer": "/statement",
+              "value_sha256": "2d615225b26df733bd936be767267e0719faf0f288a6d3e8035daa374d4e4af3"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "role_change_mid_flow": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-003",
+              "pointer": "/claim",
+              "value_sha256": "fe58ec1d710a3fa8ffd814e1b4fd7601730599ed0316e2d29aa9fca00df9027a"
+            }
+          ],
+          "rationale": "The documented authority for this bounded surface makes this axis inapplicable."
+        },
+        "stale_permission": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-084",
+              "pointer": "/statement",
+              "value_sha256": "50cc723ba26d177f8f7b07cd2d65cd92ec76f356cc1e437acfa585f59e1b46a5"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "audit": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-024",
+              "pointer": "/statement",
+              "value_sha256": "69224cf48c841cea2b2f30ac8e6ca218b6285221a2bbacfcf209c76012451211"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        }
+      }
+    }
+  ],
+  "discovery_baseline": {
+    "status": "CURRENT",
+    "definition_revision": 1,
+    "surface_manifest_digest": "a69925b34312054b8062708e651d526c03cde61a937e47b05b6bf73811818047",
+    "evidence_commitment_digest": "596f684aaa44ecc043765f1eeb2beca8a28a59730c3c89bccd2aabafa933bfd2",
+    "open_material_surface_count": 0,
+    "unresolved_material_contradiction_count": 0,
+    "procedure_complete": true,
+    "applicable_surface_classes_complete": true,
+    "active_grill_packs": [
+      {
+        "pack_id": "GRILL-ASYNC-1",
+        "version": "1.0",
+        "digest": "04b77aafead01f5287114f4b1cc4376778f0076e2e9a2d05bcd00cfb9ee30465",
+        "target_refs": [
+          "SURF-004"
+        ]
+      },
+      {
+        "pack_id": "GRILL-AUTH-1",
+        "version": "1.0",
+        "digest": "e938ee7a52a4039d1b636f9dbd113a46bb9a94a616b890687b3c1b30554cb4f6",
+        "target_refs": [
+          "SURF-001",
+          "SURF-003"
+        ]
+      },
+      {
+        "pack_id": "GRILL-CORE-1",
+        "version": "1.0",
+        "digest": "45b87b1d77916ae5a6e0d624b3a8452f787a7754daf18635157157c4497b951e",
+        "target_refs": [
+          "REQ-005",
+          "REQ-006"
+        ]
+      },
+      {
+        "pack_id": "GRILL-PERMISSION-1",
+        "version": "1.0",
+        "digest": "49759d4e792c225dd125fe2ed71f2b25d32f576571c4ccfa27ab0ef9f8a6497a",
+        "target_refs": [
+          "SURF-003"
+        ]
+      }
+    ],
+    "active_grill_packs_complete": true,
+    "unknown_unknown_exhaustiveness_claimed": false
+  },
+  "approval": {
+    "status": "UNAPPROVED"
+  },
+  "approval_history": []
+}
