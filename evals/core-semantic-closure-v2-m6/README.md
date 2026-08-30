@@ -1,20 +1,25 @@
 # Core Semantic Closure V2 M6 evaluation
 
-This directory contains the partial M6 existing-product dogfood evidence.
-Phase A is `NEEDS_CONTEXT`: a material analytics-events and measurement-policy
-choice has no authority in the inspected legacy documents or user decisions.
-It does not claim readiness for review, Product Definition Closure, downstream
-compilation, runtime conformance, re-entry, or whole-M6 completion.
+This directory contains the M6 existing-product dogfood evidence through the
+Phase A human approval checkpoint. The bounded native V2 state is
+`READY_FOR_REVIEW` and `UNAPPROVED`; it does not claim Product Definition
+Closure, downstream compilation, runtime conformance, re-entry, Phase B, or
+whole-M6 completion.
 
 The two Phase A lineages are deliberately separate:
 
 - `dogfood/migration/legacy-candidate.json` and `migration-receipt.json` are the
   complete deterministic Track A audit of the legacy state. The candidate stays
   `OPEN` and `UNAPPROVED`.
-- Track B was stopped before authoring the native V2 state. The intended bounded
-  slice was `REQ-005` and `REQ-006`, but the legacy sources do not define the
-  required analytics events or measurement behavior. Track B is not the full
-  legacy migration and cannot be used to trim or close Track A.
+- `dogfood/product-definition/client-feedback-portal-dogfood-v2/state.json` is
+  the bounded native Track B reconciliation for `REQ-005` and `REQ-006`. It is
+  not the full legacy migration and cannot trim or close Track A.
 
-No approval manifest or approval fields were written. The unresolved choice
-must be answered from real product authority before Track B can be completed.
+The user explicitly decided that analytics and telemetry are not used for this
+bounded definition. Review-link and thread actions emit no analytics events;
+ordinary domain history and email delivery state remain non-analytics product
+state. The decision is local to this definition, not a permanent prohibition.
+
+The exact review packet is `dogfood/approval-manifest.json`. No approval fields
+or timestamps may be written until a later run receives explicit approval for
+that exact manifest digest.

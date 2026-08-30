@@ -18,14 +18,20 @@ editing the source. The deterministic result is revision 45, `OPEN`, and
 
 Track A remains OPEN. Its audit is complete, but its full reconciliation is not.
 
-## Track B — blocked bounded native existing-product reconciliation
+## Track B — bounded native existing-product reconciliation
 
-Track B was stopped before a native V2 state or approval manifest was retained.
-The intended bounded slice is `REQ-005` and `REQ-006`, but the active Core Grill
-requires analytics-events and measurement behavior. The inspected legacy
-documents and user decisions contain no authority for that material policy;
-historical bare `COVERED` cells and evaluation metrics are not product intent.
+Track B reconciles the inspectable native V2 slice for `REQ-005` and `REQ-006`.
+It contains both documented actors, the review-access and exact-Version thread
+flows, `SCR-006` and `SCR-007`, acceptance criteria, tasks, and the active AUTH,
+ASYNC, PERMISSION, and Core Grill packs.
+
+The current user decision makes analytics and telemetry not applicable only to
+this bounded definition. It creates no analytics events, properties, tracking
+identifiers, retention/access policy, funnels, or success metrics. Existing
+domain history and email delivery/send status remain ordinary product state and
+are not reclassified as analytics telemetry.
 
 Track B is not the full legacy migration. It does not trim, close, replace, or
 supersede Track A, and it does not modify the historical dogfood directory.
-Its status is `NEEDS_CONTEXT`, not `READY_FOR_REVIEW`.
+Its status is `READY_FOR_REVIEW` and `UNAPPROVED`, with zero semantic-readiness
+blockers. Approval and all later work remain outside Phase A.
