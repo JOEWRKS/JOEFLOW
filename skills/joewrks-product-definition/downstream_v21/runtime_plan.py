@@ -2,6 +2,7 @@
 
 import copy
 import re
+from urllib.parse import quote
 
 from downstream_v2.authority import sha256_json
 
@@ -62,6 +63,18 @@ def _fail(code: str):
     raise ValueError(code)
 
 
+def _encoded_item_id(item_id: str) -> str:
+    return quote(item_id, safe="", encoding="utf-8", errors="surrogatepass")
+
+
+def _runtime_field_ref(collection: str, item_id: str, field_name: str) -> str:
+    return f"{collection}/{_encoded_item_id(item_id)}/{field_name}"
+
+
+def _runtime_item_prefix(collection: str, item_id: str) -> str:
+    return f"{collection}/{_encoded_item_id(item_id)}/"
+
+
 def _require_contract(contract: object) -> dict[str, object]:
     if (
         not isinstance(contract, dict)
@@ -93,6 +106,7 @@ def _resolve_pointer(value: object, pointer: object) -> object:
 
 def _contract_indexes(contract: dict[str, object]):
     fields: dict[str, dict[str, object]] = {}
+    raw_aliases: dict[str, set[str]] = {}
     owners: dict[tuple[str, str], dict[str, object]] = {}
     for collection, id_key in (
         ("actions", "action_id"),
@@ -102,9 +116,31 @@ def _contract_indexes(contract: dict[str, object]):
             item_id = item[id_key]
             owners[(collection, item_id)] = item
             for field_name, field in item["fields"].items():
-                fields[f"{collection}/{item_id}/{field_name}"] = field
+                canonical_ref = _runtime_field_ref(collection, item_id, field_name)
+                fields[canonical_ref] = field
+                raw_ref = f"{collection}/{item_id}/{field_name}"
+                raw_aliases.setdefault(raw_ref, set()).add(canonical_ref)
     seeds = {seed["seed_key"]: seed for seed in contract["source_seed_inventory"]}
-    return fields, owners, seeds
+    return fields, owners, seeds, raw_aliases
+
+
+def _canonical_field_ref(
+    ref: str,
+    *,
+    field_index: dict[str, dict[str, object]],
+    raw_aliases: dict[str, set[str]],
+    prefix: str | None = None,
+) -> str:
+    candidates = set(raw_aliases.get(ref, set()))
+    if ref in field_index:
+        candidates.add(ref)
+    if prefix is not None:
+        candidates = {
+            candidate for candidate in candidates if candidate.startswith(prefix)
+        }
+    if len(candidates) != 1:
+        _fail("INVALID_CONTRACT_FIELD_REFERENCE")
+    return next(iter(candidates))
 
 
 def _normalize_refs(
@@ -112,16 +148,29 @@ def _normalize_refs(
     *,
     prefix: str,
     field_index: dict[str, dict[str, object]],
+    raw_aliases: dict[str, set[str]],
 ) -> list[str]:
     if (
         not isinstance(refs, list)
         or not refs
         or any(not isinstance(ref, str) for ref in refs)
         or len(refs) != len(set(refs))
-        or any(not ref.startswith(prefix) or ref not in field_index for ref in refs)
     ):
         _fail("INVALID_CONTRACT_FIELD_REFERENCE")
-    return sorted(refs)
+    normalized = [
+        _canonical_field_ref(
+            ref,
+            field_index=field_index,
+            raw_aliases=raw_aliases,
+            prefix=prefix,
+        )
+        for ref in refs
+    ]
+    if len(normalized) != len(set(normalized)) or any(
+        not ref.startswith(prefix) for ref in normalized
+    ):
+        _fail("INVALID_CONTRACT_FIELD_REFERENCE")
+    return sorted(normalized)
 
 
 def _normalize_expected_source(
@@ -131,6 +180,7 @@ def _normalize_expected_source(
     item_id: str,
     item: dict[str, object],
     field_index: dict[str, dict[str, object]],
+    raw_aliases: dict[str, set[str]],
     seed_index: dict[str, dict[str, object]],
     contract_only: bool = False,
 ) -> dict[str, object]:
@@ -141,15 +191,26 @@ def _normalize_expected_source(
         if set(source) != {"source", "contract_field_path", "pointer"}:
             _fail("PRODUCT_LITERAL_FORBIDDEN")
         field_path = source.get("contract_field_path")
-        prefix = f"{collection}/{item_id}/"
+        prefix = _runtime_item_prefix(collection, item_id)
+        if not isinstance(field_path, str):
+            _fail("INVALID_CONTRACT_FIELD_REFERENCE")
+        canonical_path = _canonical_field_ref(
+            field_path,
+            field_index=field_index,
+            raw_aliases=raw_aliases,
+            prefix=prefix,
+        )
         if (
-            not isinstance(field_path, str)
-            or not field_path.startswith(prefix)
-            or field_path not in field_index
+            not canonical_path.startswith(prefix)
+            or canonical_path not in field_index
         ):
             _fail("INVALID_CONTRACT_FIELD_REFERENCE")
-        _resolve_pointer(field_index[field_path], source.get("pointer"))
-        return copy.deepcopy(source)
+        _resolve_pointer(field_index[canonical_path], source.get("pointer"))
+        return {
+            "source": "CONTRACT_DERIVED",
+            "contract_field_path": canonical_path,
+            "pointer": source["pointer"],
+        }
     if source_kind == "VERIFICATION_BASIS" and not contract_only:
         if collection != "actions" or set(source) != {
             "source",
@@ -178,6 +239,7 @@ def _normalize_components(
     *,
     prefix: str,
     field_index: dict[str, dict[str, object]],
+    raw_aliases: dict[str, set[str]],
 ) -> tuple[list[dict[str, object]], set[str]]:
     if not isinstance(components, list):
         _fail("INVALID_RUNTIME_PLAN_DRAFT")
@@ -199,6 +261,7 @@ def _normalize_components(
             component.get("contract_field_refs"),
             prefix=prefix,
             field_index=field_index,
+            raw_aliases=raw_aliases,
         )
         identity = (name, expectation, tuple(refs))
         if identity in identities:
@@ -231,6 +294,7 @@ def _normalize_assertions(
     item: dict[str, object],
     prefix: str,
     field_index: dict[str, dict[str, object]],
+    raw_aliases: dict[str, set[str]],
     seed_index: dict[str, dict[str, object]],
 ) -> tuple[list[dict[str, object]], set[str]]:
     if not isinstance(assertions, list):
@@ -251,6 +315,7 @@ def _normalize_assertions(
             assertion.get("contract_field_refs"),
             prefix=prefix,
             field_index=field_index,
+            raw_aliases=raw_aliases,
         )
         if assertion_type in {"path_present", "path_absent"}:
             if set(assertion) != {"type", "pointer", "contract_field_refs"}:
@@ -274,6 +339,7 @@ def _normalize_assertions(
                 item_id=item_id,
                 item=item,
                 field_index=field_index,
+                raw_aliases=raw_aliases,
                 seed_index=seed_index,
             )
             if (
@@ -319,6 +385,7 @@ def _normalize_action_case(
     action_id: str,
     action: dict[str, object],
     field_index: dict[str, dict[str, object]],
+    raw_aliases: dict[str, set[str]],
     seed_index: dict[str, dict[str, object]],
 ) -> dict[str, object]:
     if not isinstance(raw_case, dict) or set(raw_case) != {
@@ -328,7 +395,7 @@ def _normalize_action_case(
         "fixture_requirements",
     }:
         _fail("INVALID_RUNTIME_PLAN_DRAFT")
-    prefix = f"actions/{action_id}/"
+    prefix = _runtime_item_prefix("actions", action_id)
     result = raw_case.get("result_expectation")
     if not isinstance(result, dict) or set(result) != {
         "result_class",
@@ -339,12 +406,16 @@ def _normalize_action_case(
     if result_class not in _RESULT_CLASSES:
         _fail("INVALID_RESULT_EXPECTATION")
     result_refs = _normalize_refs(
-        result.get("contract_field_refs"), prefix=prefix, field_index=field_index
+        result.get("contract_field_refs"),
+        prefix=prefix,
+        field_index=field_index,
+        raw_aliases=raw_aliases,
     )
     components, component_refs = _normalize_components(
         raw_case.get("component_expectations"),
         prefix=prefix,
         field_index=field_index,
+        raw_aliases=raw_aliases,
     )
     assertions, assertion_refs = _normalize_assertions(
         raw_case.get("evidence_assertions"),
@@ -353,6 +424,7 @@ def _normalize_action_case(
         item=action,
         prefix=prefix,
         field_index=field_index,
+        raw_aliases=raw_aliases,
         seed_index=seed_index,
     )
     case = {
@@ -379,6 +451,7 @@ def _normalize_lifecycle_case(
     lifecycle_id: str,
     lifecycle: dict[str, object],
     field_index: dict[str, dict[str, object]],
+    raw_aliases: dict[str, set[str]],
     seed_index: dict[str, dict[str, object]],
 ) -> dict[str, object]:
     if not isinstance(raw_case, dict) or set(raw_case) != {
@@ -388,7 +461,7 @@ def _normalize_lifecycle_case(
         "fixture_requirements",
     }:
         _fail("INVALID_RUNTIME_PLAN_DRAFT")
-    prefix = f"lifecycles/{lifecycle_id}/"
+    prefix = _runtime_item_prefix("lifecycles", lifecycle_id)
     transition = raw_case.get("transition_expectation")
     if not isinstance(transition, dict) or set(transition) != {
         "from_state_source",
@@ -400,6 +473,7 @@ def _normalize_lifecycle_case(
         transition.get("contract_field_refs"),
         prefix=prefix,
         field_index=field_index,
+        raw_aliases=raw_aliases,
     )
     from_source = _normalize_expected_source(
         transition.get("from_state_source"),
@@ -407,6 +481,7 @@ def _normalize_lifecycle_case(
         item_id=lifecycle_id,
         item=lifecycle,
         field_index=field_index,
+        raw_aliases=raw_aliases,
         seed_index=seed_index,
         contract_only=True,
     )
@@ -416,9 +491,15 @@ def _normalize_lifecycle_case(
         item_id=lifecycle_id,
         item=lifecycle,
         field_index=field_index,
+        raw_aliases=raw_aliases,
         seed_index=seed_index,
         contract_only=True,
     )
+    if (
+        from_source["contract_field_path"] != f"{prefix}current_states"
+        or to_source["contract_field_path"] != f"{prefix}allowed_transitions"
+    ):
+        _fail("INVALID_TRANSITION_EXPECTATION")
     if (
         from_source["contract_field_path"] not in refs
         or to_source["contract_field_path"] not in refs
@@ -428,6 +509,7 @@ def _normalize_lifecycle_case(
         raw_case.get("component_expectations"),
         prefix=prefix,
         field_index=field_index,
+        raw_aliases=raw_aliases,
     )
     assertions, assertion_refs = _normalize_assertions(
         raw_case.get("evidence_assertions"),
@@ -436,6 +518,7 @@ def _normalize_lifecycle_case(
         item=lifecycle,
         prefix=prefix,
         field_index=field_index,
+        raw_aliases=raw_aliases,
         seed_index=seed_index,
     )
     case = {
@@ -514,6 +597,7 @@ def _normalize_collection(
     id_key: str,
     contract_items: list[dict[str, object]],
     field_index: dict[str, dict[str, object]],
+    raw_aliases: dict[str, set[str]],
     seed_index: dict[str, dict[str, object]],
 ) -> list[dict[str, object]]:
     if not isinstance(raw_collection, list):
@@ -538,6 +622,7 @@ def _normalize_collection(
                     action_id=item_id,
                     action=contract_index[item_id],
                     field_index=field_index,
+                    raw_aliases=raw_aliases,
                     seed_index=seed_index,
                 )
                 for case in raw_cases
@@ -549,6 +634,7 @@ def _normalize_collection(
                     lifecycle_id=item_id,
                     lifecycle=contract_index[item_id],
                     field_index=field_index,
+                    raw_aliases=raw_aliases,
                     seed_index=seed_index,
                 )
                 for case in raw_cases
@@ -581,11 +667,19 @@ def _critical_field_refs(
     for action in contract["actions"]:
         for field_name, classification in profile["action_fields"].items():
             if classification == "RUNTIME_CRITICAL":
-                refs.append(f"actions/{action['action_id']}/{field_name}")
+                refs.append(
+                    _runtime_field_ref("actions", action["action_id"], field_name)
+                )
     for lifecycle in contract["lifecycles"]:
         for field_name, classification in profile["lifecycle_fields"].items():
             if classification == "RUNTIME_CRITICAL":
-                refs.append(f"lifecycles/{lifecycle['lifecycle_id']}/{field_name}")
+                refs.append(
+                    _runtime_field_ref(
+                        "lifecycles",
+                        lifecycle["lifecycle_id"],
+                        field_name,
+                    )
+                )
     return sorted(refs)
 
 
@@ -620,16 +714,25 @@ def materialize_runtime_plan(
     if not isinstance(draft, dict) or set(draft) != {"actions", "lifecycles"}:
         _fail("INVALID_RUNTIME_PLAN_DRAFT")
     profile = load_runtime_responsibility_profile()
-    field_index, _owners, seed_index = _contract_indexes(contract)
+    field_index, _owners, seed_index, raw_aliases = _contract_indexes(contract)
     commitments, confirmed_paths = _review_state(
         contract, review_package, review_output
     )
+    confirmed_paths = {
+        _canonical_field_ref(
+            path,
+            field_index=field_index,
+            raw_aliases=raw_aliases,
+        )
+        for path in confirmed_paths
+    }
     actions = _normalize_collection(
         draft["actions"],
         collection="actions",
         id_key="action_id",
         contract_items=contract["actions"],
         field_index=field_index,
+        raw_aliases=raw_aliases,
         seed_index=seed_index,
     )
     lifecycles = _normalize_collection(
@@ -638,6 +741,7 @@ def materialize_runtime_plan(
         id_key="lifecycle_id",
         contract_items=contract["lifecycles"],
         field_index=field_index,
+        raw_aliases=raw_aliases,
         seed_index=seed_index,
     )
     test_ids = [

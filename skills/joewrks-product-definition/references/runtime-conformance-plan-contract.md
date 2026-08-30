@@ -8,6 +8,8 @@
 
 Every materialized plan binds the semantic contract hash, approved definition digest, product slug, frozen runtime-responsibility/1.0 digest, planner identity, and supplied review artifact identities. `review_commitments.output_hash` is the canonical SHA-256 of the complete validated review output, including that output's own normative `output_hash` field. Review completion never changes `reliability_status = NOT_MEASURED`.
 
+Runtime field references preserve every valid action-conformance/2.1 identifier by UTF-8 percent-encoding its item-ID path segment. Published plans use only this canonical, unambiguous form; slash, whitespace, percent, and non-ASCII identifier bytes are encoded as uppercase `%HH` triplets. Draft references are normalized against the exact supplied contract and never change the source action or lifecycle identity.
+
 ## Frozen coverage profile
 
 The profile classifies action fields as `RUNTIME_CRITICAL`, `NON_RUNTIME_PRESENTATION`, or `ASSURANCE_ONLY`. Every lifecycle semantic field is `RUNTIME_CRITICAL`. The JSON profile is exact, digest-bound, and not caller-overridable.
@@ -21,7 +23,7 @@ Product-specific equality values must use either:
 - `CONTRACT_DERIVED`, with an exact same-item semantic field path and resolvable pointer; or
 - `VERIFICATION_BASIS`, with an exact seed committed by the same action's verification basis and present in the consumed contract inventory.
 
-Lifecycle from/to state sources are always `CONTRACT_DERIVED`. Direct expected values are forbidden. Fixture requirements contain category names only: `OPAQUE_ID`, `ATTEMPT_ID`, `ORDERING_TIMESTAMP`, or `REVISION_INSTANCE`. They carry no values and cannot define states, thresholds, durations, permissions, actors, or policy.
+Lifecycle from/to state sources are always `CONTRACT_DERIVED`: `from_state_source` is exactly the owning lifecycle's `current_states` field and `to_state_source` is exactly its `allowed_transitions` field. Direct expected values are forbidden. Fixture requirements contain category names only: `OPAQUE_ID`, `ATTEMPT_ID`, `ORDERING_TIMESTAMP`, or `REVISION_INSTANCE`. They carry no values and cannot define states, thresholds, durations, permissions, actors, or policy.
 
 ## Review gate and identity
 

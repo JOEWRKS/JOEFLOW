@@ -45,7 +45,7 @@
   "$defs": {
     "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "nullableHash": {"oneOf": [{"$ref": "#/$defs/hash"}, {"type": "null"}]},
-    "fieldRef": {"type": "string", "pattern": "^(actions|lifecycles)/[^/\\s]+/[^/\\s]+$"},
+    "fieldRef": {"type": "string", "pattern": "^(actions|lifecycles)/(?:[A-Za-z0-9._~-]|%[0-9A-F]{2})+/[^/\\s]+$"},
     "fieldRefs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/fieldRef"}},
     "fieldRefsMaybeEmpty": {"type": "array", "items": {"$ref": "#/$defs/fieldRef"}},
     "reviewCommitments": {
@@ -76,6 +76,26 @@
       "properties": {
         "source": {"const": "CONTRACT_DERIVED"},
         "contract_field_path": {"$ref": "#/$defs/fieldRef"},
+        "pointer": {"type": "string", "pattern": "^/"}
+      }
+    },
+    "lifecycleCurrentStatesSource": {
+      "type": "object",
+      "required": ["source", "contract_field_path", "pointer"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {"const": "CONTRACT_DERIVED"},
+        "contract_field_path": {"type": "string", "pattern": "^lifecycles/(?:[A-Za-z0-9._~-]|%[0-9A-F]{2})+/current_states$"},
+        "pointer": {"type": "string", "pattern": "^/"}
+      }
+    },
+    "lifecycleAllowedTransitionsSource": {
+      "type": "object",
+      "required": ["source", "contract_field_path", "pointer"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {"const": "CONTRACT_DERIVED"},
+        "contract_field_path": {"type": "string", "pattern": "^lifecycles/(?:[A-Za-z0-9._~-]|%[0-9A-F]{2})+/allowed_transitions$"},
         "pointer": {"type": "string", "pattern": "^/"}
       }
     },
@@ -143,8 +163,8 @@
       "required": ["from_state_source", "to_state_source", "contract_field_refs"],
       "additionalProperties": false,
       "properties": {
-        "from_state_source": {"$ref": "#/$defs/contractDerivedSource"},
-        "to_state_source": {"$ref": "#/$defs/contractDerivedSource"},
+        "from_state_source": {"$ref": "#/$defs/lifecycleCurrentStatesSource"},
+        "to_state_source": {"$ref": "#/$defs/lifecycleAllowedTransitionsSource"},
         "contract_field_refs": {"$ref": "#/$defs/fieldRefs"}
       }
     },

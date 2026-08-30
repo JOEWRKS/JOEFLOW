@@ -13,9 +13,17 @@ for path in (PACKAGE_ROOT, SCRIPTS):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from downstream.schema_validation import validate_instance  # noqa: E402
+from downstream.schema_validation import (  # noqa: E402
+    SchemaValidationError,
+    validate_instance,
+)
 from downstream_v2.authority import sha256_json  # noqa: E402
 from downstream_v21.compiler import compile_handoff_definition_v21  # noqa: E402
+from downstream_v21.contracts import (  # noqa: E402
+    artifact_hash_v21,
+    semantic_contract_hash_v21,
+    validate_action_contract_v21,
+)
 from downstream_v21.semantic_review import (  # noqa: E402
     build_semantic_review_package_v21,
 )
@@ -529,6 +537,41 @@ class RuntimePlanV21Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "PRODUCT_LITERAL_FORBIDDEN"):
             self.materialize(draft=draft)
 
+    def test_lifecycle_from_source_must_be_exact_current_states_field(self):
+        draft = complete_runtime_draft(self.contract)
+        transition = draft["lifecycles"][0]["cases"][0]["transition_expectation"]
+        wrong = "lifecycles/request-lifecycle/forbidden_transitions"
+        transition["from_state_source"]["contract_field_path"] = wrong
+        transition["contract_field_refs"].append(wrong)
+        with self.assertRaisesRegex(ValueError, "INVALID_TRANSITION_EXPECTATION"):
+            self.materialize(draft=draft)
+
+    def test_lifecycle_to_source_must_be_exact_allowed_transitions_field(self):
+        draft = complete_runtime_draft(self.contract)
+        transition = draft["lifecycles"][0]["cases"][0]["transition_expectation"]
+        transition["to_state_source"]["contract_field_path"] = (
+            "lifecycles/request-lifecycle/current_states"
+        )
+        with self.assertRaisesRegex(ValueError, "INVALID_TRANSITION_EXPECTATION"):
+            self.materialize(draft=draft)
+
+    def test_schema_rejects_wrong_lifecycle_transition_source_field(self):
+        plan = self.materialize()
+        transition = plan["lifecycles"][0]["cases"][0]["transition_expectation"]
+        transition["from_state_source"]["contract_field_path"] = (
+            "lifecycles/request-lifecycle/forbidden_transitions"
+        )
+        schema = json.loads(
+            (
+                PACKAGE_ROOT
+                / "downstream_v21"
+                / "schemas"
+                / "runtime-conformance-plan.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        with self.assertRaises(SchemaValidationError):
+            validate_instance(plan, schema)
+
     def test_lifecycle_bare_ref_does_not_count_as_coverage(self):
         draft = complete_runtime_draft(self.contract)
         case = draft["lifecycles"][0]["cases"][0]
@@ -570,6 +613,70 @@ class RuntimePlanV21Tests(unittest.TestCase):
         ]
         with self.assertRaisesRegex(ValueError, "INVALID_FIXTURE_REQUIREMENT"):
             self.materialize(draft=draft)
+
+    def test_valid_contract_identifiers_materialize_schema_valid_runtime_refs(self):
+        contract = copy.deepcopy(self.contract)
+        old_action_id = contract["actions"][0]["action_id"]
+        old_lifecycle_id = contract["lifecycles"][0]["lifecycle_id"]
+        new_action_id = "submit/request with space"
+        new_lifecycle_id = "request/lifecycle with space"
+        contract["actions"][0]["action_id"] = new_action_id
+        contract["lifecycles"][0]["lifecycle_id"] = new_lifecycle_id
+        for inventory_name in (
+            "direct_authority_fields",
+            "machine_derived_fields",
+            "review_required_fields",
+        ):
+            contract["semantic_debt"][inventory_name] = [
+                path.replace(
+                    f"actions/{old_action_id}/",
+                    f"actions/{new_action_id}/",
+                ).replace(
+                    f"lifecycles/{old_lifecycle_id}/",
+                    f"lifecycles/{new_lifecycle_id}/",
+                )
+                for path in contract["semantic_debt"][inventory_name]
+            ]
+        contract["semantic_contract_hash"] = semantic_contract_hash_v21(contract)
+        contract["artifact_hash"] = artifact_hash_v21(contract)
+        self.assertEqual(validate_action_contract_v21(contract), [])
+
+        draft = complete_runtime_draft(contract)
+        original_contract = copy.deepcopy(contract)
+        original_draft = copy.deepcopy(draft)
+        plan = runtime_plan.materialize_runtime_plan(contract, draft)
+        self.assertEqual(contract, original_contract)
+        self.assertEqual(draft, original_draft)
+        self.assertEqual(runtime_plan.validate_runtime_plan(plan, contract), [])
+        schema = json.loads(
+            (
+                PACKAGE_ROOT
+                / "downstream_v21"
+                / "schemas"
+                / "runtime-conformance-plan.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        try:
+            validate_instance(plan, schema)
+        except SchemaValidationError as error:
+            self.fail(f"runtime validator and published schema disagree: {error}")
+
+        refs = plan["coverage_summary"]["runtime_critical_field_refs"]
+        self.assertTrue(any("submit%2Frequest%20with%20space" in ref for ref in refs))
+        self.assertTrue(
+            any("request%2Flifecycle%20with%20space" in ref for ref in refs)
+        )
+        self.assertFalse(any(" " in ref for ref in refs))
+        transition = plan["lifecycles"][0]["cases"][0]["transition_expectation"]
+        encoded_lifecycle = "request%2Flifecycle%20with%20space"
+        self.assertEqual(
+            transition["from_state_source"]["contract_field_path"],
+            f"lifecycles/{encoded_lifecycle}/current_states",
+        )
+        self.assertEqual(
+            transition["to_state_source"]["contract_field_path"],
+            f"lifecycles/{encoded_lifecycle}/allowed_transitions",
+        )
 
     def test_validate_runtime_plan_rejects_identity_or_case_weakening(self):
         plan = self.materialize()
