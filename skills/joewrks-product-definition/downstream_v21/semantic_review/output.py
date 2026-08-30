@@ -1,11 +1,21 @@
 """Read-only semantic-review/2.1 output validation and completion."""
 
+import copy
 import re
 
 from downstream_v2.authority import sha256_json
+from downstream_v2.reentry import build_reentry_events
 
+from ..contracts import validate_action_contract_v21
+from ..derivation import SemanticAuthorityGap
+from ..gaps import semantic_gap_record
 from ..identity import SEMANTIC_REVIEW_VERSION
-from .package import RELIABILITY_STATUS, validate_semantic_review_package_v21
+from ..responsibility import load_responsibility_profile_v21
+from .package import (
+    RELIABILITY_STATUS,
+    build_semantic_review_package_v21,
+    validate_semantic_review_package_v21,
+)
 
 
 _HASH = re.compile(r"^[0-9a-f]{64}$")
@@ -145,7 +155,89 @@ def semantic_review_completion_v21(
     return "REVIEW_OUTPUT_RECORDED"
 
 
+def _reentry_definition(contract: dict[str, object]) -> dict[str, object]:
+    """Project only immutable owner identities needed by the event builder."""
+    return {
+        "actions": [
+            {
+                "action_id": item["action_id"],
+                "authority_scope_refs": list(item["authority_scope_refs"]),
+            }
+            for item in contract["actions"]
+        ],
+        "lifecycles": [
+            {
+                "lifecycle_id": item["lifecycle_id"],
+                "authority_scope_refs": list(item["authority_scope_refs"]),
+            }
+            for item in contract["lifecycles"]
+        ],
+    }
+
+
+def review_results_to_reentry_events_v21(
+    contract: dict[str, object],
+    package: dict[str, object],
+    output: dict[str, object],
+) -> list[dict[str, object]]:
+    """Route valid non-confirmed results to read-only affected-scope events."""
+    if validate_action_contract_v21(contract):
+        raise ValueError("INVALID_ACTION_CONTRACT_V21")
+    expected_package = build_semantic_review_package_v21(contract)
+    if expected_package is None or package != expected_package:
+        raise ValueError("INVALID_SEMANTIC_REVIEW_PACKAGE_V21")
+    if validate_semantic_review_output_v21(package, output):
+        raise ValueError("INVALID_SEMANTIC_REVIEW_OUTPUT_V21")
+
+    obligations = {
+        item["obligation_id"]: item for item in package["review_obligations"]
+    }
+    profile = load_responsibility_profile_v21()
+    gaps = []
+    for result in output["results"]:
+        if result["verdict"] == "CONFIRMED_INTERPRETATION":
+            continue
+        obligation = obligations[result["obligation_id"]]
+        collection, item_id, field_name = obligation["field_path"].split("/", 2)
+        id_key = "action_id" if collection == "actions" else "lifecycle_id"
+        item = next(
+            item for item in contract[collection] if item[id_key] == item_id
+        )
+        policy_group = (
+            "action_fields" if collection == "actions" else "lifecycle_fields"
+        )
+        policy = profile[policy_group][field_name]
+        gap_type = (
+            "CONTRACT_CONFLICT"
+            if result["verdict"] == "REJECTED_INTERPRETATION"
+            else "AMBIGUITY_FOUND"
+        )
+        detail = {
+            "kind": "UNRESOLVED",
+            "gap_type": gap_type,
+            "description": f"Semantic Review recorded: {result['rationale'].strip()}",
+            "required_authority_class": policy["required_authority_class"],
+            "evidence_refs": list(obligation["source_seed_refs"]),
+        }
+        gaps.append(
+            semantic_gap_record(
+                field_path=obligation["field_path"],
+                spec={"source_seed_refs": list(obligation["source_seed_refs"])},
+                error=SemanticAuthorityGap(detail),
+                policy=policy,
+                authority_scope_refs=list(item["authority_scope_refs"]),
+            )
+        )
+    return build_reentry_events(
+        source_authority=copy.deepcopy(contract["source_authority"]),
+        definition=_reentry_definition(contract),
+        gaps=gaps,
+        source_contract_hash=contract["semantic_contract_hash"],
+    )
+
+
 __all__ = [
+    "review_results_to_reentry_events_v21",
     "semantic_review_completion_v21",
     "validate_semantic_review_output_v21",
 ]

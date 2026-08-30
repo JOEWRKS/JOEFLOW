@@ -27,6 +27,7 @@ from downstream_v21.identity import SEMANTIC_REVIEW_VERSION  # noqa: E402
 from downstream_v21.semantic_review import (  # noqa: E402
     RELIABILITY_STATUS,
     build_semantic_review_package_v21,
+    review_results_to_reentry_events_v21,
     semantic_review_completion_v21,
     validate_semantic_review_output_v21,
 )
@@ -220,6 +221,56 @@ class SemanticReviewV21Tests(unittest.TestCase):
             semantic_review_completion_v21(package, rejected),
             "REENTRY_REQUIRED",
         )
+
+    def test_review_21_nonconfirmed_verdicts_route_read_only_reentry_data(self):
+        package = self.package()
+        original_contract = copy.deepcopy(self.review_contract)
+        original_package = copy.deepcopy(package)
+        for verdict, event_type in (
+            ("REJECTED_INTERPRETATION", "CONTRACT_CONFLICT"),
+            ("UPSTREAM_AUTHORITY_GAP", "AMBIGUITY_FOUND"),
+        ):
+            with self.subTest(verdict=verdict):
+                output = reviewed_output(package, verdict=verdict)
+                original_output = copy.deepcopy(output)
+                events = review_results_to_reentry_events_v21(
+                    self.review_contract,
+                    package,
+                    output,
+                )
+                self.assertEqual(len(events), 2)
+                for event in events:
+                    self.assertEqual(event["event_type"], event_type)
+                    self.assertEqual(
+                        event["source_contract_hash"],
+                        self.review_contract["semantic_contract_hash"],
+                    )
+                    self.assertEqual(
+                        event["source_definition_digest"],
+                        self.review_contract["source_authority"][
+                            "approved_definition_digest"
+                        ],
+                    )
+                    self.assertEqual(
+                        event["affected_action_ids"],
+                        ["submit-request"],
+                    )
+                    self.assertEqual(event["affected_lifecycle_ids"], [])
+                    self.assertEqual(
+                        event["halt_scope"],
+                        {
+                            "mode": "AFFECTED_ONLY",
+                            "action_ids": ["submit-request"],
+                            "lifecycle_ids": [],
+                        },
+                    )
+                    self.assertEqual(
+                        event["recommended_action"],
+                        "REENTER_PRODUCT_DEFINITION",
+                    )
+                self.assertEqual(output, original_output)
+        self.assertEqual(self.review_contract, original_contract)
+        self.assertEqual(package, original_package)
 
 
 if __name__ == "__main__":
