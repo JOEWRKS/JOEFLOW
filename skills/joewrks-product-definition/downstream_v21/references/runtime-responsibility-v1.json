@@ -1,0 +1,42 @@
+{
+  "profile_id": "joewrks.runtime-responsibility/1.0",
+  "action_fields": {
+    "actor": "RUNTIME_CRITICAL",
+    "authentication": "RUNTIME_CRITICAL",
+    "relationship_predicate": "RUNTIME_CRITICAL",
+    "object_binding": "RUNTIME_CRITICAL",
+    "concurrency": "RUNTIME_CRITICAL",
+    "preconditions": "RUNTIME_CRITICAL",
+    "allowed_current_states": "RUNTIME_CRITICAL",
+    "forbidden_states": "RUNTIME_CRITICAL",
+    "input_invariants": "RUNTIME_CRITICAL",
+    "command": "RUNTIME_CRITICAL",
+    "expected_domain_mutation": "RUNTIME_CRITICAL",
+    "forbidden_mutations": "RUNTIME_CRITICAL",
+    "version_result": "RUNTIME_CRITICAL",
+    "history_result": "RUNTIME_CRITICAL",
+    "business_side_effects": "RUNTIME_CRITICAL",
+    "delivery_effects": "RUNTIME_CRITICAL",
+    "idempotency": "RUNTIME_CRITICAL",
+    "rejection": "RUNTIME_CRITICAL",
+    "recovery": "RUNTIME_CRITICAL",
+    "visible_success": "NON_RUNTIME_PRESENTATION",
+    "visible_error": "NON_RUNTIME_PRESENTATION",
+    "superseded_rules": "RUNTIME_CRITICAL",
+    "trace": "ASSURANCE_ONLY"
+  },
+  "lifecycle_fields": {
+    "current_states": "RUNTIME_CRITICAL",
+    "allowed_transitions": "RUNTIME_CRITICAL",
+    "forbidden_transitions": "RUNTIME_CRITICAL",
+    "boundary_conditions": "RUNTIME_CRITICAL",
+    "reversibility": "RUNTIME_CRITICAL",
+    "reversal_window": "RUNTIME_CRITICAL",
+    "object_outcome": "RUNTIME_CRITICAL",
+    "required_reason": "RUNTIME_CRITICAL",
+    "required_confirmation": "RUNTIME_CRITICAL",
+    "required_evidence": "RUNTIME_CRITICAL",
+    "authority": "RUNTIME_CRITICAL",
+    "history_preservation": "RUNTIME_CRITICAL"
+  }
+}
