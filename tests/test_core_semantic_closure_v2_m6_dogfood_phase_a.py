@@ -570,75 +570,29 @@ class CoreSemanticClosureV2M6DogfoodPhaseATest(unittest.TestCase):
                 self.assertTrue(unknown["origin"]["source_path"])
 
 
-class CoreSemanticClosureV2M6DogfoodTrackBTest(unittest.TestCase):
-    def test_exact_field_level_semantic_correspondence_and_mutations(self):
-        self.assertTrue(STATE_PATH.is_file(), "approved decisions must recreate Track B")
-        state = load_json(STATE_PATH)
-        self.assertEqual(semantic_correspondence_errors(state), [])
+class FinalReviewConcurrencySafetyStopTest(unittest.TestCase):
+    def test_missing_review_link_concurrency_authority_removes_invalid_checkpoint(self):
+        for path in (
+            STATE_PATH,
+            EVIDENCE_MAP_PATH,
+            MANIFEST_PATH,
+            EVAL_ROOT / "DOGFOOD_RUNBOOK.md",
+        ):
+            self.assertFalse(path.exists(), path)
+        readme = (EVAL_ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("REVIEW_LINK_CONCURRENT_ACTION_AUTHORITY_GAP", readme)
+        self.assertIn("product analytics/telemetry is NOT used", readme)
+        self.assertIn("Loading and Submitting show pending state", readme)
 
-        wrong_pointer = deepcopy(state)
-        loading = screen_coverage(wrong_pointer, "SCR-006")["states"]["loading"]
-        loading["authority_bindings"][0]["pointer"] = "/state_name"
-        loading["authority_bindings"][0]["value_sha256"] = sha256_json("Bounded interaction state")
-        self.assertTrue(semantic_correspondence_errors(wrong_pointer))
-
-        wrong_value = deepcopy(state)
-        index = canonical_record_index(wrong_value)
-        index["STATE-002"][1]["conditions"][0] = "Pending."
-        for screen in wrong_value["ux_coverage"]:
-            for cell in screen["states"].values():
-                for binding in cell["authority_bindings"]:
-                    if binding["record_id"] == "STATE-002" and binding["pointer"] == "/conditions/0":
-                        binding["value_sha256"] = sha256_json("Pending.")
-            for action in screen["actions"]:
-                for cell in action["cells"].values():
-                    for binding in cell["authority_bindings"]:
-                        if binding["record_id"] == "STATE-002" and binding["pointer"] == "/conditions/0":
-                            binding["value_sha256"] = sha256_json("Pending.")
-        self.assertTrue(semantic_correspondence_errors(wrong_value))
-
-    def test_checkpoint_is_ready_unapproved_and_deterministic(self):
-        required = (STATE_PATH, MANIFEST_PATH, EVIDENCE_MAP_PATH, RUNBOOK_PATH)
-        self.assertEqual([path for path in required if not path.is_file()], [])
-        state = load_json(STATE_PATH)
-        manifest = load_json(MANIFEST_PATH)
-        self.assertEqual(state["project"]["definition_status"], "READY_FOR_REVIEW")
-        self.assertEqual(state["approval"], {"status": "UNAPPROVED"})
-        self.assertEqual(state["approval_history"], [])
-        self.assertEqual(validate_state_v2(state), [])
-        self.assertEqual(sum(semantic_readiness_metrics(state).values()), 0)
-        self.assertEqual(build_approval_manifest_for_review(state), manifest)
-        self.assertEqual(definition_digest(state), EXPECTED_DEFINITION_DIGEST)
-        self.assertEqual(approval_manifest_digest(manifest), EXPECTED_MANIFEST_DIGEST)
-        self.assertEqual(len(manifest["added"]), EXPECTED_ADDED_COUNT)
-        self.assertEqual(manifest["changed"], [])
-        self.assertEqual(manifest["superseded"], [])
-        self.assertEqual(manifest["retired"], [])
-        serialized = json.dumps(state, ensure_ascii=False)
-        for forbidden in ("approved_by", "approved_at", "timestamp"):
-            self.assertNotIn(forbidden, serialized)
-
-        evidence = {item["id"]: item for item in state["evidence"]}
-        self.assertEqual(evidence["EVD-008"]["claim"], ANALYTICS_DECISION)
-        self.assertEqual(evidence["EVD-015"]["claim"], INTERACTION_DECISION)
-        evidence_map = load_json(EVIDENCE_MAP_PATH)["record_evidence"]
-        current_ids = {
-            record["id"]
-            for records in state["objects"].values()
-            for record in records
-            if record.get("status") == "CURRENT"
-        }
-        all_object_ids = {
-            record["id"] for records in state["objects"].values() for record in records
-        }
-        self.assertLessEqual(current_ids, set(evidence_map))
-        self.assertLessEqual(set(evidence_map), all_object_ids)
-        for record_id, expected_refs in EXPECTED_CONTINUATION_EVIDENCE.items():
-            self.assertEqual(evidence_map[record_id], expected_refs)
-        docs = README_PATH.read_text(encoding="utf-8") + RUNBOOK_PATH.read_text(encoding="utf-8")
-        self.assertIn("READY_FOR_REVIEW", docs)
-        self.assertIn("UNAPPROVED", docs)
-        self.assertNotIn("NEEDS_CONTEXT", docs)
+    def test_safety_stop_records_exact_resolved_and_unresolved_authority_boundaries(self):
+        readme = README_PATH.read_text(encoding="utf-8")
+        self.assertIn("`RULE-084`", readme)
+        self.assertIn("`RULE-095` and `RULE-096`", readme)
+        self.assertIn("must bind exact `RULE-110`", readme)
+        self.assertIn("not Reviewer-link `RULE-027`", readme)
+        self.assertIn("classify", readme)
+        self.assertIn("security risk", readme)
+        self.assertIn("exact frozen Git tree/blob", readme)
 
 
 if __name__ == "__main__":
