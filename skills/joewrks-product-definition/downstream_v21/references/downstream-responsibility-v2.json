@@ -1,0 +1,825 @@
+{
+  "profile_id": "joewrks.downstream-responsibility/2.0",
+  "action_fields": {
+    "actor": {
+      "expectation": "DIRECT_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "actor"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "collect_exact"
+      ],
+      "collection_semantics": "MEMBERSHIP_SET"
+    },
+    "authentication": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "permission"
+        },
+        {
+          "scope": "CORE",
+          "axis": "security"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-AUTH-1",
+          "axis": "login"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-AUTH-1",
+          "axis": "session_expiry"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-AUTH-1",
+          "axis": "session_renewal"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "relationship_predicate": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "permission"
+        },
+        {
+          "scope": "CORE",
+          "axis": "boundary"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-PERMISSION-1",
+          "axis": "role"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-PERMISSION-1",
+          "axis": "resource_ownership"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "object_binding": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "data"
+        },
+        {
+          "scope": "CORE",
+          "axis": "state"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "concurrency": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "alternative_path"
+        },
+        {
+          "scope": "CORE",
+          "axis": "error"
+        },
+        {
+          "scope": "CORE",
+          "axis": "recovery"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-ASYNC-1",
+          "axis": "idempotency"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-ASYNC-1",
+          "axis": "duplicate_execution"
+        },
+        {
+          "scope": "UX_ACTION",
+          "axis": "duplicate_concurrent_action"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "preconditions": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "precondition"
+        },
+        {
+          "scope": "UX_ACTION",
+          "axis": "precondition"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "allowed_current_states": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "state"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "forbidden_states": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "state"
+        },
+        {
+          "scope": "CORE",
+          "axis": "boundary"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "input_invariants": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "validation"
+        },
+        {
+          "scope": "CORE",
+          "axis": "data"
+        },
+        {
+          "scope": "UX_ACTION",
+          "axis": "input"
+        },
+        {
+          "scope": "UX_ACTION",
+          "axis": "validation"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select",
+        "collect_exact"
+      ],
+      "collection_semantics": "CONJUNCTIVE_SET"
+    },
+    "command": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "happy_path"
+        },
+        {
+          "scope": "CORE",
+          "axis": "entry_point"
+        },
+        {
+          "scope": "UX_ACTION",
+          "axis": "submit"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "expected_domain_mutation": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "side_effect"
+        },
+        {
+          "scope": "CORE",
+          "axis": "data"
+        },
+        {
+          "scope": "CORE",
+          "axis": "persistence"
+        },
+        {
+          "scope": "UX_ACTION",
+          "axis": "data_mutation"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "forbidden_mutations": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "boundary"
+        },
+        {
+          "scope": "CORE",
+          "axis": "side_effect"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "version_result": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "state"
+        },
+        {
+          "scope": "CORE",
+          "axis": "persistence"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "history_result": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "persistence"
+        },
+        {
+          "scope": "CORE",
+          "axis": "data"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "business_side_effects": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "side_effect"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "delivery_effects": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "notification"
+        },
+        {
+          "scope": "CORE",
+          "axis": "side_effect"
+        },
+        {
+          "scope": "UX_ACTION",
+          "axis": "notification"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "idempotency": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-ASYNC-1",
+          "axis": "idempotency"
+        },
+        {
+          "scope": "CORE",
+          "axis": "recovery"
+        },
+        {
+          "scope": "CORE",
+          "axis": "side_effect"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "rejection": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "error"
+        },
+        {
+          "scope": "CORE",
+          "axis": "validation"
+        },
+        {
+          "scope": "CORE",
+          "axis": "permission"
+        },
+        {
+          "scope": "UX_ACTION",
+          "axis": "failure"
+        },
+        {
+          "scope": "UX_ACTION",
+          "axis": "permission"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "recovery": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "recovery"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-ASYNC-1",
+          "axis": "retry"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-ASYNC-1",
+          "axis": "reconciliation"
+        },
+        {
+          "scope": "UX_ACTION",
+          "axis": "retry"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "visible_success": {
+      "expectation": "REVIEW_PERMITTED",
+      "required_authority_class": "PREFERENCE",
+      "allowed_seed_selectors": [
+        {
+          "scope": "UX_STATE",
+          "axis": "success"
+        },
+        {
+          "scope": "UX_STATE",
+          "axis": "completed"
+        },
+        {
+          "scope": "UX_ACTION",
+          "axis": "success"
+        },
+        {
+          "scope": "CORE",
+          "axis": "acceptance"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select",
+        "REVIEW_REQUIRED"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "visible_error": {
+      "expectation": "REVIEW_PERMITTED",
+      "required_authority_class": "PREFERENCE",
+      "allowed_seed_selectors": [
+        {
+          "scope": "UX_STATE",
+          "axis": "error"
+        },
+        {
+          "scope": "UX_ACTION",
+          "axis": "failure"
+        },
+        {
+          "scope": "CORE",
+          "axis": "error"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select",
+        "REVIEW_REQUIRED"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "superseded_rules": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "boundary"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "trace": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "goal"
+        },
+        {
+          "scope": "CORE",
+          "axis": "acceptance"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    }
+  },
+  "lifecycle_fields": {
+    "current_states": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "state"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "allowed_transitions": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "state"
+        },
+        {
+          "scope": "CORE",
+          "axis": "happy_path"
+        },
+        {
+          "scope": "CORE",
+          "axis": "alternative_path"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "forbidden_transitions": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "state"
+        },
+        {
+          "scope": "CORE",
+          "axis": "boundary"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "boundary_conditions": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "boundary"
+        },
+        {
+          "scope": "CORE",
+          "axis": "precondition"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "reversibility": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "recovery"
+        },
+        {
+          "scope": "CORE",
+          "axis": "boundary"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-DESTRUCTIVE-ACTION-1",
+          "axis": "undo"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-DESTRUCTIVE-ACTION-1",
+          "axis": "irreversible_boundary"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "reversal_window": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-DESTRUCTIVE-ACTION-1",
+          "axis": "grace_period"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-DESTRUCTIVE-ACTION-1",
+          "axis": "undo"
+        },
+        {
+          "scope": "CORE",
+          "axis": "boundary"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "object_outcome": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "state"
+        },
+        {
+          "scope": "CORE",
+          "axis": "side_effect"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "required_reason": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "validation"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-DESTRUCTIVE-ACTION-1",
+          "axis": "reason"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "required_confirmation": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "boundary"
+        },
+        {
+          "scope": "CORE",
+          "axis": "permission"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-DESTRUCTIVE-ACTION-1",
+          "axis": "confirmation"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "required_evidence": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "validation"
+        },
+        {
+          "scope": "CORE",
+          "axis": "data"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    },
+    "authority": {
+      "expectation": "DIRECT_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "actor"
+        },
+        {
+          "scope": "CORE",
+          "axis": "permission"
+        },
+        {
+          "scope": "GRILL",
+          "pack_id": "GRILL-PERMISSION-1",
+          "axis": "role"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "collect_exact"
+      ],
+      "collection_semantics": "MEMBERSHIP_SET"
+    },
+    "history_preservation": {
+      "expectation": "DETERMINISTIC_REQUIRED",
+      "required_authority_class": "INTENT",
+      "allowed_seed_selectors": [
+        {
+          "scope": "CORE",
+          "axis": "persistence"
+        },
+        {
+          "scope": "CORE",
+          "axis": "data"
+        }
+      ],
+      "allowed_derivations": [
+        "DIRECT_AUTHORITY",
+        "extract",
+        "select"
+      ],
+      "collection_semantics": "NONE"
+    }
+  }
+}
