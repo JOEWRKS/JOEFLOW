@@ -289,10 +289,9 @@ def runtime_evidence_inventory(
     plan: dict[str, object],
 ) -> dict[str, object]:
     """Report exact planned/observed coverage without judging semantic outcomes."""
-    required_ids = _plan_test_ids(plan)
     records = bundle.get("records") if isinstance(bundle, dict) else None
-    if not isinstance(records, list):
-        raise ValueError("INVALID_RUNTIME_EVIDENCE_BUNDLE")
+    _require_frozen_records(records)
+    required_ids = _plan_test_ids(plan)
     observed_ids = sorted(
         record["test_id"]
         for record in records

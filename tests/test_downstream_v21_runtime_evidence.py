@@ -265,6 +265,19 @@ class RuntimeEvidenceV21Tests(unittest.TestCase):
             )
         )
 
+    def test_inventory_requires_execution_v1_record_before_reading_test_id(self):
+        bundle = self.build()
+        del bundle["records"][0]["before"]["delivery_effects"]
+        original_bundle = copy.deepcopy(bundle)
+        original_plan = copy.deepcopy(self.plan)
+        with self.assertRaisesRegex(
+            ProtocolError,
+            "before snapshot is missing: delivery_effects",
+        ):
+            runtime_evidence.runtime_evidence_inventory(bundle, self.plan)
+        self.assertEqual(bundle, original_bundle)
+        self.assertEqual(self.plan, original_plan)
+
     def test_unexpected_test_id_is_reported(self):
         bundle = self.build()
         replaced_id = bundle["records"][0]["test_id"]
