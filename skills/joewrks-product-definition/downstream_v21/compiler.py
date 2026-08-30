@@ -28,6 +28,7 @@ from .derivation import (
     SemanticAuthorityGap,
     derive_semantic_field_v21,
 )
+from .field_refs import canonical_field_ref
 from .gaps import (
     expressiveness_gap_record,
     route_compilation_gaps,
@@ -252,7 +253,7 @@ def _compile_items(
                 )
         fields = {}
         for field_name in sorted(profile[profile_key]):
-            path = f"{collection_name}/{item_id}/{field_name}"
+            path = canonical_field_ref(collection_name, item_id, field_name)
             spec = item["fields"][field_name]
             policy = profile[profile_key][field_name]
             try:

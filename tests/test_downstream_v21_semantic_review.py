@@ -32,6 +32,7 @@ from downstream_v21.contracts import (  # noqa: E402
     validate_action_contract_v21,
 )
 from downstream_v21.identity import SEMANTIC_REVIEW_VERSION  # noqa: E402
+from downstream_v21.field_refs import canonical_field_ref  # noqa: E402
 from downstream_v21.semantic_review import (  # noqa: E402
     RELIABILITY_STATUS,
     build_semantic_review_package_v21,
@@ -122,7 +123,7 @@ def contract_with_action_ids(contract, action_ids):
             path for path in original_paths if not path.startswith("actions/")
         ]
         rebound_paths = lifecycle_paths + [
-            path.replace(f"actions/{original_id}/", f"actions/{action_id}/")
+            canonical_field_ref("actions", action_id, path.rsplit("/", 1)[1])
             for action_id in action_ids
             for path in action_paths
         ]

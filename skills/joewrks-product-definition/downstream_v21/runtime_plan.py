@@ -57,6 +57,12 @@ _PLAN_KEYS = {
     "mapping_gaps",
     "plan_hash",
 }
+_REVIEW_COMMITMENT_KEYS = {
+    "package_hash",
+    "output_hash",
+    "completion",
+    "reliability_status",
+}
 
 
 def _fail(code: str):
@@ -586,6 +592,56 @@ def _review_state(
     return commitments, confirmed_paths
 
 
+def _persisted_review_state(
+    contract: dict[str, object],
+    raw_commitments: object,
+) -> tuple[dict[str, object], set[str]]:
+    """Validate persisted commitments without fabricating absent review artifacts."""
+    if (
+        not isinstance(raw_commitments, dict)
+        or set(raw_commitments) != _REVIEW_COMMITMENT_KEYS
+        or raw_commitments.get("reliability_status") != "NOT_MEASURED"
+    ):
+        _fail("INVALID_RUNTIME_REVIEW_COMMITMENTS")
+    commitments = copy.deepcopy(raw_commitments)
+    expected_package = build_semantic_review_package_v21(contract)
+    if expected_package is None:
+        if commitments != {
+            "package_hash": None,
+            "output_hash": None,
+            "completion": "NOT_REQUIRED",
+            "reliability_status": "NOT_MEASURED",
+        }:
+            _fail("INVALID_RUNTIME_REVIEW_COMMITMENTS")
+        return commitments, set()
+
+    expected_package_hash = expected_package["package_hash"]
+    package_hash = commitments.get("package_hash")
+    output_hash = commitments.get("output_hash")
+    completion = commitments.get("completion")
+    if completion == "PENDING":
+        if package_hash not in {None, expected_package_hash} or output_hash is not None:
+            _fail("INVALID_RUNTIME_REVIEW_COMMITMENTS")
+        return commitments, set()
+    if completion not in {"REVIEW_OUTPUT_RECORDED", "REENTRY_REQUIRED"}:
+        _fail("INVALID_RUNTIME_REVIEW_COMMITMENTS")
+    if (
+        package_hash != expected_package_hash
+        or not isinstance(output_hash, str)
+        or _HASH.fullmatch(output_hash) is None
+    ):
+        _fail("INVALID_RUNTIME_REVIEW_COMMITMENTS")
+    confirmed_paths = (
+        {
+            obligation["field_path"]
+            for obligation in expected_package["review_obligations"]
+        }
+        if completion == "REVIEW_OUTPUT_RECORDED"
+        else set()
+    )
+    return commitments, confirmed_paths
+
+
 def _normalize_collection(
     raw_collection: object,
     *,
@@ -707,13 +763,32 @@ def materialize_runtime_plan(
 ) -> dict[str, object]:
     """Materialize verification metadata from only a valid 2.1 semantic contract."""
     contract = _require_contract(contract)
+    commitments, confirmed_paths = _review_state(
+        contract,
+        review_package,
+        review_output,
+    )
+    return _materialize_runtime_plan(
+        contract,
+        draft,
+        commitments=commitments,
+        confirmed_paths=confirmed_paths,
+    )
+
+
+def _materialize_runtime_plan(
+    contract: dict[str, object],
+    draft: dict[str, object],
+    *,
+    commitments: dict[str, object],
+    confirmed_paths: set[str],
+) -> dict[str, object]:
+    """Materialize from already validated review state."""
+    contract = _require_contract(contract)
     if not isinstance(draft, dict) or set(draft) != {"actions", "lifecycles"}:
         _fail("INVALID_RUNTIME_PLAN_DRAFT")
     profile = load_runtime_responsibility_profile()
     field_index, _owners, seed_index, raw_aliases = _contract_indexes(contract)
-    commitments, confirmed_paths = _review_state(
-        contract, review_package, review_output
-    )
     if any(path not in field_index for path in confirmed_paths):
         _fail("INVALID_CONTRACT_FIELD_REFERENCE")
     actions = _normalize_collection(
@@ -827,6 +902,56 @@ def _draft_from_plan(plan: dict[str, object]) -> dict[str, object]:
     return draft
 
 
+def validate_persisted_runtime_plan(
+    plan: object,
+    contract: dict[str, object],
+) -> list[dict[str, str]]:
+    """Validate a persisted plan canonically without requiring review artifacts."""
+    if not isinstance(plan, dict):
+        return [{"path": "/", "message": "runtime plan must be an object"}]
+    errors = []
+    if set(plan) != _PLAN_KEYS:
+        errors.append(
+            {"path": "/", "message": "runtime plan has missing or extra fields"}
+        )
+    if plan.get("plan_schema_version") != RUNTIME_PLAN_VERSION:
+        errors.append(
+            {
+                "path": "/plan_schema_version",
+                "message": "unsupported runtime plan version",
+            }
+        )
+    if (
+        not isinstance(plan.get("plan_hash"), str)
+        or _HASH.fullmatch(plan["plan_hash"]) is None
+    ):
+        errors.append(
+            {"path": "/plan_hash", "message": "must be a lowercase SHA-256"}
+        )
+    try:
+        contract = _require_contract(contract)
+        commitments, confirmed_paths = _persisted_review_state(
+            contract,
+            plan.get("review_commitments"),
+        )
+        expected = _materialize_runtime_plan(
+            contract,
+            _draft_from_plan(plan),
+            commitments=commitments,
+            confirmed_paths=confirmed_paths,
+        )
+        if plan != expected:
+            errors.append(
+                {
+                    "path": "/",
+                    "message": "runtime plan does not match deterministic materialization",
+                }
+            )
+    except (KeyError, TypeError, ValueError, AttributeError, RecursionError) as error:
+        errors.append({"path": "/", "message": str(error)})
+    return sorted(errors, key=lambda error: (error["path"], error["message"]))
+
+
 def validate_runtime_plan(
     plan: object,
     contract: dict[str, object],
@@ -876,5 +1001,6 @@ __all__ = [
     "RUNTIME_PLAN_VERSION",
     "RUNTIME_PROFILE_ID",
     "materialize_runtime_plan",
+    "validate_persisted_runtime_plan",
     "validate_runtime_plan",
 ]

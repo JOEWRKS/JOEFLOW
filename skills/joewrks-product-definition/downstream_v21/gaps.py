@@ -2,9 +2,11 @@
 
 import copy
 
+from downstream_v2.authority import sha256_json
 from downstream_v2.reentry import build_reentry_events
 
 from .derivation import ContractExpressivenessGap, SemanticAuthorityGap
+from .field_refs import encode_item_id, parse_canonical_field_ref
 
 
 SEMANTIC_AUTHORITY_GAP = "SEMANTIC_AUTHORITY_GAP"
@@ -28,11 +30,12 @@ def _record_input(
     policy: object,
     authority_scope_refs: object,
 ) -> tuple[str, dict[str, object], list[str]]:
+    try:
+        parse_canonical_field_ref(field_path)
+    except ValueError as error:
+        raise ValueError("INVALID_GAP_RECORD_INPUT") from error
     if (
-        not isinstance(field_path, str)
-        or field_path.count("/") != 2
-        or not all(field_path.split("/"))
-        or not isinstance(policy, dict)
+        not isinstance(policy, dict)
         or not isinstance(authority_scope_refs, list)
         or not authority_scope_refs
         or any(not isinstance(ref, str) or not ref for ref in authority_scope_refs)
@@ -40,6 +43,98 @@ def _record_input(
     ):
         raise ValueError("INVALID_GAP_RECORD_INPUT")
     return field_path, policy, sorted(authority_scope_refs)
+
+
+def _encoded_reentry_definition(
+    definition: dict[str, object],
+) -> dict[str, list[dict[str, object]]]:
+    """Project canonical owner aliases accepted by the frozen event builder."""
+    return {
+        "actions": [
+            {
+                "action_id": encode_item_id(item["action_id"]),
+                "authority_scope_refs": list(item["authority_scope_refs"]),
+            }
+            for item in definition["actions"]
+        ],
+        "lifecycles": [
+            {
+                "lifecycle_id": encode_item_id(item["lifecycle_id"]),
+                "authority_scope_refs": list(item["authority_scope_refs"]),
+            }
+            for item in definition["lifecycles"]
+        ],
+    }
+
+
+def _restore_reentry_owner(
+    event: dict[str, object],
+    *,
+    collection: str,
+    item_id: str,
+    field_name: str,
+) -> dict[str, object]:
+    """Restore the raw owner after the frozen canonical-path compatibility call."""
+    restored = copy.deepcopy(event)
+    action_ids = [item_id] if collection == "actions" else []
+    lifecycle_ids = [item_id] if collection == "lifecycles" else []
+    restored["affected_action_ids"] = action_ids
+    restored["affected_lifecycle_ids"] = lifecycle_ids
+    restored["halt_scope"] = {
+        "mode": "AFFECTED_ONLY",
+        "action_ids": action_ids,
+        "lifecycle_ids": lifecycle_ids,
+    }
+    path = f"{collection}/{item_id}/{field_name}"
+    if restored["event_type"] == "OUT_OF_SCOPE_REQUEST":
+        question = f"Should {path} be added to approved Product Definition scope?"
+    elif restored["event_type"] == "CONTRACT_CONFLICT":
+        question = f"Which approved authority resolves the conflict for {path}?"
+    else:
+        question = f"What approved product meaning should {path} use?"
+    restored["candidate_unknown"]["suggested_question"] = question
+    restored["candidate_unknown"]["affected_ids"] = sorted(
+        set(restored["affected_authority_ids"] + action_ids + lifecycle_ids)
+    )
+    content = {
+        key: value for key, value in restored.items() if key != "event_id"
+    }
+    restored["event_id"] = "REENTRY-" + sha256_json(content)[:24]
+    return restored
+
+
+def _build_reentry_events_with_raw_owners(
+    *,
+    source_authority: dict[str, object],
+    definition: dict[str, object],
+    semantic_gaps: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    encoded_definition = _encoded_reentry_definition(definition)
+    events = []
+    for gap in semantic_gaps:
+        try:
+            collection, item_id, field_name = parse_canonical_field_ref(
+                gap["field_path"]
+            )
+        except (KeyError, ValueError) as error:
+            raise ValueError("INVALID_SEMANTIC_GAP_INVENTORY") from error
+        built = build_reentry_events(
+            source_authority=source_authority,
+            definition=encoded_definition,
+            gaps=[gap],
+            source_contract_hash=None,
+        )
+        if len(built) != 1:
+            raise ValueError("INVALID_REENTRY_EVENT_RESULT")
+        events.append(
+            _restore_reentry_owner(
+                built[0],
+                collection=collection,
+                item_id=item_id,
+                field_name=field_name,
+            )
+        )
+    return sorted(events, key=lambda event: event["event_id"])
 
 
 def semantic_gap_record(
@@ -144,11 +239,10 @@ def route_compilation_gaps(
     semantic = copy.deepcopy(semantic_gaps)
     expressiveness = copy.deepcopy(expressiveness_gaps)
     events = (
-        build_reentry_events(
+        _build_reentry_events_with_raw_owners(
             source_authority=source_authority,
             definition=definition,
-            gaps=semantic,
-            source_contract_hash=None,
+            semantic_gaps=semantic,
         )
         if semantic
         else []

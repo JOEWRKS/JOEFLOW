@@ -10,6 +10,7 @@ from downstream_v2.seeds import (
 )
 
 from .contracts import validate_action_contract_v21
+from .field_refs import canonical_field_ref
 
 
 def _relation(contract: object, project: object) -> str:
@@ -76,7 +77,7 @@ def _consumption(contract: dict[str, object]):
                     (consumer_kind, item_id, "authority_scope_refs")
                 )
             for field_name, field in item["fields"].items():
-                path = f"{collection}/{item_id}/{field_name}"
+                path = canonical_field_ref(collection, item_id, field_name)
                 for ref in field["source_seed_refs"]:
                     seed_consumers.setdefault(ref, []).append(
                         (consumer_kind, item_id, path)

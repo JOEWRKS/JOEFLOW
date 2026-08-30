@@ -10,11 +10,8 @@ from downstream import protocol as frozen_protocol
 from downstream_v2.authority import sha256_json
 
 from .contracts import validate_action_contract_v21
-from .identity import (
-    ACTION_CONTRACT_VERSION,
-    RUNTIME_EVIDENCE_BUNDLE_VERSION,
-    RUNTIME_PLAN_VERSION,
-)
+from .identity import RUNTIME_EVIDENCE_BUNDLE_VERSION
+from .runtime_plan import validate_persisted_runtime_plan
 
 
 _HASH = re.compile(r"^[0-9a-f]{64}$")
@@ -89,31 +86,8 @@ def _source_input_errors(
     if not isinstance(contract, dict) or validate_action_contract_v21(contract):
         errors.append(_error("/contract", "INVALID_ACTION_CONTRACT_V21"))
         return errors
-    if not isinstance(plan, dict):
+    if validate_persisted_runtime_plan(plan, contract):
         return [_error("/plan", "INVALID_RUNTIME_PLAN")]
-    if plan.get("plan_schema_version") != RUNTIME_PLAN_VERSION:
-        errors.append(_error("/plan/plan_schema_version", "INVALID_RUNTIME_PLAN"))
-    plan_hash = plan.get("plan_hash")
-    if not isinstance(plan_hash, str) or _HASH.fullmatch(plan_hash) is None:
-        errors.append(_error("/plan/plan_hash", "INVALID_RUNTIME_PLAN_HASH"))
-    else:
-        projection = copy.deepcopy(plan)
-        projection.pop("plan_hash", None)
-        try:
-            if sha256_json(projection) != plan_hash:
-                errors.append(_error("/plan/plan_hash", "INVALID_RUNTIME_PLAN_HASH"))
-        except (TypeError, ValueError, RecursionError):
-            errors.append(_error("/plan", "INVALID_RUNTIME_PLAN"))
-
-    authority = contract["source_authority"]
-    expected_source = {
-        "contract_schema_version": ACTION_CONTRACT_VERSION,
-        "semantic_contract_hash": contract["semantic_contract_hash"],
-        "approved_definition_digest": authority["approved_definition_digest"],
-        "product_slug": authority["product_slug"],
-    }
-    if plan.get("source_contract") != expected_source:
-        errors.append(_error("/plan/source_contract", "RUNTIME_PLAN_SOURCE_MISMATCH"))
     try:
         _plan_test_ids(plan)
     except ValueError as exc:

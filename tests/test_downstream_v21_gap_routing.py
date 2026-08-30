@@ -11,7 +11,11 @@ for path in (PACKAGE_ROOT, SCRIPTS):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from downstream_v2.authority import DownstreamV2Error, require_closed_authority  # noqa: E402
+from downstream_v2.authority import (  # noqa: E402
+    DownstreamV2Error,
+    require_closed_authority,
+    sha256_json,
+)
 from downstream_v2.semantic_debt import semantic_debt_report  # noqa: E402
 from downstream_v21.compiler import compile_handoff_definition_v21  # noqa: E402
 from downstream_v21.derivation import (  # noqa: E402
@@ -27,6 +31,7 @@ from downstream_v21.gaps import (  # noqa: E402
     route_compilation_gaps,
     semantic_gap_record,
 )
+from downstream_v21.field_refs import canonical_field_ref  # noqa: E402
 from downstream_v21.responsibility import load_responsibility_profile_v21  # noqa: E402
 from tests.downstream_v21_support import closed_v2_state  # noqa: E402
 from tests.test_downstream_v21_compiler import complete_definition_v21  # noqa: E402
@@ -71,6 +76,100 @@ class GapRoutingTests(unittest.TestCase):
         self.assertEqual(event["halt_scope"]["mode"], "AFFECTED_ONLY")
         self.assertEqual(event["halt_scope"]["action_ids"], ["submit-request"])
         self.assertEqual(event["halt_scope"]["lifecycle_ids"], [])
+
+    def test_special_and_percent_looking_owner_ids_route_canonical_gaps_to_raw_affected_only_events(self):
+        changed = copy.deepcopy(self.definition)
+        action_template = changed["actions"][0]
+        lifecycle_template = changed["lifecycles"][0]
+        action_ids = [
+            "submit/request with space",
+            "submit request",
+            "a%2Fb",
+            "a%252Fb",
+        ]
+        lifecycle_ids = [
+            "request/lifecycle with space",
+            "request lifecycle",
+            "l%2Fx",
+            "l%252Fx",
+        ]
+        changed["actions"] = []
+        for action_id in action_ids:
+            action = copy.deepcopy(action_template)
+            action["action_id"] = action_id
+            action["fields"]["authentication"] = {
+                "kind": "UNRESOLVED",
+                "gap_type": "AMBIGUITY_FOUND",
+                "description": "Authentication behavior is not authoritative.",
+                "required_authority_class": "CONSTRAINT",
+                "evidence_refs": ["EVD-001"],
+            }
+            changed["actions"].append(action)
+        changed["lifecycles"] = []
+        for lifecycle_id in lifecycle_ids:
+            lifecycle = copy.deepcopy(lifecycle_template)
+            lifecycle["lifecycle_id"] = lifecycle_id
+            lifecycle["fields"]["boundary_conditions"] = {
+                "kind": "UNRESOLVED",
+                "gap_type": "CONTRACT_CONFLICT",
+                "description": "Lifecycle boundary authority conflicts.",
+                "required_authority_class": "INTENT",
+                "evidence_refs": ["EVD-002"],
+            }
+            changed["lifecycles"].append(lifecycle)
+        state_before = copy.deepcopy(self.state)
+        definition_before = copy.deepcopy(changed)
+
+        result = self.compile(changed)
+
+        self.assertEqual(result["status"], "REENTRY_REQUIRED")
+        self.assertEqual(result["contract"], None)
+        self.assertEqual(len(result["semantic_gaps"]), 8)
+        self.assertEqual(len(result["reentry_events"]), 8)
+        self.assertEqual(
+            {gap["field_path"] for gap in result["semantic_gaps"]},
+            {
+                canonical_field_ref("actions", action_id, "authentication")
+                for action_id in action_ids
+            }
+            | {
+                canonical_field_ref(
+                    "lifecycles", lifecycle_id, "boundary_conditions"
+                )
+                for lifecycle_id in lifecycle_ids
+            },
+        )
+        for event in result["reentry_events"]:
+            self.assertEqual(event["halt_scope"]["mode"], "AFFECTED_ONLY")
+            owners = (
+                event["affected_action_ids"]
+                + event["affected_lifecycle_ids"]
+            )
+            self.assertEqual(len(owners), 1)
+            raw_owner = owners[0]
+            self.assertIn(raw_owner, action_ids + lifecycle_ids)
+            self.assertIn(raw_owner, event["candidate_unknown"]["affected_ids"])
+            self.assertIn(
+                raw_owner,
+                event["candidate_unknown"]["suggested_question"],
+            )
+            self.assertEqual(
+                event["halt_scope"]["action_ids"],
+                event["affected_action_ids"],
+            )
+            self.assertEqual(
+                event["halt_scope"]["lifecycle_ids"],
+                event["affected_lifecycle_ids"],
+            )
+            event_content = {
+                key: value for key, value in event.items() if key != "event_id"
+            }
+            self.assertEqual(
+                event["event_id"],
+                "REENTRY-" + sha256_json(event_content)[:24],
+            )
+        self.assertEqual(self.state, state_before)
+        self.assertEqual(changed, definition_before)
 
     def controlled_expressiveness_gap(self):
         policy = {

@@ -154,9 +154,14 @@ def _review_fields(contract: dict[str, object]):
         for item in contract[collection]:
             for field_name, field in item["fields"].items():
                 if field["derivation"]["kind"] == "REVIEW_REQUIRED":
+                    field_path = canonical_field_ref(
+                        collection,
+                        item[id_key],
+                        field_name,
+                    )
                     yield (
-                        f"{collection}/{item[id_key]}/{field_name}",
-                        canonical_field_ref(collection, item[id_key], field_name),
+                        field_path,
+                        field_path,
                         field,
                     )
 

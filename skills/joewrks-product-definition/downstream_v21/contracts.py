@@ -8,6 +8,7 @@ from downstream_v2.authority import sha256_json
 from downstream_v2.seeds import source_seed_inventory_digest, source_seed_index
 
 from .derivation import derive_semantic_field_v21, seed_matches_selector_v21
+from .field_refs import canonical_field_ref
 from .identity import ACTION_CONTRACT_VERSION, RESPONSIBILITY_PROFILE_ID
 from .responsibility import (
     _validate_responsibility_profile_v21,
@@ -460,7 +461,11 @@ def validate_action_contract_v21(contract: object) -> list[dict[str, str]]:
                 continue
             for field_name in sorted(expected_fields):
                 field = fields[field_name]
-                field_path = f"{collection_name}/{item_id}/{field_name}"
+                field_path = canonical_field_ref(
+                    collection_name,
+                    item_id,
+                    field_name,
+                )
                 try:
                     recomputed = derive_semantic_field_v21(
                         _definition_spec(field),

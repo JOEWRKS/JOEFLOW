@@ -24,6 +24,7 @@ from downstream_v21.contracts import (  # noqa: E402
     semantic_contract_hash_v21,
     validate_action_contract_v21,
 )
+from downstream_v21.field_refs import canonical_field_ref  # noqa: E402
 from downstream_v21.semantic_review import (  # noqa: E402
     build_semantic_review_package_v21,
 )
@@ -631,12 +632,20 @@ class RuntimePlanV21Tests(unittest.TestCase):
             "review_required_fields",
         ):
             contract["semantic_debt"][inventory_name] = [
-                path.replace(
-                    f"actions/{old_action_id}/",
-                    f"actions/{new_action_id}/",
-                ).replace(
-                    f"lifecycles/{old_lifecycle_id}/",
-                    f"lifecycles/{new_lifecycle_id}/",
+                (
+                    canonical_field_ref(
+                        "actions",
+                        new_action_id,
+                        path.rsplit("/", 1)[1],
+                    )
+                    if path.startswith(f"actions/{old_action_id}/")
+                    else canonical_field_ref(
+                        "lifecycles",
+                        new_lifecycle_id,
+                        path.rsplit("/", 1)[1],
+                    )
+                    if path.startswith(f"lifecycles/{old_lifecycle_id}/")
+                    else path
                 )
                 for path in contract["semantic_debt"][inventory_name]
             ]
