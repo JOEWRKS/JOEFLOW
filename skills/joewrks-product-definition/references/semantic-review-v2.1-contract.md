@@ -68,6 +68,8 @@ REENTRY_REQUIRED
 
 A confirmed complete output records `REVIEW_OUTPUT_RECORDED`. A rejected interpretation or upstream authority gap records `REENTRY_REQUIRED` for semantic conflict routing. Review output never mutates the source contract or Product Definition state.
 
+For non-confirmed output, the canonical obligation path is decoded and bound to its exact raw contract owner before the frozen re-entry boundary is invoked. The emitted affected-only event carries the original raw action or lifecycle ID in its affected inventories, halt scope, question, and deterministic event identity; canonical path aliases never escape as owner identity.
+
 Completion never establishes reliability. Package and output reliability remain exactly `NOT_MEASURED`; `PASS`, `RELIABLE`, `CALIBRATED`, or any inherited v1/v2.0 calibration claim is invalid.
 
 ## Machine-readable schemas

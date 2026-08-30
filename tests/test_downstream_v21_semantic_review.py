@@ -63,6 +63,14 @@ OUTPUT_SCHEMA = json.loads(
         / "semantic-review-output-v21.schema.json"
     ).read_text(encoding="utf-8")
 )
+REENTRY_SCHEMA = json.loads(
+    (
+        PACKAGE_ROOT
+        / "downstream_v2"
+        / "schemas"
+        / "reentry-event.schema.json"
+    ).read_text(encoding="utf-8")
+)
 
 
 def reviewed_output(package, verdict="CONFIRMED_INTERPRETATION"):
@@ -219,6 +227,33 @@ class SemanticReviewV21Tests(unittest.TestCase):
         with self.assertRaises(SchemaValidationError):
             validate_instance(overencoded, INPUT_SCHEMA)
 
+    def test_review_21_schema_rejects_overencoded_tilde_identifier(self):
+        contract = contract_with_action_ids(
+            self.review_contract,
+            ["~submit-request"],
+        )
+        package = build_semantic_review_package_v21(contract)
+        overencoded = copy.deepcopy(package)
+        obligation = overencoded["review_obligations"][0]
+        self.assertEqual(
+            obligation["field_path"],
+            "actions/~submit-request/visible_error",
+        )
+        obligation["field_path"] = "actions/%7Esubmit-request/visible_error"
+        identity = {
+            "field_path": obligation["field_path"],
+            "proposed_value_sha256": obligation["proposed_value_sha256"],
+            "source_seed_refs": obligation["source_seed_refs"],
+        }
+        obligation["obligation_id"] = "REVIEW-" + sha256_json(identity)[:24]
+        rehash(overencoded, "package_hash")
+        errors = validate_semantic_review_package_v21(overencoded)
+        self.assertTrue(
+            any(error["path"].endswith("/field_path") for error in errors)
+        )
+        with self.assertRaises(SchemaValidationError):
+            validate_instance(overencoded, INPUT_SCHEMA)
+
     def test_review_21_keeps_exact_seed_provenance_and_value_hash(self):
         package = self.package()
         validate_instance(package, INPUT_SCHEMA)
@@ -344,6 +379,86 @@ class SemanticReviewV21Tests(unittest.TestCase):
                 self.assertEqual(output, original_output)
         self.assertEqual(self.review_contract, original_contract)
         self.assertEqual(package, original_package)
+
+    def test_special_ids_route_nonconfirmed_review_to_raw_owner_reentry(self):
+        for action_ids in (
+            ["submit/request with space"],
+            ["a%2Fb", "a%252Fb"],
+        ):
+            with self.subTest(action_ids=action_ids):
+                contract = contract_with_action_ids(
+                    self.review_contract,
+                    action_ids,
+                )
+                package = build_semantic_review_package_v21(contract)
+                original_contract = copy.deepcopy(contract)
+                original_package = copy.deepcopy(package)
+                for verdict, event_type in (
+                    ("REJECTED_INTERPRETATION", "CONTRACT_CONFLICT"),
+                    ("UPSTREAM_AUTHORITY_GAP", "AMBIGUITY_FOUND"),
+                ):
+                    with self.subTest(verdict=verdict):
+                        output = reviewed_output(package, verdict=verdict)
+                        original_output = copy.deepcopy(output)
+                        try:
+                            events = review_results_to_reentry_events_v21(
+                                contract,
+                                package,
+                                output,
+                            )
+                        except (StopIteration, ValueError) as error:
+                            self.fail(
+                                "valid special-ID review could not route re-entry: "
+                                f"{type(error).__name__}: {error}"
+                            )
+                        self.assertEqual(len(events), 2 * len(action_ids))
+                        self.assertEqual(
+                            {
+                                action_id: sum(
+                                    event["affected_action_ids"] == [action_id]
+                                    for event in events
+                                )
+                                for action_id in action_ids
+                            },
+                            {action_id: 2 for action_id in action_ids},
+                        )
+                        for event in events:
+                            validate_instance(event, REENTRY_SCHEMA)
+                            self.assertEqual(event["event_type"], event_type)
+                            self.assertEqual(event["affected_lifecycle_ids"], [])
+                            self.assertEqual(
+                                event["halt_scope"],
+                                {
+                                    "mode": "AFFECTED_ONLY",
+                                    "action_ids": event["affected_action_ids"],
+                                    "lifecycle_ids": [],
+                                },
+                            )
+                            self.assertIn(
+                                event["affected_action_ids"][0],
+                                action_ids,
+                            )
+                            raw_owner = event["affected_action_ids"][0]
+                            self.assertIn(
+                                raw_owner,
+                                event["candidate_unknown"]["affected_ids"],
+                            )
+                            self.assertIn(
+                                raw_owner,
+                                event["candidate_unknown"]["suggested_question"],
+                            )
+                            event_content = {
+                                key: value
+                                for key, value in event.items()
+                                if key != "event_id"
+                            }
+                            self.assertEqual(
+                                event["event_id"],
+                                "REENTRY-" + sha256_json(event_content)[:24],
+                            )
+                        self.assertEqual(output, original_output)
+                self.assertEqual(contract, original_contract)
+                self.assertEqual(package, original_package)
 
 
 if __name__ == "__main__":

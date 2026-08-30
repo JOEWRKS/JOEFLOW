@@ -834,6 +834,29 @@ class RuntimePlanV21Tests(unittest.TestCase):
         with self.assertRaises(SchemaValidationError):
             validate_instance(overencoded, schema)
 
+    def test_schema_rejects_overencoded_tilde_for_valid_tilde_identifier(self):
+        contract = contract_with_action_ids(self.contract, ["~submit-request"])
+        plan = runtime_plan.materialize_runtime_plan(
+            contract,
+            complete_runtime_draft(contract),
+        )
+        overencoded = copy.deepcopy(plan)
+        refs = overencoded["coverage_summary"]["runtime_critical_field_refs"]
+        refs[refs.index("actions/~submit-request/actor")] = (
+            "actions/%7Esubmit-request/actor"
+        )
+        self.assertTrue(runtime_plan.validate_runtime_plan(overencoded, contract))
+        schema = json.loads(
+            (
+                PACKAGE_ROOT
+                / "downstream_v21"
+                / "schemas"
+                / "runtime-conformance-plan.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        with self.assertRaises(SchemaValidationError):
+            validate_instance(overencoded, schema)
+
     def test_validate_runtime_plan_rejects_identity_or_case_weakening(self):
         plan = self.materialize()
         weakened = copy.deepcopy(plan)

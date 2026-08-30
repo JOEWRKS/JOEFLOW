@@ -8,6 +8,7 @@ from downstream_v2.reentry import build_reentry_events
 
 from ..contracts import validate_action_contract_v21
 from ..derivation import SemanticAuthorityGap
+from ..field_refs import encode_item_id, parse_canonical_field_ref
 from ..gaps import semantic_gap_record
 from ..identity import SEMANTIC_REVIEW_VERSION
 from ..responsibility import load_responsibility_profile_v21
@@ -156,23 +157,58 @@ def semantic_review_completion_v21(
 
 
 def _reentry_definition(contract: dict[str, object]) -> dict[str, object]:
-    """Project only immutable owner identities needed by the event builder."""
+    """Project canonical owner aliases accepted by the frozen event builder."""
     return {
         "actions": [
             {
-                "action_id": item["action_id"],
+                "action_id": encode_item_id(item["action_id"]),
                 "authority_scope_refs": list(item["authority_scope_refs"]),
             }
             for item in contract["actions"]
         ],
         "lifecycles": [
             {
-                "lifecycle_id": item["lifecycle_id"],
+                "lifecycle_id": encode_item_id(item["lifecycle_id"]),
                 "authority_scope_refs": list(item["authority_scope_refs"]),
             }
             for item in contract["lifecycles"]
         ],
     }
+
+
+def _restore_reentry_owner(
+    event: dict[str, object],
+    *,
+    collection: str,
+    item_id: str,
+    field_name: str,
+) -> dict[str, object]:
+    """Restore the exact raw owner after the canonical compatibility boundary."""
+    restored = copy.deepcopy(event)
+    action_ids = [item_id] if collection == "actions" else []
+    lifecycle_ids = [item_id] if collection == "lifecycles" else []
+    restored["affected_action_ids"] = action_ids
+    restored["affected_lifecycle_ids"] = lifecycle_ids
+    restored["halt_scope"] = {
+        "mode": "AFFECTED_ONLY",
+        "action_ids": action_ids,
+        "lifecycle_ids": lifecycle_ids,
+    }
+    event_type = restored["event_type"]
+    path = f"{collection}/{item_id}/{field_name}"
+    if event_type == "CONTRACT_CONFLICT":
+        question = f"Which approved authority resolves the conflict for {path}?"
+    else:
+        question = f"What approved product meaning should {path} use?"
+    restored["candidate_unknown"]["suggested_question"] = question
+    restored["candidate_unknown"]["affected_ids"] = sorted(
+        set(restored["affected_authority_ids"] + action_ids + lifecycle_ids)
+    )
+    content = {
+        key: value for key, value in restored.items() if key != "event_id"
+    }
+    restored["event_id"] = "REENTRY-" + sha256_json(content)[:24]
+    return restored
 
 
 def review_results_to_reentry_events_v21(
@@ -193,16 +229,29 @@ def review_results_to_reentry_events_v21(
         item["obligation_id"]: item for item in package["review_obligations"]
     }
     profile = load_responsibility_profile_v21()
-    gaps = []
+    definition = _reentry_definition(contract)
+    events = []
     for result in output["results"]:
         if result["verdict"] == "CONFIRMED_INTERPRETATION":
             continue
         obligation = obligations[result["obligation_id"]]
-        collection, item_id, field_name = obligation["field_path"].split("/", 2)
+        try:
+            collection, item_id, field_name = parse_canonical_field_ref(
+                obligation["field_path"]
+            )
+        except ValueError as error:
+            raise ValueError("INVALID_SEMANTIC_REVIEW_PACKAGE_V21") from error
         id_key = "action_id" if collection == "actions" else "lifecycle_id"
         item = next(
-            item for item in contract[collection] if item[id_key] == item_id
+            (
+                item
+                for item in contract[collection]
+                if item[id_key] == item_id
+            ),
+            None,
         )
+        if item is None:
+            raise ValueError("INVALID_SEMANTIC_REVIEW_PACKAGE_V21")
         policy_group = (
             "action_fields" if collection == "actions" else "lifecycle_fields"
         )
@@ -219,21 +268,30 @@ def review_results_to_reentry_events_v21(
             "required_authority_class": policy["required_authority_class"],
             "evidence_refs": list(obligation["source_seed_refs"]),
         }
-        gaps.append(
-            semantic_gap_record(
-                field_path=obligation["field_path"],
-                spec={"source_seed_refs": list(obligation["source_seed_refs"])},
-                error=SemanticAuthorityGap(detail),
-                policy=policy,
-                authority_scope_refs=list(item["authority_scope_refs"]),
+        gap = semantic_gap_record(
+            field_path=obligation["field_path"],
+            spec={"source_seed_refs": list(obligation["source_seed_refs"])},
+            error=SemanticAuthorityGap(detail),
+            policy=policy,
+            authority_scope_refs=list(item["authority_scope_refs"]),
+        )
+        built = build_reentry_events(
+            source_authority=copy.deepcopy(contract["source_authority"]),
+            definition=definition,
+            gaps=[gap],
+            source_contract_hash=contract["semantic_contract_hash"],
+        )
+        if len(built) != 1:
+            raise ValueError("INVALID_REENTRY_EVENT_RESULT")
+        events.append(
+            _restore_reentry_owner(
+                built[0],
+                collection=collection,
+                item_id=item_id,
+                field_name=field_name,
             )
         )
-    return build_reentry_events(
-        source_authority=copy.deepcopy(contract["source_authority"]),
-        definition=_reentry_definition(contract),
-        gaps=gaps,
-        source_contract_hash=contract["semantic_contract_hash"],
-    )
+    return sorted(events, key=lambda event: event["event_id"])
 
 
 __all__ = [
