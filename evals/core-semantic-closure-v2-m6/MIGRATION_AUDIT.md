@@ -18,20 +18,19 @@ editing the source. The deterministic result is revision 45, `OPEN`, and
 
 Track A remains OPEN. Its audit is complete, but its full reconciliation is not.
 
-## Track B — bounded native existing-product reconciliation
+## Track B — bounded native reconciliation stopped for context
 
-Track B reconciles the inspectable native V2 slice for `REQ-005` and `REQ-006`.
-It contains both documented actors, the review-access and exact-Version thread
-flows, `SCR-006` and `SCR-007`, acceptance criteria, tasks, and the active AUTH,
-ASYNC, PERMISSION, and Core Grill packs.
+Track B is `NEEDS_CONTEXT` at `FIELD_LEVEL_UX_AUTHORITY_GAP`. The source
+documents identify every required state and action axis, but do not define the
+behavior of several mandatory cells at field level. The old status-only
+`COVERED` cells cannot be promoted as intent.
 
-The current user decision makes analytics and telemetry not applicable only to
-this bounded definition. It creates no analytics events, properties, tracking
-identifiers, retention/access policy, funnels, or success metrics. Existing
-domain history and email delivery/send status remain ordinary product state and
-are not reclassified as analytics telemetry.
+The invalid bounded state, evidence map, approval packet, and approval runbook
+were removed. Track B has no current readiness or digest claim. The already
+authorized bounded no-analytics decision is preserved in `README.md`; it does
+not answer the independent interaction-policy gap.
 
-Track B is not the full legacy migration. It does not trim, close, replace, or
-supersede Track A, and it does not modify the historical dogfood directory.
-Its status is `READY_FOR_REVIEW` and `UNAPPROVED`, with zero semantic-readiness
-blockers. Approval and all later work remain outside Phase A.
+Track B remains separate from the complete Track A audit. It does not trim,
+close, replace, or supersede Track A, and it does not modify the historical
+dogfood directory. Approval and all later work remain prohibited until the
+missing field-level interaction policy receives user authority.

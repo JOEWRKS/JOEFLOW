@@ -1,26 +1,27 @@
 # Core Semantic Closure V2 M6 evaluation
 
-This directory contains the M6 existing-product dogfood evidence through the
-Phase A human approval checkpoint. The bounded native V2 state is
-`READY_FOR_REVIEW` and `UNAPPROVED`; it does not claim Product Definition
-Closure, downstream compilation, runtime conformance, re-entry, Phase B, or
-whole-M6 completion.
+This directory preserves the M6 existing-product dogfood evidence at an
+explicit safe stop. Track A remains the complete deterministic migration audit:
+its candidate is `OPEN` and `UNAPPROVED`, and its reconciliation remains open.
 
-The two Phase A lineages are deliberately separate:
+Track B status is `NEEDS_CONTEXT`. The prior bounded native state and review
+packet were invalidated by field-level semantic review and removed so they
+cannot be mistaken for an approval checkpoint. There is no current Track B
+definition digest, manifest digest, or approval packet.
 
-- `dogfood/migration/legacy-candidate.json` and `migration-receipt.json` are the
-  complete deterministic Track A audit of the legacy state. The candidate stays
-  `OPEN` and `UNAPPROVED`.
-- `dogfood/product-definition/client-feedback-portal-dogfood-v2/state.json` is
-  the bounded native Track B reconciliation for `REQ-005` and `REQ-006`. It is
-  not the full legacy migration and cannot trim or close Track A.
+## Preserved current user authority
 
-The user explicitly decided that analytics and telemetry are not used for this
-bounded definition. Review-link and thread actions emit no analytics events;
-ordinary domain history and email delivery state remain non-analytics product
-state. The decision is local to this definition, not a permanent prohibition.
+For this bounded M6 existing-product V2 dogfood Product Definition only, product analytics/telemetry is NOT used. REQ-005/REQ-006 review-link access and thread actions emit no analytics events. Introduce no analytics event names, properties, tracking identifiers, analytics retention/access policy, funnels, or success metrics. Existing domain/business history remains ordinary product state/history where already required. Existing email delivery/send status remains ordinary product operational/domain state where already required. Neither is reclassified as analytics telemetry. This is an explicit current user product decision/boundary, not an inference from missing implementation. It is not a permanent system-wide prohibition for future products/revisions.
 
-The exact review packet is `dogfood/approval-manifest.json`. No approval fields
-or timestamps may be written until a later run receives explicit approval for
-that exact manifest digest. The corrected deterministic packet reports 81 added
-records and no changed, superseded, or retired records.
+## FIELD_LEVEL_UX_AUTHORITY_GAP
+
+The legacy documents require all 16 screen states and all 22 action axes, but
+several fields only name an axis without defining its behavior. Missing
+field-level authority includes Loading, Empty, Partial, Submitting, Completed
+versus Success, Cancelled, Cancel, Back, Refresh, and action-specific Undo and
+ambiguous offline/timeout/retry behavior across `SCR-006` and `SCR-007`.
+Historical status-only `COVERED` cells are not product intent and cannot close
+this gap.
+
+No approval, Phase B, Task 6, downstream compilation, runtime conformance, or
+re-entry work may start while this material question remains unresolved.
