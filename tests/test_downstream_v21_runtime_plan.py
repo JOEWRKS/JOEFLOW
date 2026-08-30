@@ -481,6 +481,148 @@ class RuntimePlanV21Tests(unittest.TestCase):
         self.assertNotEqual(complete["review_commitments"]["output_hash"], output["output_hash"])
         self.assertNotEqual(pending["plan_hash"], complete["plan_hash"])
 
+    def test_persisted_plan_rejects_self_consistent_forged_review_output_hash(self):
+        output = reviewed_output(self.review_package)
+        plan = self.materialize(
+            contract=self.review_contract,
+            draft=complete_runtime_draft(self.review_contract),
+            review_package=self.review_package,
+            review_output=output,
+        )
+        forged = copy.deepcopy(plan)
+        forged["review_commitments"]["output_hash"] = "0" * 64
+        forged.pop("plan_hash")
+        forged["plan_hash"] = sha256_json(forged)
+
+        self.assertTrue(
+            runtime_plan.validate_runtime_plan(
+                forged,
+                self.review_contract,
+                review_package=self.review_package,
+                review_output=output,
+            )
+        )
+        self.assertTrue(
+            runtime_plan.validate_persisted_runtime_plan(
+                forged,
+                self.review_contract,
+                review_package=self.review_package,
+                review_output=output,
+            )
+        )
+
+    def test_persisted_plan_requires_exact_committed_review_artifacts(self):
+        output = reviewed_output(self.review_package)
+        confirmed = self.materialize(
+            contract=self.review_contract,
+            draft=complete_runtime_draft(self.review_contract),
+            review_package=self.review_package,
+            review_output=output,
+        )
+        pending = self.materialize(
+            contract=self.review_contract,
+            draft=complete_runtime_draft(self.review_contract),
+            review_package=self.review_package,
+        )
+
+        self.assertEqual(
+            runtime_plan.validate_persisted_runtime_plan(
+                confirmed,
+                self.review_contract,
+                review_package=self.review_package,
+                review_output=output,
+            ),
+            [],
+        )
+        self.assertTrue(
+            runtime_plan.validate_persisted_runtime_plan(
+                confirmed,
+                self.review_contract,
+                review_package=self.review_package,
+            ),
+            "a committed output hash requires the actual review output",
+        )
+        self.assertTrue(
+            runtime_plan.validate_persisted_runtime_plan(
+                confirmed,
+                self.review_contract,
+                review_output=output,
+            ),
+            "a committed package hash requires the actual review package",
+        )
+        self.assertEqual(
+            runtime_plan.validate_persisted_runtime_plan(
+                pending,
+                self.review_contract,
+                review_package=self.review_package,
+            ),
+            [],
+        )
+        self.assertTrue(
+            runtime_plan.validate_persisted_runtime_plan(
+                pending,
+                self.review_contract,
+            ),
+            "a pending plan that commits a package still requires that package",
+        )
+
+    def test_persisted_plan_rejects_different_review_package_and_contract(self):
+        output = reviewed_output(self.review_package)
+        confirmed = self.materialize(
+            contract=self.review_contract,
+            draft=complete_runtime_draft(self.review_contract),
+            review_package=self.review_package,
+            review_output=output,
+        )
+        foreign_contract = contract_with_action_ids(
+            self.review_contract,
+            ["different-action"],
+        )
+        foreign_package = build_semantic_review_package_v21(foreign_contract)
+        foreign_output = reviewed_output(foreign_package)
+        self.assertNotEqual(
+            foreign_package["package_hash"],
+            confirmed["review_commitments"]["package_hash"],
+        )
+        self.assertNotEqual(
+            foreign_package["source_semantic_contract_hash"],
+            self.review_contract["semantic_contract_hash"],
+        )
+
+        self.assertTrue(
+            runtime_plan.validate_persisted_runtime_plan(
+                confirmed,
+                self.review_contract,
+                review_package=foreign_package,
+                review_output=foreign_output,
+            )
+        )
+
+    def test_no_review_persisted_plan_requires_no_review_artifacts(self):
+        plan = self.materialize()
+        self.assertEqual(
+            plan["review_commitments"],
+            {
+                "package_hash": None,
+                "output_hash": None,
+                "completion": "NOT_REQUIRED",
+                "reliability_status": "NOT_MEASURED",
+            },
+        )
+        self.assertEqual(
+            runtime_plan.validate_persisted_runtime_plan(plan, self.contract),
+            [],
+        )
+        self.assertTrue(
+            runtime_plan.validate_persisted_runtime_plan(
+                plan,
+                self.contract,
+                review_package=self.review_package,
+                review_output=reviewed_output(self.review_package),
+            ),
+            "uncommitted review artifacts cannot silently change plan meaning",
+        )
+
     def test_rejected_review_routes_to_reentry_not_runtime_mapping_workaround(self):
         output = reviewed_output(self.review_package, "REJECTED_INTERPRETATION")
         plan = self.materialize(

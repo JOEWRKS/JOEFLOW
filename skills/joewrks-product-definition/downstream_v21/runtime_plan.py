@@ -902,11 +902,11 @@ def _draft_from_plan(plan: dict[str, object]) -> dict[str, object]:
     return draft
 
 
-def validate_persisted_runtime_plan(
+def _validate_persisted_runtime_plan_structure(
     plan: object,
     contract: dict[str, object],
 ) -> list[dict[str, str]]:
-    """Validate a persisted plan canonically without requiring review artifacts."""
+    """Validate persisted shape/hash invariants without trusting artifact claims."""
     if not isinstance(plan, dict):
         return [{"path": "/", "message": "runtime plan must be an object"}]
     errors = []
@@ -950,6 +950,62 @@ def validate_persisted_runtime_plan(
     except (KeyError, TypeError, ValueError, AttributeError, RecursionError) as error:
         errors.append({"path": "/", "message": str(error)})
     return sorted(errors, key=lambda error: (error["path"], error["message"]))
+
+
+def validate_persisted_runtime_plan(
+    plan: object,
+    contract: dict[str, object],
+    *,
+    review_package: dict[str, object] | None = None,
+    review_output: dict[str, object] | None = None,
+) -> list[dict[str, str]]:
+    """Validate a persisted plan against its actual semantic-review artifacts."""
+    structural_errors = _validate_persisted_runtime_plan_structure(plan, contract)
+    if structural_errors:
+        return structural_errors
+
+    commitments = plan["review_commitments"]
+    errors = []
+    if commitments["package_hash"] is None:
+        if review_package is not None:
+            errors.append(
+                {
+                    "path": "/review_commitments/package_hash",
+                    "message": "semantic review package is not committed by runtime plan",
+                }
+            )
+    elif review_package is None:
+        errors.append(
+            {
+                "path": "/review_commitments/package_hash",
+                "message": "actual semantic review package is required",
+            }
+        )
+
+    if commitments["output_hash"] is None:
+        if review_output is not None:
+            errors.append(
+                {
+                    "path": "/review_commitments/output_hash",
+                    "message": "semantic review output is not committed by runtime plan",
+                }
+            )
+    elif review_output is None:
+        errors.append(
+            {
+                "path": "/review_commitments/output_hash",
+                "message": "actual semantic review output is required",
+            }
+        )
+    if errors:
+        return sorted(errors, key=lambda error: (error["path"], error["message"]))
+
+    return validate_runtime_plan(
+        plan,
+        contract,
+        review_package=review_package,
+        review_output=review_output,
+    )
 
 
 def validate_runtime_plan(

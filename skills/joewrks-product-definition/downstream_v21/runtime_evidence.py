@@ -81,12 +81,20 @@ def _plan_test_ids(plan: object) -> list[str]:
 def _source_input_errors(
     contract: object,
     plan: object,
+    *,
+    review_package: dict[str, object] | None = None,
+    review_output: dict[str, object] | None = None,
 ) -> list[dict[str, str]]:
     errors = []
     if not isinstance(contract, dict) or validate_action_contract_v21(contract):
         errors.append(_error("/contract", "INVALID_ACTION_CONTRACT_V21"))
         return errors
-    if validate_persisted_runtime_plan(plan, contract):
+    if validate_persisted_runtime_plan(
+        plan,
+        contract,
+        review_package=review_package,
+        review_output=review_output,
+    ):
         return [_error("/plan", "INVALID_RUNTIME_PLAN")]
     try:
         _plan_test_ids(plan)
@@ -155,11 +163,19 @@ def build_runtime_evidence_bundle(
     contract: dict[str, object],
     plan: dict[str, object],
     records: list[dict[str, object]],
+    *,
+    review_package: dict[str, object] | None = None,
+    review_output: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Build a complete deterministic bundle over exact execution/1.0 records."""
     _require_frozen_records(records)
 
-    source_errors = _source_input_errors(contract, plan)
+    source_errors = _source_input_errors(
+        contract,
+        plan,
+        review_package=review_package,
+        review_output=review_output,
+    )
     if source_errors:
         raise ValueError(source_errors[0]["message"])
 
@@ -196,6 +212,9 @@ def validate_runtime_evidence_bundle(
     bundle: object,
     contract: dict[str, object],
     plan: dict[str, object],
+    *,
+    review_package: dict[str, object] | None = None,
+    review_output: dict[str, object] | None = None,
 ) -> list[dict[str, str]]:
     """Validate transport first, then deterministic 2.1 admission and binding."""
     if not isinstance(bundle, dict):
@@ -206,7 +225,12 @@ def validate_runtime_evidence_bundle(
     if transport_errors:
         return transport_errors
 
-    source_errors = _source_input_errors(contract, plan)
+    source_errors = _source_input_errors(
+        contract,
+        plan,
+        review_package=review_package,
+        review_output=review_output,
+    )
     if source_errors:
         return source_errors
 

@@ -28,6 +28,7 @@ from downstream_v21.semantic_review import (  # noqa: E402
 from tests.downstream_v21_support import closed_v2_state  # noqa: E402
 from tests.test_downstream_v21_compiler import complete_definition_v21  # noqa: E402
 from tests.test_downstream_v21_runtime_plan import complete_runtime_draft  # noqa: E402
+from tests.test_downstream_v21_semantic_review import reviewed_output  # noqa: E402
 
 
 try:
@@ -116,12 +117,22 @@ class RuntimeEvidenceV21Tests(unittest.TestCase):
     def require_api(self):
         self.assertIsNotNone(runtime_evidence, "runtime evidence API is missing")
 
-    def build(self, records=None, contract=None, plan=None):
+    def build(
+        self,
+        records=None,
+        contract=None,
+        plan=None,
+        *,
+        review_package=None,
+        review_output=None,
+    ):
         self.require_api()
         return runtime_evidence.build_runtime_evidence_bundle(
             copy.deepcopy(contract or self.contract),
             copy.deepcopy(plan or self.plan),
             copy.deepcopy(self.records if records is None else records),
+            review_package=copy.deepcopy(review_package),
+            review_output=copy.deepcopy(review_output),
         )
 
     def assert_build_error(self, code, records=None, contract=None, plan=None):
@@ -413,6 +424,7 @@ class RuntimeEvidenceV21Tests(unittest.TestCase):
             contract,
             plan,
             records,
+            review_package=review_package,
         )
 
         self.assertEqual(
@@ -420,6 +432,7 @@ class RuntimeEvidenceV21Tests(unittest.TestCase):
                 bundle,
                 contract,
                 plan,
+                review_package=review_package,
             ),
             [],
         )
@@ -435,6 +448,95 @@ class RuntimeEvidenceV21Tests(unittest.TestCase):
         self.assertEqual(contract, original_contract)
         self.assertEqual(plan, original_plan)
         self.assertEqual(records, original_records)
+
+    def test_bundle_admission_requires_actual_committed_review_artifacts(self):
+        state = closed_v2_state()
+        contract = compile_handoff_definition_v21(
+            state,
+            complete_definition_v21(state, review=True),
+        )["contract"]
+        review_package = build_semantic_review_package_v21(contract)
+        review_output = reviewed_output(review_package)
+        plan = materialize_runtime_plan(
+            contract,
+            complete_runtime_draft(contract),
+            review_package=review_package,
+            review_output=review_output,
+        )
+        records = [
+            execution_record(contract, test_id)
+            for test_id in planned_test_ids(plan)
+        ]
+
+        bundle = runtime_evidence.build_runtime_evidence_bundle(
+            contract,
+            plan,
+            records,
+            review_package=review_package,
+            review_output=review_output,
+        )
+        self.assertEqual(
+            runtime_evidence.validate_runtime_evidence_bundle(
+                bundle,
+                contract,
+                plan,
+                review_package=review_package,
+                review_output=review_output,
+            ),
+            [],
+        )
+
+        forged = copy.deepcopy(plan)
+        forged["review_commitments"]["output_hash"] = "0" * 64
+        forged.pop("plan_hash")
+        forged["plan_hash"] = sha256_json(forged)
+        forged_bundle = copy.deepcopy(bundle)
+        forged_bundle["source_runtime_plan_hash"] = forged["plan_hash"]
+        forged_bundle = bundle_with_recomputed_hash(forged_bundle)
+
+        with self.assertRaisesRegex(ValueError, "INVALID_RUNTIME_PLAN"):
+            runtime_evidence.build_runtime_evidence_bundle(
+                contract,
+                forged,
+                records,
+                review_package=review_package,
+                review_output=review_output,
+            )
+        self.assertEqual(
+            runtime_evidence.validate_runtime_evidence_bundle(
+                forged_bundle,
+                contract,
+                forged,
+                review_package=review_package,
+                review_output=review_output,
+            ),
+            [{"path": "/plan", "message": "INVALID_RUNTIME_PLAN"}],
+        )
+
+        for name, package, output in (
+            ("missing_output", review_package, None),
+            ("missing_package", None, review_output),
+            ("missing_both", None, None),
+        ):
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(ValueError, "INVALID_RUNTIME_PLAN"):
+                    runtime_evidence.build_runtime_evidence_bundle(
+                        contract,
+                        plan,
+                        records,
+                        review_package=package,
+                        review_output=output,
+                    )
+                self.assertEqual(
+                    runtime_evidence.validate_runtime_evidence_bundle(
+                        bundle,
+                        contract,
+                        plan,
+                        review_package=package,
+                        review_output=output,
+                    ),
+                    [{"path": "/plan", "message": "INVALID_RUNTIME_PLAN"}],
+                )
 
     def test_bundle_hash_is_deterministic(self):
         original_records = copy.deepcopy(self.records)
