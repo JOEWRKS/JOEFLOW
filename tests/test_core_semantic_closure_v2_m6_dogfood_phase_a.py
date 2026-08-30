@@ -43,8 +43,8 @@ EVIDENCE_MAP_PATH = DOGFOOD_ROOT / "phase-a-evidence-map.json"
 RUNBOOK_PATH = EVAL_ROOT / "DOGFOOD_RUNBOOK.md"
 README_PATH = EVAL_ROOT / "README.md"
 AUDIT_PATH = EVAL_ROOT / "MIGRATION_AUDIT.md"
-EXPECTED_DEFINITION_DIGEST = "ac531d869af5310820e2af90d78d205e841d05bb944f9a16865c8808f3a69957"
-EXPECTED_MANIFEST_DIGEST = "e9492282561bf4eaa4bd2fde5ecfd01b00e806b7aa76e7119d7c6ce5b1b1f1ce"
+EXPECTED_DEFINITION_DIGEST = "e33deda04bae78eab0da60ba432c47a0779bce17c4bee7d1c5695455d9d9f68c"
+EXPECTED_MANIFEST_DIGEST = "60ec9818666bab7d75bc4ee14d9ff4fcf2817d3cfcaa2e51c95318776be64705"
 EXPECTED_ADDED_COUNT = 113
 
 ANALYTICS_DECISION = (
@@ -777,8 +777,9 @@ class CoreSemanticClosureV2M6DogfoodTrackBTest(unittest.TestCase):
 
         for record in (
             requirements["REQ-005"],
+            requirements["REQ-006"],
             unknowns["UNK-001"], unknowns["UNK-021"], unknowns["UNK-031"], unknowns["UNK-051"],
-            decisions["DEC-001"], decisions["DEC-012"], decisions["DEC-013"], decisions["DEC-043"],
+            decisions["DEC-001"], decisions["DEC-008"], decisions["DEC-012"], decisions["DEC-013"], decisions["DEC-043"],
             surfaces["SURF-001"], surfaces["SURF-003"], surfaces["SURF-005"],
         ):
             self.assertTrue(record["materiality"]["risk_flags"]["security"], record["id"])
@@ -786,7 +787,7 @@ class CoreSemanticClosureV2M6DogfoodTrackBTest(unittest.TestCase):
         manifest = build_approval_manifest_for_review(state)
         self.assertEqual(
             [row["id"] for row in manifest["high_risk_decisions"]],
-            ["DEC-001", "DEC-012", "DEC-013", "DEC-043"],
+            ["DEC-001", "DEC-008", "DEC-012", "DEC-013", "DEC-043"],
         )
         self.assertTrue(all(row["risk_flags"] == ["security"] for row in manifest["high_risk_decisions"]))
 

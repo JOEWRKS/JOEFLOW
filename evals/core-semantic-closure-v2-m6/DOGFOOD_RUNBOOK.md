@@ -7,17 +7,18 @@ CORE_SEMANTIC_CLOSURE_V2_M6_APPROVAL_REQUIRED
 
 - State: `dogfood/product-definition/client-feedback-portal-dogfood-v2/state.json`
 - Definition revision: `1`
-- Definition digest: `ac531d869af5310820e2af90d78d205e841d05bb944f9a16865c8808f3a69957`
+- Definition digest: `e33deda04bae78eab0da60ba432c47a0779bce17c4bee7d1c5695455d9d9f68c`
 - Approval Manifest: `dogfood/approval-manifest.json`
-- Approval Manifest digest: `e9492282561bf4eaa4bd2fde5ecfd01b00e806b7aa76e7119d7c6ce5b1b1f1ce`
+- Approval Manifest digest: `60ec9818666bab7d75bc4ee14d9ff4fcf2817d3cfcaa2e51c95318776be64705`
 - Approval status: `UNAPPROVED`
 - Semantic-readiness blockers: `0`
 
 The full user-facing Approval Manifest is the exact JSON artifact above. It
 reports 113 added records; no changed, superseded, or retired records; no
 deferred nonblocking unknowns; and active Core, AUTH, ASYNC, and PERMISSION
-Grill packs. Its exact high-risk decision inventory is `DEC-001`, `DEC-012`,
-`DEC-013`, and `DEC-043`, each classified with the `security` risk flag.
+Grill packs. Its exact high-risk decision inventory is `DEC-001`, `DEC-008`,
+`DEC-012`, `DEC-013`, and `DEC-043`, each classified with the `security` risk
+flag.
 
 The bounded analytics and field-level interaction decisions remain current user
 intent and are not system-wide policies.

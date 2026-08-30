@@ -573,7 +573,7 @@
           "user_visible": true,
           "reversibility": "REVERSIBLE",
           "risk_flags": {
-            "security": false,
+            "security": true,
             "privacy": false,
             "money": false,
             "legal_or_policy": false,
@@ -1134,7 +1134,7 @@
           "user_visible": true,
           "reversibility": "REVERSIBLE",
           "risk_flags": {
-            "security": false,
+            "security": true,
             "privacy": false,
             "money": false,
             "legal_or_policy": false,

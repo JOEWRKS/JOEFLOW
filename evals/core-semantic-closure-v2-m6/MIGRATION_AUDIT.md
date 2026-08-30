@@ -36,9 +36,9 @@ row, and Designer-only thread resolution uses the Designer session authority.
 
 Magic-link identity, expiry, revocation, Designer session, and role-scoped
 permission decisions are security-classified. The exact high-risk decision
-inventory is `DEC-001`, `DEC-012`, `DEC-013`, and `DEC-043`. Every consumed
-repository-backed documented or historical intent source is pinned to the exact
-frozen historical Git tree and supporting blob commitment.
+inventory is `DEC-001`, `DEC-008`, `DEC-012`, `DEC-013`, and `DEC-043`. Every
+consumed repository-backed documented or historical intent source is pinned to
+the exact frozen historical Git tree and supporting blob commitment.
 
 Track B remains separate from the complete Track A audit. It does not trim,
 close, replace, or supersede Track A, and it does not modify the historical

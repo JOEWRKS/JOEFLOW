@@ -582,6 +582,14 @@
       ]
     },
     {
+      "id": "DEC-008",
+      "statement": "Client Reviewer만 새 pin comment를 생성하고 Designer와 Client Reviewer 모두 thread reply를 작성할 수 있다. Designer가 thread를 RESOLVED로 전환하며 Client Reviewer가 RESOLVED thread에 reply하면 자동 OPEN된다. comment와 thread history 삭제는 금지한다.",
+      "reversibility": "REVERSIBLE",
+      "risk_flags": [
+        "security"
+      ]
+    },
+    {
       "id": "DEC-012",
       "statement": "magic review link 만료 시 새 read/write 요청을 즉시 차단하고 만료 화면을 표시한다. 작성 중 comment text는 best-effort로 로컬 보존하되 서버 제출을 금지하고 Designer가 새 link를 발급한 뒤 복구·재시도한다.",
       "reversibility": "REVERSIBLE",
@@ -698,5 +706,5 @@
     "minimum_definition_gaps": 0,
     "discovery_procedure_gaps": 0
   },
-  "definition_digest": "ac531d869af5310820e2af90d78d205e841d05bb944f9a16865c8808f3a69957"
+  "definition_digest": "e33deda04bae78eab0da60ba432c47a0779bce17c4bee7d1c5695455d9d9f68c"
 }
