@@ -14,6 +14,7 @@ from approval_v2 import (  # noqa: E402
     approval_manifest_digest,
     build_approval_commitment,
     build_approval_manifest_for_review,
+    consumed_evidence_ids,
     definition_digest,
     semantic_readiness_metrics,
 )
@@ -42,9 +43,9 @@ EVIDENCE_MAP_PATH = DOGFOOD_ROOT / "phase-a-evidence-map.json"
 RUNBOOK_PATH = EVAL_ROOT / "DOGFOOD_RUNBOOK.md"
 README_PATH = EVAL_ROOT / "README.md"
 AUDIT_PATH = EVAL_ROOT / "MIGRATION_AUDIT.md"
-EXPECTED_DEFINITION_DIGEST = "ea4a1d0f899fdfd44f8c75068579555f2e198f90ae320500ad1bc5d8933e8ed7"
-EXPECTED_MANIFEST_DIGEST = "bbdf01e34da4973efb07d9f0c9bf2de5839492b4cf4c9bcd193bc0327e9e69a1"
-EXPECTED_ADDED_COUNT = 102
+EXPECTED_DEFINITION_DIGEST = "ac531d869af5310820e2af90d78d205e841d05bb944f9a16865c8808f3a69957"
+EXPECTED_MANIFEST_DIGEST = "e9492282561bf4eaa4bd2fde5ecfd01b00e806b7aa76e7119d7c6ce5b1b1f1ce"
+EXPECTED_ADDED_COUNT = 113
 
 ANALYTICS_DECISION = (
     "For this bounded M6 existing-product V2 dogfood Product Definition only, "
@@ -72,6 +73,74 @@ INTERACTION_DECISION = (
     "confirmation is N/A for this bounded fixture. This interaction policy is bounded "
     "to this dogfood Product Definition and is not a system-wide rule."
 )
+
+CONCURRENCY_DECISION = (
+    "For this bounded M6 dogfood Product Definition only, review-link send, resend, "
+    "and revoke each require client_attempt_id and expected_review_link_revision. "
+    "The same client_attempt_id returns the previously committed result and creates "
+    "no additional side effects. Distinct concurrent attempts on the same expected "
+    "revision race and exactly one may commit. Once one commits and advances the "
+    "revision, other stale expected revisions are rejected. A stale rejection returns "
+    "the latest authoritative review-link state and revision needed for recovery and "
+    "reconciliation. Retrying stale requires a new attempt based on the newly observed "
+    "revision; stale is never reinterpreted against a newer revision. One logical "
+    "successful attempt creates no duplicate review link, applicable email send, "
+    "domain/history record, delivery record, or other externally visible side effect. "
+    "Revoke uses the same attempt/revision semantics with no duplicate revocation, "
+    "history, or notification effects; it has no email side effect unless this approved "
+    "definition separately requires one. This policy is bounded to this M6 dogfood "
+    "Product Definition and is not a universal future policy."
+)
+
+RULE_131 = (
+    "For this bounded M6 dogfood only, send_review_request, resend_review_request, and "
+    "revoke_review_link each require client_attempt_id and expected_review_link_revision."
+)
+RULE_132 = (
+    "For review-link actions, the same client_attempt_id returns its previously committed "
+    "result without additional side effects; distinct concurrent attempts against the "
+    "same expected_review_link_revision race and exactly one may commit."
+)
+RULE_133 = (
+    "A committed review-link action advances review_link_revision; stale expected "
+    "revisions are rejected with the latest authoritative review-link state and revision, "
+    "and a stale retry requires a new attempt based on the newly observed revision and is "
+    "never reinterpreted against a newer revision."
+)
+RULE_134 = (
+    "One logical successful review-link attempt creates no duplicate review link, "
+    "applicable email send, domain/history record, delivery record, or other externally "
+    "visible side effect; revoke follows the same attempt/revision rule without duplicate "
+    "revocation/history/notification effects and has no email side effect unless "
+    "separately required by the approved definition."
+)
+DATA_010_PURPOSE = (
+    "Review-link action concurrency state: client_attempt_id, "
+    "expected_review_link_revision, committed-result lookup, monotonic "
+    "review_link_revision, stale rejection with latest authoritative link state and "
+    "revision, and one logical side-effect identity across applicable link, email, "
+    "domain/history, delivery, revocation, and notification effects."
+)
+
+HISTORICAL_TREE_COMMITMENT = "git-tree:22f8c2ccb8f9d77e54867c44dbdbcea63e42a052"
+HISTORICAL_STATE_COMMITMENT = "git-blob:44a29cc4ecb7a8772b6441d73d7a7acb52188e6e"
+PRODUCT_DEFINITION_COMMITMENT = "git-blob:0d18335a81ad88e633062fa1210566ddbb1f56b2"
+REPOSITORY_EVIDENCE_CONTENT = {
+    "EVD-001": PRODUCT_DEFINITION_COMMITMENT,
+    "EVD-002": HISTORICAL_STATE_COMMITMENT,
+    "EVD-003": HISTORICAL_STATE_COMMITMENT,
+    "EVD-004": HISTORICAL_STATE_COMMITMENT,
+    "EVD-005": HISTORICAL_STATE_COMMITMENT,
+    "EVD-006": HISTORICAL_TREE_COMMITMENT,
+    "EVD-007": PRODUCT_DEFINITION_COMMITMENT,
+    "EVD-009": HISTORICAL_STATE_COMMITMENT,
+    "EVD-010": HISTORICAL_STATE_COMMITMENT,
+    "EVD-011": HISTORICAL_STATE_COMMITMENT,
+    "EVD-012": HISTORICAL_STATE_COMMITMENT,
+    "EVD-013": PRODUCT_DEFINITION_COMMITMENT,
+    "EVD-014": HISTORICAL_STATE_COMMITMENT,
+    "EVD-016": HISTORICAL_TREE_COMMITMENT,
+}
 
 SCR_006_PURPOSE = (
     "Designer-only Review Access Management for an exact-Version target, designated "
@@ -133,6 +202,7 @@ EXPECTED_MEANINGS = {
         "Reviewer recipient, and active review link; DRAFT to IN_REVIEW plus immediate "
         "email and no Designer self-notification."
     ),
+    ("DATA-010", "/purpose"): DATA_010_PURPOSE,
     ("INT-001", "/purpose"): (
         "Transactional email delivery for review requests, new pins, and thread replies "
         "with the documented recipient and self-notification exclusions."
@@ -170,6 +240,13 @@ EXPECTED_MEANINGS = {
     ("RULE-084", "/statement"): (
         "Concurrent mutation is guarded by exact Version ID and expected state revision."
     ),
+    ("RULE-095", "/statement"): (
+        "동일 message attempt ID의 조회·재시도는 하나의 논리적 submission으로 처리하고 "
+        "성공 record가 있으면 기존 record를 반환한다."
+    ),
+    ("RULE-096", "/statement"): (
+        "동일 message attempt ID로 duplicate comment 또는 reply record를 생성하지 않는다."
+    ),
     ("RULE-110", "/statement"): (
         "Expired Designer session requires a new email magic-link authentication."
     ),
@@ -204,12 +281,17 @@ EXPECTED_MEANINGS = {
         "Designer enters the review canvas with an authenticated session; Client Reviewer "
         "enters with an active project-scoped link and designated email identity."
     ),
+    ("RULE-131", "/statement"): RULE_131,
+    ("RULE-132", "/statement"): RULE_132,
+    ("RULE-133", "/statement"): RULE_133,
+    ("RULE-134", "/statement"): RULE_134,
     ("EVD-014", "/claim"): (
         "The documented bounded transactional-email inventory includes review-request "
         "link delivery, new-pin notification, and thread-reply notification; it defines "
         "no revocation or thread-resolution email use."
     ),
     ("EVD-015", "/claim"): INTERACTION_DECISION,
+    ("EVD-017", "/claim"): CONCURRENCY_DECISION,
 }
 
 
@@ -264,7 +346,6 @@ COMMON_ACTION_BINDINGS = {
     "cancel": refs(("RULE-122", "/statement")),
     "back": refs(("RULE-122", "/statement")),
     "refresh": refs(("RULE-123", "/statement")),
-    "duplicate_concurrent_action": refs(("RULE-125", "/statement")),
     "timeout": refs(("RULE-125", "/statement")),
     "offline": refs(("RULE-125", "/statement")),
     "undo": refs(("RULE-124", "/statement")),
@@ -280,50 +361,57 @@ def action_refs(**overrides):
 ACTION_BINDINGS = {
     ("SCR-006", "send_review_request"): action_refs(
         entry=refs(("SCR-006", "/major_actions")),
-        precondition=refs(("RULE-046", "/statement"), ("RULE-129", "/statement")),
-        input=refs(("DATA-009", "/purpose")),
-        validation=refs(("RULE-046", "/statement")),
-        submit=refs(("FLOW-005", "/paths")),
+        precondition=refs(("RULE-046", "/statement"), ("RULE-129", "/statement"), ("RULE-131", "/statement")),
+        input=refs(("DATA-009", "/purpose"), ("DATA-010", "/purpose")),
+        validation=refs(("RULE-046", "/statement"), ("RULE-131", "/statement"), ("RULE-133", "/statement")),
+        submit=refs(("FLOW-005", "/paths"), ("RULE-131", "/statement")),
         success=refs(("FLOW-005", "/outcomes/0"), ("STATE-002", "/conditions/1")),
-        failure=refs(("RULE-128", "/statement")),
+        failure=refs(("RULE-128", "/statement"), ("RULE-133", "/statement")),
+        retry=refs(("RULE-125", "/statement"), ("RULE-133", "/statement")),
+        duplicate_concurrent_action=refs(("RULE-132", "/statement"), ("RULE-133", "/statement"), ("RULE-134", "/statement")),
         permission=refs(("RULE-129", "/statement")),
         session_expiration=refs(("RULE-110", "/statement")),
-        data_mutation=refs(("DATA-009", "/purpose")),
-        side_effect=refs(("DATA-009", "/purpose")),
-        notification=refs(("INT-001", "/purpose")),
-        persistence=refs(("DATA-004", "/purpose"), ("DATA-009", "/purpose")),
+        data_mutation=refs(("DATA-009", "/purpose"), ("DATA-010", "/purpose")),
+        side_effect=refs(("DATA-009", "/purpose"), ("RULE-134", "/statement")),
+        notification=refs(("INT-001", "/purpose"), ("RULE-134", "/statement")),
+        persistence=refs(("DATA-004", "/purpose"), ("DATA-009", "/purpose"), ("DATA-010", "/purpose")),
     ),
     ("SCR-006", "revoke_review_link"): action_refs(
         entry=refs(("SCR-006", "/major_actions")),
-        precondition=refs(("RULE-033", "/statement"), ("RULE-129", "/statement")),
-        input=refs(("DATA-004", "/purpose")),
-        validation=refs(("DATA-004", "/purpose")),
-        submit=refs(("FLOW-005", "/paths")),
+        precondition=refs(("RULE-033", "/statement"), ("RULE-129", "/statement"), ("RULE-131", "/statement")),
+        input=refs(("DATA-004", "/purpose"), ("DATA-010", "/purpose")),
+        validation=refs(("DATA-004", "/purpose"), ("RULE-131", "/statement"), ("RULE-133", "/statement")),
+        submit=refs(("FLOW-005", "/paths"), ("RULE-131", "/statement")),
         success=refs(("FLOW-005", "/outcomes/1"), ("STATE-002", "/conditions/1")),
-        failure=refs(("RULE-128", "/statement")),
+        failure=refs(("RULE-128", "/statement"), ("RULE-133", "/statement")),
+        retry=refs(("RULE-125", "/statement"), ("RULE-133", "/statement")),
+        duplicate_concurrent_action=refs(("RULE-132", "/statement"), ("RULE-133", "/statement"), ("RULE-134", "/statement")),
         permission=refs(("RULE-129", "/statement")),
         session_expiration=refs(("RULE-110", "/statement")),
-        data_mutation=refs(("DATA-004", "/purpose")),
-        side_effect=refs(("DATA-004", "/purpose")),
+        data_mutation=refs(("DATA-004", "/purpose"), ("DATA-010", "/purpose")),
+        side_effect=refs(("DATA-004", "/purpose"), ("RULE-134", "/statement")),
         notification=None,
-        persistence=refs(("DATA-004", "/purpose")),
+        persistence=refs(("DATA-004", "/purpose"), ("DATA-010", "/purpose")),
     ),
     ("SCR-006", "resend_review_request"): action_refs(
         entry=refs(("SCR-006", "/major_actions")),
-        precondition=refs(("FLOW-005", "/preconditions"), ("RULE-129", "/statement")),
-        input=refs(("DATA-009", "/purpose")),
-        validation=refs(("DATA-009", "/purpose")),
-        submit=refs(("FLOW-005", "/paths")),
+        precondition=refs(("FLOW-005", "/preconditions"), ("RULE-129", "/statement"), ("RULE-131", "/statement")),
+        input=refs(("DATA-009", "/purpose"), ("DATA-010", "/purpose")),
+        validation=refs(("DATA-009", "/purpose"), ("RULE-131", "/statement"), ("RULE-133", "/statement")),
+        submit=refs(("FLOW-005", "/paths"), ("RULE-131", "/statement")),
         success=refs(("FLOW-005", "/outcomes/2"), ("STATE-002", "/conditions/1")),
-        failure=refs(("RULE-128", "/statement")),
+        failure=refs(("RULE-128", "/statement"), ("RULE-133", "/statement")),
+        retry=refs(("RULE-125", "/statement"), ("RULE-133", "/statement")),
+        duplicate_concurrent_action=refs(("RULE-132", "/statement"), ("RULE-133", "/statement"), ("RULE-134", "/statement")),
         permission=refs(("RULE-129", "/statement")),
         session_expiration=refs(("RULE-110", "/statement")),
-        data_mutation=refs(("DATA-009", "/purpose")),
-        side_effect=refs(("DATA-009", "/purpose")),
-        notification=refs(("INT-001", "/purpose")),
-        persistence=refs(("DATA-009", "/purpose")),
+        data_mutation=refs(("DATA-009", "/purpose"), ("DATA-010", "/purpose")),
+        side_effect=refs(("DATA-009", "/purpose"), ("RULE-134", "/statement")),
+        notification=refs(("INT-001", "/purpose"), ("RULE-134", "/statement")),
+        persistence=refs(("DATA-009", "/purpose"), ("DATA-010", "/purpose")),
     ),
     ("SCR-007", "create_pin"): action_refs(
+        duplicate_concurrent_action=refs(("RULE-084", "/statement"), ("RULE-095", "/statement"), ("RULE-096", "/statement")),
         entry=refs(("SCR-007", "/major_actions")),
         precondition=refs(("FLOW-006", "/preconditions"), ("RULE-020", "/statement")),
         input=refs(("DATA-002", "/purpose")),
@@ -339,6 +427,7 @@ ACTION_BINDINGS = {
         persistence=refs(("DATA-002", "/purpose")),
     ),
     ("SCR-007", "reply_thread"): action_refs(
+        duplicate_concurrent_action=refs(("RULE-084", "/statement"), ("RULE-095", "/statement"), ("RULE-096", "/statement")),
         entry=refs(("SCR-007", "/major_actions")),
         precondition=refs(("FLOW-006", "/preconditions"), ("RULE-020", "/statement")),
         input=refs(("DATA-002", "/purpose")),
@@ -354,6 +443,7 @@ ACTION_BINDINGS = {
         persistence=refs(("DATA-002", "/purpose")),
     ),
     ("SCR-007", "resolve_thread"): action_refs(
+        duplicate_concurrent_action=refs(("RULE-084", "/statement")),
         entry=refs(("SCR-007", "/major_actions")),
         precondition=refs(("FLOW-006", "/preconditions"), ("RULE-021", "/statement")),
         input=refs(("DATA-002", "/purpose")),
@@ -362,7 +452,7 @@ ACTION_BINDINGS = {
         success=refs(("FLOW-006", "/outcomes/2"), ("STATE-002", "/conditions/1")),
         failure=refs(("RULE-128", "/statement"), ("RULE-084", "/statement")),
         permission=refs(("RULE-021", "/statement")),
-        session_expiration=refs(("RULE-130", "/statement"), ("RULE-027", "/statement")),
+        session_expiration=refs(("RULE-110", "/statement")),
         data_mutation=refs(("DATA-002", "/purpose")),
         side_effect=refs(("DATA-002", "/purpose")),
         notification=None,
@@ -388,7 +478,10 @@ ACTION_AXES = {
 
 EXPECTED_CONTINUATION_EVIDENCE = {
     "DEC-042": ["EVD-015"], "UNK-050": ["EVD-015"],
+    "DEC-043": ["EVD-017"], "UNK-051": ["EVD-017"],
     "STATE-002": ["EVD-015"], "DATA-009": ["EVD-011"],
+    "STATE-003": ["EVD-017"], "DATA-010": ["EVD-017"],
+    "AC-007": ["EVD-017"],
     "RULE-014": ["EVD-009", "EVD-016"], "RULE-015": ["EVD-016"],
     "RULE-027": ["EVD-002", "EVD-016"], "RULE-063": ["EVD-012", "EVD-016"],
     "RULE-077": ["EVD-016"], "RULE-110": ["EVD-016"],
@@ -397,6 +490,23 @@ EXPECTED_CONTINUATION_EVIDENCE = {
     "RULE-124": ["EVD-015"], "RULE-125": ["EVD-015"],
     "RULE-128": ["EVD-016"], "RULE-129": ["EVD-006", "EVD-016"],
     "RULE-130": ["EVD-006", "EVD-016"],
+    "RULE-131": ["EVD-017"], "RULE-132": ["EVD-017"],
+    "RULE-133": ["EVD-017"], "RULE-134": ["EVD-017"],
+}
+
+ASYNC_REVIEW_LINK_BINDINGS = {
+    "pending": refs(("DATA-010", "/purpose")),
+    "timeout": refs(("RULE-125", "/statement")),
+    "retry": refs(("RULE-125", "/statement"), ("RULE-133", "/statement")),
+    "idempotency": refs(("RULE-132", "/statement")),
+    "duplicate_execution": refs(("RULE-132", "/statement"), ("RULE-134", "/statement")),
+    "late_completion": refs(("RULE-133", "/statement")),
+    "partial_completion": refs(("RULE-134", "/statement")),
+    "reconciliation": refs(("RULE-133", "/statement")),
+}
+ASYNC_REVIEW_LINK_NA_BASIS = {
+    "polling": refs(("EVD-017", "/claim")),
+    "cancel": refs(("EVD-015", "/claim")),
 }
 
 
@@ -570,29 +680,206 @@ class CoreSemanticClosureV2M6DogfoodPhaseATest(unittest.TestCase):
                 self.assertTrue(unknown["origin"]["source_path"])
 
 
-class FinalReviewConcurrencySafetyStopTest(unittest.TestCase):
-    def test_missing_review_link_concurrency_authority_removes_invalid_checkpoint(self):
-        for path in (
-            STATE_PATH,
-            EVIDENCE_MAP_PATH,
-            MANIFEST_PATH,
-            EVAL_ROOT / "DOGFOOD_RUNBOOK.md",
-        ):
-            self.assertFalse(path.exists(), path)
-        readme = (EVAL_ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertIn("REVIEW_LINK_CONCURRENT_ACTION_AUTHORITY_GAP", readme)
-        self.assertIn("product analytics/telemetry is NOT used", readme)
-        self.assertIn("Loading and Submitting show pending state", readme)
+class CoreSemanticClosureV2M6DogfoodTrackBTest(unittest.TestCase):
+    def test_exact_field_level_semantic_correspondence_and_mutations(self):
+        self.assertTrue(STATE_PATH.is_file(), "approved decisions must recreate Track B")
+        state = load_json(STATE_PATH)
+        self.assertEqual(semantic_correspondence_errors(state), [])
 
-    def test_safety_stop_records_exact_resolved_and_unresolved_authority_boundaries(self):
-        readme = README_PATH.read_text(encoding="utf-8")
-        self.assertIn("`RULE-084`", readme)
-        self.assertIn("`RULE-095` and `RULE-096`", readme)
-        self.assertIn("must bind exact `RULE-110`", readme)
-        self.assertIn("not Reviewer-link `RULE-027`", readme)
-        self.assertIn("classify", readme)
-        self.assertIn("security risk", readme)
-        self.assertIn("exact frozen Git tree/blob", readme)
+        wrong_pointer = deepcopy(state)
+        loading = screen_coverage(wrong_pointer, "SCR-006")["states"]["loading"]
+        loading["authority_bindings"][0]["pointer"] = "/state_name"
+        loading["authority_bindings"][0]["value_sha256"] = sha256_json("Bounded interaction state")
+        self.assertTrue(semantic_correspondence_errors(wrong_pointer))
+
+        wrong_value = deepcopy(state)
+        index = canonical_record_index(wrong_value)
+        index["STATE-002"][1]["conditions"][0] = "Pending."
+        for screen in wrong_value["ux_coverage"]:
+            for cell in screen["states"].values():
+                for binding in cell["authority_bindings"]:
+                    if binding["record_id"] == "STATE-002" and binding["pointer"] == "/conditions/0":
+                        binding["value_sha256"] = sha256_json("Pending.")
+            for action in screen["actions"]:
+                for cell in action["cells"].values():
+                    for binding in cell["authority_bindings"]:
+                        if binding["record_id"] == "STATE-002" and binding["pointer"] == "/conditions/0":
+                            binding["value_sha256"] = sha256_json("Pending.")
+        self.assertTrue(semantic_correspondence_errors(wrong_value))
+
+        wrong_concurrency = deepcopy(state)
+        send = action_coverage(screen_coverage(wrong_concurrency, "SCR-006"), "send_review_request")
+        send["cells"]["duplicate_concurrent_action"]["authority_bindings"] = [{
+            "record_id": "RULE-125",
+            "pointer": "/statement",
+            "value_sha256": sha256_json(EXPECTED_MEANINGS[("RULE-125", "/statement")]),
+        }]
+        self.assertTrue(semantic_correspondence_errors(wrong_concurrency))
+
+        wrong_actor = deepcopy(state)
+        resolve = action_coverage(screen_coverage(wrong_actor, "SCR-007"), "resolve_thread")
+        resolve["cells"]["session_expiration"]["authority_bindings"] = [{
+            "record_id": "RULE-027",
+            "pointer": "/statement",
+            "value_sha256": sha256_json(EXPECTED_MEANINGS[("RULE-027", "/statement")]),
+        }]
+        self.assertTrue(semantic_correspondence_errors(wrong_actor))
+
+    def test_user_decision_provenance_repository_commitments_and_security_risk_are_exact(self):
+        self.assertTrue(STATE_PATH.is_file(), "approved decisions must recreate Track B")
+        state = load_json(STATE_PATH)
+        evidence = {item["id"]: item for item in state["evidence"]}
+        unknowns = {item["id"]: item for item in state["objects"]["unknowns"]}
+        decisions = {item["id"]: item for item in state["objects"]["decisions"]}
+        requirements = {item["id"]: item for item in state["objects"]["requirements"]}
+        surfaces = {item["id"]: item for item in state["surface_manifest"]["records"]}
+
+        self.assertIn("EVD-017", evidence)
+        self.assertIn("UNK-051", unknowns)
+        self.assertIn("DEC-043", decisions)
+        self.assertIn("SURF-005", surfaces)
+        self.assertEqual(evidence["EVD-017"], {
+            "id": "EVD-017",
+            "status": "CURRENT",
+            "source_kind": "USER_CONFIRMED_INTENT",
+            "locator": "user-decision/task-5-phase-a-review-link-concurrency-policy",
+            "claim": CONCURRENCY_DECISION,
+            "confidence": "DIRECT",
+            "authority_classes": ["INTENT"],
+            "observed_version": None,
+            "content_hash": None,
+        })
+        self.assertEqual(unknowns["UNK-051"]["evidence_refs"], ["EVD-017"])
+        self.assertEqual(unknowns["UNK-051"]["resolved_by"], ["DEC-043"])
+        self.assertEqual(unknowns["UNK-051"]["resolution_mode"], "USER_DECISION")
+        self.assertEqual(unknowns["UNK-051"]["resolution_summary"], CONCURRENCY_DECISION)
+        self.assertEqual(unknowns["UNK-051"]["origin"], {
+            "kind": "GRILL_PACK_AXIS",
+            "surface_ref": "SURF-005",
+            "pack_id": "GRILL-ASYNC-1",
+            "axis_id": "duplicate_execution",
+            "source_path": None,
+        })
+        self.assertEqual(decisions["DEC-043"]["statement"], CONCURRENCY_DECISION)
+        self.assertEqual(decisions["DEC-043"]["source_unknown_refs"], ["UNK-051"])
+        self.assertEqual(decisions["DEC-043"]["evidence_refs"], ["EVD-017"])
+        self.assertEqual(decisions["DEC-043"]["decided_by"], "USER")
+
+        for evidence_id, content_commitment in REPOSITORY_EVIDENCE_CONTENT.items():
+            self.assertEqual(evidence[evidence_id]["observed_version"], HISTORICAL_TREE_COMMITMENT)
+            self.assertEqual(evidence[evidence_id]["content_hash"], content_commitment)
+        repository_ids = {
+            item["id"] for item in state["evidence"]
+            if item["source_kind"] in {"DOCUMENTED_INTENT", "HISTORICAL_DECISION"}
+        }
+        self.assertEqual(repository_ids, set(REPOSITORY_EVIDENCE_CONTENT))
+        self.assertLessEqual(repository_ids & set(consumed_evidence_ids(state)), set(REPOSITORY_EVIDENCE_CONTENT))
+
+        for record in (
+            requirements["REQ-005"],
+            unknowns["UNK-001"], unknowns["UNK-021"], unknowns["UNK-031"], unknowns["UNK-051"],
+            decisions["DEC-001"], decisions["DEC-012"], decisions["DEC-013"], decisions["DEC-043"],
+            surfaces["SURF-001"], surfaces["SURF-003"], surfaces["SURF-005"],
+        ):
+            self.assertTrue(record["materiality"]["risk_flags"]["security"], record["id"])
+
+        manifest = build_approval_manifest_for_review(state)
+        self.assertEqual(
+            [row["id"] for row in manifest["high_risk_decisions"]],
+            ["DEC-001", "DEC-012", "DEC-013", "DEC-043"],
+        )
+        self.assertTrue(all(row["risk_flags"] == ["security"] for row in manifest["high_risk_decisions"]))
+
+    def test_async_core_and_ux_concurrency_bindings_are_exact(self):
+        self.assertTrue(STATE_PATH.is_file(), "approved decisions must recreate Track B")
+        state = load_json(STATE_PATH)
+        async_rows = [
+            row for row in state["grill_coverage"]
+            if row["target_ref"] == "SURF-005" and row["pack_id"] == "GRILL-ASYNC-1"
+        ]
+        self.assertEqual(len(async_rows), 1)
+        async_row = async_rows[0]
+        self.assertEqual(set(async_row["axes"]), set(ASYNC_REVIEW_LINK_BINDINGS) | set(ASYNC_REVIEW_LINK_NA_BASIS))
+        for axis, expected in ASYNC_REVIEW_LINK_BINDINGS.items():
+            cell = async_row["axes"][axis]
+            self.assertEqual(cell["status"], "ADDRESSED", axis)
+            self.assertEqual(binding_pairs(cell, "authority_bindings"), expected, axis)
+            self.assertEqual(cell["unknown_refs"], [], axis)
+            self.assertEqual(cell["basis_bindings"], [], axis)
+        for axis, expected in ASYNC_REVIEW_LINK_NA_BASIS.items():
+            cell = async_row["axes"][axis]
+            self.assertEqual(cell["status"], "N/A", axis)
+            self.assertEqual(binding_pairs(cell, "basis_bindings"), expected, axis)
+            self.assertEqual(cell["unknown_refs"], [], axis)
+            self.assertEqual(cell["authority_bindings"], [], axis)
+
+        coverage = next(row for row in state["coverage"] if row["feature_id"] == "REQ-005")
+        required_core_pairs = {
+            "precondition": [("RULE-001", "/statement"), ("RULE-131", "/statement")],
+            "error": [("RULE-026", "/statement"), ("RULE-133", "/statement")],
+            "recovery": [("RULE-034", "/statement"), ("RULE-133", "/statement")],
+            "state": [("STATE-001", "/conditions"), ("STATE-003", "/conditions")],
+            "data": [("DATA-004", "/purpose"), ("DATA-010", "/purpose")],
+            "validation": [("AC-005", "/assertion"), ("AC-007", "/assertion")],
+            "acceptance": [("AC-005", "/assertion"), ("AC-007", "/assertion")],
+            "security": [("RULE-003", "/statement"), ("DEC-043", "/statement")],
+        }
+        for axis, expected in required_core_pairs.items():
+            self.assertEqual(binding_pairs(coverage["cells"][axis], "authority_bindings"), expected, axis)
+
+        profile = state["surface_manifest"]["grill_profile"]["ASYNC"]
+        self.assertEqual(profile["status"], "ACTIVE")
+        self.assertEqual(profile["surface_refs"], ["SURF-004", "SURF-005"])
+        active_async = next(
+            pack for pack in state["discovery_baseline"]["active_grill_packs"]
+            if pack["pack_id"] == "GRILL-ASYNC-1"
+        )
+        self.assertEqual(active_async["target_refs"], ["SURF-004", "SURF-005"])
+
+    def test_checkpoint_is_ready_unapproved_and_deterministic(self):
+        required = (STATE_PATH, MANIFEST_PATH, EVIDENCE_MAP_PATH, RUNBOOK_PATH)
+        self.assertEqual([path for path in required if not path.is_file()], [])
+        state = load_json(STATE_PATH)
+        manifest = load_json(MANIFEST_PATH)
+        self.assertEqual(state["project"]["definition_status"], "READY_FOR_REVIEW")
+        self.assertEqual(state["approval"], {"status": "UNAPPROVED"})
+        self.assertEqual(state["approval_history"], [])
+        self.assertEqual(validate_state_v2(state), [])
+        self.assertEqual(sum(semantic_readiness_metrics(state).values()), 0)
+        self.assertEqual(build_approval_manifest_for_review(state), manifest)
+        self.assertEqual(definition_digest(state), EXPECTED_DEFINITION_DIGEST)
+        self.assertEqual(approval_manifest_digest(manifest), EXPECTED_MANIFEST_DIGEST)
+        self.assertEqual(len(manifest["added"]), EXPECTED_ADDED_COUNT)
+        self.assertEqual(manifest["changed"], [])
+        self.assertEqual(manifest["superseded"], [])
+        self.assertEqual(manifest["retired"], [])
+        serialized = json.dumps(state, ensure_ascii=False)
+        for forbidden in ("approved_by", "approved_at", "timestamp"):
+            self.assertNotIn(forbidden, serialized)
+
+        evidence = {item["id"]: item for item in state["evidence"]}
+        self.assertEqual(evidence["EVD-008"]["claim"], ANALYTICS_DECISION)
+        self.assertEqual(evidence["EVD-015"]["claim"], INTERACTION_DECISION)
+        self.assertEqual(evidence["EVD-017"]["claim"], CONCURRENCY_DECISION)
+        evidence_map = load_json(EVIDENCE_MAP_PATH)["record_evidence"]
+        current_ids = {
+            record["id"]
+            for records in state["objects"].values()
+            for record in records
+            if record.get("status") == "CURRENT"
+        }
+        all_object_ids = {
+            record["id"] for records in state["objects"].values() for record in records
+        }
+        self.assertLessEqual(current_ids, set(evidence_map))
+        self.assertLessEqual(set(evidence_map), all_object_ids)
+        for record_id, expected_refs in EXPECTED_CONTINUATION_EVIDENCE.items():
+            self.assertEqual(evidence_map[record_id], expected_refs)
+        docs = README_PATH.read_text(encoding="utf-8") + RUNBOOK_PATH.read_text(encoding="utf-8")
+        self.assertIn("READY_FOR_REVIEW", docs)
+        self.assertIn("UNAPPROVED", docs)
+        self.assertIn(CONCURRENCY_DECISION, docs)
+        self.assertNotIn("NEEDS_CONTEXT", docs)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,296 @@
+{
+  "schema_version": "joewrks.phase-a-evidence-map/1.0",
+  "project_slug": "client-feedback-portal-dogfood-v2",
+  "scope": [
+    "REQ-005",
+    "REQ-006"
+  ],
+  "record_evidence": {
+    "AC-005": [
+      "EVD-006"
+    ],
+    "AC-006": [
+      "EVD-006"
+    ],
+    "AC-007": [
+      "EVD-017"
+    ],
+    "DATA-002": [
+      "EVD-003",
+      "EVD-012"
+    ],
+    "DATA-004": [
+      "EVD-002"
+    ],
+    "DATA-005": [
+      "EVD-002"
+    ],
+    "DATA-007": [
+      "EVD-004"
+    ],
+    "DATA-008": [
+      "EVD-004"
+    ],
+    "DATA-009": [
+      "EVD-011"
+    ],
+    "DATA-010": [
+      "EVD-017"
+    ],
+    "DATA-015": [
+      "EVD-005"
+    ],
+    "DEC-001": [
+      "EVD-002"
+    ],
+    "DEC-008": [
+      "EVD-003"
+    ],
+    "DEC-012": [
+      "EVD-002"
+    ],
+    "DEC-013": [
+      "EVD-002"
+    ],
+    "DEC-018": [
+      "EVD-004"
+    ],
+    "DEC-019": [
+      "EVD-004"
+    ],
+    "DEC-034": [
+      "EVD-005"
+    ],
+    "DEC-041": [
+      "EVD-008"
+    ],
+    "DEC-042": [
+      "EVD-015"
+    ],
+    "DEC-043": [
+      "EVD-017"
+    ],
+    "FLOW-005": [
+      "EVD-006"
+    ],
+    "FLOW-006": [
+      "EVD-006"
+    ],
+    "GOAL-001": [
+      "EVD-001"
+    ],
+    "INT-001": [
+      "EVD-004",
+      "EVD-011"
+    ],
+    "REQ-005": [
+      "EVD-001",
+      "EVD-017"
+    ],
+    "REQ-006": [
+      "EVD-001"
+    ],
+    "RULE-001": [
+      "EVD-002"
+    ],
+    "RULE-002": [
+      "EVD-002"
+    ],
+    "RULE-003": [
+      "EVD-013"
+    ],
+    "RULE-014": [
+      "EVD-009",
+      "EVD-016"
+    ],
+    "RULE-015": [
+      "EVD-016"
+    ],
+    "RULE-017": [
+      "EVD-009"
+    ],
+    "RULE-020": [
+      "EVD-003"
+    ],
+    "RULE-021": [
+      "EVD-003"
+    ],
+    "RULE-022": [
+      "EVD-003"
+    ],
+    "RULE-023": [
+      "EVD-003"
+    ],
+    "RULE-024": [
+      "EVD-003",
+      "EVD-012"
+    ],
+    "RULE-026": [
+      "EVD-002"
+    ],
+    "RULE-027": [
+      "EVD-002",
+      "EVD-016"
+    ],
+    "RULE-030": [
+      "EVD-002"
+    ],
+    "RULE-031": [
+      "EVD-002"
+    ],
+    "RULE-032": [
+      "EVD-002"
+    ],
+    "RULE-033": [
+      "EVD-002"
+    ],
+    "RULE-034": [
+      "EVD-002"
+    ],
+    "RULE-040": [
+      "EVD-004"
+    ],
+    "RULE-041": [
+      "EVD-004"
+    ],
+    "RULE-042": [
+      "EVD-004"
+    ],
+    "RULE-043": [
+      "EVD-004"
+    ],
+    "RULE-044": [
+      "EVD-004"
+    ],
+    "RULE-046": [
+      "EVD-011"
+    ],
+    "RULE-063": [
+      "EVD-012",
+      "EVD-016"
+    ],
+    "RULE-077": [
+      "EVD-016"
+    ],
+    "RULE-084": [
+      "EVD-010"
+    ],
+    "RULE-093": [
+      "EVD-005"
+    ],
+    "RULE-094": [
+      "EVD-005"
+    ],
+    "RULE-095": [
+      "EVD-005"
+    ],
+    "RULE-096": [
+      "EVD-005"
+    ],
+    "RULE-110": [
+      "EVD-016"
+    ],
+    "RULE-119": [
+      "EVD-015"
+    ],
+    "RULE-120": [
+      "EVD-015"
+    ],
+    "RULE-122": [
+      "EVD-015"
+    ],
+    "RULE-123": [
+      "EVD-015"
+    ],
+    "RULE-124": [
+      "EVD-015"
+    ],
+    "RULE-125": [
+      "EVD-015"
+    ],
+    "RULE-128": [
+      "EVD-016"
+    ],
+    "RULE-129": [
+      "EVD-006",
+      "EVD-016"
+    ],
+    "RULE-130": [
+      "EVD-006",
+      "EVD-016"
+    ],
+    "RULE-131": [
+      "EVD-017"
+    ],
+    "RULE-132": [
+      "EVD-017"
+    ],
+    "RULE-133": [
+      "EVD-017"
+    ],
+    "RULE-134": [
+      "EVD-017"
+    ],
+    "SCR-006": [
+      "EVD-006",
+      "EVD-017"
+    ],
+    "SCR-007": [
+      "EVD-006"
+    ],
+    "STATE-001": [
+      "EVD-010",
+      "EVD-012"
+    ],
+    "STATE-002": [
+      "EVD-015"
+    ],
+    "STATE-003": [
+      "EVD-017"
+    ],
+    "TASK-004": [
+      "EVD-006",
+      "EVD-017"
+    ],
+    "TASK-005": [
+      "EVD-006"
+    ],
+    "UNK-001": [
+      "EVD-002"
+    ],
+    "UNK-005": [
+      "EVD-003"
+    ],
+    "UNK-018": [
+      "EVD-005"
+    ],
+    "UNK-021": [
+      "EVD-002"
+    ],
+    "UNK-031": [
+      "EVD-002"
+    ],
+    "UNK-034": [
+      "EVD-004"
+    ],
+    "UNK-036": [
+      "EVD-004"
+    ],
+    "UNK-049": [
+      "EVD-008"
+    ],
+    "UNK-050": [
+      "EVD-015"
+    ],
+    "UNK-051": [
+      "EVD-017"
+    ],
+    "USR-001": [
+      "EVD-001"
+    ],
+    "USR-002": [
+      "EVD-001"
+    ]
+  },
+  "observed_evidence_policy": "Observed implementation, runtime, and test evidence are not product intent."
+}

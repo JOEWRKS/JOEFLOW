@@ -1,0 +1,702 @@
+{
+  "schema_version": "joewrks.approval-manifest/1.0",
+  "from_revision": null,
+  "to_revision": 1,
+  "added": [
+    {
+      "id": "AC-005",
+      "type": "AC",
+      "summary": "Review request changes only the exact Version, sends one 30-day project link, keeps one active link, and expiry/revoke/archive block all sessions without restoring old links."
+    },
+    {
+      "id": "AC-006",
+      "type": "AC",
+      "summary": "Pins bind normalized coordinates to exact Versions; threads are append-only/idempotent; role-specific resolve/reopen and approved read-only rules hold."
+    },
+    {
+      "id": "AC-007",
+      "type": "AC",
+      "summary": "Each send, resend, and revoke requires client_attempt_id and expected_review_link_revision; same-attempt replay returns the prior committed result without side effects; distinct same-revision attempts allow exactly one commit; stale rejection returns latest link state/revision and may retry only as a new attempt on the newly observed revision; one logical success creates no duplicate applicable link, email, history, delivery, revocation, or notification effect, and revoke sends no email unless separately required."
+    },
+    {
+      "id": "DATA-002",
+      "type": "DATA",
+      "summary": "Version annotation"
+    },
+    {
+      "id": "DATA-004",
+      "type": "DATA",
+      "summary": "magic review link"
+    },
+    {
+      "id": "DATA-005",
+      "type": "DATA",
+      "summary": "만료 시 로컬 comment 초안"
+    },
+    {
+      "id": "DATA-007",
+      "type": "DATA",
+      "summary": "새 pin comment 이메일 이벤트"
+    },
+    {
+      "id": "DATA-008",
+      "type": "DATA",
+      "summary": "thread reply 이메일 이벤트"
+    },
+    {
+      "id": "DATA-009",
+      "type": "DATA",
+      "summary": "Review request email event"
+    },
+    {
+      "id": "DATA-010",
+      "type": "DATA",
+      "summary": "Review-link action attempt ledger"
+    },
+    {
+      "id": "DATA-015",
+      "type": "DATA",
+      "summary": "message submission attempt"
+    },
+    {
+      "id": "DEC-001",
+      "type": "DEC",
+      "summary": "클라이언트 접근은 계정 생성 없는 이메일 기반 project-scoped magic review link 방식으로 한다."
+    },
+    {
+      "id": "DEC-008",
+      "type": "DEC",
+      "summary": "Client Reviewer만 새 pin comment를 생성하고 Designer와 Client Reviewer 모두 thread reply를 작성할 수 있다. Designer가 thread를 RESOLVED로 전환하며 Client Reviewer가 RESOLVED thread에 reply하면 자동 OPEN된다. comment와 thread history 삭제는 금지한다."
+    },
+    {
+      "id": "DEC-012",
+      "type": "DEC",
+      "summary": "magic review link 만료 시 새 read/write 요청을 즉시 차단하고 만료 화면을 표시한다. 작성 중 comment text는 best-effort로 로컬 보존하되 서버 제출을 금지하고 Designer가 새 link를 발급한 뒤 복구·재시도한다."
+    },
+    {
+      "id": "DEC-013",
+      "type": "DEC",
+      "summary": "project당 active review link는 하나만 허용한다. 새 링크 발급 시 기존 active link를 즉시 revoke하고 열린 기존 세션도 다음 요청부터 차단한다. Designer는 active link를 수동 revoke할 수 있다."
+    },
+    {
+      "id": "DEC-018",
+      "type": "DEC",
+      "summary": "Client Reviewer가 새 pin comment를 만들면 Designer에게 즉시 이메일을 보내고 행동한 Reviewer에게 self-notification은 보내지 않는다."
+    },
+    {
+      "id": "DEC-019",
+      "type": "DEC",
+      "summary": "thread reply 작성 시 상대 참여자에게 즉시 이메일을 보내고 작성자 자신에게는 보내지 않는다."
+    },
+    {
+      "id": "DEC-034",
+      "type": "DEC",
+      "summary": "comment/reply text를 best-effort로 로컬 보존하고 client-generated message attempt ID로 idempotent 조회·재시도한다. 이미 성공했다면 기존 record를 반환하고 duplicate submission을 금지한다."
+    },
+    {
+      "id": "DEC-041",
+      "type": "DEC",
+      "summary": "For this bounded M6 existing-product V2 dogfood Product Definition only, product analytics/telemetry is NOT used. REQ-005/REQ-006 review-link access and thread actions emit no analytics events. Introduce no analytics event names, properties, tracking identifiers, analytics retention/access policy, funnels, or success metrics. Existing domain/business history remains ordinary product state/history where already required. Existing email delivery/send status remains ordinary product operational/domain state where already required. Neither is reclassified as analytics telemetry. This is an explicit current user product decision/boundary, not an inference from missing implementation. It is not a permanent system-wide prohibition for future products/revisions."
+    },
+    {
+      "id": "DEC-042",
+      "type": "DEC",
+      "summary": "For this bounded M6 existing-product V2 dogfood Product Definition only: Loading and Submitting show pending state and never success. Empty shows the screen-specific zero state. Partial shows available authoritative data plus an explicit recovery notice. Completed follows only authoritative confirmation. Cancelled, Cancel, and Back cause no mutation and preserve eligible unsent text. Refresh reloads latest authoritative state. Committed review-link/thread mutations have no direct Undo; recovery uses documented new-link, new-reply, or reopen paths. Offline and Timeout withhold success, preserve eligible input, refresh authoritative state before retry, and must not duplicate mutation or notification. Destructive confirmation is N/A for this bounded fixture. This interaction policy is bounded to this dogfood Product Definition and is not a system-wide rule."
+    },
+    {
+      "id": "DEC-043",
+      "type": "DEC",
+      "summary": "For this bounded M6 dogfood Product Definition only, review-link send, resend, and revoke each require client_attempt_id and expected_review_link_revision. The same client_attempt_id returns the previously committed result and creates no additional side effects. Distinct concurrent attempts on the same expected revision race and exactly one may commit. Once one commits and advances the revision, other stale expected revisions are rejected. A stale rejection returns the latest authoritative review-link state and revision needed for recovery and reconciliation. Retrying stale requires a new attempt based on the newly observed revision; stale is never reinterpreted against a newer revision. One logical successful attempt creates no duplicate review link, applicable email send, domain/history record, delivery record, or other externally visible side effect. Revoke uses the same attempt/revision semantics with no duplicate revocation, history, or notification effects; it has no email side effect unless this approved definition separately requires one. This policy is bounded to this M6 dogfood Product Definition and is not a universal future policy."
+    },
+    {
+      "id": "EVD-001",
+      "type": "EVD",
+      "summary": "The bounded product scope covers review-link access and exact-Version canvas, pins, and threads for Designer and Client Reviewer actors."
+    },
+    {
+      "id": "EVD-002",
+      "type": "EVD",
+      "summary": "User decisions require designated-identity, project-scoped reviewer access, 30-day expiry, one active link, rotation, manual revocation, blocked access after expiry or revocation, and local draft recovery after a new link."
+    },
+    {
+      "id": "EVD-003",
+      "type": "EVD",
+      "summary": "User decisions define Client Reviewer-only pin creation, replies by both actors, Designer-only resolution, Reviewer-only automatic reopen, Designer reply without reopen, and prohibition on deleting thread history."
+    },
+    {
+      "id": "EVD-004",
+      "type": "EVD",
+      "summary": "User decisions require immediate counterpart email notification for new pins and thread replies without self-notification."
+    },
+    {
+      "id": "EVD-005",
+      "type": "EVD",
+      "summary": "User decisions require best-effort local message preservation and idempotent retry by client-generated message attempt ID without duplicate records."
+    },
+    {
+      "id": "EVD-006",
+      "type": "EVD",
+      "summary": "The documented screens, flows, acceptance criteria, and tasks trace REQ-005 and REQ-006 through review-link lifecycle and exact-Version thread behavior."
+    },
+    {
+      "id": "EVD-007",
+      "type": "EVD",
+      "summary": "The bounded review-link and thread slice has authentication, asynchronous message recovery, and permission topology; money, file-upload, and destructive-action topology are outside this slice."
+    },
+    {
+      "id": "EVD-008",
+      "type": "EVD",
+      "summary": "For this bounded M6 existing-product V2 dogfood Product Definition only, product analytics/telemetry is NOT used. REQ-005/REQ-006 review-link access and thread actions emit no analytics events. Introduce no analytics event names, properties, tracking identifiers, analytics retention/access policy, funnels, or success metrics. Existing domain/business history remains ordinary product state/history where already required. Existing email delivery/send status remains ordinary product operational/domain state where already required. Neither is reclassified as analytics telemetry. This is an explicit current user product decision/boundary, not an inference from missing implementation. It is not a permanent system-wide prohibition for future products/revisions."
+    },
+    {
+      "id": "EVD-009",
+      "type": "EVD",
+      "summary": "The user decision binds pins and comments to an exact Version, does not copy old pins to a new Version, and allows prior Versions to show their own historical pins and comments."
+    },
+    {
+      "id": "EVD-010",
+      "type": "EVD",
+      "summary": "The user decision requires concurrent mutations to be guarded by exact Version ID and expected state revision."
+    },
+    {
+      "id": "EVD-011",
+      "type": "EVD",
+      "summary": "The user decision requires an explicit review request to move the exact Version to IN_REVIEW and immediately deliver the active review link by email to the Client Reviewer without Designer self-notification."
+    },
+    {
+      "id": "EVD-012",
+      "type": "EVD",
+      "summary": "User decisions require append-only comment and reply history and make an APPROVED exact Version read-only for new pins and replies."
+    },
+    {
+      "id": "EVD-013",
+      "type": "EVD",
+      "summary": "The documented product boundary excludes public anonymous links."
+    },
+    {
+      "id": "EVD-014",
+      "type": "EVD",
+      "summary": "The documented bounded transactional-email inventory includes review-request link delivery, new-pin notification, and thread-reply notification; it defines no revocation or thread-resolution email use."
+    },
+    {
+      "id": "EVD-015",
+      "type": "EVD",
+      "summary": "For this bounded M6 existing-product V2 dogfood Product Definition only: Loading and Submitting show pending state and never success. Empty shows the screen-specific zero state. Partial shows available authoritative data plus an explicit recovery notice. Completed follows only authoritative confirmation. Cancelled, Cancel, and Back cause no mutation and preserve eligible unsent text. Refresh reloads latest authoritative state. Committed review-link/thread mutations have no direct Undo; recovery uses documented new-link, new-reply, or reopen paths. Offline and Timeout withhold success, preserve eligible input, refresh authoritative state before retry, and must not duplicate mutation or notification. Destructive confirmation is N/A for this bounded fixture. This interaction policy is bounded to this dogfood Product Definition and is not a system-wide rule."
+    },
+    {
+      "id": "EVD-016",
+      "type": "EVD",
+      "summary": "The legacy decisions and screen contract define exact-Version pin placement, approved and archived mutation rejection, expected-revision conflict handling, explicit review-request mutation, Designer session reauthentication, and screen-scoped access and action roles."
+    },
+    {
+      "id": "EVD-017",
+      "type": "EVD",
+      "summary": "For this bounded M6 dogfood Product Definition only, review-link send, resend, and revoke each require client_attempt_id and expected_review_link_revision. The same client_attempt_id returns the previously committed result and creates no additional side effects. Distinct concurrent attempts on the same expected revision race and exactly one may commit. Once one commits and advances the revision, other stale expected revisions are rejected. A stale rejection returns the latest authoritative review-link state and revision needed for recovery and reconciliation. Retrying stale requires a new attempt based on the newly observed revision; stale is never reinterpreted against a newer revision. One logical successful attempt creates no duplicate review link, applicable email send, domain/history record, delivery record, or other externally visible side effect. Revoke uses the same attempt/revision semantics with no duplicate revocation, history, or notification effects; it has no email side effect unless this approved definition separately requires one. This policy is bounded to this M6 dogfood Product Definition and is not a universal future policy."
+    },
+    {
+      "id": "FLOW-005",
+      "type": "FLOW",
+      "summary": "Designer opens Review Access Management for the project."
+    },
+    {
+      "id": "FLOW-006",
+      "type": "FLOW",
+      "summary": "Designer or Client Reviewer opens the exact-Version review canvas."
+    },
+    {
+      "id": "GOAL-001",
+      "type": "GOAL",
+      "summary": "프리랜서 디자이너가 클라이언트와 시안, 시안 위 피드백, 수정본, 승인 상태를 한 웹앱에서 관리할 수 있게 한다."
+    },
+    {
+      "id": "INT-001",
+      "type": "INT",
+      "summary": "Transactional email delivery"
+    },
+    {
+      "id": "REQ-005",
+      "type": "REQ",
+      "summary": "Reviewer access and review-link lifecycle"
+    },
+    {
+      "id": "REQ-006",
+      "type": "REQ",
+      "summary": "Exact-Version canvas, pins, and threads"
+    },
+    {
+      "id": "RULE-001",
+      "type": "RULE",
+      "summary": "클라이언트는 별도 계정 없이 이메일 magic review link로 접근하되, project에 지정된 Client Reviewer 이메일 신원이 확인되어야 reviewer 권한을 행사할 수 있다."
+    },
+    {
+      "id": "RULE-002",
+      "type": "RULE",
+      "summary": "각 magic review link의 접근 범위는 정확히 하나의 project로 제한한다."
+    },
+    {
+      "id": "RULE-003",
+      "type": "RULE",
+      "summary": "public anonymous share link는 생성하거나 제공하지 않는다."
+    },
+    {
+      "id": "RULE-014",
+      "type": "RULE",
+      "summary": "Feedback is a point pin with a connected comment."
+    },
+    {
+      "id": "RULE-015",
+      "type": "RULE",
+      "summary": "Image pins use normalized x/y; PDF pins use page number and normalized x/y."
+    },
+    {
+      "id": "RULE-017",
+      "type": "RULE",
+      "summary": "이전 Version을 열면 해당 Version의 과거 핀과 comment를 볼 수 있다."
+    },
+    {
+      "id": "RULE-020",
+      "type": "RULE",
+      "summary": "Only Client Reviewer creates a new pin; Designer and Client Reviewer may reply."
+    },
+    {
+      "id": "RULE-021",
+      "type": "RULE",
+      "summary": "Only Designer resolves an OPEN comment thread."
+    },
+    {
+      "id": "RULE-022",
+      "type": "RULE",
+      "summary": "Client Reviewer가 RESOLVED thread에 reply하면 해당 thread는 자동으로 OPEN으로 전환된다."
+    },
+    {
+      "id": "RULE-023",
+      "type": "RULE",
+      "summary": "Designer는 RESOLVED thread에 보충 reply를 작성할 수 있지만 thread 상태는 RESOLVED로 유지한다."
+    },
+    {
+      "id": "RULE-024",
+      "type": "RULE",
+      "summary": "comment, reply, thread history는 삭제하거나 편집할 수 없다."
+    },
+    {
+      "id": "RULE-026",
+      "type": "RULE",
+      "summary": "magic review link는 issued_at으로부터 정확히 30일 후 expires_at에 만료되며 만료 시 새 read/write 요청을 즉시 거부한다."
+    },
+    {
+      "id": "RULE-027",
+      "type": "RULE",
+      "summary": "Expired review-link access shows the expiry screen and blocks new reads/writes."
+    },
+    {
+      "id": "RULE-030",
+      "type": "RULE",
+      "summary": "각 project에는 active review link가 최대 하나만 존재할 수 있다."
+    },
+    {
+      "id": "RULE-031",
+      "type": "RULE",
+      "summary": "Designer가 새 review link를 발급하면 해당 project의 기존 active link를 발급과 동시에 REVOKED로 전환한다."
+    },
+    {
+      "id": "RULE-032",
+      "type": "RULE",
+      "summary": "REVOKED link로 열린 기존 세션은 다음 read/write 요청부터 거부하고 작성 중 comment text는 서버에 제출하지 않는다."
+    },
+    {
+      "id": "RULE-033",
+      "type": "RULE",
+      "summary": "Only Designer manually revokes the current ACTIVE link."
+    },
+    {
+      "id": "RULE-034",
+      "type": "RULE",
+      "summary": "link revoke로 차단된 comment 초안은 best-effort로 로컬 보존하며 새 active link 재인증 후 복구하여 명시적으로 재시도할 수 있다."
+    },
+    {
+      "id": "RULE-040",
+      "type": "RULE",
+      "summary": "Client Reviewer가 새 pin comment를 생성하면 해당 project의 Designer에게 즉시 이메일을 보낸다."
+    },
+    {
+      "id": "RULE-041",
+      "type": "RULE",
+      "summary": "새 pin comment를 생성한 Client Reviewer에게는 자기 행동 확인 이메일을 보내지 않는다."
+    },
+    {
+      "id": "RULE-042",
+      "type": "RULE",
+      "summary": "Designer가 thread reply를 작성하면 해당 project의 Client Reviewer에게 즉시 이메일을 보낸다."
+    },
+    {
+      "id": "RULE-043",
+      "type": "RULE",
+      "summary": "Client Reviewer가 thread reply를 작성하면 해당 project의 Designer에게 즉시 이메일을 보낸다."
+    },
+    {
+      "id": "RULE-044",
+      "type": "RULE",
+      "summary": "thread reply 작성자에게는 자기 행동 확인 이메일을 보내지 않는다."
+    },
+    {
+      "id": "RULE-046",
+      "type": "RULE",
+      "summary": "Designer review request moves the exact Version from DRAFT to IN_REVIEW and immediately emails the active review link to Client Reviewer."
+    },
+    {
+      "id": "RULE-063",
+      "type": "RULE",
+      "summary": "APPROVED exact Versions reject new pin comments and all thread replies."
+    },
+    {
+      "id": "RULE-077",
+      "type": "RULE",
+      "summary": "ARCHIVED projects reject new comments, replies, review requests, approvals, and changes requests."
+    },
+    {
+      "id": "RULE-084",
+      "type": "RULE",
+      "summary": "Concurrent mutation is guarded by exact Version ID and expected state revision."
+    },
+    {
+      "id": "RULE-093",
+      "type": "RULE",
+      "summary": "comment 또는 reply 작성 text는 제출 성공이 확인될 때까지 best-effort로 로컬 보존한다."
+    },
+    {
+      "id": "RULE-094",
+      "type": "RULE",
+      "summary": "각 comment/reply 제출 전에 client가 exact Version과 thread 범위의 message attempt ID를 생성한다."
+    },
+    {
+      "id": "RULE-095",
+      "type": "RULE",
+      "summary": "동일 message attempt ID의 조회·재시도는 하나의 논리적 submission으로 처리하고 성공 record가 있으면 기존 record를 반환한다."
+    },
+    {
+      "id": "RULE-096",
+      "type": "RULE",
+      "summary": "동일 message attempt ID로 duplicate comment 또는 reply record를 생성하지 않는다."
+    },
+    {
+      "id": "RULE-110",
+      "type": "RULE",
+      "summary": "Expired Designer session requires a new email magic-link authentication."
+    },
+    {
+      "id": "RULE-119",
+      "type": "RULE",
+      "summary": "Review Access Management empty shows no active review link or pending request; Review Canvas empty shows no pins or threads for the exact Version."
+    },
+    {
+      "id": "RULE-120",
+      "type": "RULE",
+      "summary": "Review Access Management and Review Canvas partial show their available authoritative data plus an explicit recovery notice."
+    },
+    {
+      "id": "RULE-122",
+      "type": "RULE",
+      "summary": "Cancelled, Cancel, and Back cause no mutation and preserve eligible unsent text."
+    },
+    {
+      "id": "RULE-123",
+      "type": "RULE",
+      "summary": "Refresh reloads latest authoritative state."
+    },
+    {
+      "id": "RULE-124",
+      "type": "RULE",
+      "summary": "Committed review-link and thread mutations have no direct Undo; recovery uses documented new-link, new-reply, or reopen paths."
+    },
+    {
+      "id": "RULE-125",
+      "type": "RULE",
+      "summary": "Offline and Timeout withhold success, preserve eligible input, refresh authoritative state before retry, and do not duplicate mutation or notification."
+    },
+    {
+      "id": "RULE-128",
+      "type": "RULE",
+      "summary": "Error withholds success and shows the applicable documented access, permission, archive, approved-state, or expected-revision rejection and recovery."
+    },
+    {
+      "id": "RULE-129",
+      "type": "RULE",
+      "summary": "Only an authenticated Designer may use Review Access Management actions."
+    },
+    {
+      "id": "RULE-130",
+      "type": "RULE",
+      "summary": "Designer enters the review canvas with an authenticated session; Client Reviewer enters with an active project-scoped link and designated email identity."
+    },
+    {
+      "id": "RULE-131",
+      "type": "RULE",
+      "summary": "For this bounded M6 dogfood only, send_review_request, resend_review_request, and revoke_review_link each require client_attempt_id and expected_review_link_revision."
+    },
+    {
+      "id": "RULE-132",
+      "type": "RULE",
+      "summary": "For review-link actions, the same client_attempt_id returns its previously committed result without additional side effects; distinct concurrent attempts against the same expected_review_link_revision race and exactly one may commit."
+    },
+    {
+      "id": "RULE-133",
+      "type": "RULE",
+      "summary": "A committed review-link action advances review_link_revision; stale expected revisions are rejected with the latest authoritative review-link state and revision, and a stale retry requires a new attempt based on the newly observed revision and is never reinterpreted against a newer revision."
+    },
+    {
+      "id": "RULE-134",
+      "type": "RULE",
+      "summary": "One logical successful review-link attempt creates no duplicate review link, applicable email send, domain/history record, delivery record, or other externally visible side effect; revoke follows the same attempt/revision rule without duplicate revocation/history/notification effects and has no email side effect unless separately required by the approved definition."
+    },
+    {
+      "id": "SCR-006",
+      "type": "SCR",
+      "summary": "Designer-only Review Access Management for an exact-Version target, designated Reviewer email, one active 30-day link, and send, resend, and revoke outcomes."
+    },
+    {
+      "id": "SCR-007",
+      "type": "SCR",
+      "summary": "Designer/Client exact-Version review canvas with immutable viewer, exact Version identity and state, pins, thread chronology and history, and role-scoped actions."
+    },
+    {
+      "id": "STATE-001",
+      "type": "STATE",
+      "summary": "DRAFT | IN_REVIEW | CHANGES_REQUESTED | APPROVED"
+    },
+    {
+      "id": "STATE-002",
+      "type": "STATE",
+      "summary": "Bounded interaction state"
+    },
+    {
+      "id": "STATE-003",
+      "type": "STATE",
+      "summary": "Review-link action attempt and revision lifecycle"
+    },
+    {
+      "id": "SURF-001",
+      "type": "SURF",
+      "summary": "Review-link access lifecycle"
+    },
+    {
+      "id": "SURF-002",
+      "type": "SURF",
+      "summary": "Exact-Version canvas, pins, and threads"
+    },
+    {
+      "id": "SURF-003",
+      "type": "SURF",
+      "summary": "Reviewer and Designer scoped permissions"
+    },
+    {
+      "id": "SURF-004",
+      "type": "SURF",
+      "summary": "Idempotent comment and reply submission recovery"
+    },
+    {
+      "id": "SURF-005",
+      "type": "SURF",
+      "summary": "Review-link action attempt and revision concurrency"
+    },
+    {
+      "id": "TASK-004",
+      "type": "TASK",
+      "summary": "Implements REQ-005"
+    },
+    {
+      "id": "TASK-005",
+      "type": "TASK",
+      "summary": "Implements REQ-006"
+    },
+    {
+      "id": "UNK-001",
+      "type": "UNK",
+      "summary": "클라이언트는 공유 시안에 어떤 방식으로 접근하고 신원을 확인해야 하는가?"
+    },
+    {
+      "id": "UNK-005",
+      "type": "UNK",
+      "summary": "피드백 댓글에 답글 스레드를 지원할 것인가?"
+    },
+    {
+      "id": "UNK-018",
+      "type": "UNK",
+      "summary": "네트워크 실패로 comment 또는 reply 제출 결과가 불명확할 때 입력을 어떻게 보존하고 중복 없이 재시도할 것인가?"
+    },
+    {
+      "id": "UNK-021",
+      "type": "UNK",
+      "summary": "디자이너는 이미 배포한 공유 링크를 폐기할 수 있는가?"
+    },
+    {
+      "id": "UNK-031",
+      "type": "UNK",
+      "summary": "Client Reviewer가 이미 review 화면을 열어 둔 상태에서 magic review link가 30일 만료 시각을 지나면 현재 세션을 즉시 종료할 것인가?"
+    },
+    {
+      "id": "UNK-034",
+      "type": "UNK",
+      "summary": "Client Reviewer가 새 pin comment를 만들면 Designer에게 어떤 채널로 알릴 것인가?"
+    },
+    {
+      "id": "UNK-036",
+      "type": "UNK",
+      "summary": "thread reply가 작성되면 상대 참여자에게 어떤 채널로 알릴 것인가?"
+    },
+    {
+      "id": "UNK-049",
+      "type": "UNK",
+      "summary": "Which analytics-events and measurement policy applies to REQ-005 and REQ-006 in this bounded M6 dogfood definition?"
+    },
+    {
+      "id": "UNK-050",
+      "type": "UNK",
+      "summary": "Which field-level loading, zero-state, partial, completion, navigation, refresh, undo, offline, timeout, and destructive-confirmation behavior applies to SCR-006 and SCR-007?"
+    },
+    {
+      "id": "UNK-051",
+      "type": "UNK",
+      "summary": "What exact idempotency and expected-revision behavior applies when review-link send, resend, or revoke attempts are repeated or concurrent?"
+    },
+    {
+      "id": "USR-001",
+      "type": "USR",
+      "summary": "Workspace Owner / Designer"
+    },
+    {
+      "id": "USR-002",
+      "type": "USR",
+      "summary": "Client Reviewer"
+    }
+  ],
+  "changed": [],
+  "superseded": [],
+  "retired": [],
+  "high_risk_decisions": [
+    {
+      "id": "DEC-001",
+      "statement": "클라이언트 접근은 계정 생성 없는 이메일 기반 project-scoped magic review link 방식으로 한다.",
+      "reversibility": "REVERSIBLE",
+      "risk_flags": [
+        "security"
+      ]
+    },
+    {
+      "id": "DEC-012",
+      "statement": "magic review link 만료 시 새 read/write 요청을 즉시 차단하고 만료 화면을 표시한다. 작성 중 comment text는 best-effort로 로컬 보존하되 서버 제출을 금지하고 Designer가 새 link를 발급한 뒤 복구·재시도한다.",
+      "reversibility": "REVERSIBLE",
+      "risk_flags": [
+        "security"
+      ]
+    },
+    {
+      "id": "DEC-013",
+      "statement": "project당 active review link는 하나만 허용한다. 새 링크 발급 시 기존 active link를 즉시 revoke하고 열린 기존 세션도 다음 요청부터 차단한다. Designer는 active link를 수동 revoke할 수 있다.",
+      "reversibility": "REVERSIBLE",
+      "risk_flags": [
+        "security"
+      ]
+    },
+    {
+      "id": "DEC-043",
+      "statement": "For this bounded M6 dogfood Product Definition only, review-link send, resend, and revoke each require client_attempt_id and expected_review_link_revision. The same client_attempt_id returns the previously committed result and creates no additional side effects. Distinct concurrent attempts on the same expected revision race and exactly one may commit. Once one commits and advances the revision, other stale expected revisions are rejected. A stale rejection returns the latest authoritative review-link state and revision needed for recovery and reconciliation. Retrying stale requires a new attempt based on the newly observed revision; stale is never reinterpreted against a newer revision. One logical successful attempt creates no duplicate review link, applicable email send, domain/history record, delivery record, or other externally visible side effect. Revoke uses the same attempt/revision semantics with no duplicate revocation, history, or notification effects; it has no email side effect unless this approved definition separately requires one. This policy is bounded to this M6 dogfood Product Definition and is not a universal future policy.",
+      "reversibility": "REVERSIBLE",
+      "risk_flags": [
+        "security"
+      ]
+    }
+  ],
+  "deferred_non_blocking": [],
+  "active_grill_packs": [
+    {
+      "pack_id": "GRILL-ASYNC-1",
+      "version": "1.0",
+      "digest": "04b77aafead01f5287114f4b1cc4376778f0076e2e9a2d05bcd00cfb9ee30465",
+      "target_refs": [
+        "SURF-004",
+        "SURF-005"
+      ]
+    },
+    {
+      "pack_id": "GRILL-AUTH-1",
+      "version": "1.0",
+      "digest": "e938ee7a52a4039d1b636f9dbd113a46bb9a94a616b890687b3c1b30554cb4f6",
+      "target_refs": [
+        "SURF-001",
+        "SURF-003"
+      ]
+    },
+    {
+      "pack_id": "GRILL-CORE-1",
+      "version": "1.0",
+      "digest": "45b87b1d77916ae5a6e0d624b3a8452f787a7754daf18635157157c4497b951e",
+      "target_refs": [
+        "REQ-005",
+        "REQ-006"
+      ]
+    },
+    {
+      "pack_id": "GRILL-PERMISSION-1",
+      "version": "1.0",
+      "digest": "49759d4e792c225dd125fe2ed71f2b25d32f576571c4ccfa27ab0ef9f8a6497a",
+      "target_refs": [
+        "SURF-003"
+      ]
+    }
+  ],
+  "binding_contracts": {
+    "product_binding_contract": {
+      "contract_id": "joewrks.product-coverage-binding",
+      "version": "1.0",
+      "digest": "b57459533247de52038aacb158e785c2184edcdd2fa6831f0edc3db713775f3c"
+    },
+    "ux_binding_contract": {
+      "contract_id": "joewrks.ux-coverage-binding",
+      "version": "1.0",
+      "digest": "8fc84057a4a6f0f0ce329a58d11b8e208989800147d703665cea52088de0be0d"
+    }
+  },
+  "semantic_closure_summary": {
+    "semantic_readiness_blockers": 0,
+    "open_material_surfaces": 0,
+    "unbound_material_surfaces": 0,
+    "unresolved_material_contradictions": 0,
+    "stale_selected_authority": 0,
+    "stale_consumed_evidence": 0,
+    "discovery_baseline_gaps": 0,
+    "unassessed_materiality": 0,
+    "open_material_unknowns": 0,
+    "blocked_material_unknowns": 0,
+    "unresolved_unknown_provenance": 0,
+    "invalid_resolution_authority": 0,
+    "unauthorized_agent_decisions": 0,
+    "missing_required_user_decisions": 0,
+    "active_grill_pack_gaps": 0,
+    "unresolved_pack_axes": 0,
+    "umbrella_unknown_compression": 0,
+    "pack_materiality_floor_violations": 0,
+    "invalid_authority_binding": 0,
+    "stale_authority_binding": 0,
+    "coverage_without_authority": 0,
+    "open_coverage_without_unknown": 0,
+    "unjustified_na_without_basis": 0,
+    "invalid_coverage_authority_type": 0,
+    "core_coverage_gaps": 0,
+    "specialist_binding_gaps": 0,
+    "ux_coverage_gaps": 0,
+    "screen_state_gaps": 0,
+    "screen_action_inventory_gaps": 0,
+    "ux_invalid_authority_binding": 0,
+    "ux_stale_authority_binding": 0,
+    "ux_open_without_unknown": 0,
+    "ux_unjustified_na": 0,
+    "invalid_authority_graph_reference": 0,
+    "orphan_material_authority": 0,
+    "unconsumed_material_decision": 0,
+    "requirement_acceptance_gaps": 0,
+    "task_mapping_gaps": 0,
+    "minimum_definition_gaps": 0,
+    "discovery_procedure_gaps": 0
+  },
+  "definition_digest": "ac531d869af5310820e2af90d78d205e841d05bb944f9a16865c8808f3a69957"
+}
