@@ -1,6 +1,12 @@
 # Downstream Semantic Handoff Contract 2.1
 
-Status: normative action-conformance/2.1 boundary; M5.1 integration is outside this artifact.
+Status: normative action-conformance/2.1 boundary; M5.1 implementation verified, not integrated.
+
+## M5.1 implementation status
+
+The sibling `downstream_v21` implementation and its executable proof are complete on the M5.1 implementation branch. The read-only preserved M6 Phase-B replay materializes a valid `joewrks.action-conformance/2.1` contract with zero authority or expressiveness gaps and a valid, coverage-`COMPLETE` `joewrks.runtime-conformance-plan/1.0` without caller-supplied product literals.
+
+This status does not merge, deploy, or resume M6. The historical action-conformance/2.0 `REENTRY_REQUIRED` evidence remains unchanged, semantic-review/2.1 reliability remains `NOT_MEASURED`, and M6 resumption still requires the separately controlled integration continuation.
 
 ## Identities
 
