@@ -92,12 +92,12 @@
       {
         "id": "EVD-002",
         "type": "EVD",
-        "summary": "User decisions require a project-scoped reviewer link, 30-day expiry, one active link, rotation, revocation, and blocked access after expiry or revocation."
+        "summary": "User decisions require designated-identity, project-scoped reviewer access, 30-day expiry, one active link, rotation, manual revocation, blocked access after expiry or revocation, and local draft recovery after a new link."
       },
       {
         "id": "EVD-003",
         "type": "EVD",
-        "summary": "User decisions bind pins and append-only threads to an exact Version and define role-specific reply, resolve, and reopen behavior."
+        "summary": "User decisions define Client Reviewer-only pin creation, replies by both actors, Designer-only resolution, Reviewer-only automatic reopen, Designer reply without reopen, and prohibition on deleting thread history."
       },
       {
         "id": "EVD-004",
@@ -123,6 +123,36 @@
         "id": "EVD-008",
         "type": "EVD",
         "summary": "For this bounded M6 existing-product V2 dogfood Product Definition only, product analytics/telemetry is NOT used. REQ-005/REQ-006 review-link access and thread actions emit no analytics events. Introduce no analytics event names, properties, tracking identifiers, analytics retention/access policy, funnels, or success metrics. Existing domain/business history remains ordinary product state/history where already required. Existing email delivery/send status remains ordinary product operational/domain state where already required. Neither is reclassified as analytics telemetry. This is an explicit current user product decision/boundary, not an inference from missing implementation. It is not a permanent system-wide prohibition for future products/revisions."
+      },
+      {
+        "id": "EVD-009",
+        "type": "EVD",
+        "summary": "The user decision binds pins and comments to an exact Version, does not copy old pins to a new Version, and allows prior Versions to show their own historical pins and comments."
+      },
+      {
+        "id": "EVD-010",
+        "type": "EVD",
+        "summary": "The user decision requires concurrent mutations to be guarded by exact Version ID and expected state revision."
+      },
+      {
+        "id": "EVD-011",
+        "type": "EVD",
+        "summary": "The user decision requires an explicit review request to move the exact Version to IN_REVIEW and immediately deliver the active review link by email to the Client Reviewer without Designer self-notification."
+      },
+      {
+        "id": "EVD-012",
+        "type": "EVD",
+        "summary": "User decisions require append-only comment and reply history and make an APPROVED exact Version read-only for new pins and replies."
+      },
+      {
+        "id": "EVD-013",
+        "type": "EVD",
+        "summary": "The documented product boundary excludes public anonymous links."
+      },
+      {
+        "id": "EVD-014",
+        "type": "EVD",
+        "summary": "The documented bounded transactional-email inventory includes review-request link delivery, new-pin notification, and thread-reply notification; it defines no revocation or thread-resolution email use."
       },
       {
         "id": "FLOW-005",
@@ -253,6 +283,11 @@
         "id": "RULE-044",
         "type": "RULE",
         "summary": "thread reply 작성자에게는 자기 행동 확인 이메일을 보내지 않는다."
+      },
+      {
+        "id": "RULE-046",
+        "type": "RULE",
+        "summary": "Designer가 DRAFT Version에 명시적 review request를 보내면 해당 exact Version을 IN_REVIEW로 전환하고 active magic review link와 함께 Client Reviewer에게 즉시 이메일을 보낸다."
       },
       {
         "id": "RULE-084",
@@ -470,13 +505,13 @@
       "minimum_definition_gaps": 0,
       "discovery_procedure_gaps": 0
     },
-    "definition_digest": "01c03b47af0c097f9d819afc7ffe626161747f29f69a7b8a935be6cf783a276d"
+    "definition_digest": "37354762f3af6df00ea95d045447883ef0e2d024f9f27a9616eeb80d7fe23250"
   },
-  "manifest_digest": "3f7ccd880bc7ea08e165001b8d496b21027f781c5802604ce0cf5deb573c8f37",
+  "manifest_digest": "924cb2ef00bba7290cec9320af2a0adb0e283dcc225947998f50881a605253b4",
   "approval_commitment": {
     "revision": 1,
-    "definition_digest": "01c03b47af0c097f9d819afc7ffe626161747f29f69a7b8a935be6cf783a276d",
-    "manifest_digest": "3f7ccd880bc7ea08e165001b8d496b21027f781c5802604ce0cf5deb573c8f37",
+    "definition_digest": "37354762f3af6df00ea95d045447883ef0e2d024f9f27a9616eeb80d7fe23250",
+    "manifest_digest": "924cb2ef00bba7290cec9320af2a0adb0e283dcc225947998f50881a605253b4",
     "record_hashes": {
       "AC-005": "9fdd2e8ec04414f1ebdbf690e0a76448a2433491eb7229d12915ccbb55d16191",
       "AC-006": "930a6a0a4f0ab50ee264fd8b5b0f4346896565a88620d6684d0ef1edb018c1d8",
@@ -495,17 +530,23 @@
       "DEC-034": "6ef6c043218af5cf552e6f70dbf1e9bed0717149ae868284a6228753a924234a",
       "DEC-041": "85a7d243a6a0bff54f77b08e12040853c76ced9b3f0a915c8689b12ee87d50af",
       "EVD-001": "7dd4284578550903601cfd46e70cae19e164d506803a4cb503afa76c9a606da0",
-      "EVD-002": "895240be31a487044d132f617f89659e15a9a56cc7589eee474e7912d75f362b",
-      "EVD-003": "68239cc1adb3707dc8acdfc8e0bf47af1922d206bd4fd90ce4765d67a3632c56",
+      "EVD-002": "bd59eedb59058bece9d964a70fce227e6b877a0b1f9ab4c12545e369f3a41992",
+      "EVD-003": "91e04a335c28f29a76fe3eeda7a19cace6f7e9d483700d52f48e561ce67790cc",
       "EVD-004": "437c3a8c49af26012365da40e96216f237cae38d5310d76a4ab7cd063cca3661",
       "EVD-005": "c34d9e737ea87b489dd604e1f750b212523cac241853538decd05ba8d42250d1",
-      "EVD-006": "4388df9f206b4f796c3d568648d6e15d44d4aa5c1522ccbf75a6576b466266de",
+      "EVD-006": "838c113a3a1aaab58b68199cc8f4891474df5942ec6720a2da3dd5c273a29522",
       "EVD-007": "dc621b684f18928e4a612872f81939e3887b151c5db7016331768a1127c4399f",
       "EVD-008": "762083e0a569e843d3dc457cadcc863a61043b6c05f51f17a3f40d2b2c0c81a0",
+      "EVD-009": "038571a016f50adc707b34ccf899fca0eab2bd2e58803b5f7cb9c6024b8435fa",
+      "EVD-010": "6c4925144d0c1d1ddd55dc06619fe6bdd58bc65e7aa41e38f23906ad1c8b5dda",
+      "EVD-011": "b0ce2b75904d25b65cdd3cd380e51bc260d8b5751083a7eb524403ac75158c99",
+      "EVD-012": "5305685106abde5965718bc49a5ebd94914f63f005d3b33ec206eecd5c46d5dd",
+      "EVD-013": "a1eea7654fdcd6504601478d22214a81b93f25d59c0e537b8f3e5a41943fe408",
+      "EVD-014": "98534b47bcb5ed94a366c1214b7cf3d2d677c0b4745ca752832a72e93bc12044",
       "FLOW-005": "f5d865a8066dce4811f47f3aa90cbe5b5866a03a8bf5db168c78681078485c43",
       "FLOW-006": "8d48003a00e8d36c62670c54f8ac9b75600b09614a27188f3a6ab60d2a832069",
       "GOAL-001": "9154641668b1dd87a375e96e22740ce8788cf5ef85ae4a05c172e0bcbaffd15b",
-      "INT-001": "c27b10b95636e08e9e189455c414f73061f956bf573892a9d5fd9ace0a25d685",
+      "INT-001": "e6f68007c9efe76ad9af5433e8d725bf49c9d64c894b93a635e5b6b18c07d38d",
       "REQ-005": "0f543b6d38a0f482636ffd1777698bd61830d41d47b573c24aba1ed826974059",
       "REQ-006": "ef9de9cffc0fda0b27d3cd9cb2eec5193136a984cf323cb9874e9f3eb7c03b2d",
       "RULE-001": "5250aafa7f1a99038b514ae737c695666ca48d2ec4cdecce97a7861cbeeb0fad",
@@ -528,6 +569,7 @@
       "RULE-042": "6ca92fe3d48a43df54a1e526ca8b7cb95b96ad3a2b629d1b6444684b3d5a2ced",
       "RULE-043": "8c31021f56db2923ef66ef2d8d8eed1813ad6ea840150f025fb769217bebdc2d",
       "RULE-044": "c7ae3063d1714f65ad992136d032984cb6bf0afebdedeec8546624197a690301",
+      "RULE-046": "2ae7a2247c487edea8b5489a39ca49a4cb4a05811f3abea88b19c9a0d24d20d3",
       "RULE-084": "59fb08b5938fddac9aa82ca659ead251ec23c345067f68e6598aeeedbf4d91c9",
       "RULE-093": "42f78c532f32edf32e5b54ba8ede6d997d999c2340dd61d2e22719821a134a6c",
       "RULE-094": "f8fde66b9dd58e9ebd7447ae2c6aa714a5d6ba15845017dd4254ce97dd1f291e",
@@ -536,9 +578,9 @@
       "SCR-006": "fa7a8c2d86805c7519ccfb7916a6805870c553c6da6eb0ebd8712c267912cd2d",
       "SCR-007": "aa32c591a6f0822965eb27ac45a2a3bb5b6c4181c8fcab6332bd9219df837a85",
       "STATE-001": "9aa0856df3777b1f2769de1a4966cb3838a077376e65bdf8921e95ecf279481c",
-      "SURF-001": "5f4c93ba7b511a144c93c7e948fafe086367d0ffdd3749ae7e1e5877d69410ae",
-      "SURF-002": "44fcb687a8a72d8a900b52f81ebf027ca20590366d19e61383879fa1b3b2131a",
-      "SURF-003": "ac85352c6102f17062cc5a3c2c5b4a91d71069b2407b4ca3fdfde651033a0467",
+      "SURF-001": "6ce42492bdf6e7858c90cb90bd0c8e22a44fc3bbfb6dedebea287e308a491d7a",
+      "SURF-002": "2730130aead08014a475e5e4a71ff7fe8a9101f993249ac1cf29d4043de64639",
+      "SURF-003": "bfb05ad313574e3a56b79cfc962fdc00652225ed3e4aae9d3e4e6095d22e820a",
       "SURF-004": "603c44bd26f49010c094ad0a1d518b26770f5a7ab08f03de64c89e0c6c6812a8",
       "TASK-004": "926732adf78a6dd46ddab0211bbf52cf52de28065734bebb644d7c6f59be28ab",
       "TASK-005": "e7233e911ae445c605682eb619595ad488233e3bda0a37e5c683e568bf9b4f9e",
@@ -553,8 +595,8 @@
       "USR-001": "a435ae78f1ae177c4dd530647e56042660c35c87c3614594ba4dfedcfd3db323",
       "USR-002": "3bfa79de2dcb62a15f413cd492103b628a45d971823fdefcb0ea1cb2d2f1c85d"
     },
-    "coverage_digest": "497bbb5e328de304562e8cc2329e9f1289239e5ca120b930b93d0dc10c30d220",
-    "surface_digest": "562c34782c2cf00210346815b7a66c0e3075dce65953875a92d7317f6f9468a7",
+    "coverage_digest": "8cdca7da51319b8bf333bf7e24c2181ec7a5f933f192eb02160fed31aa943b72",
+    "surface_digest": "11b6c4610d026eb89e00ae10982b14d01a09bce56eb82f9b32e5287fd838365c",
     "grill_pack_set_digest": "1f602e7aa080ec1831608faa777f2f8ba113d734548ecfce35cd9c9f291fa026"
   }
 }

@@ -22,4 +22,5 @@ state. The decision is local to this definition, not a permanent prohibition.
 
 The exact review packet is `dogfood/approval-manifest.json`. No approval fields
 or timestamps may be written until a later run receives explicit approval for
-that exact manifest digest.
+that exact manifest digest. The corrected deterministic packet reports 81 added
+records and no changed, superseded, or retired records.
