@@ -217,7 +217,62 @@ def runtime_draft(contract: dict[str, object]) -> dict[str, object]:
             "fixture_requirements": ["ATTEMPT_ID", "OPAQUE_ID", "REVISION_INSTANCE"],
         }
         cases = [success, rejected, replay]
-        if action_id in {"send_review_request", "resend_review_request", "revoke_review_link"}:
+        if action_id in {"create_pin", "reply_thread", "resolve_thread"}:
+            cases.append({
+                "result_expectation": {
+                    "result_class": "STALE",
+                    "contract_field_refs": [
+                        ref(name)
+                        for name in (
+                            "allowed_current_states",
+                            "concurrency",
+                            "forbidden_states",
+                            "object_binding",
+                            "recovery",
+                            "rejection",
+                            "version_result",
+                        )
+                    ],
+                },
+                "component_expectations": components(
+                    unchanged,
+                    [
+                        "allowed_current_states",
+                        "concurrency",
+                        "forbidden_mutations",
+                        "forbidden_states",
+                        "recovery",
+                        "rejection",
+                        "version_result",
+                    ],
+                ),
+                "evidence_assertions": [
+                    {
+                        "type": "path_present",
+                        "pointer": "/result/latest_state_revision",
+                        "contract_field_refs": [
+                            ref("allowed_current_states"),
+                            ref("concurrency"),
+                            ref("version_result"),
+                        ],
+                    },
+                    {
+                        "type": "path_present",
+                        "pointer": "/result/latest_version",
+                        "contract_field_refs": [
+                            ref("object_binding"),
+                            ref("recovery"),
+                            ref("rejection"),
+                        ],
+                    },
+                ],
+                "fixture_requirements": [
+                    "ATTEMPT_ID",
+                    "OPAQUE_ID",
+                    "REVISION_INSTANCE",
+                ],
+            })
+        else:
             cases.append({
                 "result_expectation": {
                     "result_class": "STALE",

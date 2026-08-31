@@ -71,24 +71,27 @@ is `NOT_REQUIRED`; reliability remains `NOT_MEASURED`.
 ## 5. Full-contract runtime result
 
 `runtime-conformance-plan.json` has plan hash
-`fb110dea04114759d95a8524c6fbe009a3b0befcd7c7404bce702574a77bf520`
+`454dbc11d88e2a7c333aab859b8ba8d49d0253b690c0b4c8fed27401ae4dd882`
 and runtime-responsibility digest
 `035e83a108f96aeedc6475fe606a60312e326cb80d52522e51d67691e172ac64`.
 All 120 runtime-critical field references have concrete result, component, or
 assertion relationships; missing references and mapping gaps are both zero.
 
-A deterministic local Client Feedback Portal fixture executed 21 distinct
-planned cases: success, rejection, and idempotent replay for all six actions,
-plus stale-revision cases for send, resend, and revoke. The fixture maintains
-version, review-link, pin, thread, revision, history, business-effect,
-delivery-effect, and attempt-result state. It enforces the approved actors and
-inputs, fresh expected revisions, replay without duplicate effects, stale
-rejection with latest state, and revoke without an invented email.
+A deterministic local Client Feedback Portal fixture executed 24 distinct
+planned cases: success, rejection, stale-revision rejection, and idempotent
+replay for all six actions. Pin, reply, and resolve require the exact Version
+ID plus `expected_state_revision`; mismatch returns the latest authoritative
+Version and state revision without mutation or effects. Send, resend, and
+revoke retain their separate `expected_review_link_revision` rules. The
+fixture maintains version, review-link, pin, thread, revision, history,
+business-effect, delivery-effect, and attempt-result state. It enforces the
+approved actors and inputs, replay without duplicate effects, stale recovery,
+and revoke without an invented email.
 
 `runtime-evidence.jsonl` contains exactly one frozen execution/1.0 record per
-planned test ID. `runtime-evidence-bundle.json` contains 21 records, no missing,
+planned test ID. `runtime-evidence-bundle.json` contains 24 records, no missing,
 duplicate, or unexpected IDs, and bundle hash
-`ded4bfc45809c7f5cc4352289b4aced675ad2c8120ebe18b7d21639f96e9b503`.
+`d5b8a3ee998035ae3999b8b5051defa3618e3921daf1809653e4dbdc6306ff27`.
 
 The M6 verifier independently binds each test ID to its action and case,
 re-executes the deterministic scenario, and checks the command, expected

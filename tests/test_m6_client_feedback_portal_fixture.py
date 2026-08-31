@@ -43,12 +43,17 @@ def review_command(action_id, attempt_id, expected_revision):
     }
 
 
-def pin_command(attempt_id="message-pin-001", actor=REVIEWER):
+def pin_command(
+    attempt_id="message-pin-001",
+    actor=REVIEWER,
+    expected_revision=1,
+):
     return {
         "action_id": "create_pin",
         "actor": actor,
         "project_id": "project-fixture-001",
         "version_id": "version-fixture-001",
+        "expected_state_revision": expected_revision,
         "message_attempt_id": attempt_id,
         "media_type": "IMAGE",
         "x": 0.25,
@@ -57,24 +62,36 @@ def pin_command(attempt_id="message-pin-001", actor=REVIEWER):
     }
 
 
-def reply_command(thread_id, attempt_id="message-reply-001", actor=DESIGNER):
+def reply_command(
+    thread_id,
+    attempt_id="message-reply-001",
+    actor=DESIGNER,
+    expected_revision=1,
+):
     return {
         "action_id": "reply_thread",
         "actor": actor,
         "project_id": "project-fixture-001",
         "version_id": "version-fixture-001",
+        "expected_state_revision": expected_revision,
         "thread_id": thread_id,
         "message_attempt_id": attempt_id,
         "message": "Updated in the next export.",
     }
 
 
-def resolve_command(thread_id, attempt_id="message-resolve-001", actor=DESIGNER):
+def resolve_command(
+    thread_id,
+    attempt_id="message-resolve-001",
+    actor=DESIGNER,
+    expected_revision=1,
+):
     return {
         "action_id": "resolve_thread",
         "actor": actor,
         "project_id": "project-fixture-001",
         "version_id": "version-fixture-001",
+        "expected_state_revision": expected_revision,
         "thread_id": thread_id,
         "message_attempt_id": attempt_id,
     }
@@ -190,29 +207,53 @@ class ClientFeedbackPortalFixtureTest(unittest.TestCase):
         self.assertEqual(pin_replay["result"]["committed_result"]["thread_id"], thread_id)
         self.assert_no_effect(pin_replay)
 
-        replied = fixture.execute(reply_command(thread_id, actor=DESIGNER))
+        replied = fixture.execute(
+            reply_command(thread_id, actor=DESIGNER, expected_revision=2)
+        )
         self.assertEqual(replied["result"]["result_class"], "SUCCESS")
         self.assertEqual(len(replied["after"]["authoritative_state"]["threads"][0]["replies"]), 1)
         self.assertEqual(replied["deltas"]["delivery_effects"], [])
 
-        reply_replay = fixture.execute(reply_command(thread_id, actor=DESIGNER))
+        reply_replay = fixture.execute(
+            reply_command(thread_id, actor=DESIGNER, expected_revision=2)
+        )
         self.assertEqual(reply_replay["result"]["result_class"], "IDEMPOTENT_REPLAY")
         self.assert_no_effect(reply_replay)
 
-        reviewer_resolve = fixture.execute(resolve_command(thread_id, "message-resolve-wrong", REVIEWER))
+        reviewer_resolve = fixture.execute(
+            resolve_command(
+                thread_id,
+                "message-resolve-wrong",
+                REVIEWER,
+                expected_revision=3,
+            )
+        )
         self.assertEqual(reviewer_resolve["result"]["error"]["code"], "ACTOR_NOT_ALLOWED")
         self.assert_no_effect(reviewer_resolve)
 
-        resolved = fixture.execute(resolve_command(thread_id))
+        resolved = fixture.execute(resolve_command(thread_id, expected_revision=3))
         self.assertEqual(resolved["result"]["result_class"], "SUCCESS")
         self.assertEqual(resolved["after"]["authoritative_state"]["threads"][0]["status"], "RESOLVED")
         self.assertEqual(resolved["deltas"]["delivery_effects"], [])
 
-        already_resolved = fixture.execute(resolve_command(thread_id, "message-resolve-again"))
+        already_resolved = fixture.execute(
+            resolve_command(
+                thread_id,
+                "message-resolve-again",
+                expected_revision=4,
+            )
+        )
         self.assertEqual(already_resolved["result"]["error"]["code"], "THREAD_NOT_OPEN")
         self.assert_no_effect(already_resolved)
 
-        reopened = fixture.execute(reply_command(thread_id, "message-reopen", REVIEWER))
+        reopened = fixture.execute(
+            reply_command(
+                thread_id,
+                "message-reopen",
+                REVIEWER,
+                expected_revision=4,
+            )
+        )
         self.assertEqual(reopened["result"]["result_class"], "SUCCESS")
         self.assertEqual(reopened["after"]["authoritative_state"]["threads"][0]["status"], "OPEN")
 
@@ -220,6 +261,69 @@ class ClientFeedbackPortalFixtureTest(unittest.TestCase):
         approved_reply = approved.execute(reply_command("thread-fixture-missing"))
         self.assertEqual(approved_reply["result"]["error"]["code"], "VERSION_READ_ONLY")
         self.assert_no_effect(approved_reply)
+
+    def test_message_mutations_require_exact_state_revision_and_stale_returns_latest_version(self):
+        missing_fixture = self.fixture()
+        missing = pin_command("message-missing-revision")
+        del missing["expected_state_revision"]
+        missing_result = missing_fixture.execute(missing)
+        self.assertEqual(
+            missing_result["result"],
+            {
+                "result_class": "REJECTED",
+                "error": {"code": "EXPECTED_STATE_REVISION_REQUIRED"},
+            },
+        )
+        self.assert_no_effect(missing_result)
+
+        create_fixture = self.fixture()
+        stale_create = create_fixture.execute(
+            pin_command("message-stale-create", expected_revision=0)
+        )
+        self.assertEqual(
+            stale_create["result"],
+            {
+                "result_class": "STALE",
+                "latest_state_revision": 1,
+                "latest_version": {
+                    "version_id": "version-fixture-001",
+                    "status": "DRAFT",
+                    "revision": 1,
+                },
+            },
+        )
+        self.assert_no_effect(stale_create)
+
+        for action_id in ("reply_thread", "resolve_thread"):
+            with self.subTest(action_id=action_id):
+                fixture = self.fixture()
+                created = fixture.execute(pin_command(f"setup-{action_id}"))
+                thread_id = created["result"]["thread_id"]
+                command = (
+                    reply_command(
+                        thread_id,
+                        f"message-stale-{action_id}",
+                        expected_revision=1,
+                    )
+                    if action_id == "reply_thread"
+                    else resolve_command(
+                        thread_id,
+                        f"message-stale-{action_id}",
+                        expected_revision=1,
+                    )
+                )
+                stale = fixture.execute(command)
+                self.assertEqual(stale["result"]["result_class"], "STALE")
+                self.assertEqual(stale["result"]["latest_state_revision"], 2)
+                self.assertEqual(
+                    stale["result"]["latest_version"],
+                    {
+                        "version_id": "version-fixture-001",
+                        "status": "DRAFT",
+                        "revision": 2,
+                    },
+                )
+                self.assert_no_effect(stale)
 
     def test_runtime_plan_has_real_distinct_cases_and_complete_concrete_coverage(self):
         plan = materialize_runtime_plan(CONTRACT, runtime_draft(CONTRACT))
@@ -237,18 +341,36 @@ class ClientFeedbackPortalFixtureTest(unittest.TestCase):
                 self.assertTrue(all(case["component_expectations"] for case in cases))
                 self.assertTrue(all(case["evidence_assertions"] for case in cases))
                 self.assertTrue(all(case["contract_field_refs"] for case in cases))
-        for action_id in ("send_review_request", "resend_review_request", "revoke_review_link"):
+        for action_id in by_action:
             self.assertEqual(
                 {case["result_expectation"]["result_class"] for case in by_action[action_id]},
                 {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},
+            )
+        for action_id in ("create_pin", "reply_thread", "resolve_thread"):
+            stale = next(
+                case
+                for case in by_action[action_id]
+                if case["result_expectation"]["result_class"] == "STALE"
+            )
+            self.assertTrue(
+                {
+                    f"actions/{action_id}/allowed_current_states",
+                    f"actions/{action_id}/concurrency",
+                    f"actions/{action_id}/recovery",
+                    f"actions/{action_id}/rejection",
+                }.issubset(stale["contract_field_refs"])
+            )
+            self.assertEqual(
+                {item["pointer"] for item in stale["evidence_assertions"]},
+                {"/result/latest_state_revision", "/result/latest_version"},
             )
 
     def test_named_runtime_scenarios_execute_the_real_handlers(self):
         self.assertIsNotNone(execute_fixture_scenario)
         expected = {
-            "create_pin": {"SUCCESS", "REJECTED", "IDEMPOTENT_REPLAY"},
-            "reply_thread": {"SUCCESS", "REJECTED", "IDEMPOTENT_REPLAY"},
-            "resolve_thread": {"SUCCESS", "REJECTED", "IDEMPOTENT_REPLAY"},
+            "create_pin": {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},
+            "reply_thread": {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},
+            "resolve_thread": {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},
             "send_review_request": {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},
             "resend_review_request": {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},
             "revoke_review_link": {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},

@@ -171,6 +171,22 @@ class ClientFeedbackPortalFixture:
     def _version_status(self) -> str:
         return self._authoritative_state["version"]["status"]
 
+    def _state_revision_guard(
+        self,
+        command: dict[str, object],
+    ) -> dict[str, object] | None:
+        expected = command.get("expected_state_revision")
+        if type(expected) is not int or expected < 0:
+            return self._rejected("EXPECTED_STATE_REVISION_REQUIRED")
+        version = self._authoritative_state["version"]
+        if expected != version["revision"]:
+            return {
+                "result_class": "STALE",
+                "latest_state_revision": version["revision"],
+                "latest_version": copy.deepcopy(version),
+            }
+        return None
+
     def _attempt_key(self, action_id: str, command: dict[str, object]) -> tuple[str, object]:
         field = "client_attempt_id" if action_id in _REVIEW_ACTIONS else "message_attempt_id"
         namespace = "review" if action_id in _REVIEW_ACTIONS else "message"
@@ -251,6 +267,9 @@ class ClientFeedbackPortalFixture:
             return self._rejected("ACTOR_NOT_ALLOWED")
         if not self._context_valid(command):
             return self._rejected("OBJECT_BINDING_MISMATCH")
+        revision_result = self._state_revision_guard(command)
+        if revision_result is not None:
+            return revision_result
         if self._version_status() == "APPROVED":
             return self._rejected("VERSION_READ_ONLY")
         media_type = command.get("media_type")
@@ -328,6 +347,9 @@ class ClientFeedbackPortalFixture:
             return self._rejected("ACTOR_NOT_ALLOWED")
         if not self._context_valid(command):
             return self._rejected("OBJECT_BINDING_MISMATCH")
+        revision_result = self._state_revision_guard(command)
+        if revision_result is not None:
+            return revision_result
         if self._version_status() == "APPROVED":
             return self._rejected("VERSION_READ_ONLY")
         thread = self._thread(command.get("thread_id"))
@@ -381,6 +403,9 @@ class ClientFeedbackPortalFixture:
             return self._rejected("ACTOR_NOT_ALLOWED")
         if not self._context_valid(command):
             return self._rejected("OBJECT_BINDING_MISMATCH")
+        revision_result = self._state_revision_guard(command)
+        if revision_result is not None:
+            return revision_result
         if self._version_status() == "APPROVED":
             return self._rejected("VERSION_READ_ONLY")
         thread = self._thread(command.get("thread_id"))
@@ -520,12 +545,17 @@ def _contract_actor(
     return actor[index] if index is not None else actor
 
 
-def _pin_command(contract: dict[str, object], attempt_id: str) -> dict[str, object]:
+def _pin_command(
+    contract: dict[str, object],
+    attempt_id: str,
+    expected_state_revision: int,
+) -> dict[str, object]:
     return {
         "action_id": "create_pin",
         "actor": _contract_actor(contract, "create_pin"),
         "project_id": FIXTURE_PROJECT_ID,
         "version_id": FIXTURE_VERSION_ID,
+        "expected_state_revision": expected_state_revision,
         "message_attempt_id": attempt_id,
         "media_type": "IMAGE",
         "x": 0.25,
@@ -539,12 +569,14 @@ def _thread_command(
     action_id: str,
     thread_id: str,
     attempt_id: str,
+    expected_state_revision: int,
 ) -> dict[str, object]:
     command = {
         "action_id": action_id,
         "actor": _contract_actor(contract, action_id, index=0) if action_id == "reply_thread" else _contract_actor(contract, action_id),
         "project_id": FIXTURE_PROJECT_ID,
         "version_id": FIXTURE_VERSION_ID,
+        "expected_state_revision": expected_state_revision,
         "thread_id": thread_id,
         "message_attempt_id": attempt_id,
     }
@@ -574,7 +606,7 @@ def _setup_thread(
     fixture: ClientFeedbackPortalFixture,
     contract: dict[str, object],
 ) -> str:
-    created = fixture.execute(_pin_command(contract, "setup-pin"))
+    created = fixture.execute(_pin_command(contract, "setup-pin", 1))
     return created["result"]["thread_id"]
 
 
@@ -592,9 +624,9 @@ def execute_fixture_scenario(
 ) -> dict[str, object]:
     """Execute one deterministic planned case through the actual action handler."""
     permitted = {
-        "create_pin": {"SUCCESS", "REJECTED", "IDEMPOTENT_REPLAY"},
-        "reply_thread": {"SUCCESS", "REJECTED", "IDEMPOTENT_REPLAY"},
-        "resolve_thread": {"SUCCESS", "REJECTED", "IDEMPOTENT_REPLAY"},
+        "create_pin": {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},
+        "reply_thread": {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},
+        "resolve_thread": {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},
         "send_review_request": {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},
         "resend_review_request": {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},
         "revoke_review_link": {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"},
@@ -604,14 +636,21 @@ def execute_fixture_scenario(
     fixture = ClientFeedbackPortalFixture(contract)
 
     if action_id == "create_pin":
-        command = _pin_command(contract, f"target-{action_id}")
+        current_revision = fixture.snapshot()["authoritative_state"]["version"]["revision"]
+        command = _pin_command(
+            contract,
+            f"target-{action_id}",
+            current_revision - 1 if result_class == "STALE" else current_revision,
+        )
     elif action_id in {"reply_thread", "resolve_thread"}:
         thread_id = _setup_thread(fixture, contract)
+        current_revision = fixture.snapshot()["authoritative_state"]["version"]["revision"]
         command = _thread_command(
             contract,
             action_id,
             thread_id,
             f"target-{action_id}",
+            current_revision - 1 if result_class == "STALE" else current_revision,
         )
     else:
         if action_id in {"resend_review_request", "revoke_review_link"} or result_class == "STALE":

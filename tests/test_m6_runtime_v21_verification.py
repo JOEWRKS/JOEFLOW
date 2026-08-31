@@ -83,14 +83,20 @@ class RuntimeV21SemanticVerificationTest(unittest.TestCase):
         self.assertIn(code, observed_codes)
 
     def test_real_records_cover_every_planned_case_and_bind_action_and_result(self):
-        self.assertEqual(len(self.records), 21)
-        self.assertEqual(len({record["test_id"] for record in self.records}), 21)
+        self.assertEqual(len(self.records), 24)
+        self.assertEqual(len({record["test_id"] for record in self.records}), 24)
         self.assertEqual(set(self.case_index), {record["test_id"] for record in self.records})
         for record in self.records:
             expected = self.case_index[record["test_id"]]
             with self.subTest(test_id=record["test_id"]):
                 self.assertEqual(record["command"]["action_id"], expected["action_id"])
                 self.assertEqual(record["result"]["result_class"], expected["result_class"])
+                if expected["action_id"] in {
+                    "create_pin",
+                    "reply_thread",
+                    "resolve_thread",
+                }:
+                    self.assertIn("expected_state_revision", record["command"])
                 self.assertNotIn("semantic", record["result"])
                 self.assertEqual(
                     record["deltas"]["revision"],
@@ -118,11 +124,11 @@ class RuntimeV21SemanticVerificationTest(unittest.TestCase):
         self.assertEqual(report["semantic_review_reliability"], "NOT_MEASURED")
         self.assertEqual(report["runtime_status"], "CONFORMANT")
         self.assertEqual(report["implementation_status"], "IMPLEMENTATION_CONFORMANT")
-        self.assertEqual(len(report["required_action_test_ids"]), 21)
+        self.assertEqual(len(report["required_action_test_ids"]), 24)
         self.assertEqual(report["required_action_test_ids"], report["observed_action_test_ids"])
         self.assertEqual(report["missing_action_test_ids"], [])
         self.assertEqual(report["unexpected_action_test_ids"], [])
-        self.assertEqual(len(report["action_results"]), 21)
+        self.assertEqual(len(report["action_results"]), 24)
         self.assertEqual(report["lifecycle_results"], [])
         self.assertEqual(report["blocking_reentry_events"], [])
         self.assertEqual(report["contract_execution_errors"], [])
@@ -182,6 +188,65 @@ class RuntimeV21SemanticVerificationTest(unittest.TestCase):
             self.mutated_report(wrong_input),
             "RUNTIME_FIXTURE_EXECUTION_MISMATCH",
         )
+
+    def test_version_revision_commands_and_latest_stale_recovery_are_reverified(self):
+        guarded_actions = {"create_pin", "reply_thread", "resolve_thread"}
+        stale_records = [
+            record
+            for record in self.records
+            if self.case_index[record["test_id"]]["action_id"] in guarded_actions
+            and self.case_index[record["test_id"]]["result_class"] == "STALE"
+        ]
+        self.assertEqual(
+            {self.case_index[record["test_id"]]["action_id"] for record in stale_records},
+            guarded_actions,
+        )
+
+        for action_id in sorted(guarded_actions):
+            with self.subTest(action_id=action_id, mutation="missing revision"):
+                def missing_revision(records, action_id=action_id):
+                    target = next(
+                        record
+                        for record in records
+                        if self.case_index[record["test_id"]]
+                        == {"action_id": action_id, "result_class": "SUCCESS"}
+                    )
+                    del target["command"]["expected_state_revision"]
+
+                self.assert_nonconformant(
+                    self.mutated_report(missing_revision),
+                    "RUNTIME_FIXTURE_EXECUTION_MISMATCH",
+                )
+
+            with self.subTest(action_id=action_id, mutation="wrong revision"):
+                def wrong_revision(records, action_id=action_id):
+                    target = next(
+                        record
+                        for record in records
+                        if self.case_index[record["test_id"]]
+                        == {"action_id": action_id, "result_class": "SUCCESS"}
+                    )
+                    target["command"]["expected_state_revision"] += 99
+
+                self.assert_nonconformant(
+                    self.mutated_report(wrong_revision),
+                    "RUNTIME_FIXTURE_EXECUTION_MISMATCH",
+                )
+
+            with self.subTest(action_id=action_id, mutation="forged latest state"):
+                def forged_latest(records, action_id=action_id):
+                    target = next(
+                        record
+                        for record in records
+                        if self.case_index[record["test_id"]]
+                        == {"action_id": action_id, "result_class": "STALE"}
+                    )
+                    target["result"]["latest_version"]["status"] = "APPROVED"
+
+                self.assert_nonconformant(
+                    self.mutated_report(forged_latest),
+                    "RUNTIME_FIXTURE_EXECUTION_MISMATCH",
+                )
 
     def test_wrong_snapshots_revision_history_business_delivery_and_deltas_are_rejected(self):
         mutations = {
