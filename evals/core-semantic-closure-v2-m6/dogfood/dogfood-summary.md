@@ -72,3 +72,31 @@ runtime conformance report, or final-state claim was created. Track A remains
 the unchanged full historical `OPEN`/`UNAPPROVED` migration reconciliation
 candidate. Task 6, push, merge, deployment, and production conformance remain
 unstarted and unclaimed.
+
+## M5.1 remediation and 2.1 continuation
+
+The stopped 2.0 result above is historical evidence and remains unchanged. M5.1
+provided the lossless 2.1 `collect_exact` representation and the plan/bundle
+runtime boundary; it did not revise the approved Product Definition.
+
+The persisted 2.1 handoff and contract compile from that unchanged approval with
+zero semantic or expressiveness gaps. The contract hash is
+`b00b45e8ca4804289f5d8af3bb55fc6569ee65771838459b8ba49583df349b57`;
+its debt inventory is 131 direct fields, 7 machine-derived fields, zero
+authority gaps, and zero review-required fields. Semantic review is therefore
+not required and its reliability remains `NOT_MEASURED`.
+
+The 2.1 runtime plan is contract-bound and coverage `COMPLETE`. A deterministic
+local fixture produced one frozen execution/1.0 record for every planned test.
+The 2.1 verifier independently rechecked the plan's result/component/assertion
+semantics against admitted records, producing `IMPLEMENTATION_CONFORMANT` with
+`FULL_CONTRACT` coverage; bundle completeness alone is not treated as proof.
+There are no lifecycle items, so lifecycle status is `NOT_APPLICABLE`.
+
+`implementation-drift-probe.json` is a separate controlled partial probe with
+a rejected result record and a non-conformant report. `reentry-probe-v21.json`
+is separately compiled from a temporary one-field unresolved handoff and
+returns one `SEMANTIC_AUTHORITY_GAP` / `REENTRY_REQUIRED` event with
+`AFFECTED_ONLY` scope. Neither probe changes canonical approval, contract, or
+conformant evidence. This remains local dogfood evidence only: reliability is
+not measured, and no promotion, main, deployment, or final R1–R10 claim is made.

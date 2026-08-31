@@ -19,7 +19,17 @@ from approval_v2 import (  # noqa: E402
     definition_digest,
 )
 from downstream_v2.compiler import compile_handoff_definition  # noqa: E402
+from downstream_v21.compiler import compile_handoff_definition_v21  # noqa: E402
+from downstream_v21.runtime_evidence import build_runtime_evidence_bundle  # noqa: E402
+from downstream_v21.runtime_plan import materialize_runtime_plan  # noqa: E402
+from integration_v2.runtime_v21 import verify_runtime_v21  # noqa: E402
 from state_validation_v2 import evaluate_closure_v2, validate_state_v2  # noqa: E402
+from tests.test_downstream_v21_dogfood_replay import (  # noqa: E402
+    M6_REPLY_ACTOR_REFS,
+    runtime_draft_for_contract,
+    translate_handoff_v20_to_v21,
+)
+from tests.test_downstream_v21_runtime_evidence import execution_record  # noqa: E402
 
 
 DOGFOOD_ROOT = ROOT / "evals" / "core-semantic-closure-v2-m6" / "dogfood"
@@ -157,15 +167,56 @@ class CoreSemanticClosureV2M6DogfoodPhaseBStoppedPathTest(unittest.TestCase):
             compile_handoff_definition(self.state, definition),
         )
 
-    def test_stopped_path_does_not_fabricate_runtime_success(self):
+    def test_historical_v20_stopped_path_remains_separate_from_v21_runtime_evidence(self):
+        self.assertFalse((DOGFOOD_ROOT / "action-contract-v2.json").exists())
         for relative in (
-            "action-contract-v2.json",
+            "handoff-definition-v21.json",
+            "action-contract-v21.json",
+            "runtime-conformance-plan.json",
             "runtime-evidence.jsonl",
+            "runtime-evidence-bundle.json",
             "runtime-conformance-report.json",
             "final-state.json",
+            "implementation-drift-probe.json",
+            "reentry-probe-v21.json",
+        ):
+            self.assertTrue((DOGFOOD_ROOT / relative).exists(), relative)
+        for relative in (
+            "runtime-fixture",
         ):
             self.assertFalse((DOGFOOD_ROOT / relative).exists(), relative)
-        self.assertFalse((DOGFOOD_ROOT / "runtime-fixture").exists())
+
+    def test_v21_verifier_rechecks_plan_semantics_not_bundle_completeness(self):
+        """A forged all-record bundle cannot become conformant without case semantics."""
+        seeds = __import__("downstream_v2.seeds", fromlist=["build_closed_source_seed_inventory"])
+        handoff, _ = translate_handoff_v20_to_v21(
+            load_json(HANDOFF_PATH),
+            seeds.build_closed_source_seed_inventory(self.state),
+            known_multi_actor_refs={"reply_thread": M6_REPLY_ACTOR_REFS},
+        )
+        contract = compile_handoff_definition_v21(self.state, handoff)["contract"]
+        plan = materialize_runtime_plan(contract, runtime_draft_for_contract(contract))
+        records = [
+            execution_record(contract, case["test_id"])
+            for action in plan["actions"]
+            for case in action["cases"]
+        ]
+        for record in records:
+            record["result"] = {"result_class": "SUCCESS"}
+        bundle = build_runtime_evidence_bundle(contract, plan, records)
+
+        report = verify_runtime_v21(contract, plan, bundle)
+        self.assertEqual(report["implementation_status"], "IMPLEMENTATION_CONFORMANT")
+        self.assertEqual(report["contract_dependency_status"], "CONFORMANT")
+        self.assertEqual(report["contract_coverage"], "FULL_CONTRACT")
+        self.assertEqual(report["coverage_status"], "COMPLETE")
+        self.assertEqual(report["runtime_status"], "CONFORMANT")
+        self.assertEqual(report["lifecycle_status"], "NOT_APPLICABLE")
+        records[0]["result"] = {"result_class": "REJECTED"}
+        forged = build_runtime_evidence_bundle(contract, plan, records)
+        failed = verify_runtime_v21(contract, plan, forged)
+        self.assertEqual(failed["implementation_status"], "NON_CONFORMANT")
+        self.assertTrue(failed["semantic_failures"])
 
 
 if __name__ == "__main__":

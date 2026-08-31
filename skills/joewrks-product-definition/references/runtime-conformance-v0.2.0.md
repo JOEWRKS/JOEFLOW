@@ -1,6 +1,6 @@
 # Runtime conformance for Product Definition state 0.2.0
 
-This reference defines how installed V2 verification checks runtime evidence against an already materialized `joewrks.action-conformance/2.0` contract. It does not read Product Definition prose to invent implementation meaning, modify `state.json`, create approval, or start re-entry work.
+This legacy reference defines how installed V2 verification checks runtime evidence against an already materialized `joewrks.action-conformance/2.0` contract. It does not apply to the current 2.1 plan/bundle route and does not read Product Definition prose to invent implementation meaning, modify `state.json`, create approval, or start re-entry work.
 
 ## Frozen transport and V2 admission profile
 

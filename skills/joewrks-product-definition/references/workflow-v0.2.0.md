@@ -81,7 +81,7 @@ For a current 2.1 contract, materialize `joewrks.runtime-conformance-plan/1.0`. 
 Verify actual execution evidence against the compiled contract with the installed runtime verifier:
 
 ```text
-python <skill-directory>/scripts/verify_runtime_v2.py CONTRACT_JSON CURRENT_STATE_JSON EXECUTION_JSONL [REVIEW_PACKAGE_JSON REVIEW_OUTPUT_JSON]
+python <skill-directory>/scripts/verify_runtime_v21.py CONTRACT_JSON RUNTIME_PLAN_JSON RUNTIME_EVIDENCE_BUNDLE_JSON [REVIEW_PACKAGE_JSON REVIEW_OUTPUT_JSON]
 ```
 
 Runtime non-conformance is not automatically a Product Definition gap. Route it by inspecting whether exact authority is already clear.
