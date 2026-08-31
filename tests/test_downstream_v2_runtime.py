@@ -13,7 +13,7 @@ for path in (PACKAGE_ROOT, SCRIPTS):
 
 from downstream.protocol import PROTOCOL_VERSION, validate_execution_record  # noqa: E402
 from downstream_v2.contracts import semantic_contract_hash  # noqa: E402
-from downstream_v2.runtime import (  # noqa: E402
+from integration_v2.runtime import (  # noqa: E402
     RuntimeVerificationError,
     semantic_value,
     verify_action_execution,

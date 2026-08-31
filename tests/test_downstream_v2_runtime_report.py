@@ -17,14 +17,14 @@ from downstream.schema_validation import (  # noqa: E402
     SchemaValidationError,
     validate_instance,
 )
-import downstream_v2.runtime_report as runtime_report  # noqa: E402
-from downstream_v2.runtime import (  # noqa: E402
+import integration_v2.runtime_report as runtime_report  # noqa: E402
+from integration_v2.runtime import (  # noqa: E402
     RuntimeVerificationError,
     contained_runtime_error_result,
     verify_action_execution,
     verify_lifecycle_execution,
 )
-from downstream_v2.runtime_report import (  # noqa: E402
+from integration_v2.runtime_report import (  # noqa: E402
     RUNTIME_REPORT_VERSION,
     build_runtime_conformance_report,
 )
@@ -42,7 +42,7 @@ from tests.test_downstream_v2_runtime import (  # noqa: E402
 REPORT_SCHEMA = json.loads(
     (
         PACKAGE_ROOT
-        / "downstream_v2"
+        / "integration_v2"
         / "schemas"
         / "runtime-conformance-report.schema.json"
     ).read_text(encoding="utf-8")

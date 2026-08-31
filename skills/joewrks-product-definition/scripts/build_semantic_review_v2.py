@@ -1,4 +1,4 @@
-"""Installed entry point for semantic-review/2.0 package construction."""
+"""Installed entry point for semantic-review/2.1 package construction."""
 
 import sys
 from pathlib import Path
@@ -10,7 +10,7 @@ for _root in (_SKILL_ROOT, _SCRIPTS_ROOT):
     if str(_root) not in sys.path:
         sys.path.insert(0, str(_root))
 
-from downstream_v2.semantic_review.build_package import main  # noqa: E402
+from integration_v2.installed_workflow import review_main as main  # noqa: E402
 
 
 if __name__ == "__main__":

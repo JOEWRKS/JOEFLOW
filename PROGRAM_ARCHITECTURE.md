@@ -13,8 +13,8 @@ The existing runtime skill/package identifier remains **`joewrks-product-definit
 | Runtime skill/package ID | `joewrks-product-definition` |
 | Canonical Product Definition authority | `product-definition/<project-slug>/state.json` |
 | Current Product Definition state contract | `0.2.0` |
-| Current downstream authority contract | `joewrks.action-conformance/2.0` |
-| Current semantic-review boundary | `joewrks.semantic-review/2.0` / reliability `NOT_MEASURED` |
+| Current downstream authority contract | `joewrks.action-conformance/2.1` |
+| Current semantic-review boundary | `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED` |
 | Current protected `main` baseline | `efd96410f6401cbf9624328e94b795c315164b7f` |
 | Repaired v0.4.3 calibration input | `748254d6def81080a2fd2736115a3ab5e0bde5a3` |
 | v0.4.3 environment-blocked disposition | `6a0674c5d00a40790afef78cfa19494314b894e3` |
@@ -30,9 +30,9 @@ SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED
 
 Current Product Definition state contract: `0.2.0`
 
-Current V2 downstream authority contract: `joewrks.action-conformance/2.0`
+Current V2 downstream authority contract: `joewrks.action-conformance/2.1`
 
-Current V2 semantic review boundary: `joewrks.semantic-review/2.0` / reliability `NOT_MEASURED`
+Current V2 semantic review boundary: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`
 
 Historical compatibility: state `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, and v0.4.3 evidence
 
@@ -61,7 +61,7 @@ JOEWRKS Product Definition System
 │  └─ deterministic Semantic Closure Gate
 │
 ├─ 2. Downstream Conformance
-│  ├─ joewrks.action-conformance/2.0
+│  ├─ joewrks.handoff-definition/2.1 → joewrks.action-conformance/2.1
 │  ├─ exact M4 source seeds + scope commitments
 │  ├─ DIRECT_AUTHORITY / MACHINE_DERIVED / REVIEW_REQUIRED
 │  ├─ hard SEMANTIC_AUTHORITY_GAP re-entry
@@ -69,7 +69,7 @@ JOEWRKS Product Definition System
 │  └─ dependency-scoped audit
 │
 ├─ 3. Semantic Review
-│  ├─ joewrks.semantic-review/2.0
+│  ├─ joewrks.semantic-review/2.1 only for REVIEW_REQUIRED obligations
 │  ├─ only legitimate REVIEW_REQUIRED obligations
 │  ├─ exact obligation/value binding
 │  ├─ assurance, never Product Definition authority
@@ -120,7 +120,7 @@ After Product Definition Closure, the system compiles approved canonical clauses
 The current V2 handoff contract is:
 
 ```text
-joewrks.action-conformance/2.0
+joewrks.action-conformance/2.1
 ```
 
 This layer reuses exact M4 coverage bindings as source seeds, commits consumed seed and authority-scope identities, and materializes only handoffs with zero semantic authority gaps.
@@ -141,12 +141,12 @@ Historical `joewrks.action-conformance/1.0` remains frozen and reproducible unde
 Some downstream semantic fields cannot be represented safely as structured Product Definition authority or closed derivation. Only responsibility-profile-approved fields may remain `REVIEW_REQUIRED` and enter the V2 semantic-review sidecar:
 
 ```text
-joewrks.semantic-review/2.0
+joewrks.semantic-review/2.1
 ```
 
-The semantic-review/2.0 package binds every obligation to the exact action contract, source obligations, proposed value hash, and responsibility rule. Review output is assurance evidence and may emit read-only affected-scope re-entry; it never modifies Product Definition or the action contract.
+The semantic-review/2.1 package binds every obligation to the exact action contract, source obligations, proposed value hash, and responsibility rule. Review output is assurance evidence and may emit read-only affected-scope re-entry; it never modifies Product Definition or the action contract.
 
-Semantic-review/2.0 reliability begins and remains `NOT_MEASURED` in this integration task. It does not inherit the v0.4.3 calibration disposition or any semantic-review/1.0 reliability claim.
+Semantic-review/2.1 reliability begins and remains `NOT_MEASURED` in this integration task. It does not inherit the v0.4.3 calibration disposition or any semantic-review/1.0 reliability claim.
 
 Historical `joewrks.semantic-review/1.0`, its **26 action + 12 lifecycle = 38** responsibility rules, and v0.4.3 evidence remain factual frozen compatibility.
 
@@ -190,13 +190,13 @@ Semantic Closure + exact approval
         ↓
 Downstream V2 compiler
         ↓
-action-conformance/2.0 contract
+handoff-definition/2.1 → action-conformance/2.1 contract
         ↓
 Implementation / Figma Make
         ↓
 dependency audit + implementation evidence
         ↓
-semantic-review/2.0 for legitimate REVIEW_REQUIRED fields
+semantic-review/2.1 for legitimate REVIEW_REQUIRED fields
         ↓
 re-entry for affected authority gaps or ambiguity
 ```
@@ -212,7 +212,9 @@ skills/joewrks-product-definition/
 ├─ schemas/                         # canonical schemas
 ├─ templates/                       # generated projection templates
 ├─ scripts/                         # validators + installed V2 wrappers
-├─ downstream_v2/                   # current action-conformance/2.0 authority
+├─ downstream_v2/                   # frozen action-conformance/2.0 authority
+├─ downstream_v21/                  # frozen current 2.1 semantic/package authority
+├─ integration_v2/                  # M6 runtime verifier/report outside frozen packages
 └─ downstream/                      # historical v1 compatibility
    ├─ contracts.py                  # downstream contract compilation
    ├─ provenance.py                 # source binding

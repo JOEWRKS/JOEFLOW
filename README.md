@@ -286,9 +286,9 @@ SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED
 
 Current Product Definition state contract: `0.2.0`
 
-Current V2 downstream authority contract: `joewrks.action-conformance/2.0`
+Current V2 downstream authority contract: `joewrks.action-conformance/2.1`
 
-Current V2 semantic review boundary: `joewrks.semantic-review/2.0` / reliability `NOT_MEASURED`
+Current V2 semantic review boundary: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`
 
 Historical compatibility: state `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, and v0.4.3 evidence
 
@@ -303,7 +303,7 @@ Product Definition Closure 이후 중요한 상태 변화나 business behavior�
 현재 V2 downstream authority contract:
 
 ```text
-joewrks.action-conformance/2.0
+joewrks.action-conformance/2.1
 ```
 
 설치된 skill 경로를 기준으로 다음 wrapper를 실행합니다. consumer 프로젝트의 현재 디렉터리나 영구 `PYTHONPATH` 설정에 의존하지 않습니다.
@@ -314,7 +314,7 @@ python <skill-directory>/scripts/audit_downstream_v2.py CONTRACT_JSON STATE_JSON
 python <skill-directory>/scripts/build_semantic_review_v2.py CONTRACT_JSON
 ```
 
-`build_semantic_review_v2.py`는 정당한 `REVIEW_REQUIRED` 의미가 있을 때 `joewrks.semantic-review/2.0` 패키지를 만듭니다. 이 review 계약의 reliability는 `NOT_MEASURED`이며, review 결과는 Product Definition authority를 만들지 않습니다.
+`build_semantic_review_v2.py`는 정당한 `REVIEW_REQUIRED` 의미가 있을 때만 `joewrks.semantic-review/2.1` 패키지를 만듭니다. 이 review 계약의 reliability는 `NOT_MEASURED`이며, review 결과는 Product Definition authority를 만들지 않습니다. 현재 2.1 흐름은 `joewrks.runtime-conformance-plan/1.0`과 frozen `joewrks.downstream.execution/1.0` evidence를 `joewrks.runtime-evidence-bundle/1.0`으로 묶고, M6 runtime verifier/report로 `joewrks.runtime-conformance-report/1.0` evidence를 만듭니다.
 
 특히 다음 같은 영역에 적합합니다.
 

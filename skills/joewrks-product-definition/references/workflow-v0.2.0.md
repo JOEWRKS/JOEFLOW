@@ -50,15 +50,15 @@ After approval, rerun state and closure validation. `definition_status = CLOSED`
 
 ## HANDOFF — compile V2 downstream authority
 
-Compile only from a valid approved V2 state and a handoff definition:
+Compile only from a valid approved V2 state and a `joewrks.handoff-definition/2.1` handoff definition:
 
 ```text
 python <skill-directory>/scripts/compile_downstream_v2.py STATE_JSON HANDOFF_DEFINITION_JSON
 ```
 
-The wrapper resolves its own installed roots. It preserves the M5 canonical JSON and exit-code contract and does not write Product Definition authority. A `SEMANTIC_AUTHORITY_GAP` produces affected-scope re-entry rather than a contract with invented meaning.
+The wrapper resolves its own installed roots, produces `joewrks.action-conformance/2.1`, and does not write Product Definition authority. A `SEMANTIC_AUTHORITY_GAP` produces affected-scope re-entry rather than a contract with invented meaning.
 
-The current downstream identity is `joewrks.action-conformance/2.0`. Historical `joewrks.action-conformance/1.0` remains factual compatibility and is not redefined.
+The current downstream identity is `joewrks.action-conformance/2.1`. Historical `joewrks.action-conformance/2.0` and `joewrks.action-conformance/1.0` remain readable, auditable compatibility artifacts and are not the default current compilation route.
 
 ## VERIFY — audit exact dependencies and review only legitimate qualitative meaning
 
@@ -74,7 +74,9 @@ If the valid contract contains legitimate `REVIEW_REQUIRED` obligations, build t
 python <skill-directory>/scripts/build_semantic_review_v2.py CONTRACT_JSON
 ```
 
-The semantic-review identity is `joewrks.semantic-review/2.0`, and its reliability remains `NOT_MEASURED`. Review output is assurance evidence; it never creates or rewrites product authority.
+The semantic-review identity is `joewrks.semantic-review/2.1`, and its reliability remains `NOT_MEASURED`. Do not invoke it when no `REVIEW_REQUIRED` obligations exist. Review output is assurance evidence; it never creates or rewrites product authority.
+
+For a current 2.1 contract, materialize `joewrks.runtime-conformance-plan/1.0`. Before any 2.1 runtime admission, validate each raw record as frozen `joewrks.downstream.execution/1.0` evidence; retain that transport unchanged. Bind the admitted records to the plan and source contract as `joewrks.runtime-evidence-bundle/1.0`. The M6 runtime verifier/report emits the separately frozen `joewrks.runtime-conformance-report/1.0` implementation-conformance evidence; it is read-only and never changes Product Definition authority.
 
 Verify actual execution evidence against the compiled contract with the installed runtime verifier:
 

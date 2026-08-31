@@ -16,7 +16,7 @@ from downstream.protocol import (
 )
 from downstream.verifier import VerificationError, verify_execution
 
-from .contracts import semantic_contract_hash as recompute_semantic_contract_hash
+from downstream_v2.contracts import semantic_contract_hash as recompute_semantic_contract_hash
 
 
 _RESULT_CLASSES = {"SUCCESS", "REJECTED", "STALE", "IDEMPOTENT_REPLAY"}

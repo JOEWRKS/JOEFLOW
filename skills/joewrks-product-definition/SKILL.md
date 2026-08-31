@@ -30,7 +30,7 @@ Read [workflow-v0.2.0.md](references/workflow-v0.2.0.md) before running the V2 l
 - Before any material semantic state mutation, prepare and validate the complete affected records off-state. Commit the revision increment, truthful non-`CLOSED` lifecycle state, `UNAPPROVED` approval, affected-only staleness, and complete records as one canonical mutation before recompiling.
 - Treat migration gaps as uncertainty, never as Product Definition authority. Migration cannot promote legacy Closure or approval to V2 Semantic Closure.
 - Do not claim Semantic Closure until V2 state validation, closure evaluation, the deterministic Approval Manifest, and exact user approval all bind the current definition.
-- `joewrks.semantic-review/2.0` may record review results but remains reliability `NOT_MEASURED`; review never creates product authority.
+- `joewrks.semantic-review/2.1` may record review results only for legitimate `REVIEW_REQUIRED` obligations and remains reliability `NOT_MEASURED`; review never creates product authority.
 - If implementation exposes a material ambiguity or `SEMANTIC_AUTHORITY_GAP`, re-enter DISCOVER/CLOSE for the affected scope; do not decide inside implementation.
 
 ## Implementation re-entry routing
@@ -49,8 +49,8 @@ The event itself has no consumed-seed or scope-commitment inventories. For a non
 2. **CLOSE:** resolve evidence-answerable gaps first, then ask one highest-leverage material question at a time. Record truthful Materiality and decision authority.
 3. **FREEZE:** bind Core, specialist Grill, and UX coverage to exact current authority; build the deterministic Approval Manifest.
 4. **APPROVE:** show the exact current manifest and wait for explicit user approval. Do not manufacture approval or timestamps.
-5. **HANDOFF:** after validated Semantic Closure, compile `joewrks.action-conformance/2.0` using `scripts/compile_downstream_v2.py`.
-6. **VERIFY:** audit contract dependencies with `scripts/audit_downstream_v2.py`; build `joewrks.semantic-review/2.0` packages with `scripts/build_semantic_review_v2.py` only when legitimate `REVIEW_REQUIRED` obligations exist.
+5. **HANDOFF:** after validated Semantic Closure, compile a `joewrks.handoff-definition/2.1` into `joewrks.action-conformance/2.1` using `scripts/compile_downstream_v2.py`.
+6. **VERIFY:** audit only current contract dependencies with `scripts/audit_downstream_v2.py`; build `joewrks.semantic-review/2.1` packages with `scripts/build_semantic_review_v2.py` only when legitimate `REVIEW_REQUIRED` obligations exist. Then materialize `joewrks.runtime-conformance-plan/1.0`, admit only frozen `joewrks.downstream.execution/1.0` evidence into a `joewrks.runtime-evidence-bundle/1.0`, and use the M6 runtime verifier/report for implementation-conformance evidence.
 
 Resolve the absolute directory containing this loaded `SKILL.md`; never resolve scripts from the consumer project's working directory and never require the caller to persist `PYTHONPATH`.
 

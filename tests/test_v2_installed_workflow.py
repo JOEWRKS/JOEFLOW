@@ -1,4 +1,5 @@
 import json
+import importlib.util
 import io
 import os
 import subprocess
@@ -17,8 +18,10 @@ for path in (PACKAGE_ROOT, SCRIPTS):
         sys.path.insert(0, str(path))
 
 from downstream_v2.compiler import compile_handoff_definition  # noqa: E402
+from downstream_v21.compiler import compile_handoff_definition_v21  # noqa: E402
 from tests.downstream_v2_support import closed_v2_state  # noqa: E402
 from tests.test_downstream_v2_compiler import complete_definition  # noqa: E402
+from tests.test_downstream_v21_compiler import complete_definition_v21  # noqa: E402
 import verify_runtime_v2  # noqa: E402
 
 
@@ -40,14 +43,18 @@ class InstalledV2WrapperTest(unittest.TestCase):
         self.consumer_cwd = self.directory / "external-consumer"
         self.consumer_cwd.mkdir()
         self.state = closed_v2_state()
-        self.definition = complete_definition(self.state)
-        self.contract = compile_handoff_definition(
+        self.definition = complete_definition_v21(self.state)
+        self.contract = compile_handoff_definition_v21(
             self.state,
             self.definition,
         )["contract"]
-        self.review_contract = compile_handoff_definition(
+        self.review_contract = compile_handoff_definition_v21(
             self.state,
-            complete_definition(self.state, review=True),
+            complete_definition_v21(self.state, review=True),
+        )["contract"]
+        self.runtime_contract = compile_handoff_definition(
+            self.state,
+            complete_definition(self.state),
         )["contract"]
 
     def write_json(self, name, value):
@@ -99,7 +106,7 @@ class InstalledV2WrapperTest(unittest.TestCase):
         self.assertEqual(payload["status"], "AUTHORITY_READY_MACHINE_VERIFIED")
         self.assertEqual(
             payload["contract"]["contract_schema_version"],
-            "joewrks.action-conformance/2.0",
+            "joewrks.action-conformance/2.1",
         )
         self.assertEqual(
             {path: path.read_bytes() for path in (state_path, definition_path)},
@@ -138,13 +145,13 @@ class InstalledV2WrapperTest(unittest.TestCase):
         self.assertTrue(payload["review_required"])
         self.assertEqual(
             payload["package"]["review_schema_version"],
-            "joewrks.semantic-review/2.0",
+            "joewrks.semantic-review/2.1",
         )
         self.assertEqual(payload["package"]["reliability_status"], "NOT_MEASURED")
         self.assertEqual(contract_path.read_bytes(), before)
 
     def test_v2_runtime_wrapper_works_outside_repo_cwd_without_pythonpath(self):
-        contract_path = self.write_json("runtime-contract.json", self.contract)
+        contract_path = self.write_json("runtime-contract.json", self.runtime_contract)
         state_path = self.write_json("runtime-state.json", self.state)
         evidence_path = self.directory / "runtime-evidence.jsonl"
         evidence_path.write_bytes(b"")
@@ -176,7 +183,7 @@ class InstalledV2WrapperTest(unittest.TestCase):
         )
 
     def test_v2_runtime_wrapper_contains_deep_json_in_every_input_stream(self):
-        contract_path = self.write_json("deep-runtime-contract.json", self.contract)
+        contract_path = self.write_json("deep-runtime-contract.json", self.runtime_contract)
         state_path = self.write_json("deep-runtime-state.json", self.state)
         evidence_path = self.directory / "deep-runtime-evidence.jsonl"
         evidence_path.write_bytes(b"")
@@ -211,7 +218,7 @@ class InstalledV2WrapperTest(unittest.TestCase):
                 self.assertEqual(payload["error"]["code"], "JSON_PARSE_ERROR")
 
     def test_v2_runtime_cli_validates_its_final_report_before_exit(self):
-        contract_path = self.write_json("validated-runtime-contract.json", self.contract)
+        contract_path = self.write_json("validated-runtime-contract.json", self.runtime_contract)
         state_path = self.write_json("validated-runtime-state.json", self.state)
         evidence_path = self.directory / "validated-runtime-evidence.jsonl"
         evidence_path.write_bytes(b"")
@@ -243,7 +250,7 @@ class InstalledV2WrapperTest(unittest.TestCase):
         self.assertEqual(payload["error"]["code"], "RUNTIME_REPORT_INVALID")
 
     def test_v2_runtime_wrapper_binds_contained_failure_to_source_contract(self):
-        contract_path = self.write_json("failure-runtime-contract.json", self.contract)
+        contract_path = self.write_json("failure-runtime-contract.json", self.runtime_contract)
         state_path = self.write_json("failure-runtime-state.json", self.state)
         evidence_path = self.directory / "failure-runtime-evidence.jsonl"
         evidence_path.write_bytes(b"{}\n")
@@ -283,6 +290,15 @@ class InstalledV2WrapperTest(unittest.TestCase):
 
 
 class InstalledV2WorkflowContractTest(unittest.TestCase):
+    def test_runtime_integration_lives_outside_frozen_semantic_packages(self):
+        try:
+            runtime_spec = importlib.util.find_spec("integration_v2.runtime")
+            report_spec = importlib.util.find_spec("integration_v2.runtime_report")
+        except ModuleNotFoundError:
+            runtime_spec = report_spec = None
+        self.assertIsNotNone(runtime_spec)
+        self.assertIsNotNone(report_spec)
+
     def test_skill_default_template_is_v020(self):
         skill = (PACKAGE_ROOT / "SKILL.md").read_text(encoding="utf-8")
         template = json.loads(
@@ -336,6 +352,18 @@ class InstalledV2WorkflowContractTest(unittest.TestCase):
         self.assertIn("build_semantic_review_v2.py", workflow)
         self.assertIn("affected scope", workflow)
 
+        for current_identity in (
+            "joewrks.handoff-definition/2.1",
+            "joewrks.action-conformance/2.1",
+            "joewrks.semantic-review/2.1",
+            "joewrks.runtime-conformance-plan/1.0",
+            "joewrks.downstream.execution/1.0",
+            "joewrks.runtime-evidence-bundle/1.0",
+            "joewrks.runtime-conformance-report/1.0",
+        ):
+            with self.subTest(current_identity=current_identity):
+                self.assertIn(current_identity, workflow)
+
     def test_readme_and_architecture_publish_exact_v2_status_markers(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         architecture = (ROOT / "PROGRAM_ARCHITECTURE.md").read_text(
@@ -353,8 +381,8 @@ class InstalledV2WorkflowContractTest(unittest.TestCase):
                 self.assertTrue(marker in combined, marker)
         for current_contract in (
             "Current Product Definition state contract: `0.2.0`",
-            "Current V2 downstream authority contract: `joewrks.action-conformance/2.0`",
-            "Current V2 semantic review boundary: `joewrks.semantic-review/2.0` / reliability `NOT_MEASURED`",
+            "Current V2 downstream authority contract: `joewrks.action-conformance/2.1`",
+            "Current V2 semantic review boundary: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`",
         ):
             with self.subTest(current_contract=current_contract):
                 self.assertTrue(current_contract in combined, current_contract)

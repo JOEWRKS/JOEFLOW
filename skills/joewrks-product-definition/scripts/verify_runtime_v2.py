@@ -15,13 +15,13 @@ for _root in (_SKILL_ROOT, _SCRIPTS_ROOT):
 
 from downstream_v2.authority import canonical_json  # noqa: E402
 from downstream_v2.reentry import audit_contract_against_state  # noqa: E402
-from downstream_v2.runtime import (  # noqa: E402
+from integration_v2.runtime import (  # noqa: E402
     RuntimeVerificationError,
     contained_runtime_error_result,
     verify_action_execution,
     verify_lifecycle_execution,
 )
-from downstream_v2.runtime_report import (  # noqa: E402
+from integration_v2.runtime_report import (  # noqa: E402
     build_runtime_conformance_report,
     validate_runtime_conformance_report,
 )

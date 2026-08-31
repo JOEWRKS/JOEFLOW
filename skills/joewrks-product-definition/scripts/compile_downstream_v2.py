@@ -1,4 +1,4 @@
-"""Installed entry point for downstream V2 compilation."""
+"""Installed entry point for current downstream 2.1 compilation."""
 
 import sys
 from pathlib import Path
@@ -10,7 +10,7 @@ for _root in (_SKILL_ROOT, _SCRIPTS_ROOT):
     if str(_root) not in sys.path:
         sys.path.insert(0, str(_root))
 
-from downstream_v2.compile import main  # noqa: E402
+from integration_v2.installed_workflow import compile_main as main  # noqa: E402
 
 
 if __name__ == "__main__":
