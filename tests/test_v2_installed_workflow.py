@@ -23,6 +23,10 @@ from tests.downstream_v2_support import closed_v2_state  # noqa: E402
 from tests.test_downstream_v2_compiler import complete_definition  # noqa: E402
 from tests.test_downstream_v21_compiler import complete_definition_v21  # noqa: E402
 import verify_runtime_v2  # noqa: E402
+import verify_runtime_v21 as verify_runtime_v21_cli  # noqa: E402
+
+
+DOGFOOD_ROOT = ROOT / "evals" / "core-semantic-closure-v2-m6" / "dogfood"
 
 
 def canonical_bytes(value):
@@ -182,6 +186,26 @@ class InstalledV2WrapperTest(unittest.TestCase):
             before,
         )
 
+    def test_v21_runtime_wrapper_works_outside_repo_cwd_without_pythonpath(self):
+        inputs = (
+            DOGFOOD_ROOT / "action-contract-v21.json",
+            DOGFOOD_ROOT / "runtime-conformance-plan.json",
+            DOGFOOD_ROOT / "runtime-evidence-bundle.json",
+        )
+        before = {path: path.read_bytes() for path in inputs}
+
+        payload = self.assert_json_result(
+            self.run_wrapper("verify_runtime_v21.py", *inputs),
+            0,
+        )
+
+        self.assertEqual(payload["report_schema_version"], "joewrks.runtime-conformance-report/1.0")
+        self.assertEqual(payload["source_contract"]["contract_schema_version"], "joewrks.action-conformance/2.1")
+        self.assertEqual(payload["verification_scope"], "FULL_CONTRACT")
+        self.assertEqual(payload["coverage_status"], "COMPLETE")
+        self.assertEqual(payload["implementation_status"], "IMPLEMENTATION_CONFORMANT")
+        self.assertEqual({path: path.read_bytes() for path in before}, before)
+
     def test_v2_runtime_wrapper_contains_deep_json_in_every_input_stream(self):
         contract_path = self.write_json("deep-runtime-contract.json", self.runtime_contract)
         state_path = self.write_json("deep-runtime-state.json", self.state)
@@ -249,6 +273,35 @@ class InstalledV2WrapperTest(unittest.TestCase):
         self.assertEqual(payload["status"], "ERROR")
         self.assertEqual(payload["error"]["code"], "RUNTIME_REPORT_INVALID")
 
+    def test_v21_runtime_cli_validates_its_final_report_before_exit(self):
+        inputs = (
+            DOGFOOD_ROOT / "action-contract-v21.json",
+            DOGFOOD_ROOT / "runtime-conformance-plan.json",
+            DOGFOOD_ROOT / "runtime-evidence-bundle.json",
+        )
+        real_verifier = verify_runtime_v21_cli.verify_runtime_v21
+
+        def corrupted_verifier(*arguments, **keywords):
+            report = real_verifier(*arguments, **keywords)
+            del report["report_inputs"]
+            return report
+
+        captured = io.BytesIO()
+        stdout = io.TextIOWrapper(captured, encoding="utf-8")
+        with mock.patch.object(
+            verify_runtime_v21_cli,
+            "verify_runtime_v21",
+            side_effect=corrupted_verifier,
+        ), mock.patch.object(verify_runtime_v21_cli.sys, "stdout", stdout):
+            exit_code = verify_runtime_v21_cli.main([str(path) for path in inputs])
+            stdout.flush()
+
+        payload = json.loads(captured.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(captured.getvalue(), canonical_bytes(payload) + b"\n")
+        self.assertEqual(payload["status"], "ERROR")
+        self.assertEqual(payload["error"]["code"], "RUNTIME_REPORT_INVALID")
+
     def test_v2_runtime_wrapper_binds_contained_failure_to_source_contract(self):
         contract_path = self.write_json("failure-runtime-contract.json", self.runtime_contract)
         state_path = self.write_json("failure-runtime-state.json", self.state)
@@ -278,6 +331,7 @@ class InstalledV2WrapperTest(unittest.TestCase):
             "audit_downstream_v2.py",
             "build_semantic_review_v2.py",
             "verify_runtime_v2.py",
+            "verify_runtime_v21.py",
         )
         for wrapper_name in cases:
             with self.subTest(wrapper_name=wrapper_name):

@@ -77,11 +77,29 @@
     "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "nonblank": {"type": "string", "pattern": ".*\\S.*"},
     "sourceContract": {
+      "oneOf": [
+        {"$ref": "#/$defs/sourceContract20"},
+        {"$ref": "#/$defs/sourceContract21"}
+      ]
+    },
+    "sourceContract20": {
       "type": "object",
       "required": ["contract_schema_version", "semantic_contract_hash", "product_slug", "approved_revision", "approved_definition_digest"],
       "additionalProperties": false,
       "properties": {
         "contract_schema_version": {"const": "joewrks.action-conformance/2.0"},
+        "semantic_contract_hash": {"$ref": "#/$defs/hash"},
+        "product_slug": {"$ref": "#/$defs/nonblank"},
+        "approved_revision": {"type": "integer", "minimum": 1},
+        "approved_definition_digest": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "sourceContract21": {
+      "type": "object",
+      "required": ["contract_schema_version", "semantic_contract_hash", "product_slug", "approved_revision", "approved_definition_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "contract_schema_version": {"const": "joewrks.action-conformance/2.1"},
         "semantic_contract_hash": {"$ref": "#/$defs/hash"},
         "product_slug": {"$ref": "#/$defs/nonblank"},
         "approved_revision": {"type": "integer", "minimum": 1},

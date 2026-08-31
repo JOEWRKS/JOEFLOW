@@ -19,17 +19,10 @@ from approval_v2 import (  # noqa: E402
     definition_digest,
 )
 from downstream_v2.compiler import compile_handoff_definition  # noqa: E402
-from downstream_v21.compiler import compile_handoff_definition_v21  # noqa: E402
 from downstream_v21.runtime_evidence import build_runtime_evidence_bundle  # noqa: E402
-from downstream_v21.runtime_plan import materialize_runtime_plan  # noqa: E402
+from integration_v2.dogfood_v21 import materialize_dogfood  # noqa: E402
 from integration_v2.runtime_v21 import verify_runtime_v21  # noqa: E402
 from state_validation_v2 import evaluate_closure_v2, validate_state_v2  # noqa: E402
-from tests.test_downstream_v21_dogfood_replay import (  # noqa: E402
-    M6_REPLY_ACTOR_REFS,
-    runtime_draft_for_contract,
-    translate_handoff_v20_to_v21,
-)
-from tests.test_downstream_v21_runtime_evidence import execution_record  # noqa: E402
 
 
 DOGFOOD_ROOT = ROOT / "evals" / "core-semantic-closure-v2-m6" / "dogfood"
@@ -188,35 +181,57 @@ class CoreSemanticClosureV2M6DogfoodPhaseBStoppedPathTest(unittest.TestCase):
 
     def test_v21_verifier_rechecks_plan_semantics_not_bundle_completeness(self):
         """A forged all-record bundle cannot become conformant without case semantics."""
-        seeds = __import__("downstream_v2.seeds", fromlist=["build_closed_source_seed_inventory"])
-        handoff, _ = translate_handoff_v20_to_v21(
-            load_json(HANDOFF_PATH),
-            seeds.build_closed_source_seed_inventory(self.state),
-            known_multi_actor_refs={"reply_thread": M6_REPLY_ACTOR_REFS},
-        )
-        contract = compile_handoff_definition_v21(self.state, handoff)["contract"]
-        plan = materialize_runtime_plan(contract, runtime_draft_for_contract(contract))
-        records = [
-            execution_record(contract, case["test_id"])
-            for action in plan["actions"]
-            for case in action["cases"]
-        ]
+        materialized = materialize_dogfood(ROOT)
+        contract = materialized["contract"]
+        plan = materialized["plan"]
+        records = copy.deepcopy(materialized["records"])
         for record in records:
+            record["command"] = {
+                "action_id": "UNRELATED_NOOP",
+                "actor": "Wrong Actor",
+                "input": "forged",
+            }
             record["result"] = {"result_class": "SUCCESS"}
+            record["before"] = {
+                "authoritative_state": {"forged": "before"},
+                "revision": 999,
+                "history": [],
+                "business_side_effects": [],
+                "delivery_effects": [],
+            }
+            record["after"] = {
+                "authoritative_state": {"forged": "after"},
+                "revision": -1,
+                "history": [{"event": "FORGED"}],
+                "business_side_effects": [{"effect": "FORGED"}],
+                "delivery_effects": [{"effect": "FORGED"}],
+            }
+            record["deltas"] = {
+                "authoritative_state": {"forged": True},
+                "revision": 123,
+                "history": [{"event": "FORGED_DELTA"}],
+                "business_side_effects": [{"effect": "FORGED_DELTA"}],
+                "delivery_effects": [{"effect": "FORGED_DELTA"}],
+            }
         bundle = build_runtime_evidence_bundle(contract, plan, records)
 
         report = verify_runtime_v21(contract, plan, bundle)
-        self.assertEqual(report["implementation_status"], "IMPLEMENTATION_CONFORMANT")
+        self.assertEqual(
+            report["implementation_status"],
+            "IMPLEMENTATION_NOT_CONFORMANT",
+        )
         self.assertEqual(report["contract_dependency_status"], "CONFORMANT")
-        self.assertEqual(report["contract_coverage"], "FULL_CONTRACT")
+        self.assertEqual(report["verification_scope"], "FULL_CONTRACT")
         self.assertEqual(report["coverage_status"], "COMPLETE")
-        self.assertEqual(report["runtime_status"], "CONFORMANT")
-        self.assertEqual(report["lifecycle_status"], "NOT_APPLICABLE")
-        records[0]["result"] = {"result_class": "REJECTED"}
-        forged = build_runtime_evidence_bundle(contract, plan, records)
-        failed = verify_runtime_v21(contract, plan, forged)
-        self.assertEqual(failed["implementation_status"], "NON_CONFORMANT")
-        self.assertTrue(failed["semantic_failures"])
+        self.assertEqual(report["runtime_status"], "NON_CONFORMANT")
+        self.assertEqual(report["lifecycle_applicability"], "NOT_APPLICABLE")
+        error_codes = {
+            error["code"]
+            for error in report["contract_execution_errors"]
+            + report["evidence_errors"]
+        }
+        self.assertIn("RUNTIME_ACTION_BINDING_MISMATCH", error_codes)
+        self.assertIn("RUNTIME_FIXTURE_EXECUTION_MISMATCH", error_codes)
 
 
 if __name__ == "__main__":
