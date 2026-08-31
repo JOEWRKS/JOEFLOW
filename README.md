@@ -421,7 +421,7 @@ Environment-blocked disposition:
 
 ## 현재 Core 계약 — Semantic Closure V2
 
-State `0.2.0` Product Definition Core와 downstream V2 authority는 설치된 skill workflow에서 기본 경로로 연결됩니다. 이 Task 2 경계는 compile, dependency audit, semantic-review package wrapper까지만 설치하며 runtime evidence verifier, dogfood approval, 전체 M6 완료는 주장하지 않습니다.
+State `0.2.0` Product Definition Core와 downstream V2 authority는 설치된 skill workflow에서 기본 경로로 연결됩니다. 현재 경로는 `joewrks.action-conformance/2.1` → `joewrks.runtime-conformance-plan/1.0` → frozen `joewrks.downstream.execution/1.0` evidence → `joewrks.runtime-conformance-report/1.0` 순서입니다. 승인된 bounded M6 dogfood는 이 경로에서 full-contract conformance를 기록했지만, full historical migration은 여전히 `OPEN`이고 semantic-review/2.1 reliability는 `NOT_MEASURED`입니다. 최종 repository regression/review와 merge/deployment 전에는 전체 M6 완료를 주장하지 않습니다.
 
 목표는 단순합니다.
 

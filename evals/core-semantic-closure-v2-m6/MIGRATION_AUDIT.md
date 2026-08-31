@@ -18,7 +18,7 @@ editing the source. The deterministic result is revision 45, `OPEN`, and
 
 Track A remains OPEN. Its audit is complete, but its full reconciliation is not.
 
-## Track B — bounded native reconciliation ready for review
+## Track B — bounded native reconciliation approved and runtime-verified
 
 The user supplied all three bounded material decisions: no product analytics or
 telemetry for REQ-005/REQ-006; the uniform field-level interaction policy for
@@ -27,12 +27,16 @@ expected-revision, race, stale-recovery, and no-duplicate-side-effect semantics.
 All three are recorded as current user intent without a timestamp or fabricated
 repository commitment and are explicitly not universal future policies.
 
-The bounded revision 1 state is `READY_FOR_REVIEW` and `UNAPPROVED`. Discovery,
-Core and applicable Grill coverage, exact authority binding, state validation,
-and deterministic manifest compilation report zero semantic-readiness blockers.
-Every selected SCR-006/SCR-007 state and action axis is bound to exact semantic
-record fields. The review-link concurrency surface has a complete ASYNC Grill
-row, and Designer-only thread resolution uses the Designer session authority.
+The bounded revision 1 state passed the Phase-A checkpoint with zero semantic
+readiness blockers and was then explicitly approved as `CLOSED / APPROVED`.
+Its exact definition digest is
+`e33deda04bae78eab0da60ba432c47a0779bce17c4bee7d1c5695455d9d9f68c`;
+its exact Approval Manifest digest is
+`60ec9818666bab7d75bc4ee14d9ff4fcf2817d3cfcaa2e51c95318776be64705`.
+Every selected SCR-006/SCR-007 state and action axis remains bound to exact
+semantic record fields. The review-link concurrency surface has a complete
+ASYNC Grill row, and Designer-only thread resolution uses the Designer session
+authority.
 
 Magic-link identity, expiry, revocation, Designer session, and role-scoped
 permission decisions are security-classified. The exact high-risk decision
@@ -42,5 +46,19 @@ the exact frozen historical Git tree and supporting blob commitment.
 
 Track B remains separate from the complete Track A audit. It does not trim,
 close, replace, or supersede Track A, and it does not modify the historical
-dogfood directory. Approval, Phase B, Task 6, downstream compilation, runtime
-conformance, and re-entry have not started.
+dogfood directory.
+
+Track B compiled through `joewrks.action-conformance/2.1` with zero semantic,
+contract-expressiveness, review, and re-entry gaps. Its runtime plan has
+complete concrete coverage for 120/120 runtime-critical field refs. The final
+runtime bundle contains exactly 24/24 planned records, and the final report is
+`FULL_CONTRACT / COMPLETE / CONFORMANT / IMPLEMENTATION_CONFORMANT`. The
+separate controlled re-entry probe produces one affected-only
+`SEMANTIC_AUTHORITY_GAP`; it does not change Track A, Track B authority, or the
+approved revision.
+
+The full historical client-feedback migration is still an `OPEN`
+reconciliation candidate. Track B runtime conformance is evidence for the
+bounded native V2 unit only and is not migration completion evidence. Final
+repository-wide regression, frozen compatibility readback, and independent
+review remain pending after this Task-6 audit change.
