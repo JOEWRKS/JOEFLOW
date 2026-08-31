@@ -2,12 +2,12 @@
 
 Date: 2026-08-31
 
-Status: `TASK_6_TRACEABILITY_ASSEMBLED / FINAL_REGRESSION_AND_REVIEW_PENDING`
+Status: `INTEGRATION_ADOPTION_VERIFIED / R1_R10_FINAL_GATE_PASS`
 
 This audit records the exact integrated source and dogfood evidence available
-at Task 6. It does not claim `READY_FOR_MERGE`: the continuation's fresh full
-regression, final frozen/compatibility audit, and independent 0/0/0 review are
-controller-owned gates that follow this documentation commit.
+at Task 6. The continuation's fresh regression matrix, frozen/compatibility
+audit, and independent 0/0/0 review passed. `READY_FOR_MERGE` applies only to
+this feature branch; production deployment and a main merge are not claimed.
 
 ## Integration lineage
 
@@ -129,8 +129,8 @@ reference 05ae6f4c16ab65b8de9e2773a83a5ac38adaabcf
 template  5fed7e87da243b3d234148bbbbf3baf7350d8ab0
 ```
 
-The final controller audit must read these identities again after all Task-C
-changes; this section does not substitute for that fresh gate.
+The final controller audit read these identities again after the Task-C and
+deterministic wiring changes. Every listed object matched exactly.
 
 ## Corrected 2.1 compile
 
@@ -271,11 +271,11 @@ Track B is the separately approved bounded native V2 workflow unit. Its
 `IMPLEMENTATION_CONFORMANT` dogfood result does not close, trim, replace, or
 supersede Track A.
 
-## R1–R10 and remaining gates
+## R1–R10 and final gates
 
 `R1_R10_TRACEABILITY.md` binds all ten rows to production files, executable
-tests, and committed M6 artifacts. At this Task-C checkpoint each row is
-`EVIDENCE_BOUND / FINAL_GATE_PENDING`; none passes from documentation alone.
+tests, and committed M6 artifacts. Every row is now `VERIFIED / FINAL_GATE_PASS`;
+none passes from documentation alone.
 
 Task-C focused verification ran the Phase-A/Phase-B dogfood, real fixture,
 2.1 semantic runtime verifier, installed routing, re-entry, dependency audit,
@@ -292,14 +292,33 @@ Phase-A `READY_FOR_REVIEW / UNAPPROVED` checkpoint and the later current
 `CLOSED / APPROVED` state. The affected test passed, then the exact full focused
 set passed 150/150. No production or test expectation was weakened.
 
-Still pending after this commit:
+Fresh continuation verification after all production and test changes:
 
 ```text
-fresh final regression matrix: PENDING
-fresh frozen/compatibility readback after all changes: PENDING
-fresh independent review Critical/Important/Minor = 0/0/0: PENDING
-branch push/remote readback: PENDING
+M6 focused: 29/29 PASS
+M5.1 downstream-v21: 112/112 PASS
+M5 downstream-v2: 168/168 PASS
+Core V2: 337/337 PASS
+state/re-entry workflow: 29/29 PASS
+downstream v1: 44 PASS, 1 accepted environment skip
+semantic review: 125/125 PASS
+official calibration controller: 21/21 PASS
+legacy: 45/45 PASS
+migration Track A: 71/71 PASS
+installed workflow/package: 20/20 PASS
+runtime full-contract: 124/124 PASS
+full repository: 925 tests, OK, skipped=1
+git diff --check: PASS
+frozen/compatibility readback: exact
+independent review Critical/Important/Minor: 0/0/0
+branch push/remote readback: controller-owned final action after this audit
 ```
+
+The sole skip is
+`test_pinned_a_and_b_defects_are_executed_and_detected`: its explicitly
+external `JOEWRKS_FROZEN_A_ROOT` and `JOEWRKS_FROZEN_B_WORKTREE` inputs were
+not supplied. This is the continuation's historically accepted environment
+skip; no additional skip occurred.
 
 ## Claims not made
 
@@ -310,5 +329,5 @@ full historical client-feedback portal migration: OPEN reconciliation candidate
 production deployment: NOT_CLAIMED
 main merge: NOT_PERFORMED
 overall program v0.5: NOT_CLAIMED
-READY_FOR_MERGE: NOT_YET_CLAIMED
+READY_FOR_MERGE: feature-branch claim only
 ```
