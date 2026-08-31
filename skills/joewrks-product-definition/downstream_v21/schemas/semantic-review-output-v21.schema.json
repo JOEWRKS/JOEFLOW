@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "joewrks.semantic-review/2.1/output",
+  "type": "object",
+  "required": ["review_schema_version", "input_package_hash", "reliability_status", "results", "output_hash"],
+  "additionalProperties": false,
+  "properties": {
+    "review_schema_version": {"const": "joewrks.semantic-review/2.1"},
+    "input_package_hash": {"$ref": "#/$defs/hash"},
+    "reliability_status": {"const": "NOT_MEASURED"},
+    "results": {"type": "array", "items": {"$ref": "#/$defs/result"}},
+    "output_hash": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "result": {
+      "type": "object",
+      "required": ["obligation_id", "verdict", "reviewed_value_sha256", "rationale"],
+      "additionalProperties": false,
+      "properties": {
+        "obligation_id": {"type": "string", "pattern": "^REVIEW-[0-9a-f]{24}$"},
+        "verdict": {"enum": ["CONFIRMED_INTERPRETATION", "REJECTED_INTERPRETATION", "UPSTREAM_AUTHORITY_GAP"]},
+        "reviewed_value_sha256": {"$ref": "#/$defs/hash"},
+        "rationale": {"type": "string", "pattern": ".*\\S.*"}
+      }
+    }
+  }
+}

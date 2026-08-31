@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "joewrks.runtime-evidence-bundle/1.0",
+  "title": "JOEWRKS Runtime Evidence Bundle 1.0",
+  "description": "Transport-preserving envelope over records validated by frozen joewrks.downstream.execution/1.0 authority.",
+  "type": "object",
+  "required": [
+    "bundle_schema_version",
+    "source_semantic_contract_hash",
+    "source_runtime_plan_hash",
+    "source_approved_definition_digest",
+    "records",
+    "bundle_hash"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "bundle_schema_version": {"const": "joewrks.runtime-evidence-bundle/1.0"},
+    "source_semantic_contract_hash": {"$ref": "#/$defs/hash"},
+    "source_runtime_plan_hash": {"$ref": "#/$defs/hash"},
+    "source_approved_definition_digest": {"$ref": "#/$defs/hash"},
+    "records": {"type": "array", "items": {"type": "object"}},
+    "bundle_hash": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
