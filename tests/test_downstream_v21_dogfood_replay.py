@@ -417,11 +417,16 @@ def replay_m6_phase_b(worktree):
     """Read the preserved M6 Phase-B tree and replay only its known 2.1 slice."""
     worktree = Path(worktree).resolve()
     _require_m6(worktree.is_dir())
-    _require_m6(_git(worktree, "branch", "--show-current") == M6_BRANCH)
-    _require_m6(_git(worktree, "rev-parse", "HEAD") == M6_HEAD)
-    _require_m6(_git(worktree, "rev-parse", "HEAD^{tree}") == M6_TREE)
-    _require_m6(_git(worktree, "status", "--porcelain=v1") == "")
-    pre_bytes = _tracked_worktree_bytes(worktree)
+    pre_identity = {
+        "branch": _git(worktree, "branch", "--show-current"),
+        "head": _git(worktree, "rev-parse", "HEAD"),
+        "tree": _git(worktree, "rev-parse", "HEAD^{tree}"),
+        "status": _git(worktree, "status", "--porcelain=v1"),
+        "tracked_bytes": _tracked_worktree_bytes(worktree),
+    }
+    _require_m6(pre_identity["head"] == M6_HEAD)
+    _require_m6(pre_identity["tree"] == M6_TREE)
+    _require_m6(pre_identity["status"] == "")
     dogfood = worktree / "evals" / "core-semantic-closure-v2-m6" / "dogfood"
 
     try:
@@ -515,13 +520,7 @@ def replay_m6_phase_b(worktree):
             "status": _git(worktree, "status", "--porcelain=v1"),
             "tracked_bytes": _tracked_worktree_bytes(worktree),
         }
-        if post_identity != {
-            "branch": M6_BRANCH,
-            "head": M6_HEAD,
-            "tree": M6_TREE,
-            "status": "",
-            "tracked_bytes": pre_bytes,
-        }:
+        if post_identity != pre_identity:
             raise AssertionError("preserved M6 worktree changed during replay")
 
 

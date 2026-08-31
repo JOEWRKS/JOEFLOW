@@ -1,4 +1,4 @@
-import hashlib
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -12,12 +12,28 @@ FROZEN = {
 }
 
 
-def git_blob_sha1(data: bytes) -> str:
-    return hashlib.sha1(f"blob {len(data)}\0".encode("ascii") + data).hexdigest()
+def git(*args):
+    return subprocess.run(
+        ["git", *args],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
 
 
 class LegacyV0121FrozenTest(unittest.TestCase):
     def test_frozen_legacy_contract_bytes(self):
         for relative, expected in FROZEN.items():
             with self.subTest(relative=relative):
-                self.assertEqual(git_blob_sha1((ROOT / relative).read_bytes()), expected)
+                self.assertEqual(git("rev-parse", f"HEAD:{relative}"), expected)
+                clean_diff = subprocess.run(
+                    ["git", "diff", "--quiet", "HEAD", "--", relative],
+                    cwd=ROOT,
+                    check=False,
+                )
+                self.assertEqual(clean_diff.returncode, 0)
+                self.assertEqual(
+                    git("status", "--porcelain", "--untracked-files=all", "--", relative),
+                    "",
+                )
