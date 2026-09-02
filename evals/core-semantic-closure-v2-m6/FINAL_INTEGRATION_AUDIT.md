@@ -1,4 +1,4 @@
-# Core Semantic Closure V2 M6 — final integration audit
+# Core Semantic Closure V2 M6 — final integration audit and Revision-2 regeneration
 
 Date: 2026-08-31
 
@@ -30,10 +30,10 @@ statement. Preserve it as historical evidence. It is not the authoritative
 post-repair remote/integration status. The exact source integrated here is
 `8e21b3b3d6cfba79e9c1b9dd97487b87484cc802`.
 
-## Approved Product Definition identity
+## Historical original-M6 Product Definition identity
 
-The bounded dogfood Product Definition was not revised during M5.1/M6
-integration:
+The bounded dogfood Product Definition was not revised during the original
+M5.1/M6 integration. That historical run used:
 
 ```text
 schema: 0.2.0
@@ -47,7 +47,7 @@ Approval Manifest digest: 60ec9818666bab7d75bc4ee14d9ff4fcf2817d3cfcaa2e51c95318
 approval history commitments: exactly 1, matching revision 1
 ```
 
-Raw file commitments:
+Raw file commitments at the historical Task-B source HEAD:
 
 ```text
 dogfood/product-definition/client-feedback-portal-dogfood-v2/state.json
@@ -61,9 +61,32 @@ dogfood/approval-manifest.json
   SHA-256 f354e7baf1001bf1cd2a763569b310947ca2fd1ae4e6eb57c6f1573d9ec2eef1
 ```
 
-The different state file byte encodings do not represent different semantics;
-their parsed JSON structures are exact equals and the official semantic
-definition digest remains unchanged.
+At that historical HEAD, the different state file byte encodings did not
+represent different semantics; their parsed JSON structures were exact equals.
+`dogfood/final-state.json` remains this revision-1 historical snapshot and is
+not the current canonical authority.
+
+## Current approved Revision-2 identity
+
+After the original M6 run, DEC-042 provenance was corrected without changing
+product or UX meaning. The exact current approved authority is:
+
+```text
+schema: 0.2.0
+definition revision: 2
+definition status: CLOSED
+approval status: APPROVED
+approved by: user
+approved at: 2026-09-02T11:53:47Z
+definition digest: 81d3b7ff59dbce321dc27fab6b51f03db4201dc1f4a1ea3d6b202f3f76afddcf
+Approval Manifest digest: 079ef1bb60ccc382a66c6c764519e67e606744a9d10425310cc1b868be490003
+approval history commitments: exactly 2, matching revisions 1 and 2
+revision-1-to-2 changed record hashes: DEC-042, EVD-015, UNK-050
+```
+
+The revision-1 definition/manifest commitment above remains intact as the
+first history entry. Revision 2 changes only provenance representation; it did
+not exist during the historical original M6 run.
 
 ## Preserved historical 2.0 stop
 
@@ -84,8 +107,8 @@ dogfood/reentry-probe.json
 
 These artifacts were not rewritten to make 2.0 successful. Their 25-gap
 result remains evidence that the old contract misclassified representation
-limits; it is not the current 2.1 result and does not change Product Definition
-revision 1.
+limits; it is not the current 2.1 result. It did not change revision 1 during
+the original run and does not alter the current approved revision 2.
 
 ## Current installed route and frozen inputs
 
@@ -132,14 +155,19 @@ template  5fed7e87da243b3d234148bbbbf3baf7350d8ab0
 The final controller audit read these identities again after the Task-C and
 deterministic wiring changes. Every listed object matched exactly.
 
-## Corrected 2.1 compile
+## Current Revision-2 regenerated 2.1 compile
 
 The approved bounded state compiles through the M5.1 source with:
 
 ```text
 contract: joewrks.action-conformance/2.1
-semantic contract hash: b00b45e8ca4804289f5d8af3bb55fc6569ee65771838459b8ba49583df349b57
-action-contract-v21.json SHA-256: 72df95a38dbd7485c2b02f9b65a0bb8794523f73cd28909805023d5ff81992f4
+source revision: 2
+source definition digest: 81d3b7ff59dbce321dc27fab6b51f03db4201dc1f4a1ea3d6b202f3f76afddcf
+source Approval Manifest digest: 079ef1bb60ccc382a66c6c764519e67e606744a9d10425310cc1b868be490003
+handoff-definition-v21.json SHA-256: 83bce7dade12871f1289032796d6d58149b294b19788b77ecb55e1012519c062
+contract artifact hash: 715ec9722174098e81470013e29c1b5059230c67ef2a015064a872716ed1668a
+semantic contract hash: 56027cc08452fd0736315068cde7fa2377df661f39fc5e88c919ca4d00ff4c5b
+action-contract-v21.json SHA-256: 7fe72d553f295f3d5046e548173ad79c8f8adbb83de3c64a363d47265a2bc3c3
 actions: 6
 lifecycles: 0
 direct-authority fields: 131
@@ -157,8 +185,8 @@ The runtime plan is non-authoritative verification metadata:
 
 ```text
 plan: joewrks.runtime-conformance-plan/1.0
-plan hash: 454dbc11d88e2a7c333aab859b8ba8d49d0253b690c0b4c8fed27401ae4dd882
-plan file SHA-256: 48874797cefbbeef89daadf98fdb27f9af57ed50cf97fc8794a583f79d635048
+plan hash: 9d4476123d64635727b2a313d6b453ba38245d10cba14da3c41bd1f1e0c42d80
+plan file SHA-256: b91b854b1d1cc40caf6a3348c4202de644897b65b02bd3edf12fb4fe18a125d0
 runtime-responsibility digest: 035e83a108f96aeedc6475fe606a60312e326cb80d52522e51d67691e172ac64
 runtime-critical field refs: 120
 covered field refs: 120
@@ -184,9 +212,10 @@ missing action test IDs: 0
 unexpected action test IDs: 0
 duplicate evidence count: 0
 
-bundle hash: d5b8a3ee998035ae3999b8b5051defa3618e3921daf1809653e4dbdc6306ff27
-bundle file SHA-256: b6218ff11e7e78b6fa53734680169b8885eaba8f30c6c101cb1d7e5038edc983
-report file SHA-256: 53c5202640b440e7e964c4c700d5bf892e4538ae23059c644137155906fc11dd
+runtime-evidence.jsonl SHA-256: 060ab616c90840b72cc52c1160ad1e242da122359643444319a8c1153a1cdc37
+bundle hash: 402fb2bde69f1e6af34a38cceadea4c0cd2984026df8965fba087ca3ed47a48c
+bundle file SHA-256: 341f3419984bb05df69edc24dbc0400d59f107f52a3ef9da899947463d94eb40
+report file SHA-256: 601fb31e8582a53b2b5e0012f10b3e80523e24ebbf4644ea81f4206e9276bbbd
 
 verification_scope: FULL_CONTRACT
 contract_dependency_status: CONFORMANT
@@ -210,7 +239,7 @@ The committed drift probe mutates only a copied `create_pin` command:
 
 ```text
 implementation-drift-probe.json SHA-256:
-  377604d317e4a48ad0eb197b5f7124f14a4b837dd128a0c425acbda947825e20
+  b062ab657f475b2b79cbd2f3663b4abafc1d78c33f34f0fa4b8565a4ba6ffe54
 outer probe_status: PARTIAL_PROBE
 nested verification_scope: PARTIAL_PROBE
 nested runtime_status: NON_CONFORMANT
@@ -221,7 +250,7 @@ The 2.1 re-entry probe mutates one copied field to genuinely unresolved:
 
 ```text
 reentry-probe-v21.json SHA-256:
-  8014dc5986451df76d78ea7ba0df7b3e57748732592d4590738b0d918393c1c6
+  03d89136ec4105fc7c85961322e44b17092bcd82cd2c13b4871b62c94988cbbf
 status: REENTRY_REQUIRED
 SEMANTIC_AUTHORITY_GAP: 1
 CONTRACT_EXPRESSIVENESS_GAP: 0
@@ -233,6 +262,30 @@ contract: null
 Neither probe mutates the approved state, final 2.1 contract, final runtime
 evidence, or historical 2.0 evidence. A partial probe cannot produce global
 implementation conformance.
+
+## Revision-1 to Revision-2 identity and semantic diff
+
+The valid revision-1 chain at parent `486a3423cde494d912c016cb82a4137c8589f594`
+was compared recursively with the regenerated revision-2 chain. The complete
+leaf-difference classification is:
+
+```text
+EXPECTED_PROVENANCE_PROPAGATION: 491
+EXPECTED_IDENTITY_PROPAGATION: 352
+UNEXPECTED_SEMANTIC_DRIFT: 0
+```
+
+The provenance category contains only the approved revision, definition and
+manifest digests, canonical state snapshot digest, and their repeated evidence
+bindings. The identity category contains only derived contract/plan/bundle,
+evidence, and re-entry event identities. Removing exactly those named fields
+makes all eight generated chain/probe artifacts compare equal; the handoff is
+already structurally equal without normalization.
+
+All six action definitions and expected result classes remain unchanged.
+Recovery, concurrency, idempotency, commands, state transitions, effects,
+assertions, and probe mutations remain unchanged. No Product Definition
+authority was added or removed.
 
 ## Gap and authority boundary
 
@@ -271,13 +324,13 @@ Track B is the separately approved bounded native V2 workflow unit. Its
 `IMPLEMENTATION_CONFORMANT` dogfood result does not close, trim, replace, or
 supersede Track A.
 
-## R1–R10 and final gates
+## Historical original-M6 R1–R10 and final gates
 
 `R1_R10_TRACEABILITY.md` binds all ten rows to production files, executable
 tests, and committed M6 artifacts. Every row is now `VERIFIED / FINAL_GATE_PASS`;
 none passes from documentation alone.
 
-Task-C focused verification ran the Phase-A/Phase-B dogfood, real fixture,
+Historical Task-C focused verification ran the Phase-A/Phase-B dogfood, real fixture,
 2.1 semantic runtime verifier, installed routing, re-entry, dependency audit,
 compiler/gap routing, runtime plan/evidence, and frozen-boundary modules:
 
@@ -288,11 +341,11 @@ compiler/gap routing, runtime plan/evidence, and frozen-boundary modules:
 The first documentation run exposed one stale checkpoint-wording expectation:
 the current evaluation README no longer contained the historical
 `READY_FOR_REVIEW` marker. The README was corrected to state both the immutable
-Phase-A `READY_FOR_REVIEW / UNAPPROVED` checkpoint and the later current
+Phase-A `READY_FOR_REVIEW / UNAPPROVED` checkpoint and the later revision-1
 `CLOSED / APPROVED` state. The affected test passed, then the exact full focused
 set passed 150/150. No production or test expectation was weakened.
 
-Fresh continuation verification after all production and test changes:
+Historical original-M6 continuation verification after all production and test changes:
 
 ```text
 M6 focused: 29/29 PASS

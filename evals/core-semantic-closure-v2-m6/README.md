@@ -6,11 +6,14 @@ gaps retained. Its full reconciliation remains open.
 
 Track B is the separate bounded native reconciliation for
 `client-feedback-portal-dogfood-v2`. With three bounded current user decisions
-recorded as first-class intent, its revision 1 state is now `CLOSED` and
+recorded as first-class intent, its current revision 2 state is `CLOSED` and
 `APPROVED`, with exact definition digest
-`e33deda04bae78eab0da60ba432c47a0779bce17c4bee7d1c5695455d9d9f68c`
+`81d3b7ff59dbce321dc27fab6b51f03db4201dc1f4a1ea3d6b202f3f76afddcf`
 and Approval Manifest digest
-`60ec9818666bab7d75bc4ee14d9ff4fcf2817d3cfcaa2e51c95318776be64705`.
+`079ef1bb60ccc382a66c6c764519e67e606744a9d10425310cc1b868be490003`.
+Revision 1 remains the first immutable approval-history commitment. Revision 2
+is the approved DEC-042 provenance-only correction; only `DEC-042`, `EVD-015`,
+and `UNK-050` record hashes changed, with no product or UX semantic change.
 It does not trim, close, replace, or supersede Track A.
 
 ## Bounded current user authority
@@ -33,13 +36,20 @@ high-risk decision inventory. Repository-backed intent is pinned to the frozen
 historical tree/blob commitments, while current user decisions retain null
 repository commitments and no fabricated decision timestamp.
 
+After the original M6 run, revision 2 was separately approved at
+`2026-09-02T11:53:47Z` with definition digest
+`81d3b7ff59dbce321dc27fab6b51f03db4201dc1f4a1ea3d6b202f3f76afddcf`
+and manifest digest
+`079ef1bb60ccc382a66c6c764519e67e606744a9d10425310cc1b868be490003`.
+The original revision-1 approval and execution remain historical facts.
+
 The approved state compiled through `joewrks.action-conformance/2.1` with
 semantic contract hash
-`b00b45e8ca4804289f5d8af3bb55fc6569ee65771838459b8ba49583df349b57`,
+`56027cc08452fd0736315068cde7fa2377df661f39fc5e88c919ca4d00ff4c5b`,
 131 direct-authority fields, 7 machine-derived fields, and zero semantic,
 expressiveness, review, or re-entry gaps. The non-authoritative
 `joewrks.runtime-conformance-plan/1.0` has hash
-`454dbc11d88e2a7c333aab859b8ba8d49d0253b690c0b4c8fed27401ae4dd882`
+`9d4476123d64635727b2a313d6b453ba38245d10cba14da3c41bd1f1e0c42d80`
 and complete concrete coverage for all 120 runtime-critical field refs.
 
 The deterministic local fixture produced 24/24 planned execution records,
@@ -49,9 +59,16 @@ IMPLEMENTATION_CONFORMANT`; lifecycle is `NOT_APPLICABLE` only because the
 contract has zero lifecycle items. The separate implementation-drift probe is
 `PARTIAL_PROBE / NON_CONFORMANT`, and the separate 2.1 re-entry probe produces
 one affected-only `SEMANTIC_AUTHORITY_GAP` without mutating approved authority.
+The current evidence bundle hash is
+`402fb2bde69f1e6af34a38cceadea4c0cd2984026df8965fba087ca3ed47a48c`.
+
+An identity/semantic diff against the valid revision-1 chain found only
+expected authority/provenance propagation and derived identity propagation;
+all behavior-bearing content compares equal after those exact fields are
+removed. `UNEXPECTED_SEMANTIC_DRIFT = 0`.
 
 `R1_R10_TRACEABILITY.md` and `FINAL_INTEGRATION_AUDIT.md` assemble the Task-6
-evidence boundary. The final fresh repository regression, frozen readback,
-independent review, and branch push remain pending controller gates. Semantic
-review 2.1 reliability remains `NOT_MEASURED`; production deployment and main
-merge are not claimed.
+evidence boundary. For the Revision-2 regeneration, the fresh repository
+regression, frozen readback, and independent review passed. No branch push was
+requested or performed. Semantic review 2.1 reliability remains
+`NOT_MEASURED`; production deployment and main merge are not claimed.

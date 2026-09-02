@@ -1,4 +1,4 @@
-# M6 dogfood Phase A approval checkpoint
+# M6 dogfood historical Revision-1 Phase A approval checkpoint
 
 ```text
 CORE_SEMANTIC_CLOSURE_V2_M6_APPROVAL_REQUIRED
@@ -37,3 +37,31 @@ evidence, re-entry artifact, Phase B work, or Task 6 work exists at this
 checkpoint. A later run must receive explicit approval of this exact manifest
 digest and a separately supplied UTC approval timestamp before recording any
 approval.
+
+## Current Revision-2 approved authority and regenerated chain
+
+The section above is the immutable historical revision-1 checkpoint. The
+original revision-1 approval remains the first `approval_history` commitment:
+
+- definition digest: `e33deda04bae78eab0da60ba432c47a0779bce17c4bee7d1c5695455d9d9f68c`
+- manifest digest: `60ec9818666bab7d75bc4ee14d9ff4fcf2817d3cfcaa2e51c95318776be64705`
+- approved by/at: `user` / `2026-08-30T11:54:26Z`
+
+The current canonical state is revision `2`, `CLOSED`, and `APPROVED`:
+
+- definition digest: `81d3b7ff59dbce321dc27fab6b51f03db4201dc1f4a1ea3d6b202f3f76afddcf`
+- manifest digest: `079ef1bb60ccc382a66c6c764519e67e606744a9d10425310cc1b868be490003`
+- approved by/at: `user` / `2026-09-02T11:53:47Z`
+- revision-1-to-2 record-hash changes: `DEC-042`, `EVD-015`, `UNK-050`
+
+Revision 2 corrects DEC-042 provenance only. It preserves all product and UX
+meaning and the revision-1 approval history. The deterministically regenerated
+current chain is bound to semantic contract hash
+`56027cc08452fd0736315068cde7fa2377df661f39fc5e88c919ca4d00ff4c5b`,
+runtime-plan hash
+`9d4476123d64635727b2a313d6b453ba38245d10cba14da3c41bd1f1e0c42d80`,
+and evidence-bundle hash
+`402fb2bde69f1e6af34a38cceadea4c0cd2984026df8965fba087ca3ed47a48c`.
+It remains 6 actions, 0 lifecycles, 24/24 execution records, and
+`IMPLEMENTATION_CONFORMANT`; semantic-review/2.1 reliability remains
+`NOT_MEASURED`.
