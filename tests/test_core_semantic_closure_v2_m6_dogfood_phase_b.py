@@ -2,6 +2,7 @@ import copy
 import json
 import sys
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 
@@ -32,7 +33,7 @@ STATE_PATH = (
     / "client-feedback-portal-dogfood-v2"
     / "state.json"
 )
-MANIFEST_PATH = DOGFOOD_ROOT / "approval-manifest.json"
+FINAL_STATE_PATH = DOGFOOD_ROOT / "final-state.json"
 HANDOFF_PATH = DOGFOOD_ROOT / "handoff-definition.json"
 REENTRY_PATH = DOGFOOD_ROOT / "reentry-probe.json"
 
@@ -62,8 +63,22 @@ def load_json(path):
 
 class CoreSemanticClosureV2M6DogfoodPhaseBStoppedPathTest(unittest.TestCase):
     def setUp(self):
-        self.state = load_json(STATE_PATH)
-        self.manifest = load_json(MANIFEST_PATH)
+        self.state = load_json(FINAL_STATE_PATH)
+        review_copy = copy.deepcopy(self.state)
+        review_copy["project"]["definition_status"] = "READY_FOR_REVIEW"
+        review_copy["approval"] = {"status": "UNAPPROVED"}
+        review_copy["approval_history"] = []
+        self.manifest = build_approval_manifest_for_review(review_copy)
+
+    def materialize_historical_dogfood(self):
+        def historical_json(path):
+            path = Path(path)
+            if path.resolve() == STATE_PATH.resolve():
+                return copy.deepcopy(self.state)
+            return load_json(path)
+
+        with patch.dict(materialize_dogfood.__globals__, {"_json": historical_json}):
+            return materialize_dogfood(ROOT)
 
     def test_exact_user_approval_closes_the_unchanged_definition(self):
         self.assertEqual(validate_state_v2(self.state), [])
@@ -181,7 +196,7 @@ class CoreSemanticClosureV2M6DogfoodPhaseBStoppedPathTest(unittest.TestCase):
 
     def test_v21_verifier_rechecks_plan_semantics_not_bundle_completeness(self):
         """A forged all-record bundle cannot become conformant without case semantics."""
-        materialized = materialize_dogfood(ROOT)
+        materialized = self.materialize_historical_dogfood()
         contract = materialized["contract"]
         plan = materialized["plan"]
         records = copy.deepcopy(materialized["records"])

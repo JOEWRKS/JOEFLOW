@@ -43,9 +43,9 @@ EVIDENCE_MAP_PATH = DOGFOOD_ROOT / "phase-a-evidence-map.json"
 RUNBOOK_PATH = EVAL_ROOT / "DOGFOOD_RUNBOOK.md"
 README_PATH = EVAL_ROOT / "README.md"
 AUDIT_PATH = EVAL_ROOT / "MIGRATION_AUDIT.md"
-EXPECTED_DEFINITION_DIGEST = "e33deda04bae78eab0da60ba432c47a0779bce17c4bee7d1c5695455d9d9f68c"
-EXPECTED_MANIFEST_DIGEST = "60ec9818666bab7d75bc4ee14d9ff4fcf2817d3cfcaa2e51c95318776be64705"
-EXPECTED_ADDED_COUNT = 113
+EXPECTED_DEFINITION_DIGEST = "81d3b7ff59dbce321dc27fab6b51f03db4201dc1f4a1ea3d6b202f3f76afddcf"
+EXPECTED_MANIFEST_DIGEST = "079ef1bb60ccc382a66c6c764519e67e606744a9d10425310cc1b868be490003"
+EXPECTED_CHANGED_IDS = ["DEC-042", "EVD-015", "UNK-050"]
 
 ANALYTICS_DECISION = (
     "For this bounded M6 existing-product V2 dogfood Product Definition only, "
@@ -72,6 +72,54 @@ INTERACTION_DECISION = (
     "state before retry, and must not duplicate mutation or notification. Destructive "
     "confirmation is N/A for this bounded fixture. This interaction policy is bounded "
     "to this dogfood Product Definition and is not a system-wide rule."
+)
+
+INTERACTION_OPTIONS = [
+    {
+        "id": "1",
+        "statement": "아래 공통 상호작용 정책 승인",
+        "consequences": [
+            "Loading/Submitting: 진행 중 상태를 표시하며 성공으로 표시하지 않음",
+            "Empty: 화면별 명시적인 빈 상태 표시",
+            "Partial: 확보된 authoritative data와 복구 안내를 함께 표시",
+            "Completed: authoritative confirmation 이후에만 표시",
+            "Cancel/Back/Cancelled: mutation 없이 종료하고, 보존 가능한 미전송 입력 유지",
+            "Refresh: 최신 authoritative state 다시 로드",
+            "완료된 review-link/thread mutation: 직접 Undo 없음. 새 링크·새 reply·reopen 등 문서화된 복구 경로 사용",
+            "Offline/Timeout: 성공 표시 금지, 입력 보존, 최신 상태 확인 후 중복 mutation/notification 없이 재시도",
+            "Destructive confirmation: 이 bounded fixture에서는 N/A",
+        ],
+    },
+    {
+        "id": "2",
+        "statement": "화면·행동별 예외 지정",
+        "consequences": [
+            "SCR-006/SCR-007 또는 send/resend/revoke/pin/reply/resolve 중 위 정책과 다르게 처리할 항목을 지정해 주세요."
+        ],
+    },
+]
+INTERACTION_TRADEOFFS = [
+    "공통 상호작용 정책을 승인하거나, SCR-006/SCR-007 또는 send/resend/revoke/pin/reply/resolve 중 위 정책과 다르게 처리할 항목을 지정한다."
+]
+INTERACTION_RECOMMENDATION = {
+    "recommended_option": "1",
+    "reasoning_refs": ["EVD-005", "EVD-006", "EVD-007"],
+    "tradeoffs": INTERACTION_TRADEOFFS,
+    "confidence": "HIGH",
+}
+INTERACTION_ACCEPTANCE = {
+    "recommended_option": "1",
+    "alternatives_presented": ["1", "2"],
+    "tradeoffs_presented": INTERACTION_TRADEOFFS,
+    "accepted_by": "user",
+    "accepted_at": "2026-08-30T16:37:42+09:00",
+}
+INTERACTION_EVIDENCE_LOCATOR = (
+    "task=019fa2b4-a56d-77d1-ac82-d5498723280a;"
+    "agent_recommendation_turn=01a05137-2009-7af1-ba3c-51c7af2a993a;"
+    "agent_recommendation_item=item-13731;"
+    "user_acceptance_turn=01a0519a-50e9-71e2-ae86-1bacd449c550;"
+    "user_acceptance_item=item-13732"
 )
 
 CONCURRENCY_DECISION = (
@@ -518,7 +566,6 @@ def phase_a_review_projection(state):
     projection = deepcopy(state)
     projection["project"]["definition_status"] = "READY_FOR_REVIEW"
     projection["approval"] = {"status": "UNAPPROVED"}
-    projection["approval_history"] = []
     return projection
 
 
@@ -799,6 +846,56 @@ class CoreSemanticClosureV2M6DogfoodTrackBTest(unittest.TestCase):
         )
         self.assertTrue(all(row["risk_flags"] == ["security"] for row in manifest["high_risk_decisions"]))
 
+    def test_dec_042_preserves_meaning_and_records_exact_accepted_recommendation_provenance(self):
+        state = load_json(STATE_PATH)
+        evidence = {item["id"]: item for item in state["evidence"]}
+        unknowns = {item["id"]: item for item in state["objects"]["unknowns"]}
+        decisions = {item["id"]: item for item in state["objects"]["decisions"]}
+        rules = {item["id"]: item for item in state["objects"]["rules"]}
+        states = {item["id"]: item for item in state["objects"]["states"]}
+
+        unknown = unknowns["UNK-050"]
+        self.assertEqual(unknown["response_mode"], "MUTUALLY_EXCLUSIVE")
+        self.assertEqual(unknown["options"], INTERACTION_OPTIONS)
+        self.assertEqual(unknown["recommendation"], INTERACTION_RECOMMENDATION)
+        self.assertEqual(unknown["resolution_mode"], "USER_ACCEPTED_RECOMMENDATION")
+        self.assertEqual(unknown["decision_authority"], "USER_CONFIRMATION")
+
+        decision = decisions["DEC-042"]
+        self.assertEqual(decision["statement"], INTERACTION_DECISION)
+        self.assertEqual(decision["resolution_mode"], "USER_ACCEPTED_RECOMMENDATION")
+        self.assertEqual(decision["decision_authority"], "USER_CONFIRMATION")
+        self.assertEqual(decision["accepted_recommendation"], INTERACTION_ACCEPTANCE)
+
+        self.assertEqual(evidence["EVD-015"], {
+            "id": "EVD-015",
+            "status": "CURRENT",
+            "source_kind": "USER_CONFIRMED_INTENT",
+            "locator": INTERACTION_EVIDENCE_LOCATOR,
+            "claim": INTERACTION_DECISION,
+            "confidence": "DIRECT",
+            "authority_classes": ["INTENT"],
+            "observed_version": None,
+            "content_hash": None,
+        })
+        self.assertEqual(
+            {rule_id: rules[rule_id]["statement"] for rule_id in (
+                "RULE-119", "RULE-120", "RULE-122", "RULE-123", "RULE-124", "RULE-125",
+            )},
+            {rule_id: EXPECTED_MEANINGS[(rule_id, "/statement")] for rule_id in (
+                "RULE-119", "RULE-120", "RULE-122", "RULE-123", "RULE-124", "RULE-125",
+            )},
+        )
+        self.assertNotIn("RULE-121", rules)
+        self.assertEqual(states["STATE-002"]["conditions"], [
+            "Loading and Submitting show pending state and never show success.",
+            "Completed and success follow only authoritative confirmation.",
+        ])
+        self.assertEqual(state["project"]["definition_revision"], 2)
+        self.assertEqual(state["project"]["definition_status"], "READY_FOR_REVIEW")
+        self.assertEqual(state["approval"], {"status": "UNAPPROVED"})
+        self.assertEqual([item["revision"] for item in state["approval_history"]], [1])
+
     def test_async_core_and_ux_concurrency_bindings_are_exact(self):
         self.assertTrue(STATE_PATH.is_file(), "approved decisions must recreate Track B")
         state = load_json(STATE_PATH)
@@ -853,19 +950,17 @@ class CoreSemanticClosureV2M6DogfoodTrackBTest(unittest.TestCase):
         manifest = load_json(MANIFEST_PATH)
         self.assertEqual(review_state["project"]["definition_status"], "READY_FOR_REVIEW")
         self.assertEqual(review_state["approval"], {"status": "UNAPPROVED"})
-        self.assertEqual(review_state["approval_history"], [])
+        self.assertEqual([item["revision"] for item in review_state["approval_history"]], [1])
         self.assertEqual(validate_state_v2(review_state), [])
         self.assertEqual(sum(semantic_readiness_metrics(review_state).values()), 0)
         self.assertEqual(build_approval_manifest_for_review(review_state), manifest)
         self.assertEqual(definition_digest(review_state), EXPECTED_DEFINITION_DIGEST)
         self.assertEqual(approval_manifest_digest(manifest), EXPECTED_MANIFEST_DIGEST)
-        self.assertEqual(len(manifest["added"]), EXPECTED_ADDED_COUNT)
-        self.assertEqual(manifest["changed"], [])
+        self.assertEqual(manifest["added"], [])
+        self.assertEqual([item["id"] for item in manifest["changed"]], EXPECTED_CHANGED_IDS)
         self.assertEqual(manifest["superseded"], [])
         self.assertEqual(manifest["retired"], [])
-        serialized = json.dumps(review_state, ensure_ascii=False)
-        for forbidden in ("approved_by", "approved_at", "timestamp"):
-            self.assertNotIn(forbidden, serialized)
+        self.assertEqual(review_state["approval"], {"status": "UNAPPROVED"})
 
         evidence = {item["id"]: item for item in state["evidence"]}
         self.assertEqual(evidence["EVD-008"]["claim"], ANALYTICS_DECISION)

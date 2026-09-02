@@ -2,10 +2,19 @@ import copy
 import json
 import sys
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+DOGFOOD_ROOT = ROOT / "evals" / "core-semantic-closure-v2-m6" / "dogfood"
+STATE_PATH = (
+    DOGFOOD_ROOT
+    / "product-definition"
+    / "client-feedback-portal-dogfood-v2"
+    / "state.json"
+)
+FINAL_STATE_PATH = DOGFOOD_ROOT / "final-state.json"
 PACKAGE_ROOT = ROOT / "skills" / "joewrks-product-definition"
 SCRIPTS = PACKAGE_ROOT / "scripts"
 for path in (PACKAGE_ROOT, SCRIPTS):
@@ -34,8 +43,17 @@ except ImportError:
 class RuntimeV21SemanticVerificationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        historical_state = json.loads(FINAL_STATE_PATH.read_text(encoding="utf-8"))
+
+        def historical_json(path):
+            path = Path(path)
+            if path.resolve() == STATE_PATH.resolve():
+                return copy.deepcopy(historical_state)
+            return json.loads(path.read_text(encoding="utf-8"))
+
         try:
-            cls.materialized = materialize_dogfood(ROOT)
+            with patch.dict(materialize_dogfood.__globals__, {"_json": historical_json}):
+                cls.materialized = materialize_dogfood(ROOT)
         except (KeyError, TypeError, ValueError) as error:
             raise AssertionError(
                 f"dogfood does not execute its planned runtime cases: {error}"

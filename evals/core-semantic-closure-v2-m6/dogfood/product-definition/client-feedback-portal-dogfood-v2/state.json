@@ -2,8 +2,8 @@
   "schema_version": "0.2.0",
   "project": {
     "slug": "client-feedback-portal-dogfood-v2",
-    "definition_status": "CLOSED",
-    "definition_revision": 1,
+    "definition_status": "READY_FOR_REVIEW",
+    "definition_revision": 2,
     "bootstrap_mode": "EXISTING_PRODUCT_RECONCILIATION",
     "closure_contract": {
       "level": "SEMANTIC_CLOSURE",
@@ -209,7 +209,7 @@
       "id": "EVD-015",
       "status": "CURRENT",
       "source_kind": "USER_CONFIRMED_INTENT",
-      "locator": "user-decision/task-5-phase-a-field-level-interaction-policy",
+      "locator": "task=019fa2b4-a56d-77d1-ac82-d5498723280a;agent_recommendation_turn=01a05137-2009-7af1-ba3c-51c7af2a993a;agent_recommendation_item=item-13731;user_acceptance_turn=01a0519a-50e9-71e2-ae86-1bacd449c550;user_acceptance_item=item-13732",
       "claim": "For this bounded M6 existing-product V2 dogfood Product Definition only: Loading and Submitting show pending state and never success. Empty shows the screen-specific zero state. Partial shows available authoritative data plus an explicit recovery notice. Completed follows only authoritative confirmation. Cancelled, Cancel, and Back cause no mutation and preserve eligible unsent text. Refresh reloads latest authoritative state. Committed review-link/thread mutations have no direct Undo; recovery uses documented new-link, new-reply, or reopen paths. Offline and Timeout withhold success, preserve eligible input, refresh authoritative state before retry, and must not duplicate mutation or notification. Destructive confirmation is N/A for this bounded fixture. This interaction policy is bounded to this dogfood Product Definition and is not a system-wide rule.",
       "authority_classes": [
         "INTENT"
@@ -1002,7 +1002,7 @@
           },
           "classification": "MATERIAL"
         },
-        "decision_authority": "USER_DECISION_REQUIRED",
+        "decision_authority": "USER_CONFIRMATION",
         "affects": [
           "REQ-005",
           "REQ-006"
@@ -1015,16 +1015,50 @@
           "axis_id": null,
           "source_path": null
         },
-        "response_mode": "OPEN_RESPONSE_REQUIRED",
-        "options": [],
-        "recommendation": null,
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "1",
+            "statement": "아래 공통 상호작용 정책 승인",
+            "consequences": [
+              "Loading/Submitting: 진행 중 상태를 표시하며 성공으로 표시하지 않음",
+              "Empty: 화면별 명시적인 빈 상태 표시",
+              "Partial: 확보된 authoritative data와 복구 안내를 함께 표시",
+              "Completed: authoritative confirmation 이후에만 표시",
+              "Cancel/Back/Cancelled: mutation 없이 종료하고, 보존 가능한 미전송 입력 유지",
+              "Refresh: 최신 authoritative state 다시 로드",
+              "완료된 review-link/thread mutation: 직접 Undo 없음. 새 링크·새 reply·reopen 등 문서화된 복구 경로 사용",
+              "Offline/Timeout: 성공 표시 금지, 입력 보존, 최신 상태 확인 후 중복 mutation/notification 없이 재시도",
+              "Destructive confirmation: 이 bounded fixture에서는 N/A"
+            ]
+          },
+          {
+            "id": "2",
+            "statement": "화면·행동별 예외 지정",
+            "consequences": [
+              "SCR-006/SCR-007 또는 send/resend/revoke/pin/reply/resolve 중 위 정책과 다르게 처리할 항목을 지정해 주세요."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "1",
+          "reasoning_refs": [
+            "EVD-005",
+            "EVD-006",
+            "EVD-007"
+          ],
+          "tradeoffs": [
+            "공통 상호작용 정책을 승인하거나, SCR-006/SCR-007 또는 send/resend/revoke/pin/reply/resolve 중 위 정책과 다르게 처리할 항목을 지정한다."
+          ],
+          "confidence": "HIGH"
+        },
         "evidence_refs": [
           "EVD-015"
         ],
         "resolved_by": [
           "DEC-042"
         ],
-        "resolution_mode": "USER_DECISION",
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
         "resolution_summary": "For this bounded M6 existing-product V2 dogfood Product Definition only: Loading and Submitting show pending state and never success. Empty shows the screen-specific zero state. Partial shows available authoritative data plus an explicit recovery notice. Completed follows only authoritative confirmation. Cancelled, Cancel, and Back cause no mutation and preserve eligible unsent text. Refresh reloads latest authoritative state. Committed review-link/thread mutations have no direct Undo; recovery uses documented new-link, new-reply, or reopen paths. Offline and Timeout withhold success, preserve eligible input, refresh authoritative state before retry, and must not duplicate mutation or notification. Destructive confirmation is N/A for this bounded fixture. This interaction policy is bounded to this dogfood Product Definition and is not a system-wide rule.",
         "deferral": null,
         "blocked_reason": null
@@ -1366,8 +1400,8 @@
         "status": "CURRENT",
         "statement": "For this bounded M6 existing-product V2 dogfood Product Definition only: Loading and Submitting show pending state and never success. Empty shows the screen-specific zero state. Partial shows available authoritative data plus an explicit recovery notice. Completed follows only authoritative confirmation. Cancelled, Cancel, and Back cause no mutation and preserve eligible unsent text. Refresh reloads latest authoritative state. Committed review-link/thread mutations have no direct Undo; recovery uses documented new-link, new-reply, or reopen paths. Offline and Timeout withhold success, preserve eligible input, refresh authoritative state before retry, and must not duplicate mutation or notification. Destructive confirmation is N/A for this bounded fixture. This interaction policy is bounded to this dogfood Product Definition and is not a system-wide rule.",
         "decision_type": "PRODUCT_POLICY",
-        "resolution_mode": "USER_DECISION",
-        "decision_authority": "USER_DECISION_REQUIRED",
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+        "decision_authority": "USER_CONFIRMATION",
         "source_unknown_refs": [
           "UNK-050"
         ],
@@ -1395,7 +1429,18 @@
           "REQ-006"
         ],
         "decided_by": "USER",
-        "accepted_recommendation": null
+        "accepted_recommendation": {
+          "recommended_option": "1",
+          "alternatives_presented": [
+            "1",
+            "2"
+          ],
+          "tradeoffs_presented": [
+            "공통 상호작용 정책을 승인하거나, SCR-006/SCR-007 또는 send/resend/revoke/pin/reply/resolve 중 위 정책과 다르게 처리할 항목을 지정한다."
+          ],
+          "accepted_by": "user",
+          "accepted_at": "2026-08-30T16:37:42+09:00"
+        }
       },
       {
         "id": "DEC-043",
@@ -5964,9 +6009,9 @@
   ],
   "discovery_baseline": {
     "status": "CURRENT",
-    "definition_revision": 1,
+    "definition_revision": 2,
     "surface_manifest_digest": "b285e79abb81c095c649e97621c58592f92e392c8b2b14da9e1de71f94d2590b",
-    "evidence_commitment_digest": "8ddb0eb6bf33ae453a87f96d065f8829036a8bce19c341923407e02cb08a432b",
+    "evidence_commitment_digest": "178baf6ac40aa3470f82ca39f246deeec24163e1b6eae32937cd286b57f500ff",
     "open_material_surface_count": 0,
     "unresolved_material_contradiction_count": 0,
     "procedure_complete": true,
@@ -6012,12 +6057,7 @@
     "unknown_unknown_exhaustiveness_claimed": false
   },
   "approval": {
-    "status": "APPROVED",
-    "approved_revision": 1,
-    "approved_definition_digest": "e33deda04bae78eab0da60ba432c47a0779bce17c4bee7d1c5695455d9d9f68c",
-    "approved_manifest_digest": "60ec9818666bab7d75bc4ee14d9ff4fcf2817d3cfcaa2e51c95318776be64705",
-    "approved_at": "2026-08-30T11:54:26Z",
-    "approved_by": "user"
+    "status": "UNAPPROVED"
   },
   "approval_history": [
     {
