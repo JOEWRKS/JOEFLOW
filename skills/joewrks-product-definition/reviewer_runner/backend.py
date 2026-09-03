@@ -40,6 +40,10 @@ REQUIRED_CAPABILITIES = (
 _INVOCATION_ERROR_CODES = frozenset(
     {"TRANSPORT_ERROR", "TIMEOUT", "CANCELLED", "NO_RESPONSE"}
 )
+_BACKEND_KIND = "STATELESS_TOOLLESS_EXTERNAL_INFERENCE"
+_MODEL_IDENTITY_STABILITIES = frozenset(
+    {"IMMUTABLE", "STABLE_DEPLOYMENT", "FLOATING", "UNKNOWN"}
+)
 _ELIGIBLE_MODEL_STABILITIES = frozenset({"IMMUTABLE", "STABLE_DEPLOYMENT"})
 
 
@@ -113,8 +117,7 @@ def validate_backend_descriptor(descriptor: BackendDescriptor) -> None:
 
     if type(descriptor) is not BackendDescriptor:
         raise ValueError("backend descriptor must be an exact BackendDescriptor")
-    if type(descriptor.identity) is not BackendIdentity:
-        raise ValueError("backend descriptor must contain an exact BackendIdentity")
+    _validate_backend_identity(descriptor.identity)
     if (
         isinstance(descriptor.max_request_bytes, bool)
         or not isinstance(descriptor.max_request_bytes, int)
@@ -199,7 +202,31 @@ def validate_backend_response(
 
 
 def _is_identifier(value: object) -> bool:
-    return isinstance(value, str) and bool(value)
+    return isinstance(value, str) and bool(value) and value == value.strip()
+
+
+def _validate_backend_identity(identity: BackendIdentity) -> None:
+    if type(identity) is not BackendIdentity:
+        raise ValueError("backend descriptor must contain an exact BackendIdentity")
+    if identity.backend_kind != _BACKEND_KIND:
+        raise ValueError("backend_kind must be STATELESS_TOOLLESS_EXTERNAL_INFERENCE")
+    for name in (
+        "adapter_id",
+        "adapter_version",
+        "endpoint_identity",
+        "deployment_identity",
+        "model_revision_identity",
+        "retention_policy_identity",
+        "privacy_policy_identity",
+    ):
+        if not _is_identifier(getattr(identity, name)):
+            raise ValueError(f"{name} must be a non-empty string")
+    if identity.model_identity_stability not in _MODEL_IDENTITY_STABILITIES:
+        raise ValueError("model_identity_stability is invalid")
+    if not _is_sha256(identity.inference_settings_sha256):
+        raise ValueError("inference_settings_sha256 must be a SHA-256 digest")
+    if type(identity.is_test_double) is not bool:
+        raise ValueError("is_test_double must be a boolean")
 
 
 def _is_sha256(value: object) -> bool:

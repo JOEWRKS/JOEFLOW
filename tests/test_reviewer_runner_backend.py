@@ -1,6 +1,7 @@
 import inspect
 import sys
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 
@@ -150,6 +151,7 @@ class ReviewerRunnerBackendTests(unittest.TestCase):
 
     def test_deterministic_fake_is_always_non_authoritative(self):
         _, _, _, _, is_backend_eligible, validate_backend_descriptor = _backend_contract()
+        from reviewer_runner.backend import BackendDescriptor, CapabilityObservation
         from tests.reviewer_runner_support import DeterministicFakeBackend
 
         fake = DeterministicFakeBackend(b'{"verdict":"recorded"}')
@@ -175,6 +177,62 @@ class ReviewerRunnerBackendTests(unittest.TestCase):
         )
         self.assertTrue(all(observation.method for observation in descriptor.observations))
         self.assertTrue(all(len(observation.evidence_sha256) == 64 for observation in descriptor.observations))
+
+        observed_pass_descriptor = BackendDescriptor(
+            identity=replace(
+                descriptor.identity,
+                is_test_double=False,
+                model_identity_stability="IMMUTABLE",
+            ),
+            max_request_bytes=descriptor.max_request_bytes,
+            observations=tuple(
+                CapabilityObservation(
+                    capability=observation.capability,
+                    classification=CapabilityClass.OBSERVED_PASS,
+                    method=observation.method,
+                    evidence_sha256=observation.evidence_sha256,
+                )
+                for observation in descriptor.observations
+            ),
+        )
+        self.assertTrue(is_backend_eligible(observed_pass_descriptor))
+        for stability in ("FLOATING", "UNKNOWN"):
+            with self.subTest(stability=stability):
+                self.assertFalse(
+                    is_backend_eligible(
+                        replace(
+                            observed_pass_descriptor,
+                            identity=replace(
+                                observed_pass_descriptor.identity,
+                                model_identity_stability=stability,
+                            ),
+                        )
+                    )
+                )
+        for field, malformed_value in (
+            ("backend_kind", "TOOLS_ENABLED"),
+            ("adapter_id", ""),
+            ("adapter_id", " "),
+            ("adapter_version", ""),
+            ("endpoint_identity", ""),
+            ("deployment_identity", ""),
+            ("model_revision_identity", ""),
+            ("retention_policy_identity", ""),
+            ("privacy_policy_identity", ""),
+            ("model_identity_stability", "UNRECOGNIZED"),
+            ("inference_settings_sha256", "0" * 63),
+            ("is_test_double", 1),
+        ):
+            with self.subTest(field=field):
+                malformed = replace(
+                    observed_pass_descriptor,
+                    identity=replace(
+                        observed_pass_descriptor.identity,
+                        **{field: malformed_value},
+                    ),
+                )
+                with self.assertRaises(ValueError):
+                    is_backend_eligible(malformed)
 
 
 if __name__ == "__main__":
