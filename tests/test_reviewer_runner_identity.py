@@ -128,6 +128,19 @@ class ReviewerRunnerIdentityTests(unittest.TestCase):
             )
         self.assertEqual(raised.exception.code, "PACKAGE_DIGEST_MISMATCH")
 
+    def test_package_schema_version_mismatch_is_rejected(self):
+        receipt = build_runner_receipt(**valid_receipt_parts())
+        changed = dataclasses.replace(
+            receipt.run_identity,
+            package_schema_version="joewrks.semantic-review-input/2.0",
+        )
+        with self.assertRaises(RunnerIdentityError) as raised:
+            validate_runner_receipt(
+                dataclasses.replace(receipt, run_identity=changed),
+                expected_run_identity=receipt.run_identity,
+            )
+        self.assertEqual(raised.exception.code, "PACKAGE_SCHEMA_VERSION_MISMATCH")
+
     def test_brief_and_output_schema_digest_mismatch_are_rejected(self):
         receipt = build_runner_receipt(**valid_receipt_parts())
         changed_inventory = tuple(
@@ -238,6 +251,16 @@ class ReviewerRunnerIdentityTests(unittest.TestCase):
         with self.assertRaises(RunnerIdentityError) as raised:
             build_runner_receipt(**parts)
         self.assertEqual(raised.exception.code, "MODEL_IDENTITY_NOT_IMMUTABLE")
+
+    def test_response_count_rejects_boolean_and_float_values(self):
+        document = receipt_document(build_runner_receipt(**valid_receipt_parts()))
+        for response_count in (True, 1.0):
+            response_identity = dict(document["response_identity"])
+            response_identity["response_count"] = response_count
+            candidate = {**document, "response_identity": response_identity}
+            with self.assertRaises(RunnerIdentityError) as raised:
+                validate_receipt_document(candidate)
+            self.assertEqual(raised.exception.code, "RESPONSE_COUNT_INVALID")
 
 
 if __name__ == "__main__":

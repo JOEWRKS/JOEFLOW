@@ -365,7 +365,11 @@ def _validate_response_identity(identity: ResponseIdentity) -> None:
         "parsed_output_sha256",
     ):
         _require_digest(getattr(identity, name), name.upper())
-    if identity.response_count != 1:
+    if (
+        isinstance(identity.response_count, bool)
+        or not isinstance(identity.response_count, int)
+        or identity.response_count != 1
+    ):
         _fail("RESPONSE_COUNT_INVALID", "response_count must be exactly one")
     if (
         isinstance(identity.raw_response_byte_count, bool)
@@ -380,6 +384,7 @@ def _validate_expected_run_identity(actual: RunIdentity, expected: RunIdentity |
         return
     _validate_run_identity(expected)
     codes = {
+        "package_schema_version": "PACKAGE_SCHEMA_VERSION_MISMATCH",
         "package_digest": "PACKAGE_DIGEST_MISMATCH",
         "source_action_contract_hash": "SOURCE_ACTION_CONTRACT_HASH_MISMATCH",
         "source_definition_digest": "SOURCE_DEFINITION_DIGEST_MISMATCH",
