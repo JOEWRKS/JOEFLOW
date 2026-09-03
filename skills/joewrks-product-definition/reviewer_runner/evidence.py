@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ctypes
+from ctypes import wintypes
 from dataclasses import dataclass, field
 import hashlib
 import json
@@ -29,6 +31,17 @@ _RECEIPT_FILENAMES = frozenset(
 )
 _SAFE_PATH_COMPONENT = re.compile(r"[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?")
 _MAX_PATH_COMPONENT_LENGTH = 128
+_WINDOWS_FILE_READ_ATTRIBUTES = 0x00000080
+_WINDOWS_DELETE = 0x00010000
+_WINDOWS_FILE_SHARE_READ = 0x00000001
+_WINDOWS_FILE_SHARE_WRITE = 0x00000002
+_WINDOWS_OPEN_EXISTING = 3
+_WINDOWS_FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000
+_WINDOWS_FILE_FLAG_BACKUP_SEMANTICS = 0x02000000
+_WINDOWS_FILE_DISPOSITION_INFO_CLASS = 4
+_WINDOWS_FILE_ID_INFO_CLASS = 0x12
+_WINDOWS_INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
+_WINDOWS_KERNEL32 = None
 _WINDOWS_RESERVED_PATH_STEMS = frozenset(
     {
         "aux",
@@ -43,6 +56,27 @@ _WINDOWS_RESERVED_PATH_STEMS = frozenset(
 
 class EvidenceLifecycleError(ValueError):
     """A terminal failure to preserve evidence or prove exact cleanup."""
+
+
+@dataclass(frozen=True)
+class _WindowsFileIdentity:
+    volume_serial_number: int
+    file_id: bytes
+
+
+class _WindowsFileId128(ctypes.Structure):
+    _fields_ = (("identifier", ctypes.c_ubyte * 16),)
+
+
+class _WindowsFileIdInfo(ctypes.Structure):
+    _fields_ = (
+        ("volume_serial_number", ctypes.c_ulonglong),
+        ("file_id", _WindowsFileId128),
+    )
+
+
+class _WindowsFileDispositionInfo(ctypes.Structure):
+    _fields_ = (("delete_file", ctypes.c_ubyte),)
 
 
 @dataclass(frozen=True)
@@ -614,6 +648,7 @@ def _clear_run_reservation(
     try:
         os.rename(reservation_path, completed_path)
     except OSError as error:
+        _ensure_blocking_reservation(reservation_path, content)
         raise EvidenceLifecycleError(f"run reservation retirement failed: {error}") from error
     try:
         _require_directory_identity(
@@ -736,6 +771,140 @@ def _verify_owned_tree(root: Path) -> None:
             _require_resolved_descendant_or_same(candidate, root, "removable path")
 
 
+def _windows_kernel32():
+    global _WINDOWS_KERNEL32
+    if os.name != "nt":
+        raise EvidenceLifecycleError(
+            "identity-conditional directory deletion requires Windows"
+        )
+    if _WINDOWS_KERNEL32 is None:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.CreateFileW.argtypes = (
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.HANDLE,
+        )
+        kernel32.CreateFileW.restype = wintypes.HANDLE
+        kernel32.GetFileInformationByHandleEx.argtypes = (
+            wintypes.HANDLE,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+        )
+        kernel32.GetFileInformationByHandleEx.restype = wintypes.BOOL
+        kernel32.SetFileInformationByHandle.argtypes = (
+            wintypes.HANDLE,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+        )
+        kernel32.SetFileInformationByHandle.restype = wintypes.BOOL
+        kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+        kernel32.CloseHandle.restype = wintypes.BOOL
+        _WINDOWS_KERNEL32 = kernel32
+    return _WINDOWS_KERNEL32
+
+
+def _win32_lifecycle_error(operation: str) -> EvidenceLifecycleError:
+    return EvidenceLifecycleError(
+        f"{operation} failed with Win32 error {ctypes.get_last_error()}"
+    )
+
+
+def _open_windows_directory_delete_handle(directory: Path) -> int:
+    kernel32 = _windows_kernel32()
+    handle = kernel32.CreateFileW(
+        str(directory),
+        _WINDOWS_FILE_READ_ATTRIBUTES | _WINDOWS_DELETE,
+        _WINDOWS_FILE_SHARE_READ | _WINDOWS_FILE_SHARE_WRITE,
+        None,
+        _WINDOWS_OPEN_EXISTING,
+        (
+            _WINDOWS_FILE_FLAG_BACKUP_SEMANTICS
+            | _WINDOWS_FILE_FLAG_OPEN_REPARSE_POINT
+        ),
+        None,
+    )
+    if handle in (None, _WINDOWS_INVALID_HANDLE_VALUE):
+        raise _win32_lifecycle_error("opening exact removable directory handle")
+    return handle
+
+
+def _windows_directory_identity_from_handle(handle: int) -> _WindowsFileIdentity:
+    information = _WindowsFileIdInfo()
+    kernel32 = _windows_kernel32()
+    if not kernel32.GetFileInformationByHandleEx(
+        handle,
+        _WINDOWS_FILE_ID_INFO_CLASS,
+        ctypes.byref(information),
+        ctypes.sizeof(information),
+    ):
+        raise _win32_lifecycle_error("reading removable directory handle identity")
+    return _WindowsFileIdentity(
+        volume_serial_number=information.volume_serial_number,
+        file_id=bytes(information.file_id.identifier),
+    )
+
+
+def _close_windows_handle(handle: int, label: str) -> None:
+    if not _windows_kernel32().CloseHandle(handle):
+        raise _win32_lifecycle_error(f"closing {label}")
+
+
+def _capture_windows_directory_identity(directory: Path) -> _WindowsFileIdentity:
+    handle = _open_windows_directory_delete_handle(directory)
+    try:
+        return _windows_directory_identity_from_handle(handle)
+    finally:
+        _close_windows_handle(handle, "removable directory identity handle")
+
+
+def _remove_empty_windows_directory_by_handle(
+    directory: Path,
+    expected_path_identity: tuple[int, int, int],
+    expected_windows_identity: _WindowsFileIdentity,
+) -> None:
+    handle = _open_windows_directory_delete_handle(directory)
+    try:
+        observed_windows_identity = _windows_directory_identity_from_handle(handle)
+        if observed_windows_identity != expected_windows_identity:
+            raise EvidenceLifecycleError(
+                "removable directory object changed before handle-pinned deletion"
+            )
+        if _plain_directory_identity(
+            directory,
+            "handle-pinned removable directory",
+        ) != expected_path_identity:
+            raise EvidenceLifecycleError(
+                "removable directory path changed before handle-pinned deletion"
+            )
+        with os.scandir(directory) as iterator:
+            if next(iterator, None) is not None:
+                raise EvidenceLifecycleError(
+                    "handle-pinned removable directory is not empty"
+                )
+        disposition = _WindowsFileDispositionInfo(delete_file=1)
+        if not _windows_kernel32().SetFileInformationByHandle(
+            handle,
+            _WINDOWS_FILE_DISPOSITION_INFO_CLASS,
+            ctypes.byref(disposition),
+            ctypes.sizeof(disposition),
+        ):
+            raise _win32_lifecycle_error(
+                "marking exact removable directory handle for deletion"
+            )
+    finally:
+        _close_windows_handle(handle, "exact removable directory delete handle")
+    if os.path.lexists(directory):
+        raise EvidenceLifecycleError(
+            "handle-pinned removable directory still exists after cleanup"
+        )
+
+
 def _remove_owned_tree(root: Path) -> None:
     boundary = Path(os.path.abspath(root))
     root_identity = _plain_directory_identity(boundary, "removable task root")
@@ -752,6 +921,7 @@ def _remove_owned_directory(
     directory_identity = _plain_directory_identity(directory, "removable directory")
     if expected_identity is not None and directory_identity != expected_identity:
         raise EvidenceLifecycleError("removable directory ownership changed before recursion")
+    windows_identity = _capture_windows_directory_identity(directory)
     with os.scandir(directory) as iterator:
         entries = sorted(iterator, key=lambda entry: entry.name)
     if _plain_directory_identity(directory, "removable directory") != directory_identity:
@@ -814,9 +984,11 @@ def _remove_owned_directory(
     with os.scandir(directory) as iterator:
         if next(iterator, None) is not None:
             raise EvidenceLifecycleError("removable directory changed before final cleanup")
-    os.rmdir(directory)
-    if os.path.lexists(directory):
-        raise EvidenceLifecycleError("removable directory still exists after cleanup")
+    _remove_empty_windows_directory_by_handle(
+        directory,
+        directory_identity,
+        windows_identity,
+    )
 
 
 def _quarantine_owned_entry(

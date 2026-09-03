@@ -1,4 +1,5 @@
 import base64
+import ctypes
 import dataclasses
 import hashlib
 import importlib.util
@@ -876,6 +877,234 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 TaskWorkspace.create(transient_parent, "run-unlink-boundary")
 
+    def test_empty_directory_swap_at_final_rmdir_boundary_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = TaskWorkspace.create(transient_parent, "run-rmdir-boundary")
+            preserved = _preserve(base, "rmdir-boundary")
+            parked_owned = base / "parked-owned-empty-directory"
+            outside = base / "outside-rmdir-boundary.bin"
+            outside.write_bytes(b"external-rmdir-survivor")
+            original_rmdir = evidence_module.os.rmdir
+            original_rename = evidence_module.os.rename
+            swapped = False
+            matching_handle_opens = 0
+
+            def swap_empty_directory_at_rmdir(path, *args, **kwargs):
+                nonlocal swapped
+                candidate = Path(path)
+                is_quarantined_inputs = (
+                    candidate.parent == workspace.root
+                    and candidate.name.startswith(".inputs.")
+                    and candidate.name.endswith(".cleanup")
+                )
+                if is_quarantined_inputs and not swapped:
+                    swapped = True
+                    self.assertTrue(candidate.resolve(strict=True).is_relative_to(base))
+                    original_rename(candidate, parked_owned)
+                    candidate.mkdir()
+                return original_rmdir(path, *args, **kwargs)
+
+            original_open_delete_handle = getattr(
+                evidence_module,
+                "_open_windows_directory_delete_handle",
+                None,
+            )
+
+            def swap_at_final_delete_handle_open(path):
+                nonlocal matching_handle_opens, swapped
+                candidate = Path(path)
+                is_quarantined_inputs = (
+                    candidate.parent == workspace.root
+                    and candidate.name.startswith(".inputs.")
+                    and candidate.name.endswith(".cleanup")
+                )
+                if is_quarantined_inputs:
+                    matching_handle_opens += 1
+                    if matching_handle_opens == 2:
+                        swapped = True
+                        self.assertTrue(candidate.resolve(strict=True).is_relative_to(base))
+                        original_rename(candidate, parked_owned)
+                        candidate.mkdir()
+                return original_open_delete_handle(path)
+
+            observed_error = None
+            if original_open_delete_handle is None:
+                boundary_patch = mock.patch.object(
+                    evidence_module.os,
+                    "rmdir",
+                    side_effect=swap_empty_directory_at_rmdir,
+                )
+            else:
+                boundary_patch = mock.patch.object(
+                    evidence_module,
+                    "_open_windows_directory_delete_handle",
+                    side_effect=swap_at_final_delete_handle_open,
+                )
+            with boundary_patch:
+                try:
+                    workspace.cleanup(
+                        preserved_evidence_paths=(preserved,),
+                        sibling_paths=(),
+                    )
+                except Exception as error:  # test captures exact boundary outcome
+                    observed_error = error
+
+            self.assertIsInstance(observed_error, ValueError)
+            self.assertTrue(swapped)
+            self.assertTrue(parked_owned.is_dir())
+            self.assertEqual(outside.read_bytes(), b"external-rmdir-survivor")
+            with self.assertRaises(ValueError):
+                TaskWorkspace.create(transient_parent, "run-rmdir-boundary")
+
+    def test_windows_delete_handle_excludes_delete_sharing_and_stays_pinned(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            target = base / "handle-pinned-empty-directory"
+            target.mkdir()
+            expected_path_identity = evidence_module._plain_directory_identity(
+                target,
+                "test handle-pinned directory",
+            )
+            expected_windows_identity = evidence_module._WindowsFileIdentity(
+                volume_serial_number=0x12345678,
+                file_id=bytes(range(16)),
+            )
+            pinned_handle = 0xA11CE
+            calls = []
+            real_rmdir = os.rmdir
+
+            class FakeKernel32:
+                def CreateFileW(
+                    self,
+                    path,
+                    desired_access,
+                    share_mode,
+                    security_attributes,
+                    creation_disposition,
+                    flags_and_attributes,
+                    template_file,
+                ):
+                    calls.append(
+                        (
+                            "open",
+                            path,
+                            desired_access,
+                            share_mode,
+                            security_attributes,
+                            creation_disposition,
+                            flags_and_attributes,
+                            template_file,
+                        )
+                    )
+                    return pinned_handle
+
+                def GetFileInformationByHandleEx(
+                    self,
+                    handle,
+                    information_class,
+                    information_pointer,
+                    information_size,
+                ):
+                    calls.append(("identity", handle, information_class))
+                    information = ctypes.cast(
+                        information_pointer,
+                        ctypes.POINTER(evidence_module._WindowsFileIdInfo),
+                    ).contents
+                    information.volume_serial_number = (
+                        expected_windows_identity.volume_serial_number
+                    )
+                    for index, value in enumerate(expected_windows_identity.file_id):
+                        information.file_id.identifier[index] = value
+                    self.assertEqual(
+                        information_size,
+                        ctypes.sizeof(evidence_module._WindowsFileIdInfo),
+                    )
+                    return 1
+
+                def SetFileInformationByHandle(
+                    self,
+                    handle,
+                    information_class,
+                    information_pointer,
+                    information_size,
+                ):
+                    disposition = ctypes.cast(
+                        information_pointer,
+                        ctypes.POINTER(evidence_module._WindowsFileDispositionInfo),
+                    ).contents
+                    calls.append(
+                        ("delete", handle, information_class, disposition.delete_file)
+                    )
+                    self.assertEqual(
+                        information_size,
+                        ctypes.sizeof(evidence_module._WindowsFileDispositionInfo),
+                    )
+                    return 1
+
+                def CloseHandle(self, handle):
+                    calls.append(("close", handle))
+                    self.assertTrue(target.resolve(strict=True).is_relative_to(base))
+                    real_rmdir(target)
+                    return 1
+
+                def assertEqual(self, first, second):
+                    self_test.assertEqual(first, second)
+
+                def assertTrue(self, expression):
+                    self_test.assertTrue(expression)
+
+            self_test = self
+            fake_kernel32 = FakeKernel32()
+            with mock.patch.object(
+                evidence_module,
+                "_windows_kernel32",
+                return_value=fake_kernel32,
+            ):
+                evidence_module._remove_empty_windows_directory_by_handle(
+                    target,
+                    expected_path_identity,
+                    expected_windows_identity,
+                )
+
+            open_call = calls[0]
+            self.assertEqual(open_call[0:2], ("open", str(target)))
+            self.assertEqual(
+                open_call[2],
+                evidence_module._WINDOWS_FILE_READ_ATTRIBUTES
+                | evidence_module._WINDOWS_DELETE,
+            )
+            self.assertEqual(
+                open_call[3],
+                evidence_module._WINDOWS_FILE_SHARE_READ
+                | evidence_module._WINDOWS_FILE_SHARE_WRITE,
+            )
+            self.assertEqual(
+                open_call[3] & 0x00000004,
+                0,
+                "FILE_SHARE_DELETE must not be granted",
+            )
+            self.assertEqual(
+                calls[1:],
+                [
+                    (
+                        "identity",
+                        pinned_handle,
+                        evidence_module._WINDOWS_FILE_ID_INFO_CLASS,
+                    ),
+                    (
+                        "delete",
+                        pinned_handle,
+                        evidence_module._WINDOWS_FILE_DISPOSITION_INFO_CLASS,
+                        1,
+                    ),
+                    ("close", pinned_handle),
+                ],
+            )
+            self.assertFalse(os.path.lexists(target))
+
     def test_reservation_clear_swap_is_detected_without_deleting_external_file(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
@@ -938,6 +1167,53 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             self.assertEqual(outside.read_bytes(), b"external-reservation-survivor")
             with self.assertRaises(ValueError):
                 TaskWorkspace.create(transient_parent, "run-reservation-clear")
+
+    def test_reservation_retirement_source_disappearance_restores_active_blocker(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = TaskWorkspace.create(transient_parent, "run-reservation-missing")
+            preserved = _preserve(base, "reservation-missing")
+            reservation = (
+                workspace.root.parent
+                / ".joewrks-run-reservations"
+                / "run-reservation-missing.json"
+            )
+            reservation_bytes = reservation.read_bytes()
+            parked_reservation = reservation.with_name("parked-missing-source.json")
+            original_rename = evidence_module.os.rename
+            removed_before_retirement = False
+
+            def park_source_then_fail_rename(source, destination, *args, **kwargs):
+                nonlocal removed_before_retirement
+                if Path(source) == reservation and not removed_before_retirement:
+                    removed_before_retirement = True
+                    original_rename(reservation, parked_reservation)
+                return original_rename(source, destination, *args, **kwargs)
+
+            observed_error = None
+            with mock.patch.object(
+                evidence_module.os,
+                "rename",
+                side_effect=park_source_then_fail_rename,
+            ):
+                try:
+                    workspace.cleanup(
+                        preserved_evidence_paths=(preserved,),
+                        sibling_paths=(),
+                    )
+                except Exception as error:  # test captures exact boundary outcome
+                    observed_error = error
+
+            self.assertIsInstance(observed_error, ValueError)
+            self.assertTrue(removed_before_retirement)
+            self.assertEqual(parked_reservation.read_bytes(), reservation_bytes)
+            self.assertTrue(os.path.lexists(reservation))
+            if os.path.lexists(reservation):
+                self.assertEqual(reservation.read_bytes(), reservation_bytes)
+            with self.assertRaises(ValueError):
+                TaskWorkspace.create(transient_parent, "run-reservation-missing")
 
     def test_repository_head_tree_and_clean_status_are_unchanged(self):
         with tempfile.TemporaryDirectory() as directory:
