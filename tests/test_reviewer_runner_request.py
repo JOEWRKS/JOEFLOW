@@ -129,6 +129,20 @@ class ReviewerRunnerRequestTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             InputArtifact("reviewer_brief", "text/markdown", b"brief", path="C:/secret")
 
+    def test_artifact_subclass_with_path_is_rejected(self):
+        @dataclasses.dataclass(frozen=True, slots=True)
+        class ExtendedArtifact(InputArtifact):
+            path: str
+
+        extended_artifacts = (
+            ExtendedArtifact("reviewer_brief", "text/markdown", b"brief", "C:/secret"),
+            *artifacts()[1:],
+        )
+        with self.assertRaises(ValueError):
+            build_permitted_inventory(extended_artifacts)
+        with self.assertRaises(ValueError):
+            build_canonical_request(run_identity(), extended_artifacts, {})
+
     def test_controller_only_oracle_sibling_and_prior_hashes_are_rejected(self):
         for artifact in artifacts():
             with self.subTest(role=artifact.logical_role):

@@ -128,8 +128,8 @@ def _validate_artifacts(artifacts: Sequence[InputArtifact]) -> tuple[InputArtifa
         raise RequestError("INPUT_ROLE_SET_INVALID", "exactly four input artifacts are required")
     observed_roles: list[str] = []
     for artifact in normalized:
-        if not isinstance(artifact, InputArtifact):
-            raise RequestError("INPUT_ARTIFACT_INVALID", "every input must be an InputArtifact")
+        if type(artifact) is not InputArtifact:
+            raise RequestError("INPUT_ARTIFACT_INVALID", "every input must be an exact InputArtifact")
         if not isinstance(artifact.logical_role, str) or artifact.logical_role not in _REQUIRED_ROLES:
             raise RequestError("INPUT_ROLE_SET_INVALID", "input role is not permitted")
         if not isinstance(artifact.media_type, str) or not artifact.media_type:
