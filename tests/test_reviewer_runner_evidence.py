@@ -53,6 +53,11 @@ else:
         "atomic_claim_evidence",
         None,
     )
+    acquire_evidence_root_lease = getattr(
+        evidence_module,
+        "acquire_evidence_root_lease",
+        None,
+    )
     _EVIDENCE_IMPORT_ERROR = None
 
 
@@ -1169,6 +1174,32 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 outcomes = list(executor.map(lambda _: claim_once(), range(2)))
             self.assertEqual(sorted(outcomes), ["ACQUIRED", "REJECTED"])
             self.assertEqual(target.read_bytes(), content)
+
+    def test_evidence_root_lease_blocks_root_and_ancestor_rename_until_release(self):
+        self.assertIsNotNone(
+            acquire_evidence_root_lease,
+            "acquire_evidence_root_lease implementation is missing",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            owned_parent = base / "owned"
+            evidence_root = owned_parent / "evidence"
+            moved_root = owned_parent / "moved-evidence"
+            moved_parent = base / "moved-owned"
+            lease = acquire_evidence_root_lease(evidence_root)
+            try:
+                with self.assertRaises(PermissionError):
+                    evidence_root.rename(moved_root)
+                with self.assertRaises(PermissionError):
+                    owned_parent.rename(moved_parent)
+                lease.verify()
+            finally:
+                lease.close()
+
+            evidence_root.rename(moved_root)
+            moved_root.rename(evidence_root)
+            owned_parent.rename(moved_parent)
+            moved_parent.rename(owned_parent)
 
     def test_reservation_completion_never_renames_the_canonical_blocker(self):
         with tempfile.TemporaryDirectory() as directory:

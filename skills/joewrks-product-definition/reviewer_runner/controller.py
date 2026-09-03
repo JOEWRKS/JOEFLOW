@@ -14,7 +14,9 @@ from .backend import (
 from .evidence import (
     CleanupResult,
     EvidenceClaimConflict,
+    EvidenceRootLease,
     TaskWorkspace,
+    acquire_evidence_root_lease,
     atomic_claim_evidence,
     atomic_freeze_evidence,
     capture_source_snapshot,
@@ -158,7 +160,86 @@ def execute_review(
         )
 
     try:
+        evidence_lease = acquire_evidence_root_lease(evidence_root)
+    except Exception as error:
+        return _finish_early(
+            RunnerState.REVIEWER_EXECUTION_FAILED,
+            classification,
+            execution_mode,
+            before=before,
+            repository_root=repository_root,
+            evidence_root=evidence_root,
+            prepared=prepared,
+            errors=(f"evidence-root lease failed: {error}",),
+        )
+
+    release_error: Exception | None = None
+    try:
+        try:
+            outcome = _execute_with_evidence_root_lease(
+                evidence_lease,
+                prepared=prepared,
+                backend=backend,
+                descriptor=descriptor,
+                preflight=preflight,
+                isolation=isolation,
+                request=request,
+                transient_parent=transient_parent,
+                repository_root=repository_root,
+                before=before,
+                classification=classification,
+                execution_mode=execution_mode,
+                timeout_seconds=timeout_seconds,
+            )
+        except Exception as error:
+            outcome = _finish_early(
+                RunnerState.REVIEWER_EXECUTION_FAILED,
+                classification,
+                execution_mode,
+                before=before,
+                repository_root=repository_root,
+                evidence_root=evidence_lease.root,
+                prepared=prepared,
+                errors=(f"evidence-root guarded execution failed: {error}",),
+            )
+    finally:
+        try:
+            evidence_lease.close()
+        except Exception as error:
+            release_error = error
+
+    if release_error is not None:
+        return _outcome(
+            RunnerState.REVIEWER_EXECUTION_FAILED,
+            classification,
+            execution_mode,
+            raw_response_path=outcome.raw_response_path,
+            errors=(*outcome.errors, f"evidence-root lease release failed: {release_error}"),
+        )
+    return outcome
+
+
+def _execute_with_evidence_root_lease(
+    evidence_lease: EvidenceRootLease,
+    *,
+    prepared: PreparedReview,
+    backend: ToollessInferenceBackend,
+    descriptor: BackendDescriptor,
+    preflight: PreflightResult,
+    isolation: IsolationReceipt,
+    request,
+    transient_parent: Path,
+    repository_root: Path,
+    before,
+    classification: CapabilityClass,
+    execution_mode: str,
+    timeout_seconds: int,
+) -> RunOutcome:
+    evidence_root = evidence_lease.root
+    try:
+        evidence_lease.verify()
         _acquire_durable_run_claim(evidence_root, prepared, request.sha256)
+        evidence_lease.verify()
     except EvidenceClaimConflict as error:
         return _finish_early(
             RunnerState.PACKAGE_BINDING_MISMATCH,
@@ -183,7 +264,9 @@ def execute_review(
         )
 
     try:
+        evidence_lease.verify()
         used_provider_request_ids = load_used_provider_request_ids(evidence_root)
+        evidence_lease.verify()
     except Exception as error:
         return _finish_early(
             RunnerState.PACKAGE_BINDING_MISMATCH,
@@ -220,10 +303,12 @@ def execute_review(
     raw_response_path: Path | None = None
     preserved_paths: list[Path] = []
     try:
+        evidence_lease.verify()
         response = backend.invoke(
             request.content,
             timeout_seconds=timeout_seconds,
         )
+        evidence_lease.verify()
         bound = freeze_validate_bind_response(
             response,
             expected_run=prepared.run_identity,
@@ -233,6 +318,7 @@ def execute_review(
             output_validator=prepared.output_validator,
             used_provider_request_ids=used_provider_request_ids,
         )
+        evidence_lease.verify()
         raw_response_path = bound.frozen.path
         preserved_paths.append(bound.frozen.path)
         receipt = build_runner_receipt(
@@ -265,18 +351,25 @@ def execute_review(
         errors.append(str(error))
 
     if state is not RunnerState.REVIEW_COMPLETED:
-        if not _record_failure_evidence(
-            "failure.json",
-            state,
-            errors,
-            evidence_root,
-            prepared,
-            preserved_paths=preserved_paths,
-        ):
+        try:
+            evidence_lease.verify()
+        except Exception as error:
             state = RunnerState.REVIEWER_EXECUTION_FAILED
+            errors.append(f"evidence-root verification failed: {error}")
+        else:
+            if not _record_failure_evidence(
+                "failure.json",
+                state,
+                errors,
+                evidence_root,
+                prepared,
+                preserved_paths=preserved_paths,
+            ):
+                state = RunnerState.REVIEWER_EXECUTION_FAILED
 
     cleanup: CleanupResult | None = None
     try:
+        evidence_lease.verify()
         cleanup = workspace.cleanup(
             preserved_evidence_paths=tuple(preserved_paths),
             sibling_paths=_sibling_run_paths(transient_parent, prepared),
@@ -284,16 +377,22 @@ def execute_review(
     except Exception as error:
         state = RunnerState.REVIEWER_EXECUTION_FAILED
         errors.append(f"cleanup failed: {error}")
-        _record_failure_evidence(
-            "cleanup-failure.json",
-            state,
-            errors,
-            evidence_root,
-            prepared,
-        )
+        try:
+            evidence_lease.verify()
+        except Exception as verification_error:
+            errors.append(f"evidence-root verification failed: {verification_error}")
+        else:
+            _record_failure_evidence(
+                "cleanup-failure.json",
+                state,
+                errors,
+                evidence_root,
+                prepared,
+            )
 
     if cleanup is not None:
         try:
+            evidence_lease.verify()
             _freeze_cleanup_evidence(
                 cleanup,
                 evidence_root,
@@ -302,43 +401,65 @@ def execute_review(
         except Exception as error:
             state = RunnerState.REVIEWER_EXECUTION_FAILED
             errors.append(f"cleanup evidence publication failed: {error}")
-            _record_failure_evidence(
-                "cleanup-evidence-failure.json",
-                state,
-                errors,
-                evidence_root,
-                prepared,
-            )
+            try:
+                evidence_lease.verify()
+            except Exception as verification_error:
+                errors.append(
+                    f"evidence-root verification failed: {verification_error}"
+                )
+            else:
+                _record_failure_evidence(
+                    "cleanup-evidence-failure.json",
+                    state,
+                    errors,
+                    evidence_root,
+                    prepared,
+                )
 
     try:
         verify_source_unchanged(before, repository_root)
     except Exception as error:
         state = RunnerState.REVIEWER_EXECUTION_FAILED
         errors.append(f"source readback failed: {error}")
-        _record_failure_evidence(
-            "source-readback-failure.json",
-            state,
-            errors,
-            evidence_root,
-            prepared,
-        )
-
-    receipt_path: Path | None = None
-    if state is RunnerState.REVIEW_COMPLETED and receipt is not None and cleanup is not None:
         try:
-            receipt_path = _freeze_receipt(receipt, evidence_root, prepared)
-        except Exception as error:
-            state = RunnerState.REVIEWER_EXECUTION_FAILED
-            errors.append(f"receipt evidence publication failed: {error}")
+            evidence_lease.verify()
+        except Exception as verification_error:
+            errors.append(f"evidence-root verification failed: {verification_error}")
+        else:
             _record_failure_evidence(
-                "receipt-publication-failure.json",
+                "source-readback-failure.json",
                 state,
                 errors,
                 evidence_root,
                 prepared,
             )
+
+    receipt_path: Path | None = None
+    if state is RunnerState.REVIEW_COMPLETED and receipt is not None and cleanup is not None:
+        try:
+            evidence_lease.verify()
+            receipt_path = _freeze_receipt(receipt, evidence_root, prepared)
+            evidence_lease.verify()
+        except Exception as error:
+            state = RunnerState.REVIEWER_EXECUTION_FAILED
+            errors.append(f"receipt evidence publication failed: {error}")
+            try:
+                evidence_lease.verify()
+            except Exception as verification_error:
+                errors.append(
+                    f"evidence-root verification failed: {verification_error}"
+                )
+            else:
+                _record_failure_evidence(
+                    "receipt-publication-failure.json",
+                    state,
+                    errors,
+                    evidence_root,
+                    prepared,
+                )
             receipt_path = None
 
+    evidence_lease.verify()
     return _outcome(
         state,
         classification,

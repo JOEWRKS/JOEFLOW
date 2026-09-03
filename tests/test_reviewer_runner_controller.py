@@ -826,7 +826,7 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             )
             self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
             self.assertEqual(len(backend.received_request_bytes), 0)
-            self.assertTrue(any("durable run claim failed" in e for e in outcome.errors))
+            self.assertTrue(any("evidence-root lease failed" in e for e in outcome.errors))
             self.assertEqual(
                 {
                     path.relative_to(outside).as_posix(): path.read_bytes()
@@ -879,6 +879,92 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             self.assertEqual(second.state, RunnerState.PACKAGE_BINDING_MISMATCH)
             self.assertEqual(len(backend.received_request_bytes), 0)
             self.assertEqual(claims[0].read_bytes(), claim_bytes)
+
+    def test_evidence_root_identity_is_pinned_after_claim_before_index_scan(self):
+        prepared, material = _prepared_v1(
+            run_id="run-root-identity-pin",
+            context_id="context-root-identity-pin",
+        )
+        backend = _fake_backend(canonical_json_bytes(material["output"]))
+        preflight, freshness = _fake_preflight(backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            evidence_root = base / "evidence"
+            parked_root = base / "parked-evidence"
+            outside = base / "outside-evidence"
+            outside_receipt = outside / "runs" / "prior" / "context"
+            outside_receipt.mkdir(parents=True)
+            external_receipt = outside_receipt / "runner-receipt.json"
+            external_receipt.write_bytes(b'{"external":"must-not-be-read"}')
+            outside_before = {
+                path.relative_to(outside).as_posix(): path.read_bytes()
+                for path in outside.rglob("*")
+                if path.is_file()
+            }
+            original_claim = controller_module.atomic_claim_evidence
+            original_read_bytes = Path.read_bytes
+            claim_record = {}
+            external_reads = []
+
+            def claim_then_attempt_root_swap(content, target_path):
+                claim_path = original_claim(content, target_path)
+                claim_record["content"] = content
+                claim_record["name"] = claim_path.name
+                evidence_root.rename(parked_root)
+                evidence_root.symlink_to(outside, target_is_directory=True)
+                claim_record["swap_succeeded"] = True
+                return claim_path
+
+            external_path_key = str(external_receipt.resolve()).casefold()
+
+            def monitor_read_bytes(path):
+                if str(Path(path).resolve()).casefold() == external_path_key:
+                    external_reads.append(str(path))
+                return original_read_bytes(path)
+
+            with mock.patch.object(
+                controller_module,
+                "atomic_claim_evidence",
+                side_effect=claim_then_attempt_root_swap,
+            ), mock.patch.object(Path, "read_bytes", monitor_read_bytes):
+                outcome = execute_review(
+                    prepared,
+                    backend=backend,
+                    preflight=preflight,
+                    current_freshness=freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=transient_parent,
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+
+            self.assertNotEqual(outcome.state, RunnerState.REVIEW_COMPLETED)
+            self.assertEqual(len(backend.received_request_bytes), 0)
+            self.assertEqual(
+                external_reads,
+                [],
+                "the swapped external evidence root must never be traversed",
+            )
+            self.assertEqual(
+                {
+                    path.relative_to(outside).as_posix(): path.read_bytes()
+                    for path in outside.rglob("*")
+                    if path.is_file()
+                },
+                outside_before,
+            )
+            claim_parent = (
+                parked_root if parked_root.exists() else evidence_root
+            ) / "run-claims"
+            preserved_claim = claim_parent / claim_record["name"]
+            self.assertEqual(preserved_claim.read_bytes(), claim_record["content"])
+            self.assertFalse(parked_root.exists())
+            evidence_root.rename(parked_root)
+            self.assertTrue(parked_root.is_dir())
+            parked_root.rename(evidence_root)
 
     def test_durable_evidence_claim_blocks_same_identity_across_transient_parents(self):
         prepared, material = _prepared_v1(

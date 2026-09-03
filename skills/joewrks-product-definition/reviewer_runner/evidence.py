@@ -35,6 +35,7 @@ _WINDOWS_FILE_READ_ATTRIBUTES = 0x00000080
 _WINDOWS_DELETE = 0x00010000
 _WINDOWS_FILE_SHARE_READ = 0x00000001
 _WINDOWS_FILE_SHARE_WRITE = 0x00000002
+_WINDOWS_FILE_SHARE_DELETE = 0x00000004
 _WINDOWS_OPEN_EXISTING = 3
 _WINDOWS_FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000
 _WINDOWS_FILE_FLAG_BACKUP_SEMANTICS = 0x02000000
@@ -60,6 +61,53 @@ class EvidenceLifecycleError(ValueError):
 
 class EvidenceClaimConflict(EvidenceLifecycleError):
     """A one-shot durable evidence claim already exists or is in progress."""
+
+
+@dataclass
+class EvidenceRootLease:
+    """Pin one lexical evidence root for a complete runner execution."""
+
+    root: Path
+    _pinned_components: tuple[tuple[Path, int, "_WindowsFileIdentity"], ...]
+    _released: bool = field(default=False, init=False, repr=False)
+
+    def verify(self) -> None:
+        """Require every lexical component to still name its pinned directory."""
+
+        if self._released:
+            raise EvidenceLifecycleError("evidence-root lease is already released")
+        _reject_reparse_components(self.root, "leased evidence_root")
+        for path, _handle, expected_identity in self._pinned_components:
+            _require_plain_directory(path, "leased evidence-root component")
+            observed_handle = _open_windows_directory_verification_handle(path)
+            try:
+                observed_identity = _windows_directory_identity_from_handle(
+                    observed_handle
+                )
+            finally:
+                _close_windows_handle(
+                    observed_handle,
+                    "evidence-root verification handle",
+                )
+            if observed_identity != expected_identity:
+                raise EvidenceLifecycleError(
+                    "leased evidence-root component identity changed"
+                )
+
+    def close(self) -> None:
+        """Release every pin, attempting all closes before reporting an error."""
+
+        if self._released:
+            return
+        self._released = True
+        failures: list[str] = []
+        for _path, handle, _identity in reversed(self._pinned_components):
+            try:
+                _close_windows_handle(handle, "evidence-root pin handle")
+            except EvidenceLifecycleError as error:
+                failures.append(str(error))
+        if failures:
+            raise EvidenceLifecycleError("; ".join(failures))
 
 
 @dataclass(frozen=True)
@@ -277,6 +325,57 @@ def atomic_claim_evidence(content: bytes, target_path: Path) -> Path:
         target_path,
         existing_is_conflict=True,
     )
+
+
+def acquire_evidence_root_lease(evidence_root: Path) -> EvidenceRootLease:
+    """Create and pin the exact lexical evidence root against path replacement."""
+
+    if not isinstance(evidence_root, Path):
+        raise EvidenceLifecycleError("evidence_root must be a Path")
+    if os.name != "nt":
+        raise EvidenceLifecycleError(
+            "continuous evidence-root identity protection requires Windows"
+        )
+    root = Path(os.path.abspath(evidence_root))
+    _reject_reparse_components(root, "evidence_root")
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        raise EvidenceLifecycleError(
+            f"evidence_root cannot be created: {error}"
+        ) from error
+    _reject_reparse_components(root, "evidence_root")
+    _require_plain_directory(root, "evidence_root")
+
+    components = (root,)
+    pinned: list[tuple[Path, int, _WindowsFileIdentity]] = []
+    try:
+        for component in components:
+            _require_plain_directory(component, "evidence-root lexical component")
+            handle = _open_windows_directory_pin_handle(component)
+            try:
+                identity = _windows_directory_identity_from_handle(handle)
+                _require_plain_directory(
+                    component,
+                    "pinned evidence-root lexical component",
+                )
+            except Exception:
+                _close_windows_handle(handle, "incomplete evidence-root pin handle")
+                raise
+            pinned.append((component, handle, identity))
+        lease = EvidenceRootLease(root=root, _pinned_components=tuple(pinned))
+        lease.verify()
+        return lease
+    except Exception:
+        failures: list[str] = []
+        for _path, handle, _identity in reversed(pinned):
+            try:
+                _close_windows_handle(handle, "incomplete evidence-root pin handle")
+            except EvidenceLifecycleError as error:
+                failures.append(str(error))
+        if failures:
+            raise EvidenceLifecycleError("; ".join(failures))
+        raise
 
 
 def _atomic_publish_evidence(
@@ -855,6 +954,48 @@ def _open_windows_directory_delete_handle(directory: Path) -> int:
     )
     if handle in (None, _WINDOWS_INVALID_HANDLE_VALUE):
         raise _win32_lifecycle_error("opening exact removable directory handle")
+    return handle
+
+
+def _open_windows_directory_pin_handle(directory: Path) -> int:
+    kernel32 = _windows_kernel32()
+    handle = kernel32.CreateFileW(
+        str(directory),
+        _WINDOWS_FILE_READ_ATTRIBUTES | _WINDOWS_DELETE,
+        _WINDOWS_FILE_SHARE_READ | _WINDOWS_FILE_SHARE_WRITE,
+        None,
+        _WINDOWS_OPEN_EXISTING,
+        (
+            _WINDOWS_FILE_FLAG_BACKUP_SEMANTICS
+            | _WINDOWS_FILE_FLAG_OPEN_REPARSE_POINT
+        ),
+        None,
+    )
+    if handle in (None, _WINDOWS_INVALID_HANDLE_VALUE):
+        raise _win32_lifecycle_error("opening evidence-root pin handle")
+    return handle
+
+
+def _open_windows_directory_verification_handle(directory: Path) -> int:
+    kernel32 = _windows_kernel32()
+    handle = kernel32.CreateFileW(
+        str(directory),
+        _WINDOWS_FILE_READ_ATTRIBUTES,
+        (
+            _WINDOWS_FILE_SHARE_READ
+            | _WINDOWS_FILE_SHARE_WRITE
+            | _WINDOWS_FILE_SHARE_DELETE
+        ),
+        None,
+        _WINDOWS_OPEN_EXISTING,
+        (
+            _WINDOWS_FILE_FLAG_BACKUP_SEMANTICS
+            | _WINDOWS_FILE_FLAG_OPEN_REPARSE_POINT
+        ),
+        None,
+    )
+    if handle in (None, _WINDOWS_INVALID_HANDLE_VALUE):
+        raise _win32_lifecycle_error("opening evidence-root verification handle")
     return handle
 
 
