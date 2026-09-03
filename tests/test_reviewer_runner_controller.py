@@ -698,6 +698,27 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             self.assertEqual(first.state, RunnerState.REVIEW_COMPLETED)
             first_raw_readback = first.raw_response_path.read_bytes()
             first_receipt_readback = first.receipt_path.read_bytes()
+            claims = list((evidence_root / "run-claims").glob("*.json"))
+            self.assertEqual(len(claims), 1)
+            expected_claim_key = sha256_bytes(
+                canonical_json_bytes(
+                    {
+                        "context_id": prepared.run_identity.context_id,
+                        "review_run_id": prepared.run_identity.review_run_id,
+                    }
+                )
+            )
+            self.assertEqual(claims[0].name, f"{expected_claim_key}.json")
+            self.assertEqual(
+                json.loads(claims[0].read_bytes()),
+                {
+                    "claim_schema_version": "joewrks.reviewer-runner-run-claim/1.0",
+                    "request_sha256": sha256_bytes(
+                        first_backend.received_request_bytes[0]
+                    ),
+                    "run_identity": dataclasses.asdict(prepared.run_identity),
+                },
+            )
             first_receipt = json.loads(first_receipt_readback)
             self.assertEqual(
                 first_receipt["response_identity"]["raw_response_sha256"],
@@ -722,7 +743,7 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
                 execution_mode="SYNTHETIC_TEST",
             )
 
-            self.assertEqual(second.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertEqual(second.state, RunnerState.PACKAGE_BINDING_MISMATCH)
             self.assertEqual(
                 len(first_backend.received_request_bytes)
                 + len(second_backend.received_request_bytes),
@@ -735,6 +756,194 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
                 json.loads(first.receipt_path.read_bytes())["response_identity"][
                     "raw_response_sha256"
                 ],
+                sha256_bytes(first.raw_response_path.read_bytes()),
+            )
+
+    def test_durable_claim_store_failure_blocks_invoke_and_checks_source(self):
+        prepared, material = _prepared_v1(
+            run_id="run-claim-store-failure",
+            context_id="context-claim-store-failure",
+        )
+        backend = _fake_backend(canonical_json_bytes(material["output"]))
+        preflight, freshness = _fake_preflight(backend)
+        original_verify = controller_module.verify_source_unchanged
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            controller_module,
+            "atomic_claim_evidence",
+            side_effect=OSError("forced durable claim store failure"),
+        ), mock.patch.object(
+            controller_module,
+            "verify_source_unchanged",
+            wraps=original_verify,
+        ) as verify:
+            outcome, _, _, _ = self._execute(
+                prepared,
+                backend,
+                preflight,
+                freshness,
+                Path(directory),
+            )
+        self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+        self.assertEqual(backend.received_request_bytes, [])
+        self.assertEqual(verify.call_count, 1)
+        self.assertTrue(any("durable run claim failed" in e for e in outcome.errors))
+
+    def test_durable_claim_rejects_reparse_evidence_root_without_escape(self):
+        prepared, material = _prepared_v1(
+            run_id="run-claim-reparse-root",
+            context_id="context-claim-reparse-root",
+        )
+        backend = _fake_backend(canonical_json_bytes(material["output"]))
+        preflight, freshness = _fake_preflight(backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            outside = base / "outside-evidence"
+            outside.mkdir()
+            outside_receipt = outside / "runs" / "prior" / "context"
+            outside_receipt.mkdir(parents=True)
+            (outside_receipt / "runner-receipt.json").write_bytes(
+                b'{"outside":"must-not-be-indexed"}'
+            )
+            outside_before = {
+                path.relative_to(outside).as_posix(): path.read_bytes()
+                for path in outside.rglob("*")
+                if path.is_file()
+            }
+            evidence_alias = base / "evidence-alias"
+            evidence_alias.symlink_to(outside, target_is_directory=True)
+            outcome = execute_review(
+                prepared,
+                backend=backend,
+                preflight=preflight,
+                current_freshness=freshness,
+                evidence_root=evidence_alias,
+                transient_parent=transient_parent,
+                repository_root=repository,
+                execution_mode="SYNTHETIC_TEST",
+            )
+            self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertEqual(len(backend.received_request_bytes), 0)
+            self.assertTrue(any("durable run claim failed" in e for e in outcome.errors))
+            self.assertEqual(
+                {
+                    path.relative_to(outside).as_posix(): path.read_bytes()
+                    for path in outside.rglob("*")
+                    if path.is_file()
+                },
+                outside_before,
+            )
+
+    def test_durable_claim_survives_post_claim_preinvoke_workspace_failure(self):
+        prepared, material = _prepared_v1(
+            run_id="run-claim-workspace-failure",
+            context_id="context-claim-workspace-failure",
+        )
+        backend = _fake_backend(canonical_json_bytes(material["output"]))
+        preflight, freshness = _fake_preflight(backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            evidence_root = base / "evidence"
+            missing_transient_parent = base / "missing-transient"
+            first = execute_review(
+                prepared,
+                backend=backend,
+                preflight=preflight,
+                current_freshness=freshness,
+                evidence_root=evidence_root,
+                transient_parent=missing_transient_parent,
+                repository_root=repository,
+                execution_mode="SYNTHETIC_TEST",
+            )
+            self.assertEqual(first.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertEqual(len(backend.received_request_bytes), 0)
+            claims = list((evidence_root / "run-claims").glob("*.json"))
+            self.assertEqual(len(claims), 1)
+            claim_bytes = claims[0].read_bytes()
+
+            valid_transient_parent = base / "valid-transient"
+            valid_transient_parent.mkdir()
+            second = execute_review(
+                prepared,
+                backend=backend,
+                preflight=preflight,
+                current_freshness=freshness,
+                evidence_root=evidence_root,
+                transient_parent=valid_transient_parent,
+                repository_root=repository,
+                execution_mode="SYNTHETIC_TEST",
+            )
+            self.assertEqual(second.state, RunnerState.PACKAGE_BINDING_MISMATCH)
+            self.assertEqual(len(backend.received_request_bytes), 0)
+            self.assertEqual(claims[0].read_bytes(), claim_bytes)
+
+    def test_durable_evidence_claim_blocks_same_identity_across_transient_parents(self):
+        prepared, material = _prepared_v1(
+            run_id="run-durable-claim",
+            context_id="context-durable-claim",
+        )
+        first_raw = canonical_json_bytes(material["output"])
+        first_backend = _fake_backend(first_raw)
+        first_preflight, first_freshness = _fake_preflight(first_backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            evidence_root = base / "evidence"
+            transient_first = base / "transient-first"
+            transient_second = base / "transient-second"
+            transient_first.mkdir()
+            transient_second.mkdir()
+            first = execute_review(
+                prepared,
+                backend=first_backend,
+                preflight=first_preflight,
+                current_freshness=first_freshness,
+                evidence_root=evidence_root,
+                transient_parent=transient_first,
+                repository_root=repository,
+                execution_mode="SYNTHETIC_TEST",
+            )
+            self.assertEqual(first.state, RunnerState.REVIEW_COMPLETED)
+            first_raw_readback = first.raw_response_path.read_bytes()
+            first_receipt_readback = first.receipt_path.read_bytes()
+
+            second_backend = _fake_backend(
+                b" " + first_raw,
+                metadata_drift={"provider_request_id": "cross-parent-second-request"},
+            )
+            second_preflight, second_freshness = _fake_preflight(second_backend)
+            original_verify = controller_module.verify_source_unchanged
+            with mock.patch.object(
+                controller_module,
+                "verify_source_unchanged",
+                wraps=original_verify,
+            ) as verify:
+                second = execute_review(
+                    prepared,
+                    backend=second_backend,
+                    preflight=second_preflight,
+                    current_freshness=second_freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=transient_second,
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+
+            self.assertNotEqual(second.state, RunnerState.REVIEW_COMPLETED)
+            self.assertEqual(verify.call_count, 1)
+            self.assertEqual(
+                len(second_backend.received_request_bytes),
+                0,
+                "durable same-run/context claim must block before transmission",
+            )
+            self.assertEqual(first.raw_response_path.read_bytes(), first_raw_readback)
+            self.assertEqual(first.receipt_path.read_bytes(), first_receipt_readback)
+            receipt = json.loads(first.receipt_path.read_bytes())
+            self.assertEqual(
+                receipt["response_identity"]["raw_response_sha256"],
                 sha256_bytes(first.raw_response_path.read_bytes()),
             )
 

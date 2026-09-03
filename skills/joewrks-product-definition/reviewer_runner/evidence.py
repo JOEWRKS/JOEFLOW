@@ -58,6 +58,10 @@ class EvidenceLifecycleError(ValueError):
     """A terminal failure to preserve evidence or prove exact cleanup."""
 
 
+class EvidenceClaimConflict(EvidenceLifecycleError):
+    """A one-shot durable evidence claim already exists or is in progress."""
+
+
 @dataclass(frozen=True)
 class _WindowsFileIdentity:
     volume_serial_number: int
@@ -258,6 +262,29 @@ def verify_source_unchanged(
 def atomic_freeze_evidence(content: bytes, target_path: Path) -> Path:
     """Persist immutable bytes without overwriting an intervening publication."""
 
+    return _atomic_publish_evidence(
+        content,
+        target_path,
+        existing_is_conflict=False,
+    )
+
+
+def atomic_claim_evidence(content: bytes, target_path: Path) -> Path:
+    """Acquire one permanent claim; an identical existing claim still conflicts."""
+
+    return _atomic_publish_evidence(
+        content,
+        target_path,
+        existing_is_conflict=True,
+    )
+
+
+def _atomic_publish_evidence(
+    content: bytes,
+    target_path: Path,
+    *,
+    existing_is_conflict: bool,
+) -> Path:
     if type(content) is not bytes:
         raise EvidenceLifecycleError("evidence content must be exact bytes")
     if not isinstance(target_path, Path):
@@ -267,7 +294,11 @@ def atomic_freeze_evidence(content: bytes, target_path: Path) -> Path:
     target = Path(os.path.abspath(target_path))
     _reject_reparse_components(target, "evidence target")
     if os.path.lexists(target):
-        return _read_existing_immutable_evidence(target, content)
+        return _resolve_existing_publication(
+            target,
+            content,
+            existing_is_conflict=existing_is_conflict,
+        )
 
     target.parent.mkdir(parents=True, exist_ok=True)
     _reject_reparse_components(target, "evidence target")
@@ -289,6 +320,10 @@ def atomic_freeze_evidence(content: bytes, target_path: Path) -> Path:
                 "evidence publication lock",
             )
         except FileExistsError as error:
+            if existing_is_conflict:
+                raise EvidenceClaimConflict(
+                    "one-shot evidence claim is already being acquired"
+                ) from error
             raise EvidenceLifecycleError(
                 "evidence publication is already reserved by another writer"
             ) from error
@@ -312,7 +347,11 @@ def atomic_freeze_evidence(content: bytes, target_path: Path) -> Path:
             "evidence parent after publication lock",
         )
         if os.path.lexists(target):
-            return _read_existing_immutable_evidence(target, content)
+            return _resolve_existing_publication(
+                target,
+                content,
+                existing_is_conflict=existing_is_conflict,
+            )
         temporary_descriptor = _open_delete_on_close_file(
             temporary,
             "evidence temporary file",
@@ -345,7 +384,11 @@ def atomic_freeze_evidence(content: bytes, target_path: Path) -> Path:
                 parent_identity,
                 "evidence parent after publication conflict",
             )
-            return _read_existing_immutable_evidence(target, content)
+            return _resolve_existing_publication(
+                target,
+                content,
+                existing_is_conflict=existing_is_conflict,
+            )
         except OSError as error:
             raise EvidenceLifecycleError(
                 f"atomic no-clobber evidence publication failed: {error}"
@@ -366,6 +409,21 @@ def atomic_freeze_evidence(content: bytes, target_path: Path) -> Path:
     finally:
         _close_delete_on_close_file(temporary_descriptor, "evidence temporary file")
         _close_delete_on_close_file(lock_descriptor, "evidence publication lock")
+
+
+def _resolve_existing_publication(
+    target: Path,
+    expected: bytes,
+    *,
+    existing_is_conflict: bool,
+) -> Path:
+    if existing_is_conflict:
+        if _is_reparse_point(target) or not target.is_file():
+            raise EvidenceLifecycleError(
+                "one-shot evidence claim target is not a plain file"
+            )
+        raise EvidenceClaimConflict("one-shot evidence claim already exists")
+    return _read_existing_immutable_evidence(target, expected)
 
 
 def load_used_provider_request_ids(evidence_root: Path) -> frozenset[str]:

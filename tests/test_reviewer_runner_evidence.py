@@ -1,4 +1,5 @@
 import base64
+import concurrent.futures
 import ctypes
 import dataclasses
 import hashlib
@@ -46,6 +47,11 @@ else:
         capture_source_snapshot,
         load_used_provider_request_ids,
         verify_source_unchanged,
+    )
+    atomic_claim_evidence = getattr(
+        evidence_module,
+        "atomic_claim_evidence",
+        None,
     )
     _EVIDENCE_IMPORT_ERROR = None
 
@@ -1128,6 +1134,41 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             )
             with self.assertRaises(ValueError):
                 TaskWorkspace.create(transient_parent, "run-reservation-complete")
+
+    def test_atomic_claim_is_permanent_and_non_idempotent_for_identical_bytes(self):
+        self.assertIsNotNone(
+            atomic_claim_evidence,
+            "atomic_claim_evidence implementation is missing",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory).resolve() / "claims" / "claim.json"
+            content = canonical_json_bytes({"claim": "same-run-context"})
+            first = atomic_claim_evidence(content, target)
+            first_readback = first.read_bytes()
+            with self.assertRaises(ValueError):
+                atomic_claim_evidence(content, target)
+            self.assertEqual(target.read_bytes(), first_readback)
+
+    def test_atomic_claim_has_exactly_one_concurrent_winner(self):
+        self.assertIsNotNone(
+            atomic_claim_evidence,
+            "atomic_claim_evidence implementation is missing",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory).resolve() / "claims" / "claim.json"
+            content = canonical_json_bytes({"claim": "concurrent-run-context"})
+
+            def claim_once():
+                try:
+                    atomic_claim_evidence(content, target)
+                except ValueError:
+                    return "REJECTED"
+                return "ACQUIRED"
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                outcomes = list(executor.map(lambda _: claim_once(), range(2)))
+            self.assertEqual(sorted(outcomes), ["ACQUIRED", "REJECTED"])
+            self.assertEqual(target.read_bytes(), content)
 
     def test_reservation_completion_never_renames_the_canonical_blocker(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -13,7 +13,9 @@ from .backend import (
 )
 from .evidence import (
     CleanupResult,
+    EvidenceClaimConflict,
     TaskWorkspace,
+    atomic_claim_evidence,
     atomic_freeze_evidence,
     capture_source_snapshot,
     load_used_provider_request_ids,
@@ -153,6 +155,31 @@ def execute_review(
             evidence_root=evidence_root,
             prepared=prepared,
             errors=(str(error),),
+        )
+
+    try:
+        _acquire_durable_run_claim(evidence_root, prepared, request.sha256)
+    except EvidenceClaimConflict as error:
+        return _finish_early(
+            RunnerState.PACKAGE_BINDING_MISMATCH,
+            classification,
+            execution_mode,
+            before=before,
+            repository_root=repository_root,
+            evidence_root=evidence_root,
+            prepared=prepared,
+            errors=(f"durable run claim conflict: {error}",),
+        )
+    except Exception as error:
+        return _finish_early(
+            RunnerState.REVIEWER_EXECUTION_FAILED,
+            classification,
+            execution_mode,
+            before=before,
+            repository_root=repository_root,
+            evidence_root=evidence_root,
+            prepared=prepared,
+            errors=(f"durable run claim failed: {error}",),
         )
 
     try:
@@ -333,6 +360,30 @@ def _validate_prepared_review(prepared: PreparedReview) -> None:
         raise ValueError("controller-only hash labels must be unique")
     if not callable(prepared.output_validator):
         raise ValueError("prepared output validator must be callable")
+
+
+def _acquire_durable_run_claim(
+    evidence_root: Path,
+    prepared: PreparedReview,
+    request_sha256: str,
+) -> Path:
+    identity_key = sha256_bytes(
+        canonical_json_bytes(
+            {
+                "context_id": prepared.run_identity.context_id,
+                "review_run_id": prepared.run_identity.review_run_id,
+            }
+        )
+    )
+    claim = {
+        "claim_schema_version": "joewrks.reviewer-runner-run-claim/1.0",
+        "request_sha256": request_sha256,
+        "run_identity": asdict(prepared.run_identity),
+    }
+    return atomic_claim_evidence(
+        canonical_json_bytes(claim),
+        evidence_root / "run-claims" / f"{identity_key}.json",
+    )
 
 
 def _describe_backend(
