@@ -26,6 +26,18 @@ from .identity import (
 
 _JSON_WHITESPACE = re.compile(r"[ \t\r\n]*")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
+_SAFE_PATH_COMPONENT = re.compile(r"[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?")
+_MAX_PATH_COMPONENT_LENGTH = 128
+_WINDOWS_RESERVED_PATH_STEMS = frozenset(
+    {
+        "aux",
+        "con",
+        "nul",
+        "prn",
+        *(f"com{number}" for number in range(1, 10)),
+        *(f"lpt{number}" for number in range(1, 10)),
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -133,7 +145,12 @@ def parse_single_json_document(frozen: FrozenResponse) -> dict[str, object]:
     start = _JSON_WHITESPACE.match(text).end()
     try:
         parsed, end = decoder.raw_decode(text, idx=start)
-    except (json.JSONDecodeError, _DuplicateJsonKey, ValueError) as error:
+    except (
+        json.JSONDecodeError,
+        _DuplicateJsonKey,
+        RecursionError,
+        ValueError,
+    ) as error:
         _fail(f"raw response is not one valid JSON document: {error}")
     if _JSON_WHITESPACE.fullmatch(text, pos=end) is None:
         _fail("raw response contains trailing bytes or another JSON document")
@@ -280,13 +297,9 @@ def _resolved_evidence_root(evidence_root: Path) -> Path:
 def _require_path_component(value: object, label: str) -> None:
     if (
         not isinstance(value, str)
-        or not value
-        or value != value.strip()
-        or value in {".", ".."}
-        or "/" in value
-        or "\\" in value
-        or "\x00" in value
-        or Path(value).is_absolute()
+        or len(value) > _MAX_PATH_COMPONENT_LENGTH
+        or _SAFE_PATH_COMPONENT.fullmatch(value) is None
+        or value.split(".", 1)[0] in _WINDOWS_RESERVED_PATH_STEMS
     ):
         _fail(f"{label} is not a safe evidence-path component")
 
@@ -309,7 +322,7 @@ def _reject_non_json_number(value: str) -> object:
 def _canonical_parsed_sha256(parsed: dict[str, object]) -> str:
     try:
         return sha256_bytes(canonical_json_bytes(parsed))
-    except (TypeError, ValueError, UnicodeError) as error:
+    except (RecursionError, TypeError, ValueError, UnicodeError) as error:
         _fail(f"parsed response cannot be canonically hashed: {error}")
 
 

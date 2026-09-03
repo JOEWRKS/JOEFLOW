@@ -132,11 +132,17 @@ def _assert_invalid(
     callable_,
     expected_state=RunnerState.REVIEW_OUTPUT_INVALID,
 ):
-    with test_case.assertRaises(RunnerIdentityError) as raised:
+    caught = None
+    try:
         callable_()
-    test_case.assertEqual(raised.exception.code, expected_state.value)
+    except Exception as error:
+        caught = error
+        test_case.assertIsInstance(error, RunnerIdentityError)
+    else:
+        test_case.fail(f"expected {expected_state.value}")
+    test_case.assertEqual(caught.code, expected_state.value)
     test_case.assertEqual(
-        getattr(raised.exception, "runner_state", None),
+        getattr(caught, "runner_state", None),
         expected_state,
     )
 
@@ -212,6 +218,25 @@ class ReviewerRunnerResponseTests(unittest.TestCase):
                     raw_bytes,
                 )
 
+    def test_deeply_nested_json_is_review_output_invalid(self):
+        depth = 20_000
+        raw_bytes = b'{"nested":' * depth + b"0" + b"}" * depth
+        run = _run_identity(review_run_id="run-deep-json")
+        response = _backend_response(raw_bytes, run=run)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "evidence"
+            _assert_invalid(self, lambda: _bind(response, root, run=run))
+            self.assertEqual(
+                (
+                    root
+                    / "runs"
+                    / run.review_run_id
+                    / run.context_id
+                    / "raw-response.json"
+                ).read_bytes(),
+                raw_bytes,
+            )
+
     def test_duplicate_or_extra_json_document_is_rejected(self):
         invalid_documents = (
             b'{"status":"synthetic-ok","status":"forged"}',
@@ -285,6 +310,47 @@ class ReviewerRunnerResponseTests(unittest.TestCase):
                     self,
                     lambda: _bind(response, Path(directory) / "evidence", run=run),
                 )
+
+    def test_cross_platform_path_aliases_cannot_collide_with_frozen_evidence(self):
+        _, _, _, atomic_freeze_raw_response, _, _ = _response_contract()
+        canonical_bytes = b'{"status":"canonical"}'
+        alias_bytes = b'{"status":"alias"}'
+        aliases = (
+            ("Run-001", "context-001"),
+            ("run-001.", "context-001"),
+            ("run-001 ", "context-001"),
+            ("run:001", "context-001"),
+            ("con", "context-001"),
+            ("con.json", "context-001"),
+            ("run-001", "Context-001"),
+            ("run-001", "context-001."),
+            ("run-001", "nul"),
+        )
+        for review_run_id, context_id in aliases:
+            with (
+                self.subTest(
+                    review_run_id=review_run_id,
+                    context_id=context_id,
+                ),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                root = Path(directory) / "evidence"
+                canonical = atomic_freeze_raw_response(
+                    canonical_bytes,
+                    evidence_root=root,
+                    review_run_id="run-001",
+                    context_id="context-001",
+                )
+                _assert_invalid(
+                    self,
+                    lambda: atomic_freeze_raw_response(
+                        alias_bytes,
+                        evidence_root=root,
+                        review_run_id=review_run_id,
+                        context_id=context_id,
+                    ),
+                )
+                self.assertEqual(canonical.path.read_bytes(), canonical_bytes)
 
     def test_model_deployment_settings_or_request_metadata_mismatch_is_rejected(self):
         original_backend = _backend_identity()
