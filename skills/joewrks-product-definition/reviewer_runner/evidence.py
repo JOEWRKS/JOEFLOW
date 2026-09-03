@@ -42,6 +42,7 @@ _WINDOWS_FILE_FLAG_BACKUP_SEMANTICS = 0x02000000
 _WINDOWS_FILE_DISPOSITION_INFO_CLASS = 4
 _WINDOWS_FILE_ID_INFO_CLASS = 0x12
 _WINDOWS_INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
+_WINDOWS_DUPLICATE_SAME_ACCESS = 0x00000002
 _WINDOWS_KERNEL32 = None
 _WINDOWS_RESERVED_PATH_STEMS = frozenset(
     {
@@ -351,17 +352,7 @@ def acquire_evidence_root_lease(evidence_root: Path) -> EvidenceRootLease:
     pinned: list[tuple[Path, int, _WindowsFileIdentity]] = []
     try:
         for component in components:
-            _require_plain_directory(component, "evidence-root lexical component")
-            handle = _open_windows_directory_pin_handle(component)
-            try:
-                identity = _windows_directory_identity_from_handle(handle)
-                _require_plain_directory(
-                    component,
-                    "pinned evidence-root lexical component",
-                )
-            except Exception:
-                _close_windows_handle(handle, "incomplete evidence-root pin handle")
-                raise
+            handle, identity = _acquire_windows_directory_pin(component)
             pinned.append((component, handle, identity))
         lease = EvidenceRootLease(root=root, _pinned_components=tuple(pinned))
         lease.verify()
@@ -919,6 +910,18 @@ def _windows_kernel32():
             wintypes.DWORD,
         )
         kernel32.GetFileInformationByHandleEx.restype = wintypes.BOOL
+        kernel32.GetCurrentProcess.argtypes = ()
+        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+        kernel32.DuplicateHandle.argtypes = (
+            wintypes.HANDLE,
+            wintypes.HANDLE,
+            wintypes.HANDLE,
+            ctypes.POINTER(wintypes.HANDLE),
+            wintypes.DWORD,
+            wintypes.BOOL,
+            wintypes.DWORD,
+        )
+        kernel32.DuplicateHandle.restype = wintypes.BOOL
         kernel32.SetFileInformationByHandle.argtypes = (
             wintypes.HANDLE,
             wintypes.DWORD,
@@ -974,6 +977,81 @@ def _open_windows_directory_pin_handle(directory: Path) -> int:
     if handle in (None, _WINDOWS_INVALID_HANDLE_VALUE):
         raise _win32_lifecycle_error("opening evidence-root pin handle")
     return handle
+
+
+def _duplicate_windows_directory_pin_handle(authority_handle: int) -> int:
+    kernel32 = _windows_kernel32()
+    process = kernel32.GetCurrentProcess()
+    duplicated = wintypes.HANDLE()
+    if not kernel32.DuplicateHandle(
+        process,
+        authority_handle,
+        process,
+        ctypes.byref(duplicated),
+        0,
+        False,
+        _WINDOWS_DUPLICATE_SAME_ACCESS,
+    ):
+        raise _win32_lifecycle_error("duplicating evidence-root pin handle")
+    if duplicated.value in (None, _WINDOWS_INVALID_HANDLE_VALUE):
+        raise EvidenceLifecycleError("duplicated evidence-root pin handle is invalid")
+    return duplicated.value
+
+
+def _acquire_windows_directory_pin(
+    directory: Path,
+) -> tuple[int, _WindowsFileIdentity]:
+    """Atomically hand first-open authority to one long-lived duplicate handle."""
+
+    _require_plain_directory(directory, "evidence-root lexical component")
+    authority_handle = _open_windows_directory_pin_handle(directory)
+    lease_handle: int | None = None
+    try:
+        authority_identity = _windows_directory_identity_from_handle(authority_handle)
+        _require_plain_directory(
+            directory,
+            "authority-pinned evidence-root lexical component",
+        )
+        lease_handle = _duplicate_windows_directory_pin_handle(authority_handle)
+        lease_identity = _windows_directory_identity_from_handle(lease_handle)
+        if lease_identity != authority_identity:
+            raise EvidenceLifecycleError(
+                "evidence-root authority and lease handle identities differ"
+            )
+        _require_plain_directory(
+            directory,
+            "lease-pinned evidence-root lexical component",
+        )
+    except Exception as error:
+        handles = tuple(
+            handle for handle in (lease_handle, authority_handle) if handle is not None
+        )
+        try:
+            _close_windows_handles(handles, "failed evidence-root acquisition handle")
+        except EvidenceLifecycleError as close_error:
+            raise EvidenceLifecycleError(f"{error}; {close_error}") from error
+        raise
+
+    try:
+        _close_windows_handle(authority_handle, "evidence-root authority handle")
+    except EvidenceLifecycleError as error:
+        try:
+            _close_windows_handle(lease_handle, "failed evidence-root lease handle")
+        except EvidenceLifecycleError as close_error:
+            raise EvidenceLifecycleError(f"{error}; {close_error}") from error
+        raise
+    return lease_handle, lease_identity
+
+
+def _close_windows_handles(handles: Sequence[int], label: str) -> None:
+    failures: list[str] = []
+    for handle in handles:
+        try:
+            _close_windows_handle(handle, label)
+        except EvidenceLifecycleError as error:
+            failures.append(str(error))
+    if failures:
+        raise EvidenceLifecycleError("; ".join(failures))
 
 
 def _open_windows_directory_verification_handle(directory: Path) -> int:

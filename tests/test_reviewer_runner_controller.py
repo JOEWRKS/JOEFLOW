@@ -39,6 +39,7 @@ from reviewer_runner.preflight import (  # noqa: E402
     run_isolation_preflight,
 )
 import reviewer_runner.controller as controller_module  # noqa: E402
+import reviewer_runner.evidence as evidence_module  # noqa: E402
 from tests.downstream_v21_support import closed_v2_state  # noqa: E402
 from tests.reviewer_runner_support import DeterministicFakeBackend  # noqa: E402
 from tests.semantic_review_support import make_run_set  # noqa: E402
@@ -965,6 +966,66 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             evidence_root.rename(parked_root)
             self.assertTrue(parked_root.is_dir())
             parked_root.rename(evidence_root)
+
+    def test_evidence_root_handle_handoff_mismatch_fails_before_invoke(self):
+        prepared, material = _prepared_v1(
+            run_id="run-root-handoff-mismatch",
+            context_id="context-root-handoff-mismatch",
+        )
+        backend = _fake_backend(canonical_json_bytes(material["output"]))
+        preflight, freshness = _fake_preflight(backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            evidence_root = base / "evidence"
+            outside = base / "outside"
+            outside.mkdir()
+            marker = outside / "external-marker.bin"
+            marker.write_bytes(b"must-not-be-read-or-written")
+            marker_before = marker.read_bytes()
+            external_reads = []
+            original_read_bytes = Path.read_bytes
+            first_identity = evidence_module._WindowsFileIdentity(
+                volume_serial_number=1,
+                file_id=b"a" * 16,
+            )
+            substituted_identity = evidence_module._WindowsFileIdentity(
+                volume_serial_number=1,
+                file_id=b"b" * 16,
+            )
+
+            def monitor_read_bytes(path):
+                if Path(path) == marker:
+                    external_reads.append(str(path))
+                return original_read_bytes(path)
+
+            with mock.patch.object(
+                evidence_module,
+                "_windows_directory_identity_from_handle",
+                side_effect=(first_identity, substituted_identity),
+            ), mock.patch.object(Path, "read_bytes", monitor_read_bytes):
+                outcome = execute_review(
+                    prepared,
+                    backend=backend,
+                    preflight=preflight,
+                    current_freshness=freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=transient_parent,
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+
+            self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertEqual(len(backend.received_request_bytes), 0)
+            self.assertTrue(
+                any("handle identities differ" in error for error in outcome.errors)
+            )
+            self.assertEqual(external_reads, [])
+            self.assertEqual(marker.read_bytes(), marker_before)
+            self.assertEqual(list(evidence_root.rglob("*")), [])
+            evidence_root.rename(base / "released-evidence")
 
     def test_durable_evidence_claim_blocks_same_identity_across_transient_parents(self):
         prepared, material = _prepared_v1(

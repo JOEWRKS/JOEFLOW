@@ -1201,6 +1201,51 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             owned_parent.rename(moved_parent)
             moved_parent.rename(owned_parent)
 
+    def test_evidence_root_lease_handoff_blocks_plain_directory_substitution(self):
+        duplicate_pin = getattr(
+            evidence_module,
+            "_duplicate_windows_directory_pin_handle",
+            None,
+        )
+        self.assertIsNotNone(
+            duplicate_pin,
+            "evidence-root acquisition lacks an atomic authority-to-lease handoff",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            evidence_root = base / "evidence"
+            parked_root = base / "parked-evidence"
+            replacement_root = base / "replacement-evidence"
+            replacement_root.mkdir()
+            marker = replacement_root / "external-marker.bin"
+            marker.write_bytes(b"must-not-be-read-or-written")
+            marker_before = marker.read_bytes()
+            substitution_attempts = []
+
+            def attempt_substitution_during_handoff(authority_handle):
+                substitution_attempts.append("ATTEMPTED")
+                try:
+                    evidence_root.rename(parked_root)
+                    replacement_root.rename(evidence_root)
+                    substitution_attempts.append("SUCCEEDED")
+                except PermissionError:
+                    substitution_attempts.append("DENIED")
+                return duplicate_pin(authority_handle)
+
+            with mock.patch.object(
+                evidence_module,
+                "_duplicate_windows_directory_pin_handle",
+                side_effect=attempt_substitution_during_handoff,
+            ):
+                lease = acquire_evidence_root_lease(evidence_root)
+            try:
+                self.assertEqual(substitution_attempts, ["ATTEMPTED", "DENIED"])
+                self.assertFalse(parked_root.exists())
+                self.assertEqual(marker.read_bytes(), marker_before)
+                lease.verify()
+            finally:
+                lease.close()
+
     def test_reservation_completion_never_renames_the_canonical_blocker(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
