@@ -222,7 +222,7 @@ def verify_source_unchanged(
 
 
 def atomic_freeze_evidence(content: bytes, target_path: Path) -> Path:
-    """Persist immutable exact bytes with exclusive temp, fsync, replace, and readback."""
+    """Persist immutable bytes without overwriting an intervening publication."""
 
     if type(content) is not bytes:
         raise EvidenceLifecycleError("evidence content must be exact bytes")
@@ -230,83 +230,99 @@ def atomic_freeze_evidence(content: bytes, target_path: Path) -> Path:
         raise EvidenceLifecycleError("target_path must be a Path")
     if not target_path.name:
         raise EvidenceLifecycleError("target_path must name an evidence file")
-    unresolved_target = Path(os.path.abspath(target_path))
-    _reject_reparse_components(unresolved_target, "evidence target")
-    target = unresolved_target.resolve(strict=False)
+    target = Path(os.path.abspath(target_path))
+    _reject_reparse_components(target, "evidence target")
     if os.path.lexists(target):
         return _read_existing_immutable_evidence(target, content)
 
     target.parent.mkdir(parents=True, exist_ok=True)
-    _reject_reparse_components(unresolved_target, "evidence target")
+    _reject_reparse_components(target, "evidence target")
     _require_plain_directory(target.parent, "evidence parent")
+    parent_identity = _plain_directory_identity(target.parent, "evidence parent")
     publication_lock = target.with_name(f".{target.name}.freeze.lock")
     temporary = target.with_name(f".{target.name}.{uuid.uuid4().hex}.tmp")
-    lock_identity = None
-    target_claim_identity = None
-    target_claim_bytes = None
-    temporary_identity = None
-    lock_created = False
-    target_claimed = False
-    created_temporary = False
+    lock_descriptor = None
+    temporary_descriptor = None
     try:
+        _require_directory_identity(
+            target.parent,
+            parent_identity,
+            "evidence parent before publication lock",
+        )
         try:
-            with publication_lock.open("xb") as stream:
-                lock_created = True
-                lock_bytes = uuid.uuid4().hex.encode("ascii")
-                written = stream.write(lock_bytes)
-                if written != len(lock_bytes):
-                    raise EvidenceLifecycleError(
-                        "evidence publication lock write was incomplete"
-                    )
-                stream.flush()
-                os.fsync(stream.fileno())
+            lock_descriptor = _open_delete_on_close_file(
+                publication_lock,
+                "evidence publication lock",
+            )
         except FileExistsError as error:
             raise EvidenceLifecycleError(
                 "evidence publication is already reserved by another writer"
             ) from error
-        lock_identity = _plain_file_identity(
-            publication_lock,
+        lock_identity = _opened_plain_file_identity(
+            lock_descriptor,
             "evidence publication lock",
+        )
+        _write_descriptor_exact(
+            lock_descriptor,
+            uuid.uuid4().hex.encode("ascii"),
+            "evidence publication lock",
+        )
+        _verify_opened_file_path(
+            publication_lock,
+            lock_identity,
+            "evidence publication lock",
+        )
+        _require_directory_identity(
+            target.parent,
+            parent_identity,
+            "evidence parent after publication lock",
         )
         if os.path.lexists(target):
             return _read_existing_immutable_evidence(target, content)
-        target_claim_bytes = (
-            b"joewrks-evidence-destination-reservation\0"
-            + uuid.uuid4().hex.encode("ascii")
+        temporary_descriptor = _open_delete_on_close_file(
+            temporary,
+            "evidence temporary file",
+        )
+        temporary_identity = _opened_plain_file_identity(
+            temporary_descriptor,
+            "evidence temporary file",
+        )
+        _write_descriptor_exact(
+            temporary_descriptor,
+            content,
+            "evidence temporary file",
+        )
+        _verify_opened_file_path(
+            temporary,
+            temporary_identity,
+            "evidence temporary file",
+        )
+        _reject_reparse_components(target, "evidence target before publication")
+        _require_directory_identity(
+            target.parent,
+            parent_identity,
+            "evidence parent immediately before publication",
         )
         try:
-            with target.open("xb") as stream:
-                target_claimed = True
-                written = stream.write(target_claim_bytes)
-                if written != len(target_claim_bytes):
-                    raise EvidenceLifecycleError(
-                        "evidence destination reservation write was incomplete"
-                    )
-                stream.flush()
-                os.fsync(stream.fileno())
+            os.link(temporary, target)
         except FileExistsError:
+            _require_directory_identity(
+                target.parent,
+                parent_identity,
+                "evidence parent after publication conflict",
+            )
             return _read_existing_immutable_evidence(target, content)
-        target_claim_identity = _plain_file_identity(
-            target,
-            "evidence destination reservation",
+        except OSError as error:
+            raise EvidenceLifecycleError(
+                f"atomic no-clobber evidence publication failed: {error}"
+            ) from error
+        _require_directory_identity(
+            target.parent,
+            parent_identity,
+            "evidence parent immediately after publication",
         )
-        with temporary.open("xb") as stream:
-            created_temporary = True
-            written = stream.write(content)
-            if written != len(content):
-                raise EvidenceLifecycleError("evidence temporary write was incomplete")
-            stream.flush()
-            os.fsync(stream.fileno())
-        temporary_identity = _plain_file_identity(temporary, "evidence temporary file")
-        _verify_created_file(
-            target,
-            target_claim_identity,
-            target_claim_bytes,
-            "evidence destination reservation",
-        )
-        os.replace(temporary, target)
-        created_temporary = False
-        target_claimed = False
+        if _plain_file_identity(target, "frozen evidence") != temporary_identity[:2]:
+            raise EvidenceLifecycleError("frozen evidence identity changed after publication")
         observed = target.read_bytes()
         if observed != content or sha256_bytes(observed) != sha256_bytes(content):
             raise EvidenceLifecycleError(
@@ -314,34 +330,8 @@ def atomic_freeze_evidence(content: bytes, target_path: Path) -> Path:
             )
         return target
     finally:
-        if created_temporary and os.path.lexists(temporary):
-            _unlink_created_file(
-                temporary,
-                temporary_identity,
-                "evidence temporary file",
-            )
-        if target_claimed:
-            if not os.path.lexists(target):
-                raise EvidenceLifecycleError(
-                    "evidence destination reservation disappeared before cleanup"
-                )
-            _verify_created_file(
-                target,
-                target_claim_identity,
-                target_claim_bytes,
-                "evidence destination reservation",
-            )
-            _unlink_created_file(
-                target,
-                target_claim_identity,
-                "evidence destination reservation",
-            )
-        if lock_created and os.path.lexists(publication_lock):
-            _unlink_created_file(
-                publication_lock,
-                lock_identity,
-                "evidence publication lock",
-            )
+        _close_delete_on_close_file(temporary_descriptor, "evidence temporary file")
+        _close_delete_on_close_file(lock_descriptor, "evidence publication lock")
 
 
 def load_used_provider_request_ids(evidence_root: Path) -> frozenset[str]:
@@ -452,31 +442,87 @@ def _plain_file_identity(path: Path, label: str) -> tuple[int, int]:
     return observed.st_dev, observed.st_ino
 
 
-def _verify_created_file(
-    path: Path,
-    expected_identity: tuple[int, int] | None,
-    expected_bytes: bytes | None,
-    label: str,
-) -> None:
-    if expected_identity is None or _plain_file_identity(path, label) != expected_identity:
-        raise EvidenceLifecycleError(f"{label} ownership changed")
-    if expected_bytes is None or path.read_bytes() != expected_bytes:
-        raise EvidenceLifecycleError(f"{label} bytes changed")
-
-
-def _unlink_created_file(
-    path: Path,
-    expected_identity: tuple[int, int] | None,
-    label: str,
-) -> None:
-    if expected_identity is None or _plain_file_identity(path, label) != expected_identity:
-        raise EvidenceLifecycleError(f"{label} ownership changed before cleanup")
+def _open_delete_on_close_file(path: Path, label: str) -> int:
+    temporary_flag = getattr(os, "O_TEMPORARY", None)
+    if temporary_flag is None:
+        raise EvidenceLifecycleError(
+            f"{label} requires platform delete-on-close support"
+        )
+    flags = os.O_CREAT | os.O_EXCL | os.O_RDWR | temporary_flag
+    flags |= getattr(os, "O_BINARY", 0)
     try:
-        path.unlink()
+        return os.open(path, flags, 0o600)
     except OSError as error:
-        raise EvidenceLifecycleError(f"{label} cleanup failed: {error}") from error
-    if os.path.lexists(path):
-        raise EvidenceLifecycleError(f"{label} still exists after cleanup")
+        if isinstance(error, FileExistsError):
+            raise
+        raise EvidenceLifecycleError(f"{label} cannot be created exclusively: {error}") from error
+
+
+def _open_existing_delete_on_close_file(path: Path, label: str) -> int:
+    temporary_flag = getattr(os, "O_TEMPORARY", None)
+    if temporary_flag is None:
+        raise EvidenceLifecycleError(
+            f"{label} requires platform delete-on-close support"
+        )
+    flags = os.O_RDONLY | temporary_flag | getattr(os, "O_BINARY", 0)
+    try:
+        return os.open(path, flags)
+    except OSError as error:
+        raise EvidenceLifecycleError(f"{label} cannot be opened safely: {error}") from error
+
+
+def _opened_plain_file_identity(descriptor: int, label: str) -> tuple[int, int, int]:
+    try:
+        observed = os.fstat(descriptor)
+    except OSError as error:
+        raise EvidenceLifecycleError(f"{label} handle cannot be inspected") from error
+    if not stat.S_ISREG(observed.st_mode):
+        raise EvidenceLifecycleError(f"{label} handle is not a plain file")
+    return observed.st_dev, observed.st_ino, observed.st_mode
+
+
+def _write_descriptor_exact(descriptor: int, content: bytes, label: str) -> None:
+    offset = 0
+    while offset < len(content):
+        try:
+            written = os.write(descriptor, content[offset:])
+        except OSError as error:
+            raise EvidenceLifecycleError(f"{label} write failed: {error}") from error
+        if written <= 0:
+            raise EvidenceLifecycleError(f"{label} write was incomplete")
+        offset += written
+    try:
+        os.fsync(descriptor)
+    except OSError as error:
+        raise EvidenceLifecycleError(f"{label} fsync failed: {error}") from error
+
+
+def _verify_opened_file_path(
+    path: Path,
+    expected_identity: tuple[int, int, int],
+    label: str,
+) -> None:
+    observed = _entry_identity_no_follow(path)
+    if observed != expected_identity or not stat.S_ISREG(observed[2]):
+        raise EvidenceLifecycleError(f"{label} path no longer names its opened file")
+
+
+def _close_delete_on_close_file(descriptor: int | None, label: str) -> None:
+    if descriptor is None:
+        return
+    try:
+        os.close(descriptor)
+    except OSError as error:
+        raise EvidenceLifecycleError(f"{label} handle cleanup failed: {error}") from error
+
+
+def _require_directory_identity(
+    path: Path,
+    expected_identity: tuple[int, int, int],
+    label: str,
+) -> None:
+    if _plain_directory_identity(path, label) != expected_identity:
+        raise EvidenceLifecycleError(f"{label} identity changed")
 
 
 def _create_run_reservation(
@@ -545,12 +591,78 @@ def _clear_run_reservation(
         task_root,
         review_run_id,
     )
+    reservation_directory = reservation_path.parent
+    directory_identity = _plain_directory_identity(
+        reservation_directory,
+        "run reservation directory",
+    )
+    reservation_identity = _plain_file_identity(
+        reservation_path,
+        "run reservation",
+    )
+    content = _reservation_bytes(task_root, review_run_id)
+    completed_path = reservation_path.with_name(
+        f".{reservation_path.stem}.{uuid.uuid4().hex}.completed.json"
+    )
+    if os.path.lexists(completed_path):
+        raise EvidenceLifecycleError("completed run reservation path already exists")
+    _require_directory_identity(
+        reservation_directory,
+        directory_identity,
+        "run reservation directory before retirement",
+    )
     try:
-        reservation_path.unlink()
+        os.rename(reservation_path, completed_path)
     except OSError as error:
-        raise EvidenceLifecycleError(f"run reservation cleanup failed: {error}") from error
+        raise EvidenceLifecycleError(f"run reservation retirement failed: {error}") from error
+    try:
+        _require_directory_identity(
+            reservation_directory,
+            directory_identity,
+            "run reservation directory after retirement",
+        )
+        if _plain_file_identity(
+            completed_path,
+            "completed run reservation",
+        ) != reservation_identity:
+            raise EvidenceLifecycleError("retired run reservation ownership changed")
+        if completed_path.read_bytes() != content:
+            raise EvidenceLifecycleError("retired run reservation bytes changed")
+        if os.path.lexists(reservation_path):
+            raise EvidenceLifecycleError("active run reservation reappeared after retirement")
+    except (OSError, EvidenceLifecycleError) as error:
+        _ensure_blocking_reservation(reservation_path, content)
+        if isinstance(error, EvidenceLifecycleError):
+            raise
+        raise EvidenceLifecycleError(
+            f"retired run reservation cannot be verified: {error}"
+        ) from error
+
+
+def _ensure_blocking_reservation(reservation_path: Path, content: bytes) -> None:
     if os.path.lexists(reservation_path):
-        raise EvidenceLifecycleError("run reservation still exists after cleanup")
+        if (
+            not _is_reparse_point(reservation_path)
+            and reservation_path.is_file()
+            and reservation_path.read_bytes() == content
+        ):
+            return
+        raise EvidenceLifecycleError(
+            "ambiguous active run reservation already blocks reuse"
+        )
+    try:
+        with reservation_path.open("xb") as stream:
+            written = stream.write(content)
+            if written != len(content):
+                raise EvidenceLifecycleError("blocking run reservation write was incomplete")
+            stream.flush()
+            os.fsync(stream.fileno())
+    except FileExistsError as error:
+        raise EvidenceLifecycleError(
+            "concurrent active run reservation blocks reuse"
+        ) from error
+    if reservation_path.read_bytes() != content:
+        raise EvidenceLifecycleError("blocking run reservation readback changed")
 
 
 def _reservation_bytes(task_root: Path, review_run_id: str) -> bytes:
@@ -626,12 +738,20 @@ def _verify_owned_tree(root: Path) -> None:
 
 def _remove_owned_tree(root: Path) -> None:
     boundary = Path(os.path.abspath(root))
-    _remove_owned_directory(boundary, boundary)
+    root_identity = _plain_directory_identity(boundary, "removable task root")
+    _remove_owned_directory(boundary, boundary, expected_identity=root_identity)
 
 
-def _remove_owned_directory(directory: Path, boundary: Path) -> None:
+def _remove_owned_directory(
+    directory: Path,
+    boundary: Path,
+    *,
+    expected_identity: tuple[int, int, int] | None = None,
+) -> None:
     _require_lexical_descendant_or_same(directory, boundary, "removable directory")
     directory_identity = _plain_directory_identity(directory, "removable directory")
+    if expected_identity is not None and directory_identity != expected_identity:
+        raise EvidenceLifecycleError("removable directory ownership changed before recursion")
     with os.scandir(directory) as iterator:
         entries = sorted(iterator, key=lambda entry: entry.name)
     if _plain_directory_identity(directory, "removable directory") != directory_identity:
@@ -654,7 +774,18 @@ def _remove_owned_directory(directory: Path, boundary: Path) -> None:
                 raise EvidenceLifecycleError(
                     "removable child directory changed before recursion"
                 )
-            _remove_owned_directory(candidate, boundary)
+            quarantined = _quarantine_owned_entry(
+                candidate,
+                directory,
+                directory_identity,
+                entry_identity,
+                "removable child directory",
+            )
+            _remove_owned_directory(
+                quarantined,
+                boundary,
+                expected_identity=entry_identity,
+            )
             continue
         if not stat.S_ISREG(entry_identity[2]):
             raise EvidenceLifecycleError(
@@ -664,9 +795,19 @@ def _remove_owned_directory(directory: Path, boundary: Path) -> None:
             raise EvidenceLifecycleError("removable directory changed before file cleanup")
         if _entry_identity_no_follow(candidate) != entry_identity:
             raise EvidenceLifecycleError("removable file changed before cleanup")
-        os.unlink(candidate)
-        if os.path.lexists(candidate):
-            raise EvidenceLifecycleError("removable file still exists after cleanup")
+        quarantined = _quarantine_owned_entry(
+            candidate,
+            directory,
+            directory_identity,
+            entry_identity,
+            "removable file",
+        )
+        _unlink_quarantined_file(
+            quarantined,
+            entry_identity,
+            directory,
+            directory_identity,
+        )
 
     if _plain_directory_identity(directory, "removable directory") != directory_identity:
         raise EvidenceLifecycleError("removable directory changed before final cleanup")
@@ -676,6 +817,75 @@ def _remove_owned_directory(directory: Path, boundary: Path) -> None:
     os.rmdir(directory)
     if os.path.lexists(directory):
         raise EvidenceLifecycleError("removable directory still exists after cleanup")
+
+
+def _quarantine_owned_entry(
+    candidate: Path,
+    parent: Path,
+    parent_identity: tuple[int, int, int],
+    expected_identity: tuple[int, int, int],
+    label: str,
+) -> Path:
+    _require_directory_identity(parent, parent_identity, f"{label} parent")
+    if _entry_identity_no_follow(candidate) != expected_identity:
+        raise EvidenceLifecycleError(f"{label} changed before quarantine")
+    quarantine = candidate.with_name(
+        f".{candidate.name}.{uuid.uuid4().hex}.cleanup"
+    )
+    if os.path.lexists(quarantine):
+        raise EvidenceLifecycleError(f"{label} quarantine path already exists")
+    try:
+        os.rename(candidate, quarantine)
+    except OSError as error:
+        raise EvidenceLifecycleError(f"{label} quarantine move failed: {error}") from error
+    _require_directory_identity(parent, parent_identity, f"{label} parent after quarantine")
+    if _entry_identity_no_follow(quarantine) != expected_identity:
+        raise EvidenceLifecycleError(f"{label} quarantine ownership is ambiguous")
+    if os.path.lexists(candidate):
+        raise EvidenceLifecycleError(f"{label} source reappeared after quarantine")
+    return quarantine
+
+
+def _unlink_quarantined_file(
+    path: Path,
+    expected_identity: tuple[int, int, int],
+    parent: Path,
+    parent_identity: tuple[int, int, int],
+) -> None:
+    guard_path = path.with_name(f".{path.name}.{uuid.uuid4().hex}.delete-guard")
+    if os.path.lexists(guard_path):
+        raise EvidenceLifecycleError("removable file delete guard already exists")
+    try:
+        os.link(path, guard_path)
+    except OSError as error:
+        raise EvidenceLifecycleError(f"removable file guard creation failed: {error}") from error
+    guard_descriptor = None
+    try:
+        guard_descriptor = _open_existing_delete_on_close_file(
+            guard_path,
+            "removable file delete guard",
+        )
+        guard_before = os.fstat(guard_descriptor)
+        guard_identity = (guard_before.st_dev, guard_before.st_ino, guard_before.st_mode)
+        if guard_identity != expected_identity:
+            raise EvidenceLifecycleError("removable file changed before guarded cleanup")
+        _require_directory_identity(parent, parent_identity, "removable file parent")
+        if _entry_identity_no_follow(path) != expected_identity:
+            raise EvidenceLifecycleError("removable file changed before guarded unlink")
+        try:
+            os.unlink(path)
+        except OSError as error:
+            raise EvidenceLifecycleError(f"removable file unlink failed: {error}") from error
+        guard_after = os.fstat(guard_descriptor)
+        if guard_after.st_nlink != guard_before.st_nlink - 1:
+            raise EvidenceLifecycleError("removable file substitution detected during unlink")
+        if os.path.lexists(path):
+            raise EvidenceLifecycleError("removable file still exists after cleanup")
+    finally:
+        _close_delete_on_close_file(
+            guard_descriptor,
+            "removable file delete guard",
+        )
 
 
 def _plain_directory_identity(path: Path, label: str) -> tuple[int, int, int]:

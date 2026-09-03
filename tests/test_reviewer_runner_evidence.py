@@ -268,11 +268,11 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             target = base / "evidence" / "receipt.json"
-            original_replace = evidence_module.os.replace
+            original_link = evidence_module.os.link
             intervention_active = False
             competing_outcomes = []
 
-            def replace_with_competing_writer(source, destination):
+            def link_with_competing_writer(source, destination, *args, **kwargs):
                 nonlocal intervention_active
                 resolved_destination = Path(destination).resolve(strict=False)
                 self.assertEqual(resolved_destination, target.resolve(strict=False))
@@ -291,26 +291,26 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                             competing_outcomes.append("published")
                     finally:
                         intervention_active = False
-                original_replace(source, destination)
+                return original_link(source, destination, *args, **kwargs)
 
             with mock.patch.object(
                 evidence_module.os,
-                "replace",
-                side_effect=replace_with_competing_writer,
+                "link",
+                side_effect=link_with_competing_writer,
             ):
                 frozen = atomic_freeze_evidence(b"reserved-writer-bytes", target)
 
             self.assertEqual(competing_outcomes, ["rejected"])
             self.assertEqual(frozen.read_bytes(), b"reserved-writer-bytes")
 
-    def test_evidence_freeze_reserves_destination_against_exclusive_creator(self):
+    def test_evidence_freeze_does_not_clobber_intervening_exclusive_creator(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             target = base / "evidence" / "receipt.json"
-            original_replace = evidence_module.os.replace
+            original_link = evidence_module.os.link
             creator_outcomes = []
 
-            def replace_after_exclusive_creator(source, destination):
+            def link_after_exclusive_creator(source, destination, *args, **kwargs):
                 resolved_destination = Path(destination).resolve(strict=False)
                 self.assertEqual(resolved_destination, target.resolve(strict=False))
                 self.assertTrue(resolved_destination.is_relative_to(base))
@@ -323,17 +323,205 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                     creator_outcomes.append("rejected")
                 else:
                     creator_outcomes.append("published")
-                original_replace(source, destination)
+                return original_link(source, destination, *args, **kwargs)
 
+            observed_error = None
+            with mock.patch.object(
+                evidence_module.os,
+                "link",
+                side_effect=link_after_exclusive_creator,
+            ):
+                try:
+                    atomic_freeze_evidence(b"reserved-destination-bytes", target)
+                except Exception as error:  # test captures exact boundary outcome
+                    observed_error = error
+
+            self.assertIsInstance(observed_error, ValueError)
+            self.assertEqual(creator_outcomes, ["published"])
+            self.assertEqual(target.read_bytes(), b"exclusive-intervening-writer")
+
+    def test_evidence_freeze_does_not_clobber_independent_atomic_replacement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            target = base / "evidence" / "receipt.json"
+            independent_bytes = b"independent-atomic-replacement"
+            original_replace = evidence_module.os.replace
+            original_link = evidence_module.os.link
+            intervened = False
+
+            def install_independent_replacement(destination):
+                nonlocal intervened
+                if intervened:
+                    return
+                intervened = True
+                replacement = base / "independent-replacement.tmp"
+                replacement.write_bytes(independent_bytes)
+                original_replace(replacement, destination)
+
+            def replace_after_independent_writer(source, destination):
+                if Path(destination) == target:
+                    install_independent_replacement(destination)
+                return original_replace(source, destination)
+
+            def link_after_independent_writer(source, destination, *args, **kwargs):
+                if Path(destination) == target:
+                    install_independent_replacement(destination)
+                return original_link(source, destination, *args, **kwargs)
+
+            observed_error = None
             with mock.patch.object(
                 evidence_module.os,
                 "replace",
-                side_effect=replace_after_exclusive_creator,
+                side_effect=replace_after_independent_writer,
+            ), mock.patch.object(
+                evidence_module.os,
+                "link",
+                side_effect=link_after_independent_writer,
             ):
-                frozen = atomic_freeze_evidence(b"reserved-destination-bytes", target)
+                try:
+                    atomic_freeze_evidence(b"publisher-bytes", target)
+                except Exception as error:  # test captures exact boundary outcome
+                    observed_error = error
 
-            self.assertEqual(creator_outcomes, ["rejected"])
-            self.assertEqual(frozen.read_bytes(), b"reserved-destination-bytes")
+            self.assertIsInstance(observed_error, ValueError)
+            self.assertTrue(intervened)
+            self.assertEqual(target.read_bytes(), independent_bytes)
+
+    def test_evidence_freeze_parent_swap_at_final_publication_preserves_external_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            target = base / "evidence" / "receipt.json"
+            parked_parent = base / "parked-evidence-parent"
+            outside = base / "outside-publication-parent"
+            outside.mkdir()
+            outside_target = outside / target.name
+            outside_bytes = b"external-publication-survivor"
+            outside_target.write_bytes(outside_bytes)
+            original_replace = evidence_module.os.replace
+            original_link = evidence_module.os.link
+            intervened = False
+
+            def swap_parent(source):
+                nonlocal intervened
+                if intervened:
+                    return
+                intervened = True
+                parent = target.parent
+                self.assertTrue(parent.resolve(strict=True).is_relative_to(base))
+                original_replace(parent, parked_parent)
+                parent.symlink_to(outside, target_is_directory=True)
+                outside.joinpath(Path(source).name).write_bytes(b"attacker-source")
+
+            def replace_after_parent_swap(source, destination):
+                if Path(destination) == target:
+                    swap_parent(source)
+                return original_replace(source, destination)
+
+            def link_after_parent_swap(source, destination, *args, **kwargs):
+                if Path(destination) == target:
+                    swap_parent(source)
+                return original_link(source, destination, *args, **kwargs)
+
+            observed_error = None
+            with mock.patch.object(
+                evidence_module.os,
+                "replace",
+                side_effect=replace_after_parent_swap,
+            ), mock.patch.object(
+                evidence_module.os,
+                "link",
+                side_effect=link_after_parent_swap,
+            ):
+                try:
+                    atomic_freeze_evidence(b"publisher-parent-swap", target)
+                except Exception as error:  # test captures exact boundary outcome
+                    observed_error = error
+
+            self.assertIsInstance(observed_error, ValueError)
+            self.assertTrue(intervened)
+            self.assertEqual(outside_target.read_bytes(), outside_bytes)
+
+    def test_publication_cleanup_never_path_unlinks_lock_or_temporary_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            target = base / "evidence" / "receipt.json"
+            outside = base / "outside-lock-cleanup.bin"
+            outside.write_bytes(b"external-lock-cleanup-survivor")
+            original_unlink = evidence_module.os.unlink
+            original_replace = evidence_module.os.replace
+            parked_paths = []
+
+            def swap_before_publication_cleanup(path, *args, **kwargs):
+                candidate = Path(path)
+                if candidate.parent == target.parent and (
+                    candidate.name.endswith(".freeze.lock")
+                    or candidate.name.endswith(".tmp")
+                ):
+                    parked = base / f"parked-{len(parked_paths)}-{candidate.name}"
+                    original_replace(candidate, parked)
+                    original_link = os.link
+                    original_link(outside, candidate)
+                    parked_paths.append(parked)
+                return original_unlink(path, *args, **kwargs)
+
+            with mock.patch.object(
+                evidence_module.os,
+                "unlink",
+                side_effect=swap_before_publication_cleanup,
+            ):
+                frozen = atomic_freeze_evidence(b"publication-cleanup", target)
+
+            self.assertEqual(frozen.read_bytes(), b"publication-cleanup")
+            self.assertEqual(parked_paths, [])
+            self.assertEqual(outside.read_bytes(), b"external-lock-cleanup-survivor")
+
+    def test_failed_publication_never_path_unlinks_destination_claim(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            target = base / "evidence" / "receipt.json"
+            outside = base / "outside-claim-cleanup.bin"
+            outside.write_bytes(b"external-claim-cleanup-survivor")
+            parked_claim = base / "parked-destination-claim"
+            original_unlink = evidence_module.os.unlink
+            original_replace = evidence_module.os.replace
+            original_link = evidence_module.os.link
+            claim_swapped = False
+
+            def fail_publication(*args, **kwargs):
+                raise OSError("synthetic final publication failure")
+
+            def swap_before_claim_cleanup(path, *args, **kwargs):
+                nonlocal claim_swapped
+                candidate = Path(path)
+                if candidate == target:
+                    claim_swapped = True
+                    original_replace(candidate, parked_claim)
+                    original_link(outside, candidate)
+                return original_unlink(path, *args, **kwargs)
+
+            observed_error = None
+            with mock.patch.object(
+                evidence_module.os,
+                "unlink",
+                side_effect=swap_before_claim_cleanup,
+            ), mock.patch.object(
+                evidence_module.os,
+                "replace",
+                side_effect=fail_publication,
+            ), mock.patch.object(
+                evidence_module.os,
+                "link",
+                side_effect=fail_publication,
+            ):
+                try:
+                    atomic_freeze_evidence(b"failed-publication", target)
+                except Exception as error:  # test captures exact boundary outcome
+                    observed_error = error
+
+            self.assertIsInstance(observed_error, ValueError)
+            self.assertFalse(claim_swapped)
+            self.assertFalse(os.path.lexists(parked_claim))
+            self.assertEqual(outside.read_bytes(), b"external-claim-cleanup-survivor")
 
     def test_cleanup_removes_only_exact_task_root_and_reads_back_absence(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -578,6 +766,178 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 self.assertEqual(outside_file.read_bytes(), b"external-parent-swap-bytes")
             with self.assertRaises(ValueError):
                 TaskWorkspace.create(transient_parent, "run-parent-swap")
+
+    def test_plain_directory_swap_at_final_recursion_boundary_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = TaskWorkspace.create(transient_parent, "run-recursion-boundary")
+            owned_file = workspace.inputs_path / "owned.bin"
+            owned_file.write_bytes(b"owned-directory-content")
+            parked_owned = base / "parked-owned-inputs"
+            outside = base / "outside-recursion-boundary.bin"
+            outside.write_bytes(b"external-recursion-survivor")
+            preserved = _preserve(base, "recursion-boundary")
+            original_remove_directory = evidence_module._remove_owned_directory
+            swapped = False
+
+            def swap_at_callee_entry(directory_path, *args, **kwargs):
+                nonlocal swapped
+                candidate = Path(directory_path)
+                is_original_or_quarantined = (
+                    candidate == workspace.inputs_path
+                    or (
+                        candidate.parent == workspace.root
+                        and candidate.name.startswith(".inputs.")
+                        and candidate.name.endswith(".cleanup")
+                    )
+                )
+                if is_original_or_quarantined and not swapped:
+                    swapped = True
+                    self.assertTrue(candidate.resolve(strict=True).is_relative_to(base))
+                    os.replace(candidate, parked_owned)
+                    candidate.mkdir()
+                    os.link(outside, candidate / "external-link.bin")
+                return original_remove_directory(directory_path, *args, **kwargs)
+
+            observed_error = None
+            with mock.patch.object(
+                evidence_module,
+                "_remove_owned_directory",
+                side_effect=swap_at_callee_entry,
+            ):
+                try:
+                    workspace.cleanup(
+                        preserved_evidence_paths=(preserved,),
+                        sibling_paths=(),
+                    )
+                except Exception as error:  # test captures exact boundary outcome
+                    observed_error = error
+
+            self.assertIsInstance(observed_error, ValueError)
+            self.assertTrue(swapped)
+            self.assertEqual(outside.read_bytes(), b"external-recursion-survivor")
+            with self.assertRaises(ValueError):
+                TaskWorkspace.create(transient_parent, "run-recursion-boundary")
+
+    def test_plain_file_swap_at_final_unlink_boundary_is_detected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = TaskWorkspace.create(transient_parent, "run-unlink-boundary")
+            owned_file = workspace.inputs_path / "race.bin"
+            owned_file.write_bytes(b"owned-file-content")
+            parked_owned = base / "parked-owned-unlink-boundary.bin"
+            outside = base / "outside-unlink-boundary.bin"
+            outside.write_bytes(b"external-unlink-survivor")
+            preserved = _preserve(base, "unlink-boundary")
+            original_unlink = evidence_module.os.unlink
+            original_replace = evidence_module.os.replace
+            original_link = evidence_module.os.link
+            swapped = False
+
+            def swap_at_unlink(path, *args, **kwargs):
+                nonlocal swapped
+                candidate = Path(path)
+                is_owned_or_quarantined = (
+                    candidate == owned_file
+                    or (
+                        candidate.name.startswith(".race.bin.")
+                        and candidate.name.endswith(".cleanup")
+                        and candidate.is_relative_to(workspace.root)
+                    )
+                )
+                if is_owned_or_quarantined and not swapped:
+                    swapped = True
+                    self.assertTrue(candidate.resolve(strict=True).is_relative_to(base))
+                    original_replace(candidate, parked_owned)
+                    original_link(outside, candidate)
+                return original_unlink(path, *args, **kwargs)
+
+            observed_error = None
+            with mock.patch.object(
+                evidence_module.os,
+                "unlink",
+                side_effect=swap_at_unlink,
+            ):
+                try:
+                    workspace.cleanup(
+                        preserved_evidence_paths=(preserved,),
+                        sibling_paths=(),
+                    )
+                except Exception as error:  # test captures exact boundary outcome
+                    observed_error = error
+
+            self.assertIsInstance(observed_error, ValueError)
+            self.assertTrue(swapped)
+            self.assertEqual(outside.read_bytes(), b"external-unlink-survivor")
+            with self.assertRaises(ValueError):
+                TaskWorkspace.create(transient_parent, "run-unlink-boundary")
+
+    def test_reservation_clear_swap_is_detected_without_deleting_external_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = TaskWorkspace.create(transient_parent, "run-reservation-clear")
+            preserved = _preserve(base, "reservation-clear")
+            reservation = (
+                workspace.root.parent
+                / ".joewrks-run-reservations"
+                / "run-reservation-clear.json"
+            )
+            parked_reservation = reservation.with_name("parked-reservation.json")
+            outside = base / "outside-reservation-clear.bin"
+            outside.write_bytes(b"external-reservation-survivor")
+            original_unlink = evidence_module.os.unlink
+            original_rename = evidence_module.os.rename
+            original_replace = evidence_module.os.replace
+            original_link = evidence_module.os.link
+            swapped = False
+
+            def install_substitute():
+                nonlocal swapped
+                if swapped:
+                    return
+                swapped = True
+                original_replace(reservation, parked_reservation)
+                original_link(outside, reservation)
+
+            def swap_at_unlink(path, *args, **kwargs):
+                if Path(path) == reservation:
+                    install_substitute()
+                return original_unlink(path, *args, **kwargs)
+
+            def swap_at_rename(source, destination, *args, **kwargs):
+                if Path(source) == reservation:
+                    install_substitute()
+                return original_rename(source, destination, *args, **kwargs)
+
+            observed_error = None
+            with mock.patch.object(
+                evidence_module.os,
+                "unlink",
+                side_effect=swap_at_unlink,
+            ), mock.patch.object(
+                evidence_module.os,
+                "rename",
+                side_effect=swap_at_rename,
+            ):
+                try:
+                    workspace.cleanup(
+                        preserved_evidence_paths=(preserved,),
+                        sibling_paths=(),
+                    )
+                except Exception as error:  # test captures exact boundary outcome
+                    observed_error = error
+
+            self.assertIsInstance(observed_error, ValueError)
+            self.assertTrue(swapped)
+            self.assertEqual(outside.read_bytes(), b"external-reservation-survivor")
+            with self.assertRaises(ValueError):
+                TaskWorkspace.create(transient_parent, "run-reservation-clear")
 
     def test_repository_head_tree_and_clean_status_are_unchanged(self):
         with tempfile.TemporaryDirectory() as directory:
