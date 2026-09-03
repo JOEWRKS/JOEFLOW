@@ -121,3 +121,150 @@ class DeterministicFakeBackend:
             events=self._events,
         )
         return replace(response, **self._metadata_drift)
+
+
+def observed_probe_descriptor():
+    """Return a test-only descriptor representing directly observed real capacity."""
+
+    from reviewer_runner.backend import (
+        BackendDescriptor,
+        CapabilityObservation,
+        REQUIRED_CAPABILITIES,
+        hash_evidence_record,
+    )
+    from reviewer_runner.identity import (
+        BackendIdentity,
+        CapabilityClass,
+        canonical_json_bytes,
+        sha256_bytes,
+    )
+
+    identity = BackendIdentity(
+        backend_kind="STATELESS_TOOLLESS_EXTERNAL_INFERENCE",
+        adapter_id="synthetic-observed-adapter",
+        adapter_version="1.0.0",
+        endpoint_identity="https://synthetic-preflight.example.invalid/v1",
+        deployment_identity="synthetic-isolation-deployment",
+        model_revision_identity="synthetic-model@2026-09-03",
+        model_identity_stability="IMMUTABLE",
+        inference_settings_sha256=sha256_bytes(
+            canonical_json_bytes({"temperature": 0, "structured_output": True})
+        ),
+        retention_policy_identity="synthetic-no-retention",
+        privacy_policy_identity="synthetic-private-inputs",
+        is_test_double=False,
+    )
+    return BackendDescriptor(
+        identity=identity,
+        max_request_bytes=1_000_000,
+        observations=tuple(
+            CapabilityObservation(
+                capability=capability,
+                classification=CapabilityClass.OBSERVED_PASS,
+                method="direct:synthetic-boundary-observation",
+                evidence_sha256=hash_evidence_record(
+                    {
+                        "capability": capability,
+                        "method": "direct:synthetic-boundary-observation",
+                    }
+                ),
+            )
+            for capability in REQUIRED_CAPABILITIES
+        ),
+    )
+
+
+class SyntheticObservedBackend:
+    """Test-only probe endpoint with a descriptor controlled by each test."""
+
+    def __init__(
+        self,
+        *,
+        descriptor,
+        response_factory=None,
+        events=(),
+        metadata_drift: Mapping[str, object] | None = None,
+        resolver_callback=None,
+    ):
+        from reviewer_runner.backend import BackendResponse
+
+        self._descriptor = descriptor
+        self._response_factory = response_factory
+        self._events = tuple(events)
+        self._metadata_drift = dict(metadata_drift or {})
+        allowed_drift = {field.name for field in fields(BackendResponse)}
+        if set(self._metadata_drift).difference(allowed_drift):
+            raise ValueError("metadata_drift contains unsupported BackendResponse fields")
+        self._resolver_callback = resolver_callback
+        self.received_request_bytes: list[bytes] = []
+        self.returned_events = ()
+
+    def describe(self):
+        return self._descriptor
+
+    def invoke(self, request_bytes: bytes, *, timeout_seconds: int):
+        import base64
+
+        from reviewer_runner.backend import BackendResponse
+        from reviewer_runner.identity import (
+            backend_identity_sha256,
+            canonical_json_bytes,
+            sha256_bytes,
+        )
+
+        self.received_request_bytes.append(request_bytes)
+        request = json.loads(request_bytes)
+        run_identity = request["run_identity"]
+        package_record = next(
+            item for item in request["inputs"] if item["logical_role"] == "review_package"
+        )
+        package = json.loads(
+            base64.b64decode(package_record["content_base64"], validate=True)
+        )
+        allowed_nonce = package["allowed_nonce"]
+        if self._response_factory is None:
+            raw_response = canonical_json_bytes(
+                {
+                    "allowed_nonce": allowed_nonce,
+                    "probe_schema_version": "joewrks.throwaway-isolation-probe/1.0",
+                    "response_count": 1,
+                }
+            )
+        else:
+            raw_response = self._response_factory(allowed_nonce)
+        self.returned_events = self._events
+        response = BackendResponse(
+            raw_bytes=raw_response,
+            provider_request_id="synthetic-observed-request",
+            request_sha256=sha256_bytes(request_bytes),
+            reviewer_id=run_identity["reviewer_id"],
+            review_run_id=run_identity["review_run_id"],
+            context_id=run_identity["context_id"],
+            backend_identity_sha256=backend_identity_sha256(self._descriptor.identity),
+            response_count=1,
+            continuation_id=None,
+            previous_response_id=None,
+            events=self._events,
+        )
+        return replace(response, **self._metadata_drift)
+
+
+def observed_probe_backend(
+    *,
+    nonce_source,
+    descriptor=None,
+    response_factory=None,
+    events=(),
+    metadata_drift=None,
+    resolver_callback=None,
+):
+    """Build the test-only backend; nonce_source documents shared test inputs."""
+
+    del nonce_source
+    return SyntheticObservedBackend(
+        descriptor=descriptor or observed_probe_descriptor(),
+        response_factory=response_factory,
+        events=events,
+        metadata_drift=metadata_drift,
+        resolver_callback=resolver_callback,
+    )
