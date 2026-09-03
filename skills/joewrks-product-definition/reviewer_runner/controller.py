@@ -92,10 +92,14 @@ def execute_review(
             controller_only_hashes=dict(prepared.controller_only_hashes),
         )
     except (RequestError, RunnerIdentityError, TypeError, ValueError) as error:
-        return _outcome(
+        return _finish_early(
             RunnerState.PACKAGE_BINDING_MISMATCH,
             classification,
             execution_mode,
+            before=before,
+            repository_root=repository_root,
+            evidence_root=evidence_root,
+            prepared=prepared,
             errors=(str(error),),
         )
 
@@ -109,17 +113,25 @@ def execute_review(
     )
     if authorization is not None:
         state, classification, message = authorization
-        return _outcome(
+        return _finish_early(
             state,
             classification,
             execution_mode,
+            before=before,
+            repository_root=repository_root,
+            evidence_root=evidence_root,
+            prepared=prepared,
             errors=(message,),
         )
     if backend is None or descriptor is None:
-        return _outcome(
+        return _finish_early(
             RunnerState.ISOLATION_CAPABILITY_UNAVAILABLE,
             classification,
             execution_mode,
+            before=before,
+            repository_root=repository_root,
+            evidence_root=evidence_root,
+            prepared=prepared,
             errors=("backend is unavailable",),
         )
 
@@ -132,11 +144,29 @@ def execute_review(
             request.sha256,
         )
     except (RunnerIdentityError, TypeError, ValueError) as error:
-        return _outcome(
+        return _finish_early(
             RunnerState.ISOLATION_PREFLIGHT_FAILED,
             classification,
             execution_mode,
+            before=before,
+            repository_root=repository_root,
+            evidence_root=evidence_root,
+            prepared=prepared,
             errors=(str(error),),
+        )
+
+    try:
+        used_provider_request_ids = load_used_provider_request_ids(evidence_root)
+    except Exception as error:
+        return _finish_early(
+            RunnerState.PACKAGE_BINDING_MISMATCH,
+            classification,
+            execution_mode,
+            before=before,
+            repository_root=repository_root,
+            evidence_root=evidence_root,
+            prepared=prepared,
+            errors=(f"replay index validation failed: {error}",),
         )
 
     try:
@@ -145,10 +175,14 @@ def execute_review(
             prepared.run_identity.review_run_id,
         )
     except (OSError, TypeError, ValueError) as error:
-        return _outcome(
+        return _finish_early(
             RunnerState.REVIEWER_EXECUTION_FAILED,
             classification,
             execution_mode,
+            before=before,
+            repository_root=repository_root,
+            evidence_root=evidence_root,
+            prepared=prepared,
             errors=(str(error),),
         )
 
@@ -170,7 +204,7 @@ def execute_review(
             expected_request_sha256=request.sha256,
             evidence_root=evidence_root,
             output_validator=prepared.output_validator,
-            used_provider_request_ids=load_used_provider_request_ids(evidence_root),
+            used_provider_request_ids=used_provider_request_ids,
         )
         raw_response_path = bound.frozen.path
         preserved_paths.append(bound.frozen.path)
@@ -204,14 +238,15 @@ def execute_review(
         errors.append(str(error))
 
     if state is not RunnerState.REVIEW_COMPLETED:
-        failure_path = _freeze_failure_evidence(
+        if not _record_failure_evidence(
+            "failure.json",
             state,
             errors,
             evidence_root,
             prepared,
-        )
-        if failure_path is not None:
-            preserved_paths.append(failure_path)
+            preserved_paths=preserved_paths,
+        ):
+            state = RunnerState.REVIEWER_EXECUTION_FAILED
 
     cleanup: CleanupResult | None = None
     try:
@@ -222,22 +257,44 @@ def execute_review(
     except Exception as error:
         state = RunnerState.REVIEWER_EXECUTION_FAILED
         errors.append(f"cleanup failed: {error}")
-        _freeze_failure_evidence(state, errors, evidence_root, prepared)
+        _record_failure_evidence(
+            "cleanup-failure.json",
+            state,
+            errors,
+            evidence_root,
+            prepared,
+        )
 
     if cleanup is not None:
         try:
-            cleanup_path = _freeze_cleanup_evidence(
+            _freeze_cleanup_evidence(
                 cleanup,
                 evidence_root,
                 prepared,
             )
-            verify_source_unchanged(before, repository_root)
         except Exception as error:
             state = RunnerState.REVIEWER_EXECUTION_FAILED
-            errors.append(f"post-execution evidence check failed: {error}")
-            _freeze_failure_evidence(state, errors, evidence_root, prepared)
-        else:
-            del cleanup_path
+            errors.append(f"cleanup evidence publication failed: {error}")
+            _record_failure_evidence(
+                "cleanup-evidence-failure.json",
+                state,
+                errors,
+                evidence_root,
+                prepared,
+            )
+
+    try:
+        verify_source_unchanged(before, repository_root)
+    except Exception as error:
+        state = RunnerState.REVIEWER_EXECUTION_FAILED
+        errors.append(f"source readback failed: {error}")
+        _record_failure_evidence(
+            "source-readback-failure.json",
+            state,
+            errors,
+            evidence_root,
+            prepared,
+        )
 
     receipt_path: Path | None = None
     if state is RunnerState.REVIEW_COMPLETED and receipt is not None and cleanup is not None:
@@ -245,8 +302,14 @@ def execute_review(
             receipt_path = _freeze_receipt(receipt, evidence_root, prepared)
         except Exception as error:
             state = RunnerState.REVIEWER_EXECUTION_FAILED
-            errors.append(f"receipt freeze failed: {error}")
-            _freeze_failure_evidence(state, errors, evidence_root, prepared)
+            errors.append(f"receipt evidence publication failed: {error}")
+            _record_failure_evidence(
+                "receipt-publication-failure.json",
+                state,
+                errors,
+                evidence_root,
+                prepared,
+            )
             receipt_path = None
 
     return _outcome(
@@ -391,21 +454,52 @@ def _build_isolation_receipt(
     )
 
 
-def _freeze_failure_evidence(
+def _freeze_diagnostic_evidence(
+    filename: str,
     state: RunnerState,
     errors: list[str],
     evidence_root: Path,
     prepared: PreparedReview,
-) -> Path | None:
+) -> Path:
+    if filename not in {
+        "failure.json",
+        "cleanup-failure.json",
+        "cleanup-evidence-failure.json",
+        "source-readback-failure.json",
+        "receipt-publication-failure.json",
+    }:
+        raise ValueError("diagnostic evidence filename is not permitted")
+    return atomic_freeze_evidence(
+        canonical_json_bytes(
+            {"errors": list(errors), "runner_state": state.value}
+        ),
+        _run_evidence_directory(evidence_root, prepared) / filename,
+    )
+
+
+def _record_failure_evidence(
+    filename: str,
+    state: RunnerState,
+    errors: list[str],
+    evidence_root: Path,
+    prepared: PreparedReview,
+    *,
+    preserved_paths: list[Path] | None = None,
+) -> bool:
     try:
-        return atomic_freeze_evidence(
-            canonical_json_bytes(
-                {"errors": list(errors), "runner_state": state.value}
-            ),
-            _run_evidence_directory(evidence_root, prepared) / "failure.json",
+        path = _freeze_diagnostic_evidence(
+            filename,
+            state,
+            errors,
+            evidence_root,
+            prepared,
         )
-    except (OSError, TypeError, ValueError):
-        return None
+    except Exception as error:
+        errors.append(f"{filename} evidence publication failed: {error}")
+        return False
+    if preserved_paths is not None:
+        preserved_paths.append(path)
+    return True
 
 
 def _freeze_cleanup_evidence(
@@ -471,6 +565,39 @@ def _preflight_classification(preflight: object) -> CapabilityClass:
         classification
         if isinstance(classification, CapabilityClass)
         else CapabilityClass.UNAVAILABLE
+    )
+
+
+def _finish_early(
+    state: RunnerState,
+    classification: CapabilityClass,
+    execution_mode: str,
+    *,
+    before,
+    repository_root: Path,
+    evidence_root: Path,
+    prepared: object,
+    errors: tuple[str, ...],
+) -> RunOutcome:
+    final_errors = list(errors)
+    try:
+        verify_source_unchanged(before, repository_root)
+    except Exception as error:
+        state = RunnerState.REVIEWER_EXECUTION_FAILED
+        final_errors.append(f"source readback failed: {error}")
+        if type(prepared) is PreparedReview:
+            _record_failure_evidence(
+                "source-readback-failure.json",
+                state,
+                final_errors,
+                evidence_root,
+                prepared,
+            )
+    return _outcome(
+        state,
+        classification,
+        execution_mode,
+        errors=tuple(final_errors),
     )
 
 

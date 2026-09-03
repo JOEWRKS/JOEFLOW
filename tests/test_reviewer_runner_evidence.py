@@ -39,6 +39,7 @@ else:
     from reviewer_runner import evidence as evidence_module  # noqa: E402
     from reviewer_runner.evidence import (  # noqa: E402
         CleanupResult,
+        EvidenceLifecycleError,
         SourceSnapshot,
         TaskWorkspace,
         atomic_freeze_evidence,
@@ -549,13 +550,11 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             self.assertTrue(transient_parent.is_dir())
             self.assertTrue(runner_parent.is_dir())
             self.assertTrue(preserved.is_file())
-            recreated = TaskWorkspace.create(transient_parent, "run-cleanup")
-            self.assertEqual(recreated.root, workspace.root)
-            recreated.cleanup(
-                preserved_evidence_paths=(preserved,),
-                sibling_paths=(),
-            )
-            self.assertFalse(os.path.lexists(recreated.root))
+            with self.assertRaisesRegex(
+                EvidenceLifecycleError,
+                "reserved by a prior or active execution",
+            ):
+                TaskWorkspace.create(transient_parent, "run-cleanup")
 
     def test_sibling_root_and_sibling_output_remain_byte_identical(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1105,115 +1104,69 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             )
             self.assertFalse(os.path.lexists(target))
 
-    def test_reservation_clear_swap_is_detected_without_deleting_external_file(self):
+    def test_completed_reservation_remains_canonical_and_blocks_reuse(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-reservation-clear")
-            preserved = _preserve(base, "reservation-clear")
+            workspace = TaskWorkspace.create(transient_parent, "run-reservation-complete")
+            preserved = _preserve(base, "reservation-complete")
             reservation = (
                 workspace.root.parent
                 / ".joewrks-run-reservations"
-                / "run-reservation-clear.json"
-            )
-            parked_reservation = reservation.with_name("parked-reservation.json")
-            outside = base / "outside-reservation-clear.bin"
-            outside.write_bytes(b"external-reservation-survivor")
-            original_unlink = evidence_module.os.unlink
-            original_rename = evidence_module.os.rename
-            original_replace = evidence_module.os.replace
-            original_link = evidence_module.os.link
-            swapped = False
-
-            def install_substitute():
-                nonlocal swapped
-                if swapped:
-                    return
-                swapped = True
-                original_replace(reservation, parked_reservation)
-                original_link(outside, reservation)
-
-            def swap_at_unlink(path, *args, **kwargs):
-                if Path(path) == reservation:
-                    install_substitute()
-                return original_unlink(path, *args, **kwargs)
-
-            def swap_at_rename(source, destination, *args, **kwargs):
-                if Path(source) == reservation:
-                    install_substitute()
-                return original_rename(source, destination, *args, **kwargs)
-
-            observed_error = None
-            with mock.patch.object(
-                evidence_module.os,
-                "unlink",
-                side_effect=swap_at_unlink,
-            ), mock.patch.object(
-                evidence_module.os,
-                "rename",
-                side_effect=swap_at_rename,
-            ):
-                try:
-                    workspace.cleanup(
-                        preserved_evidence_paths=(preserved,),
-                        sibling_paths=(),
-                    )
-                except Exception as error:  # test captures exact boundary outcome
-                    observed_error = error
-
-            self.assertIsInstance(observed_error, ValueError)
-            self.assertTrue(swapped)
-            self.assertEqual(outside.read_bytes(), b"external-reservation-survivor")
-            with self.assertRaises(ValueError):
-                TaskWorkspace.create(transient_parent, "run-reservation-clear")
-
-    def test_reservation_retirement_source_disappearance_restores_active_blocker(self):
-        with tempfile.TemporaryDirectory() as directory:
-            base = Path(directory).resolve()
-            transient_parent = base / "transient"
-            transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-reservation-missing")
-            preserved = _preserve(base, "reservation-missing")
-            reservation = (
-                workspace.root.parent
-                / ".joewrks-run-reservations"
-                / "run-reservation-missing.json"
+                / "run-reservation-complete.json"
             )
             reservation_bytes = reservation.read_bytes()
-            parked_reservation = reservation.with_name("parked-missing-source.json")
-            original_rename = evidence_module.os.rename
-            removed_before_retirement = False
+            workspace.cleanup(
+                preserved_evidence_paths=(preserved,),
+                sibling_paths=(),
+            )
+            self.assertTrue(os.path.lexists(reservation))
+            self.assertEqual(reservation.read_bytes(), reservation_bytes)
+            self.assertTrue(
+                reservation.with_name("run-reservation-complete.completed.json").is_file()
+            )
+            with self.assertRaises(ValueError):
+                TaskWorkspace.create(transient_parent, "run-reservation-complete")
 
-            def park_source_then_fail_rename(source, destination, *args, **kwargs):
-                nonlocal removed_before_retirement
-                if Path(source) == reservation and not removed_before_retirement:
-                    removed_before_retirement = True
-                    original_rename(reservation, parked_reservation)
+    def test_reservation_completion_never_renames_the_canonical_blocker(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = TaskWorkspace.create(transient_parent, "run-reservation-no-rename")
+            preserved = _preserve(base, "reservation-no-rename")
+            reservation = (
+                workspace.root.parent
+                / ".joewrks-run-reservations"
+                / "run-reservation-no-rename.json"
+            )
+            reservation_bytes = reservation.read_bytes()
+            original_rename = evidence_module.os.rename
+
+            def reject_reservation_rename(source, destination, *args, **kwargs):
+                if Path(source) == reservation:
+                    raise AssertionError(
+                        "canonical reservation must never be renamed"
+                    )
                 return original_rename(source, destination, *args, **kwargs)
 
-            observed_error = None
             with mock.patch.object(
                 evidence_module.os,
                 "rename",
-                side_effect=park_source_then_fail_rename,
-            ):
-                try:
-                    workspace.cleanup(
-                        preserved_evidence_paths=(preserved,),
-                        sibling_paths=(),
-                    )
-                except Exception as error:  # test captures exact boundary outcome
-                    observed_error = error
-
-            self.assertIsInstance(observed_error, ValueError)
-            self.assertTrue(removed_before_retirement)
-            self.assertEqual(parked_reservation.read_bytes(), reservation_bytes)
+                side_effect=reject_reservation_rename,
+            ) as rename:
+                workspace.cleanup(
+                    preserved_evidence_paths=(preserved,),
+                    sibling_paths=(),
+                )
+            self.assertFalse(
+                any(Path(call.args[0]) == reservation for call in rename.call_args_list)
+            )
             self.assertTrue(os.path.lexists(reservation))
-            if os.path.lexists(reservation):
-                self.assertEqual(reservation.read_bytes(), reservation_bytes)
+            self.assertEqual(reservation.read_bytes(), reservation_bytes)
             with self.assertRaises(ValueError):
-                TaskWorkspace.create(transient_parent, "run-reservation-missing")
+                TaskWorkspace.create(transient_parent, "run-reservation-no-rename")
 
     def test_repository_head_tree_and_clean_status_are_unchanged(self):
         with tempfile.TemporaryDirectory() as directory:

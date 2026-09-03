@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +38,7 @@ from reviewer_runner.preflight import (  # noqa: E402
     build_preflight_freshness,
     run_isolation_preflight,
 )
+import reviewer_runner.controller as controller_module  # noqa: E402
 from tests.downstream_v21_support import closed_v2_state  # noqa: E402
 from tests.reviewer_runner_support import DeterministicFakeBackend  # noqa: E402
 from tests.semantic_review_support import make_run_set  # noqa: E402
@@ -632,7 +634,7 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
                     / "runs"
                     / prepared.run_identity.review_run_id
                     / prepared.run_identity.context_id
-                    / "failure.json"
+                    / "cleanup-failure.json"
                 ).is_file()
             )
 
@@ -668,6 +670,300 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
             self.assertIsNone(outcome.receipt_path)
             self.assertEqual(len(backend.received_request_bytes), 1)
+
+    def test_completed_run_identity_is_permanently_reserved_before_second_invoke(self):
+        prepared, material = _prepared_v1(
+            run_id="run-permanent-reservation",
+            context_id="context-permanent-reservation",
+        )
+        first_raw = canonical_json_bytes(material["output"])
+        first_backend = _fake_backend(first_raw)
+        first_preflight, first_freshness = _fake_preflight(first_backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            evidence_root = base / "evidence"
+            first = execute_review(
+                prepared,
+                backend=first_backend,
+                preflight=first_preflight,
+                current_freshness=first_freshness,
+                evidence_root=evidence_root,
+                transient_parent=transient_parent,
+                repository_root=repository,
+                execution_mode="SYNTHETIC_TEST",
+            )
+            self.assertEqual(first.state, RunnerState.REVIEW_COMPLETED)
+            first_raw_readback = first.raw_response_path.read_bytes()
+            first_receipt_readback = first.receipt_path.read_bytes()
+            first_receipt = json.loads(first_receipt_readback)
+            self.assertEqual(
+                first_receipt["response_identity"]["raw_response_sha256"],
+                sha256_bytes(first_raw_readback),
+            )
+
+            second_backend = _fake_backend(
+                b" " + first_raw,
+                metadata_drift={
+                    "provider_request_id": "deterministic-fake-request-second"
+                },
+            )
+            second_preflight, second_freshness = _fake_preflight(second_backend)
+            second = execute_review(
+                prepared,
+                backend=second_backend,
+                preflight=second_preflight,
+                current_freshness=second_freshness,
+                evidence_root=evidence_root,
+                transient_parent=transient_parent,
+                repository_root=repository,
+                execution_mode="SYNTHETIC_TEST",
+            )
+
+            self.assertEqual(second.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertEqual(
+                len(first_backend.received_request_bytes)
+                + len(second_backend.received_request_bytes),
+                1,
+                "a completed run identity must block reuse before transmission",
+            )
+            self.assertEqual(first.raw_response_path.read_bytes(), first_raw_readback)
+            self.assertEqual(first.receipt_path.read_bytes(), first_receipt_readback)
+            self.assertEqual(
+                json.loads(first.receipt_path.read_bytes())["response_identity"][
+                    "raw_response_sha256"
+                ],
+                sha256_bytes(first.raw_response_path.read_bytes()),
+            )
+
+    def test_invalid_output_and_cleanup_failure_have_distinct_immutable_diagnostics(self):
+        prepared, _ = _prepared_v1(
+            run_id="run-compound-failure",
+            context_id="context-compound-failure",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            transient_parent = base / "transient"
+            marker = (
+                transient_parent
+                / "joewrks-reviewer-runner"
+                / prepared.run_identity.review_run_id
+                / ".joewrks-runner-owner.json"
+            )
+            delegate = _fake_backend(b'{"unexpected":true}')
+            backend = _PostInvokeSideEffectBackend(delegate, marker.unlink)
+            preflight, freshness = _fake_preflight(backend)
+            outcome, _, _, evidence_root = self._execute(
+                prepared,
+                backend,
+                preflight,
+                freshness,
+                base,
+            )
+            run_evidence = (
+                evidence_root
+                / "runs"
+                / prepared.run_identity.review_run_id
+                / prepared.run_identity.context_id
+            )
+            initial = json.loads((run_evidence / "failure.json").read_bytes())
+            self.assertTrue(
+                (run_evidence / "cleanup-failure.json").is_file(),
+                "cleanup failure must use a distinct immutable diagnostic",
+            )
+            cleanup = json.loads(
+                (run_evidence / "cleanup-failure.json").read_bytes()
+            )
+            self.assertEqual(
+                initial["runner_state"], RunnerState.REVIEW_OUTPUT_INVALID.value
+            )
+            self.assertTrue(
+                any("cleanup failed" in error for error in cleanup["errors"])
+            )
+            self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertTrue(any("cleanup failed" in error for error in outcome.errors))
+
+    def test_failure_evidence_publication_error_is_never_silently_swallowed(self):
+        prepared, _ = _prepared_v1(
+            run_id="run-failure-evidence",
+            context_id="context-failure-evidence",
+        )
+        backend = _fake_backend(b'{"unexpected":true}')
+        preflight, freshness = _fake_preflight(backend)
+        original_freeze = controller_module.atomic_freeze_evidence
+
+        def fail_initial_failure_evidence(content, target_path):
+            if Path(target_path).name == "failure.json":
+                raise OSError("forced initial failure evidence error")
+            return original_freeze(content, target_path)
+
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            controller_module,
+            "atomic_freeze_evidence",
+            side_effect=fail_initial_failure_evidence,
+        ):
+            outcome, _, _, _ = self._execute(
+                prepared,
+                backend,
+                preflight,
+                freshness,
+                Path(directory),
+            )
+        self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+        self.assertTrue(
+            any(
+                "failure.json evidence publication failed" in error
+                for error in outcome.errors
+            )
+        )
+
+    def test_cleanup_evidence_failure_does_not_suppress_repository_drift(self):
+        prepared, material = _prepared_v1(
+            run_id="run-cleanup-evidence-drift",
+            context_id="context-cleanup-evidence-drift",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            evidence_root = base / "evidence"
+            delegate = _fake_backend(canonical_json_bytes(material["output"]))
+
+            def mutate_source():
+                (repository / "unexpected.txt").write_bytes(b"drift")
+
+            backend = _PostInvokeSideEffectBackend(delegate, mutate_source)
+            preflight, freshness = _fake_preflight(backend)
+            original_freeze = controller_module.atomic_freeze_evidence
+
+            def fail_cleanup_evidence(content, target_path):
+                if Path(target_path).name == "cleanup.json":
+                    raise OSError("forced cleanup evidence error")
+                return original_freeze(content, target_path)
+
+            with mock.patch.object(
+                controller_module,
+                "atomic_freeze_evidence",
+                side_effect=fail_cleanup_evidence,
+            ):
+                outcome = execute_review(
+                    prepared,
+                    backend=backend,
+                    preflight=preflight,
+                    current_freshness=freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=transient_parent,
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+            self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertTrue(
+                any("cleanup evidence publication failed" in e for e in outcome.errors)
+            )
+            self.assertTrue(any("source readback failed" in e for e in outcome.errors))
+
+    def test_cleanup_failure_does_not_suppress_repository_drift(self):
+        prepared, material = _prepared_v1(
+            run_id="run-cleanup-drift",
+            context_id="context-cleanup-drift",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            evidence_root = base / "evidence"
+            marker = (
+                transient_parent
+                / "joewrks-reviewer-runner"
+                / prepared.run_identity.review_run_id
+                / ".joewrks-runner-owner.json"
+            )
+            delegate = _fake_backend(canonical_json_bytes(material["output"]))
+
+            def break_cleanup_and_mutate_source():
+                marker.unlink()
+                (repository / "unexpected.txt").write_bytes(b"drift")
+
+            backend = _PostInvokeSideEffectBackend(
+                delegate,
+                break_cleanup_and_mutate_source,
+            )
+            preflight, freshness = _fake_preflight(backend)
+            outcome = execute_review(
+                prepared,
+                backend=backend,
+                preflight=preflight,
+                current_freshness=freshness,
+                evidence_root=evidence_root,
+                transient_parent=transient_parent,
+                repository_root=repository,
+                execution_mode="SYNTHETIC_TEST",
+            )
+            self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertTrue(any("cleanup failed" in e for e in outcome.errors))
+            self.assertTrue(any("source readback failed" in e for e in outcome.errors))
+
+    def test_early_gate_exit_still_requires_repository_readback(self):
+        prepared, _ = _prepared_v1(
+            run_id="run-early-source-readback",
+            context_id="context-early-source-readback",
+        )
+        freshness = build_preflight_freshness(None)
+        preflight = run_isolation_preflight(
+            None,
+            freshness=freshness,
+            nonce_source=_nonce_bytes,
+        )
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            controller_module,
+            "verify_source_unchanged",
+            side_effect=ValueError("injected repository drift"),
+        ) as verify:
+            outcome, _, _, _ = self._execute(
+                prepared,
+                None,
+                preflight,
+                freshness,
+                Path(directory),
+                execution_mode="REAL_REVIEW",
+            )
+        self.assertEqual(verify.call_count, 1)
+        self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+        self.assertTrue(any("source readback failed" in e for e in outcome.errors))
+
+    def test_malformed_replay_index_blocks_transmission_before_invoke(self):
+        prepared, material = _prepared_v1(
+            run_id="run-malformed-index",
+            context_id="context-malformed-index",
+        )
+        backend = _fake_backend(canonical_json_bytes(material["output"]))
+        preflight, freshness = _fake_preflight(backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            evidence_root = base / "evidence"
+            malformed = evidence_root / "runs" / "prior" / "context"
+            malformed.mkdir(parents=True)
+            (malformed / "runner-receipt.json").write_bytes(b'{"invalid":true}')
+            outcome = execute_review(
+                prepared,
+                backend=backend,
+                preflight=preflight,
+                current_freshness=freshness,
+                evidence_root=evidence_root,
+                transient_parent=transient_parent,
+                repository_root=repository,
+                execution_mode="SYNTHETIC_TEST",
+            )
+            self.assertEqual(outcome.state, RunnerState.PACKAGE_BINDING_MISMATCH)
+            self.assertEqual(backend.received_request_bytes, [])
+            self.assertIsNone(outcome.raw_response_path)
 
     def test_oracle_goldens_gate_and_reliability_modules_are_never_imported_or_called(self):
         forbidden = {"goldens", "gate", "statistics", "disagreement", "oracle"}

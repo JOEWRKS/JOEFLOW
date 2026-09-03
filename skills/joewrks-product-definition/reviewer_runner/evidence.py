@@ -222,7 +222,7 @@ class TaskWorkspace:
             source_snapshot_unchanged=source_unchanged,
             cleanup_sha256=sha256_bytes(canonical_json_bytes(result_content)),
         )
-        _clear_run_reservation(self.root.parent, self.root, self.review_run_id)
+        _complete_run_reservation(self.root.parent, self.root, self.review_run_id)
         return result
 
 
@@ -615,11 +615,13 @@ def _verify_run_reservation(
     return reservation_path
 
 
-def _clear_run_reservation(
+def _complete_run_reservation(
     runner_parent: Path,
     task_root: Path,
     review_run_id: str,
 ) -> None:
+    """Freeze completion while retaining the canonical no-clobber blocker."""
+
     reservation_path = _verify_run_reservation(
         runner_parent,
         task_root,
@@ -635,69 +637,33 @@ def _clear_run_reservation(
         "run reservation",
     )
     content = _reservation_bytes(task_root, review_run_id)
-    completed_path = reservation_path.with_name(
-        f".{reservation_path.stem}.{uuid.uuid4().hex}.completed.json"
-    )
-    if os.path.lexists(completed_path):
-        raise EvidenceLifecycleError("completed run reservation path already exists")
     _require_directory_identity(
         reservation_directory,
         directory_identity,
-        "run reservation directory before retirement",
+        "run reservation directory before completion",
     )
-    try:
-        os.rename(reservation_path, completed_path)
-    except OSError as error:
-        _ensure_blocking_reservation(reservation_path, content)
-        raise EvidenceLifecycleError(f"run reservation retirement failed: {error}") from error
-    try:
-        _require_directory_identity(
-            reservation_directory,
-            directory_identity,
-            "run reservation directory after retirement",
-        )
-        if _plain_file_identity(
-            completed_path,
-            "completed run reservation",
-        ) != reservation_identity:
-            raise EvidenceLifecycleError("retired run reservation ownership changed")
-        if completed_path.read_bytes() != content:
-            raise EvidenceLifecycleError("retired run reservation bytes changed")
-        if os.path.lexists(reservation_path):
-            raise EvidenceLifecycleError("active run reservation reappeared after retirement")
-    except (OSError, EvidenceLifecycleError) as error:
-        _ensure_blocking_reservation(reservation_path, content)
-        if isinstance(error, EvidenceLifecycleError):
-            raise
-        raise EvidenceLifecycleError(
-            f"retired run reservation cannot be verified: {error}"
-        ) from error
-
-
-def _ensure_blocking_reservation(reservation_path: Path, content: bytes) -> None:
-    if os.path.lexists(reservation_path):
-        if (
-            not _is_reparse_point(reservation_path)
-            and reservation_path.is_file()
-            and reservation_path.read_bytes() == content
-        ):
-            return
-        raise EvidenceLifecycleError(
-            "ambiguous active run reservation already blocks reuse"
-        )
-    try:
-        with reservation_path.open("xb") as stream:
-            written = stream.write(content)
-            if written != len(content):
-                raise EvidenceLifecycleError("blocking run reservation write was incomplete")
-            stream.flush()
-            os.fsync(stream.fileno())
-    except FileExistsError as error:
-        raise EvidenceLifecycleError(
-            "concurrent active run reservation blocks reuse"
-        ) from error
+    completion_path = reservation_path.with_name(
+        f"{reservation_path.stem}.completed.json"
+    )
+    atomic_freeze_evidence(
+        canonical_json_bytes(
+            {
+                "reservation_sha256": sha256_bytes(content),
+                "review_run_id": review_run_id,
+                "status": "COMPLETED",
+            }
+        ),
+        completion_path,
+    )
+    _require_directory_identity(
+        reservation_directory,
+        directory_identity,
+        "run reservation directory after completion",
+    )
+    if _plain_file_identity(reservation_path, "run reservation") != reservation_identity:
+        raise EvidenceLifecycleError("canonical run reservation identity changed")
     if reservation_path.read_bytes() != content:
-        raise EvidenceLifecycleError("blocking run reservation readback changed")
+        raise EvidenceLifecycleError("canonical run reservation bytes changed")
 
 
 def _reservation_bytes(task_root: Path, review_run_id: str) -> bytes:
