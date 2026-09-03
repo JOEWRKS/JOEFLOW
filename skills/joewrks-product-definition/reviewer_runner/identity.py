@@ -11,6 +11,12 @@ import json
 RUNNER_CONTRACT_VERSION = "joewrks.reviewer-runner/1.0"
 RECEIPT_SCHEMA_VERSION = "joewrks.reviewer-runner-receipt/1.0"
 SEMANTIC_REVIEW_CONTRACT_VERSION = "joewrks.semantic-review/1.0"
+SEMANTIC_REVIEW_CONTRACT_VERSIONS = frozenset(
+    {
+        "joewrks.semantic-review/1.0",
+        "joewrks.semantic-review/2.1",
+    }
+)
 
 _INPUT_ROLES = (
     "reviewer_brief",
@@ -229,10 +235,6 @@ def validate_runner_receipt(
     ):
         _require_digest(getattr(receipt, name), name.upper())
 
-    if receipt.run_identity.package_digest != _inventory_by_role(
-        receipt.permitted_input_inventory
-    )["review_package"].sha256:
-        _fail("PACKAGE_DIGEST_MISMATCH", "package_digest must match review_package")
     if receipt.request_sha256 != receipt.response_identity.request_sha256:
         _fail("REQUEST_DIGEST_MISMATCH", "response request_sha256 does not match receipt")
     if receipt.run_identity.reviewer_id != receipt.response_identity.reviewer_id:
@@ -290,10 +292,10 @@ def validate_receipt_document(document: dict[str, object]) -> RunnerReceipt:
 
 def _validate_run_identity(identity: RunIdentity) -> None:
     _require_instance(identity, RunIdentity, "RUN_IDENTITY_INVALID")
-    if identity.semantic_review_contract_version != SEMANTIC_REVIEW_CONTRACT_VERSION:
+    if identity.semantic_review_contract_version not in SEMANTIC_REVIEW_CONTRACT_VERSIONS:
         _fail(
             "SEMANTIC_REVIEW_CONTRACT_VERSION_MISMATCH",
-            "semantic_review_contract_version is not the semantic-review/1.0 contract",
+            "semantic_review_contract_version is not an admitted exact contract",
         )
     for name in (
         "package_schema_version",

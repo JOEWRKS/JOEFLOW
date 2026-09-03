@@ -1,4 +1,5 @@
 import dataclasses
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -232,7 +233,7 @@ class ReviewerRunnerIdentityTests(unittest.TestCase):
         receipt = build_runner_receipt(**valid_receipt_parts())
         changed = dataclasses.replace(
             receipt.run_identity,
-            semantic_review_contract_version="joewrks.semantic-review/2.1",
+            semantic_review_contract_version="joewrks.semantic-review/2.0",
         )
         with self.assertRaises(RunnerIdentityError) as raised:
             validate_runner_receipt(
@@ -240,6 +241,65 @@ class ReviewerRunnerIdentityTests(unittest.TestCase):
                 expected_run_identity=receipt.run_identity,
             )
         self.assertEqual(raised.exception.code, "SEMANTIC_REVIEW_CONTRACT_VERSION_MISMATCH")
+
+    def test_v21_receipt_accepts_distinct_semantic_and_artifact_digests(self):
+        parts = valid_receipt_parts()
+        semantic_package_digest = _digest("semantic-package-v21")
+        exact_package_bytes_digest = _digest("exact-package-bytes-v21")
+        parts["run_identity"] = dataclasses.replace(
+            parts["run_identity"],
+            semantic_review_contract_version="joewrks.semantic-review/2.1",
+            package_schema_version="joewrks.semantic-review/2.1",
+            package_digest=semantic_package_digest,
+        )
+        parts["permitted_input_inventory"] = tuple(
+            dataclasses.replace(item, sha256=exact_package_bytes_digest)
+            if item.logical_role == "review_package"
+            else item
+            for item in parts["permitted_input_inventory"]
+        )
+        parts["response_identity"] = {
+            **parts["response_identity"],
+            "reviewer_id": parts["run_identity"].reviewer_id,
+            "review_run_id": parts["run_identity"].review_run_id,
+            "context_id": parts["run_identity"].context_id,
+        }
+
+        try:
+            receipt = build_runner_receipt(**parts)
+        except RunnerIdentityError as error:
+            self.fail(f"semantic-review/2.1 receipt must be accepted: {error.code}")
+
+        self.assertEqual(receipt.run_identity.package_digest, semantic_package_digest)
+        package_commitment = next(
+            item
+            for item in receipt.permitted_input_inventory
+            if item.logical_role == "review_package"
+        )
+        self.assertEqual(package_commitment.sha256, exact_package_bytes_digest)
+        self.assertNotEqual(
+            receipt.run_identity.package_digest,
+            package_commitment.sha256,
+        )
+        schema = json.loads(
+            (
+                SKILL_ROOT
+                / "reviewer_runner"
+                / "schemas"
+                / "reviewer-runner-receipt-v1.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            schema["$defs"]["runIdentity"]["properties"][
+                "semantic_review_contract_version"
+            ],
+            {
+                "enum": [
+                    "joewrks.semantic-review/1.0",
+                    "joewrks.semantic-review/2.1",
+                ]
+            },
+        )
 
     def test_floating_model_name_cannot_be_promoted_to_immutable_identity(self):
         parts = valid_receipt_parts()

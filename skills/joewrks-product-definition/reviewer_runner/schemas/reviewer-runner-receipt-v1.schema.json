@@ -63,7 +63,10 @@
       ],
       "properties": {
         "semantic_review_contract_version": {
-          "const": "joewrks.semantic-review/1.0"
+          "enum": [
+            "joewrks.semantic-review/1.0",
+            "joewrks.semantic-review/2.1"
+          ]
         },
         "package_schema_version": { "$ref": "#/$defs/identifier" },
         "package_digest": { "$ref": "#/$defs/digest" },
