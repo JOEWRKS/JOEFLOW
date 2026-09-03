@@ -102,7 +102,6 @@ def execute_review(
             execution_mode,
             before=before,
             repository_root=repository_root,
-            evidence_root=evidence_root,
             prepared=prepared,
             errors=(str(error),),
         )
@@ -123,7 +122,6 @@ def execute_review(
             execution_mode,
             before=before,
             repository_root=repository_root,
-            evidence_root=evidence_root,
             prepared=prepared,
             errors=(message,),
         )
@@ -134,7 +132,6 @@ def execute_review(
             execution_mode,
             before=before,
             repository_root=repository_root,
-            evidence_root=evidence_root,
             prepared=prepared,
             errors=("backend is unavailable",),
         )
@@ -154,7 +151,6 @@ def execute_review(
             execution_mode,
             before=before,
             repository_root=repository_root,
-            evidence_root=evidence_root,
             prepared=prepared,
             errors=(str(error),),
         )
@@ -168,7 +164,6 @@ def execute_review(
             execution_mode,
             before=before,
             repository_root=repository_root,
-            evidence_root=evidence_root,
             prepared=prepared,
             errors=(f"evidence-root lease failed: {error}",),
         )
@@ -198,7 +193,7 @@ def execute_review(
                 execution_mode,
                 before=before,
                 repository_root=repository_root,
-                evidence_root=evidence_lease.root,
+                active_evidence_lease=evidence_lease,
                 prepared=prepared,
                 errors=(f"evidence-root guarded execution failed: {error}",),
             )
@@ -247,7 +242,7 @@ def _execute_with_evidence_root_lease(
             execution_mode,
             before=before,
             repository_root=repository_root,
-            evidence_root=evidence_root,
+            active_evidence_lease=evidence_lease,
             prepared=prepared,
             errors=(f"durable run claim conflict: {error}",),
         )
@@ -258,7 +253,7 @@ def _execute_with_evidence_root_lease(
             execution_mode,
             before=before,
             repository_root=repository_root,
-            evidence_root=evidence_root,
+            active_evidence_lease=evidence_lease,
             prepared=prepared,
             errors=(f"durable run claim failed: {error}",),
         )
@@ -274,7 +269,7 @@ def _execute_with_evidence_root_lease(
             execution_mode,
             before=before,
             repository_root=repository_root,
-            evidence_root=evidence_root,
+            active_evidence_lease=evidence_lease,
             prepared=prepared,
             errors=(f"replay index validation failed: {error}",),
         )
@@ -291,7 +286,7 @@ def _execute_with_evidence_root_lease(
             execution_mode,
             before=before,
             repository_root=repository_root,
-            evidence_root=evidence_root,
+            active_evidence_lease=evidence_lease,
             prepared=prepared,
             errors=(str(error),),
         )
@@ -747,7 +742,7 @@ def _finish_early(
     *,
     before,
     repository_root: Path,
-    evidence_root: Path,
+    active_evidence_lease: EvidenceRootLease | None = None,
     prepared: object,
     errors: tuple[str, ...],
 ) -> RunOutcome:
@@ -757,14 +752,22 @@ def _finish_early(
     except Exception as error:
         state = RunnerState.REVIEWER_EXECUTION_FAILED
         final_errors.append(f"source readback failed: {error}")
-        if type(prepared) is PreparedReview:
-            _record_failure_evidence(
-                "source-readback-failure.json",
-                state,
-                final_errors,
-                evidence_root,
-                prepared,
-            )
+        if type(prepared) is PreparedReview and active_evidence_lease is not None:
+            try:
+                active_evidence_lease.verify()
+            except Exception as verification_error:
+                final_errors.append(
+                    "source readback diagnostic suppressed because evidence-root "
+                    f"lease verification failed: {verification_error}"
+                )
+            else:
+                _record_failure_evidence(
+                    "source-readback-failure.json",
+                    state,
+                    final_errors,
+                    active_evidence_lease.root,
+                    prepared,
+                )
     return _outcome(
         state,
         classification,

@@ -789,6 +789,51 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
         self.assertEqual(verify.call_count, 1)
         self.assertTrue(any("durable run claim failed" in e for e in outcome.errors))
 
+    def test_guarded_early_source_failure_still_records_diagnostic(self):
+        prepared, material = _prepared_v1(
+            run_id="run-guarded-source-diagnostic",
+            context_id="context-guarded-source-diagnostic",
+        )
+        backend = _fake_backend(canonical_json_bytes(material["output"]))
+        preflight, freshness = _fake_preflight(backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            evidence_root = base / "evidence"
+            with mock.patch.object(
+                controller_module,
+                "atomic_claim_evidence",
+                side_effect=OSError("forced guarded claim failure"),
+            ), mock.patch.object(
+                controller_module,
+                "verify_source_unchanged",
+                side_effect=ValueError("forced guarded source drift"),
+            ) as verify:
+                outcome = execute_review(
+                    prepared,
+                    backend=backend,
+                    preflight=preflight,
+                    current_freshness=freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=transient_parent,
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+
+            self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertEqual(verify.call_count, 1)
+            self.assertEqual(len(backend.received_request_bytes), 0)
+            diagnostic = (
+                evidence_root
+                / "runs"
+                / prepared.run_identity.review_run_id
+                / prepared.run_identity.context_id
+                / "source-readback-failure.json"
+            )
+            self.assertTrue(diagnostic.is_file())
+
     def test_durable_claim_rejects_reparse_evidence_root_without_escape(self):
         prepared, material = _prepared_v1(
             run_id="run-claim-reparse-root",
@@ -1027,6 +1072,84 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             self.assertEqual(list(evidence_root.rglob("*")), [])
             evidence_root.rename(base / "released-evidence")
 
+    def test_prelease_source_failure_never_writes_through_replaced_plain_root(self):
+        prepared, material = _prepared_v1(
+            run_id="run-prelease-source-failure",
+            context_id="context-prelease-source-failure",
+        )
+        backend = _fake_backend(canonical_json_bytes(material["output"]))
+        preflight, freshness = _fake_preflight(backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            evidence_root = base / "evidence"
+            parked_root = base / "parked-evidence"
+            replacement_root = base / "external-replacement"
+            replacement_root.mkdir()
+            marker = replacement_root / "external-marker.bin"
+            marker.write_bytes(b"must-remain-byte-identical")
+            external_before = {
+                path.relative_to(replacement_root).as_posix(): path.read_bytes()
+                for path in replacement_root.rglob("*")
+                if path.is_file()
+            }
+            verify_calls = []
+            first_identity = evidence_module._WindowsFileIdentity(
+                volume_serial_number=1,
+                file_id=b"a" * 16,
+            )
+            substituted_identity = evidence_module._WindowsFileIdentity(
+                volume_serial_number=1,
+                file_id=b"b" * 16,
+            )
+
+            def replace_root_during_source_readback(*_args, **_kwargs):
+                verify_calls.append("CALLED")
+                evidence_root.rename(parked_root)
+                replacement_root.rename(evidence_root)
+                raise ValueError("forced source drift after lease acquisition failure")
+
+            with mock.patch.object(
+                evidence_module,
+                "_windows_directory_identity_from_handle",
+                side_effect=(first_identity, substituted_identity),
+            ), mock.patch.object(
+                controller_module,
+                "verify_source_unchanged",
+                side_effect=replace_root_during_source_readback,
+            ):
+                outcome = execute_review(
+                    prepared,
+                    backend=backend,
+                    preflight=preflight,
+                    current_freshness=freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=transient_parent,
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+
+            self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertEqual(verify_calls, ["CALLED"])
+            self.assertEqual(len(backend.received_request_bytes), 0)
+            self.assertEqual(list(parked_root.iterdir()), [])
+            self.assertEqual(
+                {
+                    path.relative_to(evidence_root).as_posix(): path.read_bytes()
+                    for path in evidence_root.rglob("*")
+                    if path.is_file()
+                },
+                external_before,
+            )
+            self.assertFalse(
+                any(
+                    path.name == "source-readback-failure.json"
+                    for path in evidence_root.rglob("*")
+                )
+            )
+
     def test_durable_evidence_claim_blocks_same_identity_across_transient_parents(self):
         prepared, material = _prepared_v1(
             run_id="run-durable-claim",
@@ -1262,6 +1385,14 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
             self.assertTrue(any("cleanup failed" in e for e in outcome.errors))
             self.assertTrue(any("source readback failed" in e for e in outcome.errors))
+            source_diagnostic = (
+                evidence_root
+                / "runs"
+                / prepared.run_identity.review_run_id
+                / prepared.run_identity.context_id
+                / "source-readback-failure.json"
+            )
+            self.assertTrue(source_diagnostic.is_file())
 
     def test_early_gate_exit_still_requires_repository_readback(self):
         prepared, _ = _prepared_v1(
