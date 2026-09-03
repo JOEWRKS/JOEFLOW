@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "joewrks.reviewer-runner-receipt/1.0",
+  "title": "JOEWRKS reviewer runner receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "state",
+    "run_identity",
+    "backend_identity",
+    "permitted_input_inventory",
+    "request_sha256",
+    "capability_preflight_sha256",
+    "isolation_receipt_sha256",
+    "response_identity",
+    "receipt_sha256"
+  ],
+  "properties": {
+    "state": {
+      "enum": [
+        "CALIBRATION_NOT_RUN",
+        "ISOLATION_CAPABILITY_UNAVAILABLE",
+        "ISOLATION_PREFLIGHT_FAILED",
+        "PACKAGE_BINDING_MISMATCH",
+        "REVIEWER_EXECUTION_FAILED",
+        "REVIEW_OUTPUT_INVALID",
+        "REVIEW_COMPLETED"
+      ]
+    },
+    "run_identity": { "$ref": "#/$defs/runIdentity" },
+    "backend_identity": { "$ref": "#/$defs/backendIdentity" },
+    "permitted_input_inventory": { "$ref": "#/$defs/inputInventory" },
+    "request_sha256": { "$ref": "#/$defs/digest" },
+    "capability_preflight_sha256": { "$ref": "#/$defs/digest" },
+    "isolation_receipt_sha256": { "$ref": "#/$defs/digest" },
+    "response_identity": { "$ref": "#/$defs/responseIdentity" },
+    "receipt_sha256": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^\\S(?:.*\\S)?$"
+    },
+    "runIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "semantic_review_contract_version",
+        "package_schema_version",
+        "package_digest",
+        "source_action_contract_hash",
+        "source_definition_digest",
+        "reviewer_id",
+        "review_run_id",
+        "context_id",
+        "cohort_id",
+        "case_id"
+      ],
+      "properties": {
+        "semantic_review_contract_version": {
+          "const": "joewrks.semantic-review/1.0"
+        },
+        "package_schema_version": { "$ref": "#/$defs/identifier" },
+        "package_digest": { "$ref": "#/$defs/digest" },
+        "source_action_contract_hash": { "$ref": "#/$defs/digest" },
+        "source_definition_digest": {
+          "anyOf": [
+            { "$ref": "#/$defs/digest" },
+            { "type": "null" }
+          ]
+        },
+        "reviewer_id": { "$ref": "#/$defs/identifier" },
+        "review_run_id": { "$ref": "#/$defs/identifier" },
+        "context_id": { "$ref": "#/$defs/identifier" },
+        "cohort_id": {
+          "anyOf": [
+            { "$ref": "#/$defs/identifier" },
+            { "type": "null" }
+          ]
+        },
+        "case_id": {
+          "anyOf": [
+            { "$ref": "#/$defs/identifier" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "backendIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend_kind",
+        "adapter_id",
+        "adapter_version",
+        "endpoint_identity",
+        "deployment_identity",
+        "model_revision_identity",
+        "model_identity_stability",
+        "inference_settings_sha256",
+        "retention_policy_identity",
+        "privacy_policy_identity",
+        "is_test_double"
+      ],
+      "properties": {
+        "backend_kind": { "const": "STATELESS_TOOLLESS_EXTERNAL_INFERENCE" },
+        "adapter_id": { "$ref": "#/$defs/identifier" },
+        "adapter_version": { "$ref": "#/$defs/identifier" },
+        "endpoint_identity": { "$ref": "#/$defs/identifier" },
+        "deployment_identity": { "$ref": "#/$defs/identifier" },
+        "model_revision_identity": { "$ref": "#/$defs/identifier" },
+        "model_identity_stability": {
+          "enum": ["IMMUTABLE", "STABLE_DEPLOYMENT", "FLOATING", "UNKNOWN"]
+        },
+        "inference_settings_sha256": { "$ref": "#/$defs/digest" },
+        "retention_policy_identity": { "$ref": "#/$defs/identifier" },
+        "privacy_policy_identity": { "$ref": "#/$defs/identifier" },
+        "is_test_double": { "type": "boolean" }
+      }
+    },
+    "inputCommitment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logical_role", "media_type", "byte_count", "sha256"],
+      "properties": {
+        "logical_role": {
+          "enum": [
+            "reviewer_brief",
+            "review_package",
+            "run_envelope",
+            "output_schema"
+          ]
+        },
+        "media_type": { "$ref": "#/$defs/identifier" },
+        "byte_count": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "inputInventory": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/inputCommitment" },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "logical_role": { "const": "reviewer_brief" } },
+            "required": ["logical_role"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "logical_role": { "const": "review_package" } },
+            "required": ["logical_role"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "logical_role": { "const": "run_envelope" } },
+            "required": ["logical_role"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "logical_role": { "const": "output_schema" } },
+            "required": ["logical_role"]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "responseIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_request_id",
+        "request_sha256",
+        "reviewer_id",
+        "review_run_id",
+        "context_id",
+        "backend_identity_sha256",
+        "response_count",
+        "raw_response_byte_count",
+        "raw_response_sha256",
+        "parsed_output_sha256"
+      ],
+      "properties": {
+        "provider_request_id": { "$ref": "#/$defs/identifier" },
+        "request_sha256": { "$ref": "#/$defs/digest" },
+        "reviewer_id": { "$ref": "#/$defs/identifier" },
+        "review_run_id": { "$ref": "#/$defs/identifier" },
+        "context_id": { "$ref": "#/$defs/identifier" },
+        "backend_identity_sha256": { "$ref": "#/$defs/digest" },
+        "response_count": { "const": 1 },
+        "raw_response_byte_count": { "type": "integer", "minimum": 0 },
+        "raw_response_sha256": { "$ref": "#/$defs/digest" },
+        "parsed_output_sha256": { "$ref": "#/$defs/digest" }
+      }
+    }
+  }
+}
