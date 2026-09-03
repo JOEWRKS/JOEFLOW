@@ -8,6 +8,8 @@ Working name: `Post-M6 Semantic Review Reliability Enablement`
 
 This work is not assigned an `M7` identity.
 
+Capability audit: `evals/post-m6-semantic-review-reliability-enablement/ISOLATION_CAPABILITY_AUDIT.md`
+
 ## 1. Context
 
 The authoritative repository baseline for this design is:

@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-09-03-post-m6-semantic-review-reliability-enablement-design.md`
 
+**Capability audit:** `evals/post-m6-semantic-review-reliability-enablement/ISOLATION_CAPABILITY_AUDIT.md`
+
 ## Global Constraints
 
 - Execute from an isolated Git worktree created with `superpowers:using-git-worktrees` from the PM-approved tip of `origin/plan/post-m6-semantic-review-reliability-enablement`.
@@ -30,6 +32,10 @@
 - Cleanup may remove only resolved, marker-owned task paths after evidence freeze; it must read back absence, preserve siblings, and prove the repository source snapshot is unchanged.
 - No automatic same-context retry is permitted. Transport or validation failure returns one terminal runner state.
 - Every task follows RED → GREEN → REFACTOR and commits only a GREEN focused scope.
+
+> Any test invocation that includes `tests.test_downstream_v21_dogfood_replay`, including `python -m unittest discover -s tests -v`, must provision a temporary clean detached worktree at exact M6 checkpoint `d38b0ca04768888c47e658c79f41e1cec0a7a1ce`, verify tree `40749d900b98936cf694b0c96db7897011cddae8`, bind it through `JOEWRKS_M6_PHASE_B_WORKTREE` for that test process, and remove the temporary worktree after execution. Absence of this fixture is an execution-environment failure, not a semantic/product failure.
+
+This fixture rule applies to the starting implementation baseline, the Task 8 v2.1/M6 replay regression, and the final full repository verification. The historical checkpoint is mandatory and remains an independently read-only worktree; do not copy its evidence into the implementation worktree or change the replay test to skip when the environment variable is absent.
 
 ---
 
