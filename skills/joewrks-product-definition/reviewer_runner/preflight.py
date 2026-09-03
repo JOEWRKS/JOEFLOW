@@ -302,6 +302,20 @@ def run_isolation_preflight(
             outcome={"reason": "capability-prerequisite-not-observed", "invoked": False},
         )
 
+    if required_package_bytes != DEFAULT_REQUIRED_PACKAGE_BYTES:
+        return _build_result(
+            CapabilityClass.UNAVAILABLE,
+            backend_identity_hash=identity_hash,
+            freshness_hash=freshness_hash,
+            request_hash=sha256_bytes(b""),
+            response_hash=None,
+            required_package_bytes=required_package_bytes,
+            actual_request_bytes=0,
+            observations=descriptor_before.observations,
+            forbidden_hashes=(),
+            outcome={"reason": "non-authoritative-package-size", "invoked": False},
+        )
+
     allowed_nonce, forbidden_nonces = _build_nonces(nonce_source)
     forbidden_hashes = tuple(sha256_bytes(value) for value in forbidden_nonces)
     canonical_request = _build_probe_request(allowed_nonce, required_package_bytes)
@@ -516,11 +530,25 @@ def _response_failure_reason(
         )
     except (AttributeError, TypeError, ValueError):
         return "response-boundary-invalid"
+    if _detect_forbidden_canary_leak(
+        response.raw_bytes,
+        events=response.events,
+        forbidden_nonces=forbidden_nonces,
+    ):
+        return "forbidden-canary-leak"
+    if not _has_exactly_one_serialized_allowed_nonce(
+        response.raw_bytes,
+        allowed_nonce,
+    ):
+        return "allowed-nonce-occurrence-invalid"
     if response.events:
         return "forbidden-backend-event"
     try:
-        document = json.loads(response.raw_bytes)
-    except (UnicodeDecodeError, json.JSONDecodeError):
+        document = json.loads(
+            response.raw_bytes,
+            object_pairs_hook=_reject_duplicate_object_keys,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
         return "probe-response-invalid-json"
     if type(document) is not dict or set(document) != {
         "probe_schema_version",
@@ -534,17 +562,48 @@ def _response_failure_reason(
         return "probe-response-count-invalid"
     if document["allowed_nonce"] != allowed_nonce.hex():
         return "allowed-nonce-mismatch"
-    serialized = response.raw_bytes
+    return None
+
+
+def _detect_forbidden_canary_leak(
+    raw_bytes: bytes,
+    *,
+    events: tuple,
+    forbidden_nonces: tuple[bytes, ...],
+) -> bool:
+    """Detect raw forbidden values before schema parsing can mask the evidence."""
+
     for forbidden in forbidden_nonces:
         forbidden_hash = sha256_bytes(forbidden)
         if (
-            forbidden in serialized
-            or forbidden.hex().encode("ascii") in serialized
-            or base64.b64encode(forbidden) in serialized
-            or any(event.metadata_sha256 == forbidden_hash for event in response.events)
+            forbidden in raw_bytes
+            or forbidden.hex().encode("ascii") in raw_bytes
+            or base64.b64encode(forbidden) in raw_bytes
+            or any(
+                getattr(event, "metadata_sha256", None) == forbidden_hash
+                for event in events
+            )
         ):
-            return "forbidden-canary-leak"
-    return None
+            return True
+    return False
+
+
+def _has_exactly_one_serialized_allowed_nonce(
+    raw_bytes: bytes,
+    allowed_nonce: bytes,
+) -> bool:
+    """Require one and only one literal serialized allowed nonce value."""
+
+    return raw_bytes.count(allowed_nonce.hex().encode("ascii")) == 1
+
+
+def _reject_duplicate_object_keys(pairs):
+    document = {}
+    for key, value in pairs:
+        if key in document:
+            raise ValueError("duplicate JSON object key")
+        document[key] = value
+    return document
 
 
 def _build_result(

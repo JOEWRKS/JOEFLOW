@@ -123,8 +123,12 @@ class DeterministicFakeBackend:
         return replace(response, **self._metadata_drift)
 
 
-def observed_probe_descriptor():
-    """Return a test-only descriptor representing directly observed real capacity."""
+def unit_only_eligible_external_descriptor():
+    """Simulate a trusted external descriptor solely for unit branch coverage.
+
+    This helper lives under ``tests`` and is neither a runtime adapter nor evidence
+    suitable for a committed capability receipt.
+    """
 
     from reviewer_runner.backend import (
         BackendDescriptor,
@@ -174,8 +178,13 @@ def observed_probe_descriptor():
     )
 
 
-class SyntheticObservedBackend:
-    """Test-only probe endpoint with a descriptor controlled by each test."""
+class UnitOnlyEligibleExternalAdapterSimulation:
+    """Non-runtime simulation of the trusted external-adapter branch.
+
+    ``is_test_double=False`` is intentionally part of the branch being simulated;
+    this class must remain in test support and must never be registered or persisted
+    as capability evidence.
+    """
 
     def __init__(
         self,
@@ -249,7 +258,7 @@ class SyntheticObservedBackend:
         return replace(response, **self._metadata_drift)
 
 
-def observed_probe_backend(
+def unit_only_eligible_external_adapter(
     *,
     nonce_source,
     descriptor=None,
@@ -258,11 +267,11 @@ def observed_probe_backend(
     metadata_drift=None,
     resolver_callback=None,
 ):
-    """Build the test-only backend; nonce_source documents shared test inputs."""
+    """Build the unit-only eligible-branch simulation."""
 
     del nonce_source
-    return SyntheticObservedBackend(
-        descriptor=descriptor or observed_probe_descriptor(),
+    return UnitOnlyEligibleExternalAdapterSimulation(
+        descriptor=descriptor or unit_only_eligible_external_descriptor(),
         response_factory=response_factory,
         events=events,
         metadata_drift=metadata_drift,

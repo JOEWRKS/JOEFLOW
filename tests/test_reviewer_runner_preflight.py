@@ -80,6 +80,30 @@ def response_bytes(allowed_nonce: str, **extra: object) -> bytes:
     ).encode("utf-8")
 
 
+def response_with_duplicate_key(
+    *,
+    allowed_nonce: str,
+    duplicate_key: str,
+    first_value: object,
+    second_value: object,
+) -> bytes:
+    pairs = [("probe_schema_version", PROBE_SCHEMA_VERSION)]
+    if duplicate_key == "allowed_nonce":
+        pairs.extend(((duplicate_key, first_value), (duplicate_key, second_value)))
+    else:
+        pairs.append(("allowed_nonce", allowed_nonce))
+    if duplicate_key == "response_count":
+        pairs.extend(((duplicate_key, first_value), (duplicate_key, second_value)))
+    else:
+        pairs.append(("response_count", 1))
+    return (
+        "{" + ",".join(
+            json.dumps(key) + ":" + json.dumps(value)
+            for key, value in pairs
+        ) + "}"
+    ).encode("utf-8")
+
+
 def package_from_request(request_bytes: bytes) -> bytes:
     request = json.loads(request_bytes)
     package = next(
@@ -88,14 +112,18 @@ def package_from_request(request_bytes: bytes) -> bytes:
     return base64.b64decode(package["content_base64"], validate=True)
 
 
-def observed_probe_backend(**kwargs):
-    from tests.reviewer_runner_support import observed_probe_backend as build_backend
+def unit_only_eligible_external_adapter(**kwargs):
+    from tests.reviewer_runner_support import (
+        unit_only_eligible_external_adapter as build_backend,
+    )
 
     return build_backend(**kwargs)
 
 
-def observed_probe_descriptor():
-    from tests.reviewer_runner_support import observed_probe_descriptor as build_descriptor
+def unit_only_eligible_external_descriptor():
+    from tests.reviewer_runner_support import (
+        unit_only_eligible_external_descriptor as build_descriptor,
+    )
 
     return build_descriptor()
 
@@ -109,7 +137,7 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
         return build_preflight_freshness(backend.describe().identity)
 
     def test_positive_probe_returns_exact_allowed_nonce_once(self):
-        backend = observed_probe_backend(nonce_source=nonce_bytes)
+        backend = unit_only_eligible_external_adapter(nonce_source=nonce_bytes)
         freshness = self._freshness(backend)
 
         result = run_isolation_preflight(
@@ -140,25 +168,80 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
         for family in FORBIDDEN_FAMILIES:
             self.assertNotIn(nonce_bytes(family).hex().encode("ascii"), request_bytes)
 
-        receipt = build_per_run_isolation_receipt(
+        # This receipt exists only in memory to cover the trusted-adapter branch;
+        # the unit-only simulation never writes or commits capability evidence.
+        ephemeral_receipt = build_per_run_isolation_receipt(
             result,
             current_freshness=freshness,
             backend_identity=backend.describe().identity,
             request_sha256=sha256_bytes(b"bound semantic request"),
         )
-        self.assertEqual(receipt.classification, CapabilityClass.OBSERVED_PASS)
-        self.assertEqual(receipt.preflight_evidence_sha256, result.evidence_sha256)
-        self.assertEqual(len(receipt.receipt_sha256), 64)
+        self.assertEqual(
+            ephemeral_receipt.classification, CapabilityClass.OBSERVED_PASS
+        )
+        self.assertEqual(
+            ephemeral_receipt.preflight_evidence_sha256, result.evidence_sha256
+        )
+        self.assertEqual(len(ephemeral_receipt.receipt_sha256), 64)
+
+    def test_unit_only_eligible_fixture_is_separate_from_runtime_fake_evidence(self):
+        try:
+            from tests.reviewer_runner_support import (
+                UnitOnlyEligibleExternalAdapterSimulation,
+                unit_only_eligible_external_adapter,
+            )
+        except ImportError:
+            self.fail("eligible-branch simulation must be explicitly unit-only")
+
+        simulated = unit_only_eligible_external_adapter(nonce_source=nonce_bytes)
+        self.assertIsInstance(simulated, UnitOnlyEligibleExternalAdapterSimulation)
+        self.assertEqual(type(simulated).__module__, "tests.reviewer_runner_support")
+        self.assertFalse(simulated.describe().identity.is_test_double)
+
+        fake = DeterministicFakeBackend(
+            response_bytes(nonce_bytes("allowed-package-brief").hex())
+        )
+        self.assertTrue(fake.describe().identity.is_test_double)
+        self.assertEqual(
+            classify_backend_eligibility(fake.describe()),
+            CapabilityClass.UNTESTED,
+        )
 
     def test_each_forbidden_canary_family_fails_if_leaked(self):
+        try:
+            from reviewer_runner.preflight import _detect_forbidden_canary_leak
+        except ImportError:
+            self.fail("raw forbidden-canary detection must be independently reachable")
+
+        allowed_nonce = nonce_bytes("allowed-package-brief").hex()
         for family in FORBIDDEN_FAMILIES:
             with self.subTest(family=family):
                 leaked_nonce = nonce_bytes(family).hex()
-                backend = observed_probe_backend(
+                raw_response = response_with_duplicate_key(
+                    allowed_nonce=allowed_nonce,
+                    duplicate_key="allowed_nonce",
+                    first_value=leaked_nonce,
+                    second_value=allowed_nonce,
+                )
+                collapsed = json.loads(raw_response)
+                self.assertEqual(
+                    collapsed,
+                    {
+                        "probe_schema_version": PROBE_SCHEMA_VERSION,
+                        "allowed_nonce": allowed_nonce,
+                        "response_count": 1,
+                    },
+                )
+                self.assertTrue(
+                    _detect_forbidden_canary_leak(
+                        raw_response,
+                        events=(),
+                        forbidden_nonces=(nonce_bytes(family),),
+                    )
+                )
+                backend = unit_only_eligible_external_adapter(
                     nonce_source=nonce_bytes,
-                    response_factory=lambda allowed, leak=leaked_nonce: response_bytes(
-                        allowed, leaked_forbidden_nonce=leak
-                    ),
+                    response_factory=lambda allowed, raw=raw_response: raw,
                 )
                 result = run_isolation_preflight(
                     backend,
@@ -168,9 +251,75 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
                 self.assertEqual(result.classification, CapabilityClass.OBSERVED_FAIL)
                 self.assertIn(sha256_bytes(nonce_bytes(family)), result.forbidden_canary_hashes)
 
+    def test_non_default_package_size_cannot_authorize_or_issue_receipt(self):
+        backend = unit_only_eligible_external_adapter(nonce_source=nonce_bytes)
+        freshness = self._freshness(backend)
+
+        result = run_isolation_preflight(
+            backend,
+            freshness=freshness,
+            nonce_source=nonce_bytes,
+            required_package_bytes=319_065,
+        )
+
+        self.assertNotEqual(result.classification, CapabilityClass.OBSERVED_PASS)
+        self.assertEqual(backend.received_request_bytes, [])
+        with self.assertRaises(ValueError):
+            build_per_run_isolation_receipt(
+                result,
+                current_freshness=freshness,
+                backend_identity=backend.describe().identity,
+                request_sha256=sha256_bytes(b"semantic request"),
+            )
+
+    def test_duplicate_json_keys_or_repeated_allowed_nonce_fail_preflight(self):
+        allowed_nonce = nonce_bytes("allowed-package-brief").hex()
+        for duplicate_key, first_value, second_value in (
+            ("allowed_nonce", allowed_nonce, allowed_nonce),
+            ("response_count", 1, 1),
+        ):
+            with self.subTest(duplicate_key=duplicate_key):
+                raw_response = response_with_duplicate_key(
+                    allowed_nonce=allowed_nonce,
+                    duplicate_key=duplicate_key,
+                    first_value=first_value,
+                    second_value=second_value,
+                )
+                backend = unit_only_eligible_external_adapter(
+                    nonce_source=nonce_bytes,
+                    response_factory=lambda allowed, raw=raw_response: raw,
+                )
+                result = run_isolation_preflight(
+                    backend,
+                    freshness=self._freshness(backend),
+                    nonce_source=nonce_bytes,
+                )
+                self.assertEqual(result.classification, CapabilityClass.OBSERVED_FAIL)
+
+    def test_serialized_allowed_nonce_must_occur_exactly_once(self):
+        try:
+            from reviewer_runner.preflight import (
+                _has_exactly_one_serialized_allowed_nonce,
+            )
+        except ImportError:
+            self.fail("serialized allowed-nonce count must be independently enforced")
+
+        allowed_nonce = nonce_bytes("allowed-package-brief")
+        exact_response = response_bytes(allowed_nonce.hex())
+        repeated_response = response_bytes(
+            allowed_nonce.hex(),
+            repeated_nonce=allowed_nonce.hex(),
+        )
+        self.assertTrue(
+            _has_exactly_one_serialized_allowed_nonce(exact_response, allowed_nonce)
+        )
+        self.assertFalse(
+            _has_exactly_one_serialized_allowed_nonce(repeated_response, allowed_nonce)
+        )
+
     def test_windows_unix_unc_traversal_git_symlink_and_junction_strings_are_inert(self):
         resolver_calls = []
-        backend = observed_probe_backend(
+        backend = unit_only_eligible_external_adapter(
             nonce_source=nonce_bytes,
             resolver_callback=lambda value: resolver_calls.append(value),
         )
@@ -191,7 +340,9 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
         for kind in ("tool", "retrieval", "file"):
             with self.subTest(kind=kind):
                 event = BackendEvent(kind, sha256_bytes(("event:" + kind).encode("utf-8")))
-                backend = observed_probe_backend(nonce_source=nonce_bytes, events=(event,))
+                backend = unit_only_eligible_external_adapter(
+                    nonce_source=nonce_bytes, events=(event,)
+                )
                 result = run_isolation_preflight(
                     backend,
                     freshness=self._freshness(backend),
@@ -202,7 +353,7 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
     def test_continuation_or_previous_response_id_fails_preflight(self):
         for field in ("continuation_id", "previous_response_id"):
             with self.subTest(field=field):
-                backend = observed_probe_backend(
+                backend = unit_only_eligible_external_adapter(
                     nonce_source=nonce_bytes,
                     metadata_drift={field: "prior-response"},
                 )
@@ -219,7 +370,7 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
             (CapabilityClass.OBSERVED_PASS, "inferred-from-provider-docs"),
         ):
             with self.subTest(classification=classification, method=method):
-                descriptor = observed_probe_descriptor()
+                descriptor = unit_only_eligible_external_descriptor()
                 changed = dataclasses.replace(
                     descriptor,
                     observations=(
@@ -231,7 +382,9 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
                         *descriptor.observations[1:],
                     ),
                 )
-                backend = observed_probe_backend(nonce_source=nonce_bytes, descriptor=changed)
+                backend = unit_only_eligible_external_adapter(
+                    nonce_source=nonce_bytes, descriptor=changed
+                )
                 self.assertNotEqual(
                     classify_backend_eligibility(backend.describe()),
                     CapabilityClass.OBSERVED_PASS,
@@ -244,7 +397,7 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
                 self.assertNotEqual(result.classification, CapabilityClass.OBSERVED_PASS)
 
     def test_backend_model_settings_or_policy_drift_invalidates_preflight(self):
-        backend = observed_probe_backend(nonce_source=nonce_bytes)
+        backend = unit_only_eligible_external_adapter(nonce_source=nonce_bytes)
         freshness = self._freshness(backend)
         for field, replacement in (
             ("model_revision_identity", "different-model@2026-09-03"),
@@ -258,7 +411,7 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
                         backend.describe().identity, **{field: replacement}
                     ),
                 )
-                changed_backend = observed_probe_backend(
+                changed_backend = unit_only_eligible_external_adapter(
                     nonce_source=nonce_bytes, descriptor=changed_descriptor
                 )
                 result = run_isolation_preflight(
@@ -276,7 +429,7 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
         policy_drift = dataclasses.replace(
             freshness, capability_policy_sha256=sha256_bytes(b"different-policy")
         )
-        policy_backend = observed_probe_backend(nonce_source=nonce_bytes)
+        policy_backend = unit_only_eligible_external_adapter(nonce_source=nonce_bytes)
         policy_result = run_isolation_preflight(
             policy_backend,
             freshness=policy_drift,
@@ -296,7 +449,7 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
         )
 
     def test_exact_319066_package_capacity_is_sent_without_split(self):
-        backend = observed_probe_backend(nonce_source=nonce_bytes)
+        backend = unit_only_eligible_external_adapter(nonce_source=nonce_bytes)
         result = run_isolation_preflight(
             backend,
             freshness=self._freshness(backend),
@@ -316,8 +469,12 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
         self.assertGreater(result.actual_request_bytes, result.required_package_bytes)
 
     def test_package_too_large_fails_before_semantic_execution(self):
-        descriptor = dataclasses.replace(observed_probe_descriptor(), max_request_bytes=319_066)
-        backend = observed_probe_backend(nonce_source=nonce_bytes, descriptor=descriptor)
+        descriptor = dataclasses.replace(
+            unit_only_eligible_external_descriptor(), max_request_bytes=319_066
+        )
+        backend = unit_only_eligible_external_adapter(
+            nonce_source=nonce_bytes, descriptor=descriptor
+        )
 
         result = run_isolation_preflight(
             backend,
