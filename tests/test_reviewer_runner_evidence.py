@@ -59,25 +59,44 @@ def _git(repository: Path, *arguments: str) -> bytes:
 
 
 def _tree_bytes_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
     resolved = path.resolve(strict=True)
+    manifest = []
     if resolved.is_file():
-        digest.update(b"file\0")
-        digest.update(resolved.read_bytes())
-        return digest.hexdigest()
+        content = resolved.read_bytes()
+        manifest.append(
+            {
+                "byte_count": len(content),
+                "content_sha256": hashlib.sha256(content).hexdigest(),
+                "path": "",
+                "type": "file",
+            }
+        )
+        return hashlib.sha256(
+            json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+    manifest.append({"path": "", "type": "directory"})
     for current, directories, files in os.walk(resolved, topdown=True, followlinks=False):
         directories.sort()
         files.sort()
         current_path = Path(current)
         for name in directories:
             relative = (current_path / name).relative_to(resolved).as_posix()
-            digest.update(b"dir\0" + relative.encode("utf-8") + b"\0")
+            manifest.append({"path": relative, "type": "directory"})
         for name in files:
             candidate = current_path / name
             relative = candidate.relative_to(resolved).as_posix()
-            digest.update(b"file\0" + relative.encode("utf-8") + b"\0")
-            digest.update(candidate.read_bytes())
-    return digest.hexdigest()
+            content = candidate.read_bytes()
+            manifest.append(
+                {
+                    "byte_count": len(content),
+                    "content_sha256": hashlib.sha256(content).hexdigest(),
+                    "path": relative,
+                    "type": "file",
+                }
+            )
+    return hashlib.sha256(
+        json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
 
 
 def _receipt_bytes(provider_request_id: str, review_run_id: str) -> bytes:
@@ -228,6 +247,94 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 frozenset({"provider-request-freeze"}),
             )
 
+    def test_evidence_freeze_rejects_reparse_alias_before_writing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            real_evidence = base / "real-evidence"
+            real_evidence.mkdir()
+            alias = base / "evidence-alias"
+            alias.symlink_to(real_evidence, target_is_directory=True)
+            escaped_target = real_evidence / "receipt.json"
+
+            with self.assertRaises(ValueError):
+                atomic_freeze_evidence(
+                    b"must-not-follow-reparse-alias",
+                    alias / "receipt.json",
+                )
+
+            self.assertFalse(os.path.lexists(escaped_target))
+
+    def test_evidence_freeze_serializes_intervening_writer_without_clobber(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            target = base / "evidence" / "receipt.json"
+            original_replace = evidence_module.os.replace
+            intervention_active = False
+            competing_outcomes = []
+
+            def replace_with_competing_writer(source, destination):
+                nonlocal intervention_active
+                resolved_destination = Path(destination).resolve(strict=False)
+                self.assertEqual(resolved_destination, target.resolve(strict=False))
+                self.assertTrue(resolved_destination.is_relative_to(base))
+                if not intervention_active:
+                    intervention_active = True
+                    try:
+                        try:
+                            atomic_freeze_evidence(
+                                b"competing-writer-bytes",
+                                resolved_destination,
+                            )
+                        except ValueError:
+                            competing_outcomes.append("rejected")
+                        else:
+                            competing_outcomes.append("published")
+                    finally:
+                        intervention_active = False
+                original_replace(source, destination)
+
+            with mock.patch.object(
+                evidence_module.os,
+                "replace",
+                side_effect=replace_with_competing_writer,
+            ):
+                frozen = atomic_freeze_evidence(b"reserved-writer-bytes", target)
+
+            self.assertEqual(competing_outcomes, ["rejected"])
+            self.assertEqual(frozen.read_bytes(), b"reserved-writer-bytes")
+
+    def test_evidence_freeze_reserves_destination_against_exclusive_creator(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            target = base / "evidence" / "receipt.json"
+            original_replace = evidence_module.os.replace
+            creator_outcomes = []
+
+            def replace_after_exclusive_creator(source, destination):
+                resolved_destination = Path(destination).resolve(strict=False)
+                self.assertEqual(resolved_destination, target.resolve(strict=False))
+                self.assertTrue(resolved_destination.is_relative_to(base))
+                try:
+                    with resolved_destination.open("xb") as stream:
+                        stream.write(b"exclusive-intervening-writer")
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                except FileExistsError:
+                    creator_outcomes.append("rejected")
+                else:
+                    creator_outcomes.append("published")
+                original_replace(source, destination)
+
+            with mock.patch.object(
+                evidence_module.os,
+                "replace",
+                side_effect=replace_after_exclusive_creator,
+            ):
+                frozen = atomic_freeze_evidence(b"reserved-destination-bytes", target)
+
+            self.assertEqual(creator_outcomes, ["rejected"])
+            self.assertEqual(frozen.read_bytes(), b"reserved-destination-bytes")
+
     def test_cleanup_removes_only_exact_task_root_and_reads_back_absence(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
@@ -253,6 +360,13 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             self.assertTrue(transient_parent.is_dir())
             self.assertTrue(runner_parent.is_dir())
             self.assertTrue(preserved.is_file())
+            recreated = TaskWorkspace.create(transient_parent, "run-cleanup")
+            self.assertEqual(recreated.root, workspace.root)
+            recreated.cleanup(
+                preserved_evidence_paths=(preserved,),
+                sibling_paths=(),
+            )
+            self.assertFalse(os.path.lexists(recreated.root))
 
     def test_sibling_root_and_sibling_output_remain_byte_identical(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -284,6 +398,41 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 result.sibling_paths_unchanged,
                 tuple(sorted((str(sibling.root), str(sibling_output)))),
             )
+
+    def test_sibling_manifest_rejects_split_file_digest_collision(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = TaskWorkspace.create(transient_parent, "run-framed-sibling")
+            preserved = _preserve(base, "framed-sibling")
+            sibling = base / "sibling-tree"
+            sibling.mkdir()
+            sibling.joinpath("a").write_bytes(b"Xfile\0b\0Y")
+            original_remove_owned_tree = evidence_module._remove_owned_tree
+
+            def delete_then_split_sibling_file(target):
+                resolved_target = Path(target).resolve(strict=True)
+                self.assertEqual(resolved_target, workspace.root)
+                self.assertTrue(resolved_target.is_relative_to(base))
+                original_remove_owned_tree(resolved_target)
+                sibling.joinpath("a").unlink()
+                sibling.joinpath("a").write_bytes(b"X")
+                sibling.joinpath("b").write_bytes(b"Y")
+
+            with mock.patch.object(
+                evidence_module,
+                "_remove_owned_tree",
+                side_effect=delete_then_split_sibling_file,
+            ):
+                with self.assertRaises(ValueError):
+                    workspace.cleanup(
+                        preserved_evidence_paths=(preserved,),
+                        sibling_paths=(sibling,),
+                    )
+
+            self.assertEqual(sibling.joinpath("a").read_bytes(), b"X")
+            self.assertEqual(sibling.joinpath("b").read_bytes(), b"Y")
 
     def test_ambiguous_or_mismatched_ownership_blocks_cleanup_and_next_execution(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -339,6 +488,97 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                     b"outside-survivor",
                 )
 
+    def test_reparse_swap_after_partial_cleanup_is_terminal_and_never_traversed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = TaskWorkspace.create(transient_parent, "run-delete-race")
+            removed_before_swap = workspace.inputs_path / "partial.bin"
+            removed_before_swap.write_bytes(b"owned-partial-cleanup")
+            outside = base / "outside-delete-boundary"
+            outside.mkdir()
+            outside_file = outside / "must-survive.bin"
+            outside_file.write_bytes(b"external-target-bytes")
+            preserved = _preserve(base, "delete-race")
+            original_verify = evidence_module._verify_owned_tree
+
+            def verify_then_partially_remove_and_swap(root):
+                resolved_root = Path(root).resolve(strict=True)
+                self.assertEqual(resolved_root, workspace.root)
+                self.assertTrue(resolved_root.is_relative_to(base))
+                original_verify(resolved_root)
+                self.assertTrue(removed_before_swap.is_relative_to(resolved_root))
+                removed_before_swap.unlink()
+                workspace.synthetic_canaries_path.rmdir()
+                workspace.synthetic_canaries_path.symlink_to(
+                    outside,
+                    target_is_directory=True,
+                )
+
+            with mock.patch.object(
+                evidence_module,
+                "_verify_owned_tree",
+                side_effect=verify_then_partially_remove_and_swap,
+            ):
+                with self.assertRaises(ValueError):
+                    workspace.cleanup(
+                        preserved_evidence_paths=(preserved,),
+                        sibling_paths=(),
+                    )
+
+            self.assertFalse(os.path.lexists(removed_before_swap))
+            self.assertTrue(os.path.lexists(workspace.root))
+            self.assertEqual(outside_file.read_bytes(), b"external-target-bytes")
+            with self.assertRaises(ValueError):
+                TaskWorkspace.create(transient_parent, "run-delete-race")
+
+    def test_parent_reparse_swap_before_child_recursion_never_traverses_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = TaskWorkspace.create(transient_parent, "run-parent-swap")
+            preserved = _preserve(base, "parent-swap")
+            outside = base / "outside-parent-swap"
+            outside_marker_directory = outside / ".joewrks-runner-owner.json"
+            outside_marker_directory.mkdir(parents=True)
+            outside_file = outside_marker_directory / "must-survive.bin"
+            outside_file.write_bytes(b"external-parent-swap-bytes")
+            parked_root = base / "parked-owned-root"
+            original_plain_directory_identity = evidence_module._plain_directory_identity
+            root_identity_checks = 0
+
+            def identity_with_parent_swap(path, label):
+                nonlocal root_identity_checks
+                identity = original_plain_directory_identity(path, label)
+                if Path(path) == workspace.root:
+                    root_identity_checks += 1
+                    if root_identity_checks == 3:
+                        resolved_root = workspace.root.resolve(strict=True)
+                        self.assertEqual(resolved_root, workspace.root)
+                        self.assertTrue(resolved_root.is_relative_to(base))
+                        os.replace(workspace.root, parked_root)
+                        workspace.root.symlink_to(outside, target_is_directory=True)
+                return identity
+
+            with mock.patch.object(
+                evidence_module,
+                "_plain_directory_identity",
+                side_effect=identity_with_parent_swap,
+            ):
+                with self.assertRaises(ValueError):
+                    workspace.cleanup(
+                        preserved_evidence_paths=(preserved,),
+                        sibling_paths=(),
+                    )
+
+            self.assertTrue(outside_file.is_file())
+            if outside_file.is_file():
+                self.assertEqual(outside_file.read_bytes(), b"external-parent-swap-bytes")
+            with self.assertRaises(ValueError):
+                TaskWorkspace.create(transient_parent, "run-parent-swap")
+
     def test_repository_head_tree_and_clean_status_are_unchanged(self):
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory).resolve() / "repository"
@@ -382,8 +622,8 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             preserved = _preserve(base, "cleanup-failure", b"preserved-failure-detail")
 
             with mock.patch.object(
-                evidence_module.shutil,
-                "rmtree",
+                evidence_module,
+                "_remove_owned_tree",
                 side_effect=OSError("synthetic cleanup failure"),
             ):
                 with self.assertRaises(ValueError):
@@ -402,6 +642,38 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 )
             with self.assertRaises(ValueError):
                 TaskWorkspace.create(transient_parent, "run-cleanup-failure")
+
+    def test_post_deletion_verification_failure_blocks_same_run_recreation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = TaskWorkspace.create(transient_parent, "run-post-delete")
+            preserved = _preserve(base, "post-delete", b"before-cleanup")
+            original_remove_owned_tree = evidence_module._remove_owned_tree
+
+            def delete_then_change_preserved_evidence(target):
+                resolved_target = Path(target).resolve(strict=True)
+                self.assertEqual(resolved_target, workspace.root)
+                self.assertTrue(resolved_target.is_relative_to(base))
+                original_remove_owned_tree(resolved_target)
+                self.assertFalse(os.path.lexists(resolved_target))
+                preserved.write_bytes(b"changed-after-delete")
+
+            with mock.patch.object(
+                evidence_module,
+                "_remove_owned_tree",
+                side_effect=delete_then_change_preserved_evidence,
+            ):
+                with self.assertRaises(ValueError):
+                    workspace.cleanup(
+                        preserved_evidence_paths=(preserved,),
+                        sibling_paths=(),
+                    )
+
+            self.assertFalse(os.path.lexists(workspace.root))
+            with self.assertRaises(ValueError):
+                TaskWorkspace.create(transient_parent, "run-post-delete")
 
     def test_prior_output_bytes_do_not_enter_the_next_workspace_or_request(self):
         with tempfile.TemporaryDirectory() as directory:
