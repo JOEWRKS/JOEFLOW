@@ -17,8 +17,8 @@ This audit verifies the runner implementation and its deterministic synthetic te
 
 - Implementation base commit: `71ffc0a66618c11e2fe08a442df5fd2d67718f7b`
 - Implementation base tree: `d77b8b0570543ebd9dbcfc03e3663819e64dc9e9`
-- Audited runner code commit: `b6c1c5358dbb0491ecbce5454181b6d9cc3f2476`
-- Audited runner code tree: `2a24514772d02f146b208c4f3510da85c152c1e1`
+- Audited runner code commit: `0d77f1550b111a71d1f66f7311fa17a80630ba36`
+- Audited runner code tree: `e45f42e899288a18c68e8fe5ffd2717dd1961fc9`
 - Runner contract: `joewrks.reviewer-runner/1.0`
 - Backend kind: `STATELESS_TOOLLESS_EXTERNAL_INFERENCE`
 
@@ -57,15 +57,16 @@ Test and policy modules:
 
 ## Synthetic and Adversarial Results
 
-- Runner plus capability-audit focused suite: `133/133 PASS`, `0` skipped.
+- Runner plus capability-audit focused suite: `136/136 PASS`, `0` skipped.
 - Package dependency-policy suite: `5/5 PASS`, `0` skipped.
 - The audit CLI emitted bytes exactly equal to `RUNNER_CAPABILITY_EVIDENCE.json` on Windows: UTF-8 canonical JSON plus one LF, with no CRLF translation. A task-owned bytecode-prefix probe observed no audit-created files, and the module/CLI bytecode guard restored the caller's original `sys.dont_write_bytecode` state.
-- All Git inspection runs with optional locking disabled, preventing read-only status inspection from refreshing or rewriting the index.
+- All Git inspection and source snapshot/readback runs use `--no-optional-locks`; a stat-stale clean-repository regression preserves the exact index bytes, identity, mode, link count, size, write/change times, attributes, and reparse metadata across both capture and readback.
 - The deterministic fake backend stayed marked `is_test_double = true` and `fake_backend_authoritative = false`.
 - Synthetic positive paths verified deterministic request, identity, raw-response, receipt, cleanup, and source-readback behavior without claiming a real preflight PASS.
 - Adversarial preflight coverage passed for all nine forbidden host-data canary families across the closed response/metadata projection (including `provider_request_id`) in raw, lowercase/uppercase hex, padded/unpadded standard Base64, and padded/unpadded URL-safe Base64 forms. Clean, allowed, and one-character near-miss controls remained accepted. Tool/retrieval events, continuation state, model/settings/policy drift, complete descriptor drift after proof, live OS/runtime drift, capacity mismatch, duplicate JSON keys, repeated nonce, path aliases, and unknown or inferred capability also remained covered.
-- Response and controller coverage passed for binding drift, malformed or duplicate output, replay, transport failure, evidence publication, cleanup, source drift, durable run claims, evidence-root identity pinning, and fail-closed early exits. Raw-response publication now uses the hardened exclusive no-clobber path, including different pre-existing bytes, identical idempotent bytes, and intervening publication.
+- Response and controller coverage passed for binding drift, malformed or duplicate output, replay, transport failure, evidence publication, cleanup, source drift, durable run claims, per-operation reparse rejection, exact Task-6 handle-based final directory deletion, and fail-closed early exits. Raw-response publication now uses the hardened exclusive no-clobber path, including different pre-existing bytes, identical idempotent bytes, and intervening publication.
 - Post-audit whole-branch review restored the approved Task 1/2 identity/request boundaries and the raw-response immutable-evidence boundary: exact nested receipt dataclass types with declared-field serialization, bidirectional semantic-review version comparison, immutable canonical-request inventory, keyword-only controller hashes, controller consumption of that bound inventory, and exclusive raw-response publication. Direct parser/controller coverage also confirms `NaN`, `Infinity`, and `-Infinity` remain rejected as `REVIEW_OUTPUT_INVALID` without a production semantic change.
+- Final whole-branch remediation restored the controller-owned source boundary and transactional workspace setup, removed the out-of-scope Task-7 evidence-root lease and its unapproved native APIs, statically constrains Kernel32 use to the four Task-6-approved functions, and prevents Git source readback from taking optional index locks. Malicious host/controller concurrent evidence-root substitution remains outside the frozen design threat model; the trusted controller boundary, durable run claim, static reparse rejection, all-exit cleanup, and exact final task-owned directory deletion remain unchanged.
 
 Synthetic fake success remains non-authoritative and cannot change `UNAVAILABLE`, `CALIBRATION_NOT_RUN`, or `NOT_MEASURED`.
 
@@ -101,6 +102,7 @@ The required historical M6 replay fixture was created as a fresh detached, byte-
 - Important #7 and Minor #2 remediation: runner plus capability-audit suite `125/125 PASS`, `0` skipped; affected semantic-output, semantic-review/2.1, filesystem-migration, and dependency-policy regression `70/70 PASS`, `0` skipped.
 - Important #4 and #5 remediation: runner plus capability-audit suite `130/130 PASS`, `0` skipped; affected semantic-review/controller contract regression `73/73 PASS`, `0` skipped. All live OS/runtime, capacity, observation method/evidence/classification, and stale caller freshness cases stopped with zero semantic invocations.
 - Residual Important #4 and #5 follow-up: runner plus capability-audit suite `133/133 PASS`, `0` skipped; affected preflight/controller and semantic-output regression `72/72 PASS`, `0` skipped; package dependency-policy suite `5/5 PASS`, `0` skipped. Equivalent uppercase-hex and padded/unpadded standard/URL-safe Base64 canaries cannot earn `OBSERVED_PASS`, and complete descriptor drift injected during evidence, claim, or workspace setup stops at the immediate pre-invocation boundary with zero semantic invocations.
+- Important #1, #2, and #9 remediation: runner plus capability-audit suite `136/136 PASS`, `0` skipped; affected semantic-review, filesystem-migration, and package-policy regression `120/120 PASS`, `0` skipped. Non-Git CWD, stale captured-source, injected marker/owned-directory/runner-parent setup failures, exact reservation/workspace absence readback, Task-6 native API allowlisting, reparse rejection, durable claims, and exact Git index bytes/metadata are covered.
 - The broader counts below are the committed implementation-audit record; this bounded remediation reran the focused and affected suites above rather than a new full repository audit.
 - Existing semantic-review/1.0 and repaired calibration-controller regression: `146/146 PASS`, `0` skipped.
 - semantic-review/2.1, action-conformance/2.1, M5.1/M6, runtime, and frozen-boundary regression: `142/142 PASS`, `0` skipped.
