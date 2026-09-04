@@ -1,7 +1,9 @@
 import ast
 import copy
 import dataclasses
+import hashlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -109,6 +111,56 @@ def _init_clean_repository(parent: Path) -> Path:
         shell=False,
     )
     return repository
+
+
+def _tree_bytes_sha256(path: Path) -> str:
+    resolved = path.resolve(strict=True)
+    manifest = [{"path": "", "type": "directory"}]
+    for current, directories, files in os.walk(
+        resolved,
+        topdown=True,
+        followlinks=False,
+    ):
+        directories.sort()
+        files.sort()
+        current_path = Path(current)
+        for name in directories:
+            candidate = current_path / name
+            relative = candidate.relative_to(resolved).as_posix()
+            if candidate.is_symlink():
+                manifest.append(
+                    {
+                        "path": relative,
+                        "target": os.readlink(candidate),
+                        "type": "symlink",
+                    }
+                )
+            else:
+                manifest.append({"path": relative, "type": "directory"})
+        for name in files:
+            candidate = current_path / name
+            relative = candidate.relative_to(resolved).as_posix()
+            if candidate.is_symlink():
+                manifest.append(
+                    {
+                        "path": relative,
+                        "target": os.readlink(candidate),
+                        "type": "symlink",
+                    }
+                )
+                continue
+            content = candidate.read_bytes()
+            manifest.append(
+                {
+                    "byte_count": len(content),
+                    "content_sha256": hashlib.sha256(content).hexdigest(),
+                    "path": relative,
+                    "type": "file",
+                }
+            )
+    return hashlib.sha256(
+        json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
 
 
 def _v1_material(*, run_id: str = "run-001", context_id: str = "context-001"):
@@ -284,6 +336,187 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             **changes,
         )
         return outcome, repository, transient_parent, evidence_root
+
+    def test_unsafe_path_topology_matrix_fails_before_state_or_invocation(self):
+        cases = (
+            ("evidence-equals-repository", "repository_root overlaps evidence_root"),
+            ("evidence-inside-repository", "repository_root overlaps evidence_root"),
+            ("repository-inside-evidence", "repository_root overlaps evidence_root"),
+            ("transient-equals-repository", "repository_root overlaps transient_parent"),
+            ("transient-inside-repository", "repository_root overlaps transient_parent"),
+            ("repository-inside-transient", "repository_root overlaps transient_parent"),
+            ("writable-roots-equal", "evidence_root overlaps transient_parent"),
+            ("evidence-inside-transient", "evidence_root overlaps transient_parent"),
+            ("transient-inside-evidence", "evidence_root overlaps transient_parent"),
+            ("nonexistent-lexical-alias", "repository_root overlaps evidence_root"),
+        )
+        for index, (label, expected_error) in enumerate(cases):
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                base = Path(directory).resolve()
+                if label == "repository-inside-evidence":
+                    evidence_root = base / "writable-parent"
+                    evidence_root.mkdir()
+                    repository = _init_clean_repository(evidence_root)
+                    transient_parent = base / "transient"
+                    transient_parent.mkdir()
+                elif label == "repository-inside-transient":
+                    transient_parent = base / "writable-parent"
+                    transient_parent.mkdir()
+                    repository = _init_clean_repository(transient_parent)
+                    evidence_root = base / "evidence"
+                else:
+                    repository = _init_clean_repository(base)
+                    if label == "evidence-equals-repository":
+                        evidence_root = repository
+                        transient_parent = base / "transient"
+                        transient_parent.mkdir()
+                    elif label == "evidence-inside-repository":
+                        evidence_root = repository / "future-evidence"
+                        transient_parent = base / "transient"
+                        transient_parent.mkdir()
+                    elif label == "transient-equals-repository":
+                        evidence_root = base / "evidence"
+                        transient_parent = repository
+                    elif label == "transient-inside-repository":
+                        evidence_root = base / "evidence"
+                        transient_parent = repository / "future-transient"
+                    elif label == "writable-roots-equal":
+                        evidence_root = base / "writable"
+                        evidence_root.mkdir()
+                        transient_parent = evidence_root
+                    elif label == "evidence-inside-transient":
+                        transient_parent = base / "writable"
+                        transient_parent.mkdir()
+                        evidence_root = transient_parent / "future-evidence"
+                    elif label == "transient-inside-evidence":
+                        evidence_root = base / "writable"
+                        evidence_root.mkdir()
+                        transient_parent = evidence_root / "future-transient"
+                    elif label == "nonexistent-lexical-alias":
+                        evidence_root = repository / "missing" / ".."
+                        transient_parent = base / "transient"
+                        transient_parent.mkdir()
+                    else:
+                        self.fail(f"unhandled path-topology fixture: {label}")
+
+                prepared, material = _prepared_v1(
+                    run_id=f"run-topology-{index}",
+                    context_id=f"context-topology-{index}",
+                )
+                backend = _fake_backend(canonical_json_bytes(material["output"]))
+                preflight, freshness = _fake_preflight(backend)
+                before = _tree_bytes_sha256(base)
+
+                outcome = execute_review(
+                    prepared,
+                    backend=backend,
+                    preflight=preflight,
+                    current_freshness=freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=transient_parent,
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+
+                self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+                self.assertEqual(
+                    outcome.errors,
+                    (f"unsafe runner path topology: {expected_error}",),
+                )
+                self.assertEqual(backend.received_request_bytes, [])
+                self.assertIsNone(outcome.receipt_path)
+                self.assertIsNone(outcome.raw_response_path)
+                self.assertEqual(_tree_bytes_sha256(base), before)
+                self.assertFalse(any(base.rglob("run-claims")))
+                self.assertFalse(any(base.rglob(".joewrks-run-reservations")))
+                self.assertFalse(any(base.rglob(".joewrks-runner-owner.json")))
+
+    def test_symlink_alias_with_nonexistent_leaf_fails_topology_without_escape(self):
+        prepared, material = _prepared_v1(
+            run_id="run-topology-symlink",
+            context_id="context-topology-symlink",
+        )
+        backend = _fake_backend(canonical_json_bytes(material["output"]))
+        preflight, freshness = _fake_preflight(backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            repository = _init_clean_repository(base)
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            alias = base / "repository-alias"
+            try:
+                alias.symlink_to(repository, target_is_directory=True)
+            except (NotImplementedError, OSError):
+                return
+            evidence_root = alias / "future-evidence"
+            before = _tree_bytes_sha256(base)
+
+            outcome = execute_review(
+                prepared,
+                backend=backend,
+                preflight=preflight,
+                current_freshness=freshness,
+                evidence_root=evidence_root,
+                transient_parent=transient_parent,
+                repository_root=repository,
+                execution_mode="SYNTHETIC_TEST",
+            )
+
+            self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertEqual(
+                outcome.errors,
+                (
+                    "unsafe runner path topology: evidence_root contains a symlink or junction",
+                ),
+            )
+            self.assertEqual(backend.received_request_bytes, [])
+            self.assertEqual(_tree_bytes_sha256(base), before)
+            self.assertFalse((repository / "future-evidence").exists())
+
+    def test_disjoint_absolute_roots_execute_from_unrelated_cwd(self):
+        prepared, material = _prepared_v1(
+            run_id="run-topology-disjoint",
+            context_id="context-topology-disjoint",
+        )
+        backend = _fake_backend(canonical_json_bytes(material["output"]))
+        preflight, freshness = _fake_preflight(backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            repository = _init_clean_repository(base)
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            evidence_root = base / "future-evidence"
+            unrelated_cwd = base / "unrelated-cwd"
+            unrelated_cwd.mkdir()
+            prior_cwd = Path.cwd()
+            try:
+                os.chdir(unrelated_cwd)
+                outcome = execute_review(
+                    prepared,
+                    backend=backend,
+                    preflight=preflight,
+                    current_freshness=freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=transient_parent,
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+            finally:
+                os.chdir(prior_cwd)
+
+            self.assertEqual(outcome.state, RunnerState.REVIEW_COMPLETED)
+            self.assertEqual(len(backend.received_request_bytes), 1)
+            self.assertTrue(outcome.receipt_path.is_file())
+            self.assertTrue(outcome.raw_response_path.is_file())
+            self.assertEqual(
+                subprocess.run(
+                    ["git", "-C", str(repository), "status", "--porcelain=v1"],
+                    check=True,
+                    shell=False,
+                    stdout=subprocess.PIPE,
+                ).stdout,
+                b"",
+            )
 
     def test_real_review_without_backend_returns_isolation_capability_unavailable_before_invoke(self):
         prepared, _ = _prepared_v1()
@@ -1129,7 +1362,7 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             )
             self.assertTrue(diagnostic.is_file())
 
-    def test_durable_claim_rejects_reparse_evidence_root_without_escape(self):
+    def test_controller_topology_rejects_reparse_evidence_root_without_escape(self):
         prepared, material = _prepared_v1(
             run_id="run-claim-reparse-root",
             context_id="context-claim-reparse-root",
@@ -1167,7 +1400,12 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             )
             self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
             self.assertEqual(len(backend.received_request_bytes), 0)
-            self.assertTrue(any("durable run claim failed" in e for e in outcome.errors))
+            self.assertEqual(
+                outcome.errors,
+                (
+                    "unsafe runner path topology: evidence_root contains a symlink or junction",
+                ),
+            )
             self.assertEqual(
                 {
                     path.relative_to(outside).as_posix(): path.read_bytes()

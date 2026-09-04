@@ -109,6 +109,13 @@ class CleanupResult:
     cleanup_sha256: str
 
 
+@dataclass(frozen=True)
+class ResolvedPathTopology:
+    repository_root: Path
+    evidence_root: Path
+    transient_parent: Path
+
+
 @dataclass
 class TaskWorkspace:
     transient_parent: Path
@@ -308,6 +315,33 @@ def verify_source_unchanged(
     if after != before:
         raise EvidenceLifecycleError("repository source snapshot changed")
     return True
+
+
+def validate_runner_path_topology(
+    repository_root: Path,
+    evidence_root: Path,
+    transient_parent: Path,
+) -> ResolvedPathTopology:
+    """Resolve the controller roots and reject every unsafe writable overlap."""
+
+    repository = _resolve_topology_path(
+        repository_root,
+        "repository_root",
+        must_exist=True,
+    )
+    evidence = _resolve_topology_path(evidence_root, "evidence_root")
+    transient = _resolve_topology_path(transient_parent, "transient_parent")
+    if _paths_overlap(repository, evidence):
+        raise EvidenceLifecycleError("repository_root overlaps evidence_root")
+    if _paths_overlap(repository, transient):
+        raise EvidenceLifecycleError("repository_root overlaps transient_parent")
+    if _paths_overlap(evidence, transient):
+        raise EvidenceLifecycleError("evidence_root overlaps transient_parent")
+    return ResolvedPathTopology(
+        repository_root=repository,
+        evidence_root=evidence,
+        transient_parent=transient,
+    )
 
 
 def atomic_freeze_evidence(content: bytes, target_path: Path) -> Path:
@@ -1552,6 +1586,46 @@ def _require_existing_directory(path: Path, label: str) -> Path:
         return path.resolve(strict=True)
     except OSError as error:
         raise EvidenceLifecycleError(f"{label} cannot be resolved") from error
+
+
+def _resolve_topology_path(
+    path: Path,
+    label: str,
+    *,
+    must_exist: bool = False,
+) -> Path:
+    if not isinstance(path, Path):
+        raise EvidenceLifecycleError(f"{label} must be a Path")
+    if not path.is_absolute():
+        raise EvidenceLifecycleError(f"{label} must be absolute")
+    try:
+        absolute = Path(os.path.abspath(path))
+    except (OSError, ValueError) as error:
+        raise EvidenceLifecycleError(f"{label} cannot be normalized") from error
+    _reject_reparse_components(absolute, label)
+
+    existing_ancestor = absolute
+    missing_components: list[str] = []
+    while not os.path.lexists(existing_ancestor):
+        parent = existing_ancestor.parent
+        if _same_path(parent, existing_ancestor) or not existing_ancestor.name:
+            raise EvidenceLifecycleError(
+                f"{label} has no safely resolvable existing ancestor"
+            )
+        missing_components.append(existing_ancestor.name)
+        existing_ancestor = parent
+    _require_plain_directory(existing_ancestor, f"{label} existing ancestor")
+    try:
+        resolved_ancestor = existing_ancestor.resolve(strict=True)
+    except OSError as error:
+        raise EvidenceLifecycleError(
+            f"{label} existing ancestor cannot be resolved"
+        ) from error
+    if must_exist and missing_components:
+        raise EvidenceLifecycleError(f"{label} must already exist")
+
+    resolved = resolved_ancestor.joinpath(*reversed(missing_components))
+    return Path(os.path.normpath(resolved))
 
 
 def _require_plain_directory(path: Path, label: str) -> None:

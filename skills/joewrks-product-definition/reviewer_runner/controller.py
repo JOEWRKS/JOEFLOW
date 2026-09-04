@@ -14,11 +14,13 @@ from .backend import (
 from .evidence import (
     CleanupResult,
     EvidenceClaimConflict,
+    EvidenceLifecycleError,
     TaskWorkspace,
     atomic_claim_evidence,
     atomic_freeze_evidence,
     capture_source_snapshot,
     load_used_provider_request_ids,
+    validate_runner_path_topology,
     verify_source_unchanged,
 )
 from .identity import (
@@ -80,6 +82,22 @@ def execute_review(
     """Execute at most one request and expose success only after cleanup."""
 
     classification = _preflight_classification(preflight)
+    try:
+        topology = validate_runner_path_topology(
+            repository_root,
+            evidence_root,
+            transient_parent,
+        )
+    except EvidenceLifecycleError as error:
+        return _outcome(
+            RunnerState.REVIEWER_EXECUTION_FAILED,
+            classification,
+            execution_mode,
+            errors=(f"unsafe runner path topology: {error}",),
+        )
+    repository_root = topology.repository_root
+    evidence_root = topology.evidence_root
+    transient_parent = topology.transient_parent
     try:
         before = capture_source_snapshot(repository_root)
     except (OSError, TypeError, ValueError) as error:
