@@ -518,6 +518,170 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
                 b"",
             )
 
+    def test_windows_device_namespace_forms_fail_before_resolution_or_state(self):
+        self.assertEqual(os.name, "nt", "device-namespace matrix requires Windows")
+        forms = (
+            ("extended", lambda local: "\\\\?\\" + local),
+            ("device", lambda local: "\\\\.\\" + local),
+            ("nt", lambda local: "\\??\\" + local),
+            ("extended-forward", lambda local: "//?/" + local.replace("\\", "/")),
+            ("device-forward", lambda local: "//./" + local.replace("\\", "/")),
+            ("nt-forward", lambda local: "/??/" + local.replace("\\", "/")),
+            ("nt-double-forward", lambda local: "//??/" + local.replace("\\", "/")),
+            ("extended-mixed", lambda local: "\\\\?/" + local),
+            ("device-mixed", lambda local: "\\\\./" + local),
+            ("nt-mixed", lambda local: "\\??/" + local),
+            ("extended-unc", lambda local: r"\\?\UNC\server\share\future"),
+            ("extended-unc-case", lambda local: r"\\?\uNc\server\share\future"),
+            ("extended-unc-forward", lambda local: "//?/UnC/server/share/future"),
+            ("device-unc", lambda local: r"\\.\UNC\server\share\future"),
+            ("device-unc-forward", lambda local: "//./unc/server/share/future"),
+            ("nt-unc", lambda local: r"\??\UNC\server\share\future"),
+            ("nt-unc-forward", lambda local: "/??/uNc/server/share/future"),
+        )
+        for index, (label, build_path) in enumerate(forms):
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                base = Path(directory).resolve()
+                repository = _init_clean_repository(base)
+                transient_parent = base / "transient"
+                transient_parent.mkdir()
+                prepared, material = _prepared_v1(
+                    run_id=f"run-device-form-{index}",
+                    context_id=f"context-device-form-{index}",
+                )
+                backend = _fake_backend(canonical_json_bytes(material["output"]))
+                preflight, freshness = _fake_preflight(backend)
+                evidence_root = Path(
+                    build_path(str(repository / "future-evidence"))
+                )
+                before = _tree_bytes_sha256(base)
+
+                outcome = execute_review(
+                    prepared,
+                    backend=backend,
+                    preflight=preflight,
+                    current_freshness=freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=transient_parent,
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+
+                self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+                self.assertEqual(
+                    outcome.errors,
+                    (
+                        "unsafe runner path topology: evidence_root uses a Windows device namespace",
+                    ),
+                )
+                self.assertEqual(backend.received_request_bytes, [])
+                self.assertEqual(_tree_bytes_sha256(base), before)
+                self.assertFalse(any(base.rglob("run-claims")))
+                self.assertFalse(any(base.rglob(".joewrks-run-reservations")))
+                self.assertFalse(any(base.rglob(".joewrks-runner-owner.json")))
+
+    def test_windows_extended_alias_physical_topology_matrix_fails_closed(self):
+        self.assertEqual(os.name, "nt", "physical alias matrix requires Windows")
+        cases = (
+            "repository-alias",
+            "evidence-inside-repository",
+            "repository-inside-evidence",
+            "transient-inside-repository",
+            "repository-inside-transient",
+            "writable-roots-equal",
+            "evidence-inside-transient",
+            "transient-inside-evidence",
+        )
+        for index, label in enumerate(cases):
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                base = Path(directory).resolve()
+                evidence_root = base / "evidence"
+                transient_parent = base / "transient"
+                expected_root_label = ""
+                if label == "repository-inside-evidence":
+                    writable_parent = base / "writable-parent"
+                    writable_parent.mkdir()
+                    repository = _init_clean_repository(writable_parent)
+                    evidence_root = Path("\\\\?\\" + str(writable_parent))
+                    transient_parent.mkdir()
+                    expected_root_label = "evidence_root"
+                elif label == "repository-inside-transient":
+                    writable_parent = base / "writable-parent"
+                    writable_parent.mkdir()
+                    repository = _init_clean_repository(writable_parent)
+                    transient_parent = Path("\\\\?\\" + str(writable_parent))
+                    expected_root_label = "transient_parent"
+                else:
+                    repository = _init_clean_repository(base)
+                    if label == "repository-alias":
+                        repository = Path("\\\\?\\" + str(repository))
+                        transient_parent.mkdir()
+                        expected_root_label = "repository_root"
+                    elif label == "evidence-inside-repository":
+                        evidence_root = Path(
+                            "\\\\?\\" + str(repository / "future-evidence")
+                        )
+                        transient_parent.mkdir()
+                        expected_root_label = "evidence_root"
+                    elif label == "transient-inside-repository":
+                        transient_parent = Path(
+                            "\\\\?\\" + str(repository / "future-transient")
+                        )
+                        expected_root_label = "transient_parent"
+                    elif label == "writable-roots-equal":
+                        evidence_root.mkdir()
+                        transient_parent = Path("\\\\?\\" + str(evidence_root))
+                        expected_root_label = "transient_parent"
+                    elif label == "evidence-inside-transient":
+                        transient_parent.mkdir()
+                        evidence_root = Path(
+                            "\\\\?\\" + str(transient_parent / "future-evidence")
+                        )
+                        expected_root_label = "evidence_root"
+                    elif label == "transient-inside-evidence":
+                        evidence_root.mkdir()
+                        transient_parent = Path(
+                            "\\\\?\\" + str(evidence_root / "future-transient")
+                        )
+                        expected_root_label = "transient_parent"
+                    else:
+                        self.fail(f"unhandled physical alias fixture: {label}")
+
+                prepared, material = _prepared_v1(
+                    run_id=f"run-physical-alias-{index}",
+                    context_id=f"context-physical-alias-{index}",
+                )
+                backend = _fake_backend(canonical_json_bytes(material["output"]))
+                preflight, freshness = _fake_preflight(backend)
+                before = _tree_bytes_sha256(base)
+
+                outcome = execute_review(
+                    prepared,
+                    backend=backend,
+                    preflight=preflight,
+                    current_freshness=freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=transient_parent,
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+
+                self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+                self.assertEqual(
+                    outcome.errors,
+                    (
+                        "unsafe runner path topology: "
+                        f"{expected_root_label} uses a Windows device namespace",
+                    ),
+                )
+                self.assertEqual(backend.received_request_bytes, [])
+                self.assertIsNone(outcome.receipt_path)
+                self.assertIsNone(outcome.raw_response_path)
+                self.assertEqual(_tree_bytes_sha256(base), before)
+                self.assertFalse(any(base.rglob("run-claims")))
+                self.assertFalse(any(base.rglob(".joewrks-run-reservations")))
+                self.assertFalse(any(base.rglob(".joewrks-runner-owner.json")))
+
     def test_real_review_without_backend_returns_isolation_capability_unavailable_before_invoke(self):
         prepared, _ = _prepared_v1()
         freshness = build_preflight_freshness(None)

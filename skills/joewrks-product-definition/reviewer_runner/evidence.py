@@ -42,6 +42,12 @@ _WINDOWS_FILE_DISPOSITION_INFO_CLASS = 4
 _WINDOWS_FILE_ID_INFO_CLASS = 0x12
 _WINDOWS_INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
 _WINDOWS_KERNEL32 = None
+_WINDOWS_DEVICE_NAMESPACE_PREFIXES = (
+    "\\\\?\\",
+    "\\\\.\\",
+    "\\??\\",
+    "\\\\??\\",
+)
 _WINDOWS_RESERVED_PATH_STEMS = frozenset(
     {
         "aux",
@@ -1596,6 +1602,7 @@ def _resolve_topology_path(
 ) -> Path:
     if not isinstance(path, Path):
         raise EvidenceLifecycleError(f"{label} must be a Path")
+    _reject_windows_device_namespace(path, label)
     if not path.is_absolute():
         raise EvidenceLifecycleError(f"{label} must be absolute")
     try:
@@ -1626,6 +1633,12 @@ def _resolve_topology_path(
 
     resolved = resolved_ancestor.joinpath(*reversed(missing_components))
     return Path(os.path.normpath(resolved))
+
+
+def _reject_windows_device_namespace(path: Path, label: str) -> None:
+    normalized = str(path).replace("/", "\\")
+    if normalized.startswith(_WINDOWS_DEVICE_NAMESPACE_PREFIXES):
+        raise EvidenceLifecycleError(f"{label} uses a Windows device namespace")
 
 
 def _require_plain_directory(path: Path, label: str) -> None:
