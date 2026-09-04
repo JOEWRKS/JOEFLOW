@@ -27,6 +27,7 @@ from .backend import (
     backend_descriptor_sha256,
     validate_backend_descriptor,
     validate_backend_response,
+    validate_response_event_contract,
 )
 from .identity import (
     BackendIdentity,
@@ -397,6 +398,7 @@ def run_isolation_preflight(
         if failure_reason is not None
         else CapabilityClass.OBSERVED_PASS
     )
+    response_diagnostics = _validated_response_diagnostics(response)
     return _build_result(
         classification,
         backend_identity_hash=identity_hash,
@@ -411,11 +413,7 @@ def run_isolation_preflight(
         outcome={
             "reason": failure_reason or "direct-probe-observed",
             "invoked": True,
-            "response_count": getattr(response, "response_count", None),
-            "event_hashes": [
-                getattr(event, "metadata_sha256", "invalid")
-                for event in getattr(response, "events", ())
-            ],
+            **response_diagnostics,
         },
     )
 
@@ -595,6 +593,25 @@ def _response_failure_reason(
     if document["allowed_nonce"] != allowed_nonce.hex():
         return "allowed-nonce-mismatch"
     return None
+
+
+def _validated_response_diagnostics(response: object) -> dict[str, object]:
+    """Project only closed, validated response values into preflight evidence."""
+
+    diagnostics: dict[str, object] = {
+        "response_count": None,
+        "event_hashes": [],
+    }
+    if type(response) is not BackendResponse:
+        return diagnostics
+    if type(response.response_count) is int and response.response_count == 1:
+        diagnostics["response_count"] = 1
+    try:
+        validate_response_event_contract(response.events)
+    except (TypeError, ValueError):
+        return diagnostics
+    diagnostics["event_hashes"] = [response.events[0].metadata_sha256]
+    return diagnostics
 
 
 def _detect_forbidden_canary_leak(

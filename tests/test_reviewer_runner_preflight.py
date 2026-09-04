@@ -653,6 +653,83 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
                 )
                 self.assertEqual(result.classification, CapabilityClass.OBSERVED_FAIL)
 
+    def test_malformed_untrusted_event_type_matrix_is_deterministic_observed_fail(self):
+        response_event = BackendEvent(
+            "RESPONSE",
+            sha256_bytes(b"preflight-response-event"),
+        )
+        metadata_sha256 = sha256_bytes(b"malformed-event-type-matrix")
+        exotic = object()
+        cases = (
+            ("none-container", None),
+            ("integer-container", 7),
+            ("list-container", [response_event]),
+            ("bytes-container", b"RESPONSE"),
+            ("mapping-container", {"kind": "RESPONSE"}),
+            ("non-event-entry", ("RESPONSE",)),
+            ("mapping-entry", ({"kind": "RESPONSE"},)),
+            ("none-kind", (BackendEvent(None, metadata_sha256),)),
+            ("integer-kind", (BackendEvent(7, metadata_sha256),)),
+            ("bytes-kind", (BackendEvent(b"RESPONSE", metadata_sha256),)),
+            (
+                "nested-mapping-kind",
+                (BackendEvent({"nested": [b"RESPONSE", exotic]}, metadata_sha256),),
+            ),
+            ("none-metadata", (BackendEvent("RESPONSE", None),)),
+            ("integer-metadata", (BackendEvent("RESPONSE", 7),)),
+            ("bytes-metadata", (BackendEvent("RESPONSE", b"1" * 64),)),
+            (
+                "nested-mapping-metadata",
+                (BackendEvent("RESPONSE", {"nested": [b"1", exotic]}),),
+            ),
+        )
+
+        accepted = unit_only_eligible_external_adapter(nonce_source=nonce_bytes)
+        accepted_result = run_isolation_preflight(
+            accepted,
+            freshness=self._freshness(accepted),
+            nonce_source=nonce_bytes,
+        )
+        self.assertEqual(accepted_result.classification, CapabilityClass.OBSERVED_PASS)
+
+        invalid_evidence_hashes = []
+        for label, malformed_events in cases:
+            with self.subTest(label=label):
+                results = []
+                for _ in range(2):
+                    backend = unit_only_eligible_external_adapter(
+                        nonce_source=nonce_bytes,
+                        metadata_drift={"events": malformed_events},
+                    )
+                    try:
+                        result = run_isolation_preflight(
+                            backend,
+                            freshness=self._freshness(backend),
+                            nonce_source=nonce_bytes,
+                        )
+                    except Exception as error:
+                        self.fail(
+                            f"{label} raised {type(error).__name__} instead of "
+                            "returning OBSERVED_FAIL"
+                        )
+                    results.append(result)
+
+                self.assertTrue(all(
+                    result.classification is CapabilityClass.OBSERVED_FAIL
+                    for result in results
+                ))
+                self.assertEqual(
+                    results[0].evidence_sha256,
+                    results[1].evidence_sha256,
+                )
+                invalid_evidence_hashes.append(results[0].evidence_sha256)
+
+        self.assertEqual(
+            len(set(invalid_evidence_hashes)),
+            1,
+            "malformed raw event values must not enter deterministic diagnostics",
+        )
+
     def test_continuation_or_previous_response_id_fails_preflight(self):
         for field in ("continuation_id", "previous_response_id"):
             with self.subTest(field=field):
