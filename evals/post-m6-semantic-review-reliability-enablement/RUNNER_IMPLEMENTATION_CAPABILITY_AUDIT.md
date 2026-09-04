@@ -17,8 +17,8 @@ This audit verifies the runner implementation and its deterministic synthetic te
 
 - Implementation base commit: `71ffc0a66618c11e2fe08a442df5fd2d67718f7b`
 - Implementation base tree: `d77b8b0570543ebd9dbcfc03e3663819e64dc9e9`
-- Audited runner code commit: `2ec493e98c074d432e24a9fd0d30c4e3a437c551`
-- Audited runner code tree: `08013c78b19ecab69574b0b306b397217f3acef7`
+- Audited runner code commit: `af9be1ce6e2d47a591137812c56e8e843bd6dd15`
+- Audited runner code tree: `42f06f3b5e043adc4ffde2de36465d7dcf6a6248`
 - Runner contract: `joewrks.reviewer-runner/1.0`
 - Backend kind: `STATELESS_TOOLLESS_EXTERNAL_INFERENCE`
 
@@ -57,7 +57,7 @@ Test and policy modules:
 
 ## Synthetic and Adversarial Results
 
-- Runner plus capability-audit focused suite: `158/158 PASS`, `0` skipped.
+- Runner plus capability-audit focused suite: `160/160 PASS`, `0` skipped.
 - Package dependency-policy suite: `5/5 PASS`, `0` skipped.
 - The audit CLI emitted bytes exactly equal to `RUNNER_CAPABILITY_EVIDENCE.json` on Windows: UTF-8 canonical JSON plus one LF, with no CRLF translation. A task-owned bytecode-prefix probe observed no audit-created files, the module/CLI bytecode guard restored the caller's original `sys.dont_write_bytecode` state, and a valid-timestamp poisoned `.pyc` in an external cache could not override the verified source bytes.
 - All Git inspection and source snapshot/readback runs use `--no-optional-locks`; a stat-stale clean-repository regression preserves the exact index bytes, identity, mode, link count, size, write/change times, attributes, and reparse metadata across both capture and readback.
@@ -75,6 +75,7 @@ Test and policy modules:
 - Final whole-review Important #4 remediation gives synthetic preflight and real response binding one closed backend event contract: exactly one exact `BackendEvent(kind="RESPONSE", metadata_sha256=<lowercase SHA-256>)` is required and accepted. Missing, duplicate, malformed container/event types, forbidden events before or after `RESPONSE`, `TOOL`, `RETRIEVAL`, `FILE`, `WEB`, `CODE_EXECUTION`, and undeclared kinds fail closed. The closed metadata projection still scans both event fields across the retained raw/hex/Base64 encodings and keeps clean, allowed, and near-miss controls accepted.
 - Important #4 review follow-up closes the untrusted diagnostic boundary after event validation: non-iterable or wrong event containers, non-`BackendEvent` entries, non-string kind/metadata values, bytes, mappings, and nested exotic values all return deterministic `OBSERVED_FAIL`. Preflight evidence projects only exact validated response count/event-hash values; malformed raw objects are neither iterated nor serialized. All malformed matrix members produce the same closed evidence commitment, while the exact one-`RESPONSE` control and exhaustive event-field canary coverage remain unchanged.
 - Final whole-review Important #2 remediation adds one controller-owned resolved-topology gate before source capture and every claim, write, workspace creation, or semantic invocation. It requires absolute roots, resolves a safe existing plain-directory ancestor before reconstructing any nonexistent leaf, rejects existing symlink/junction components, rejects equality or ancestor/descendant overlap between the repository and either writable root, and rejects the same overlap between the evidence and transient roots. Only the returned resolved roots reach later operations; the existing per-operation reparse defenses and Task-6 native API inventory remain unchanged.
+- The Windows namespace follow-up makes that topology gate fail closed before resolution on `\\?\`, `\\.\`, `\??\`, doubled-NT, slash/mixed-slash, and extended UNC forms. Physical equality and ancestry aliases for all three roots now stop before source capture, claims, directories, evidence, workspaces, or semantic invocation; normal disjoint paths, the existing junction/reparse rules, and the approved native API inventory remain unchanged.
 
 Synthetic fake success remains non-authoritative and cannot change `UNAVAILABLE`, `CALIBRATION_NOT_RUN`, or `NOT_MEASURED`.
 
@@ -119,6 +120,7 @@ The required historical M6 replay fixture was created as a fresh detached, byte-
 - Final whole-review Important #4 event-contract remediation: focused backend/preflight/response `45/45 PASS`, affected runner plus both semantic-output contracts `161/161 PASS`, runner plus capability-audit `154/154 PASS`, package policy `5/5 PASS`, and frozen-boundary/legacy-freeze `4/4 PASS`; all had `0` skipped. The controlled RED classified an otherwise eligible exact-`RESPONSE` probe as `OBSERVED_FAIL`; after the shared validator change, the valid control passes and every missing, duplicate, wrong-order/type, forbidden, or undeclared event case fails closed.
 - Important #4 malformed-event follow-up: controlled type-matrix RED produced `4` assertion failures and `0` unittest errors for non-iterable event containers and non-JSON event metadata; GREEN was direct `1/1`, focused backend/preflight/response `46/46`, affected runner plus both semantic-output contracts `162/162`, and runner plus capability-audit `155/155`, all with `0` skipped. Package policy remained `5/5` and frozen-boundary/legacy-freeze remained `4/4`.
 - Final whole-review Important #2 path-topology remediation: controlled RED produced `11` assertion failures and `0` unittest errors across repository/evidence/transient equality and both ancestry directions plus a symlink alias, while the valid disjoint control passed. GREEN was direct topology `3/3`, focused controller `32/32`, affected evidence/controller/response `90/90`, complete runner plus capability audit `158/158`, and package plus frozen-boundary checks `9/9`, all with `0` skipped. Every rejected case invoked the backend zero times and preserved the exact repository/evidence/transient tree manifest without a claim, reservation, workspace marker, or new directory.
+- Windows device-namespace topology follow-up: controlled RED produced `25` assertion failures and `0` unittest errors across prefix syntax variants, extended UNC case variants, and physical equality/ancestry aliases, while the valid disjoint control passed. GREEN was direct matrix/control `3/3`, focused controller `34/34`, affected evidence/controller/response `92/92`, complete runner without audit `144/144`, complete runner plus capability audit `160/160`, and package plus frozen-boundary checks `10/10`, all with `0` skipped. Every namespace rejection returned the same deterministic fail-closed state before filesystem resolution, invoked the backend zero times, and preserved the exact repository/evidence/transient prestate without a claim, reservation, workspace marker, or new directory.
 - Existing semantic-review/1.0 and repaired calibration-controller regression: `146/146 PASS`, `0` skipped.
 - semantic-review/2.1, action-conformance/2.1, M5.1/M6, runtime, and frozen-boundary regression: `142/142 PASS`, `0` skipped.
 - Legacy frozen regression: `37/37 PASS`, `0` skipped.
