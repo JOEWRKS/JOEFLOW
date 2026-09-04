@@ -321,6 +321,13 @@ def _execute_with_evidence_root(
         )
         raw_response_path = bound.frozen.path
         preserved_paths.append(bound.frozen.path)
+        _acquire_provider_request_claim(
+            evidence_root,
+            prepared,
+            descriptor,
+            request.sha256,
+            bound,
+        )
         receipt = build_runner_receipt(
             state=RunnerState.REVIEW_COMPLETED,
             run_identity=prepared.run_identity,
@@ -343,6 +350,18 @@ def _execute_with_evidence_root(
         raw_response_path = _existing_raw_response_path(evidence_root, prepared)
         if raw_response_path is not None:
             preserved_paths.append(raw_response_path)
+    except EvidenceClaimConflict as error:
+        state = RunnerState.PACKAGE_BINDING_MISMATCH
+        errors.append(f"provider request replay: {error}")
+        if bound is not None:
+            raw_response_path = bound.frozen.path
+            preserved_paths.append(bound.frozen.path)
+    except EvidenceLifecycleError as error:
+        state = RunnerState.REVIEWER_EXECUTION_FAILED
+        errors.append(f"provider request claim failed: {error}")
+        if bound is not None:
+            raw_response_path = bound.frozen.path
+            preserved_paths.append(bound.frozen.path)
     except RunnerIdentityError as error:
         state = RunnerState.PACKAGE_BINDING_MISMATCH
         errors.append(f"{error.code}: {error}")
@@ -472,6 +491,31 @@ def _acquire_durable_run_claim(
     return atomic_claim_evidence(
         canonical_json_bytes(claim),
         evidence_root / "run-claims" / f"{identity_key}.json",
+    )
+
+
+def _acquire_provider_request_claim(
+    evidence_root: Path,
+    prepared: PreparedReview,
+    descriptor: BackendDescriptor,
+    request_sha256: str,
+    bound: BoundResponse,
+) -> Path:
+    provider_request_id = bound.identity.provider_request_id
+    claim_key = sha256_bytes(provider_request_id.encode("utf-8", errors="strict"))
+    claim = {
+        "backend_identity": asdict(descriptor.identity),
+        "backend_identity_sha256": bound.identity.backend_identity_sha256,
+        "claim_schema_version": (
+            "joewrks.reviewer-runner-provider-request-claim/1.0"
+        ),
+        "provider_request_id": provider_request_id,
+        "request_sha256": request_sha256,
+        "run_identity": asdict(prepared.run_identity),
+    }
+    return atomic_claim_evidence(
+        canonical_json_bytes(claim),
+        evidence_root / "provider-request-claims" / f"{claim_key}.json",
     )
 
 

@@ -1,4 +1,5 @@
 import ast
+import concurrent.futures
 import copy
 import dataclasses
 import hashlib
@@ -7,6 +8,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -42,6 +44,7 @@ from reviewer_runner.preflight import (  # noqa: E402
 )
 from reviewer_runner.request import build_canonical_request  # noqa: E402
 import reviewer_runner.controller as controller_module  # noqa: E402
+import reviewer_runner.evidence as evidence_module  # noqa: E402
 from tests.downstream_v21_support import closed_v2_state  # noqa: E402
 from tests.reviewer_runner_support import DeterministicFakeBackend  # noqa: E402
 from tests.semantic_review_support import make_run_set  # noqa: E402
@@ -288,6 +291,24 @@ class _PostInvokeSideEffectBackend:
             timeout_seconds=timeout_seconds,
         )
         self._side_effect()
+        return response
+
+
+class _BarrierBackend:
+    def __init__(self, delegate, barrier):
+        self._delegate = delegate
+        self._barrier = barrier
+        self.received_request_bytes = delegate.received_request_bytes
+
+    def describe(self):
+        return self._delegate.describe()
+
+    def invoke(self, request_bytes: bytes, *, timeout_seconds: int):
+        response = self._delegate.invoke(
+            request_bytes,
+            timeout_seconds=timeout_seconds,
+        )
+        self._barrier.wait(timeout=10)
         return response
 
 
@@ -1451,6 +1472,515 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
                 ],
                 sha256_bytes(first.raw_response_path.read_bytes()),
             )
+
+    def test_preseeded_provider_request_claim_is_a_permanent_replay_failure(self):
+        provider_request_id = "provider-preseeded-request"
+        prepared, material = _prepared_v1(
+            run_id="run-provider-preseeded",
+            context_id="context-provider-preseeded",
+        )
+        backend = _fake_backend(
+            canonical_json_bytes(material["output"]),
+            metadata_drift={"provider_request_id": provider_request_id},
+        )
+        preflight, freshness = _fake_preflight(backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            evidence_root = base / "evidence"
+            claim_key = hashlib.sha256(provider_request_id.encode("utf-8")).hexdigest()
+            claim_path = (
+                evidence_root / "provider-request-claims" / f"{claim_key}.json"
+            )
+            claim_path.parent.mkdir(parents=True)
+            preseeded_bytes = b'{"preseeded-provider-claim":true}'
+            claim_path.write_bytes(preseeded_bytes)
+
+            outcome, _, _, _ = self._execute(
+                prepared,
+                backend,
+                preflight,
+                freshness,
+                base,
+            )
+
+            self.assertEqual(outcome.state, RunnerState.PACKAGE_BINDING_MISMATCH)
+            self.assertEqual(len(backend.received_request_bytes), 1)
+            self.assertIsNone(outcome.receipt_path)
+            self.assertEqual(claim_path.read_bytes(), preseeded_bytes)
+            self.assertTrue(outcome.raw_response_path.is_file())
+            self.assertTrue(any("provider request replay" in e for e in outcome.errors))
+
+    def test_concurrent_distinct_runs_with_one_provider_id_have_exactly_one_receipt(self):
+        provider_request_id = "provider-concurrent-shared"
+        first_prepared, first_material = _prepared_v1(
+            run_id="run-provider-concurrent-a",
+            context_id="context-provider-concurrent-a",
+        )
+        second_prepared, second_material = _prepared_v1(
+            run_id="run-provider-concurrent-b",
+            context_id="context-provider-concurrent-b",
+        )
+        barrier = threading.Barrier(2)
+        first_backend = _BarrierBackend(
+            _fake_backend(
+                canonical_json_bytes(first_material["output"]),
+                metadata_drift={"provider_request_id": provider_request_id},
+            ),
+            barrier,
+        )
+        second_backend = _BarrierBackend(
+            _fake_backend(
+                canonical_json_bytes(second_material["output"]),
+                metadata_drift={"provider_request_id": provider_request_id},
+            ),
+            barrier,
+        )
+        first_preflight, first_freshness = _fake_preflight(first_backend)
+        second_preflight, second_freshness = _fake_preflight(second_backend)
+
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            evidence_root = base / "evidence"
+            first_transient = base / "transient-a"
+            second_transient = base / "transient-b"
+            first_transient.mkdir()
+            second_transient.mkdir()
+
+            def run_once(prepared, backend, preflight, freshness, transient_parent):
+                return execute_review(
+                    prepared,
+                    backend=backend,
+                    preflight=preflight,
+                    current_freshness=freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=transient_parent,
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                first_future = executor.submit(
+                    run_once,
+                    first_prepared,
+                    first_backend,
+                    first_preflight,
+                    first_freshness,
+                    first_transient,
+                )
+                second_future = executor.submit(
+                    run_once,
+                    second_prepared,
+                    second_backend,
+                    second_preflight,
+                    second_freshness,
+                    second_transient,
+                )
+                outcomes = (first_future.result(), second_future.result())
+
+            self.assertEqual(
+                sorted(outcome.state.value for outcome in outcomes),
+                [
+                    RunnerState.PACKAGE_BINDING_MISMATCH.value,
+                    RunnerState.REVIEW_COMPLETED.value,
+                ],
+            )
+            self.assertEqual(
+                len(list((evidence_root / "runs").rglob("runner-receipt.json"))),
+                1,
+            )
+            self.assertEqual(
+                sum(outcome.receipt_path is not None for outcome in outcomes),
+                1,
+            )
+            replay = next(
+                outcome
+                for outcome in outcomes
+                if outcome.state is RunnerState.PACKAGE_BINDING_MISMATCH
+            )
+            self.assertTrue(any("provider request replay" in e for e in replay.errors))
+            claims = list((evidence_root / "provider-request-claims").glob("*.json"))
+            self.assertEqual(len(claims), 1)
+            self.assertEqual(
+                claims[0].name,
+                f"{hashlib.sha256(provider_request_id.encode('utf-8')).hexdigest()}.json",
+            )
+            claim = json.loads(claims[0].read_bytes())
+            winner = next(
+                outcome
+                for outcome in outcomes
+                if outcome.state is RunnerState.REVIEW_COMPLETED
+            )
+            receipt = json.loads(winner.receipt_path.read_bytes())
+            expected_by_run_id = {
+                first_prepared.run_identity.review_run_id: (
+                    first_prepared,
+                    first_backend,
+                ),
+                second_prepared.run_identity.review_run_id: (
+                    second_prepared,
+                    second_backend,
+                ),
+            }
+            winning_prepared, winning_backend = expected_by_run_id[
+                receipt["run_identity"]["review_run_id"]
+            ]
+            self.assertEqual(
+                claim,
+                {
+                    "backend_identity": dataclasses.asdict(
+                        winning_backend.describe().identity
+                    ),
+                    "backend_identity_sha256": backend_identity_sha256(
+                        winning_backend.describe().identity
+                    ),
+                    "claim_schema_version": (
+                        "joewrks.reviewer-runner-provider-request-claim/1.0"
+                    ),
+                    "provider_request_id": provider_request_id,
+                    "request_sha256": hashlib.sha256(
+                        winning_backend.received_request_bytes[0]
+                    ).hexdigest(),
+                    "run_identity": dataclasses.asdict(winning_prepared.run_identity),
+                },
+            )
+            self.assertEqual(
+                receipt["response_identity"]["provider_request_id"],
+                provider_request_id,
+            )
+            self.assertEqual(len(first_backend.received_request_bytes), 1)
+            self.assertEqual(len(second_backend.received_request_bytes), 1)
+            self.assertFalse(
+                any(
+                    path.name.endswith((".tmp", ".freeze.lock"))
+                    for path in evidence_root.rglob("*")
+                )
+            )
+
+    def test_concurrent_distinct_provider_ids_each_publish_one_receipt_and_claim(self):
+        prepared_runs = (
+            _prepared_v1(
+                run_id="run-provider-distinct-a",
+                context_id="context-provider-distinct-a",
+            ),
+            _prepared_v1(
+                run_id="run-provider-distinct-b",
+                context_id="context-provider-distinct-b",
+            ),
+        )
+        provider_ids = ("provider-distinct-a", "provider-distinct-b")
+        barrier = threading.Barrier(2)
+        backends = tuple(
+            _BarrierBackend(
+                _fake_backend(
+                    canonical_json_bytes(material["output"]),
+                    metadata_drift={"provider_request_id": provider_request_id},
+                ),
+                barrier,
+            )
+            for (_, material), provider_request_id in zip(prepared_runs, provider_ids)
+        )
+        proof = tuple(_fake_preflight(backend) for backend in backends)
+
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            evidence_root = base / "evidence"
+            transient_roots = (base / "transient-a", base / "transient-b")
+            for transient_root in transient_roots:
+                transient_root.mkdir()
+
+            def run_index(index):
+                preflight, freshness = proof[index]
+                return execute_review(
+                    prepared_runs[index][0],
+                    backend=backends[index],
+                    preflight=preflight,
+                    current_freshness=freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=transient_roots[index],
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                outcomes = tuple(executor.map(run_index, range(2)))
+
+            self.assertEqual(
+                [outcome.state for outcome in outcomes],
+                [RunnerState.REVIEW_COMPLETED, RunnerState.REVIEW_COMPLETED],
+                [outcome.errors for outcome in outcomes],
+            )
+            self.assertEqual(
+                len(list((evidence_root / "runs").rglob("runner-receipt.json"))),
+                2,
+            )
+            claims = list((evidence_root / "provider-request-claims").glob("*.json"))
+            self.assertEqual(
+                {path.name for path in claims},
+                {
+                    f"{hashlib.sha256(provider_request_id.encode('utf-8')).hexdigest()}.json"
+                    for provider_request_id in provider_ids
+                },
+            )
+            self.assertEqual(
+                {json.loads(path.read_bytes())["provider_request_id"] for path in claims},
+                set(provider_ids),
+            )
+
+    def test_provider_claim_store_failures_never_publish_a_success_receipt(self):
+        failure_cases = (
+            ("write", "forced provider claim write failure"),
+            ("fsync", "forced provider claim fsync failure"),
+            ("readback", "forced provider claim readback failure"),
+        )
+        for index, (failure_operation, failure_message) in enumerate(failure_cases):
+            with self.subTest(failure_operation=failure_operation):
+                prepared, material = _prepared_v1(
+                    run_id=f"run-provider-claim-io-{index}",
+                    context_id=f"context-provider-claim-io-{index}",
+                )
+                backend = _fake_backend(
+                    canonical_json_bytes(material["output"]),
+                    metadata_drift={
+                        "provider_request_id": f"provider-claim-io-{index}"
+                    },
+                )
+                preflight, freshness = _fake_preflight(backend)
+                original_claim = controller_module.atomic_claim_evidence
+                expected_provider_claim = None
+                expected_provider_claim_path = None
+
+                def fail_provider_claim(content, target_path):
+                    nonlocal expected_provider_claim, expected_provider_claim_path
+                    if target_path.parent.name == "provider-request-claims":
+                        expected_provider_claim = content
+                        expected_provider_claim_path = target_path
+                        if failure_operation == "write":
+                            with mock.patch.object(
+                                evidence_module.os,
+                                "write",
+                                side_effect=OSError(failure_message),
+                            ):
+                                return original_claim(content, target_path)
+                        if failure_operation == "fsync":
+                            with mock.patch.object(
+                                evidence_module.os,
+                                "fsync",
+                                side_effect=OSError(failure_message),
+                            ):
+                                return original_claim(content, target_path)
+                        original_read_bytes = Path.read_bytes
+
+                        def fail_exact_claim_readback(path):
+                            if Path(path) == target_path:
+                                raise OSError(failure_message)
+                            return original_read_bytes(path)
+
+                        with mock.patch.object(
+                            Path,
+                            "read_bytes",
+                            fail_exact_claim_readback,
+                        ):
+                            return original_claim(content, target_path)
+                    return original_claim(content, target_path)
+
+                with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+                    controller_module,
+                    "atomic_claim_evidence",
+                    side_effect=fail_provider_claim,
+                ):
+                    base = Path(directory)
+                    outcome, _, _, evidence_root = self._execute(
+                        prepared,
+                        backend,
+                        preflight,
+                        freshness,
+                        base,
+                    )
+
+                    self.assertEqual(
+                        outcome.state,
+                        RunnerState.REVIEWER_EXECUTION_FAILED,
+                    )
+                    self.assertEqual(len(backend.received_request_bytes), 1)
+                    self.assertIsNone(outcome.receipt_path)
+                    self.assertTrue(outcome.raw_response_path.is_file())
+                    self.assertTrue(
+                        any(failure_message in error for error in outcome.errors)
+                    )
+                    provider_claim_root = evidence_root / "provider-request-claims"
+                    self.assertIsNotNone(expected_provider_claim)
+                    self.assertIsNotNone(expected_provider_claim_path)
+                    if failure_operation == "readback":
+                        self.assertEqual(
+                            expected_provider_claim_path.read_bytes(),
+                            expected_provider_claim,
+                        )
+                    else:
+                        self.assertFalse(any(provider_claim_root.glob("*.json")))
+                    self.assertFalse(
+                        any(
+                            path.name.endswith((".tmp", ".freeze.lock"))
+                            for path in evidence_root.rglob("*")
+                        )
+                    )
+
+    def test_provider_claim_survives_receipt_failure_and_blocks_reentry(self):
+        provider_request_id = "provider-claim-survives-reentry"
+        first_prepared, first_material = _prepared_v1(
+            run_id="run-provider-reentry-a",
+            context_id="context-provider-reentry-a",
+        )
+        first_backend = _fake_backend(
+            canonical_json_bytes(first_material["output"]),
+            metadata_drift={"provider_request_id": provider_request_id},
+        )
+        first_preflight, first_freshness = _fake_preflight(first_backend)
+
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            evidence_root = base / "evidence"
+            first_transient = base / "transient-a"
+            second_transient = base / "transient-b"
+            first_transient.mkdir()
+            second_transient.mkdir()
+            with mock.patch.object(
+                controller_module,
+                "_freeze_receipt",
+                side_effect=OSError("forced post-provider-claim receipt failure"),
+            ):
+                first = execute_review(
+                    first_prepared,
+                    backend=first_backend,
+                    preflight=first_preflight,
+                    current_freshness=first_freshness,
+                    evidence_root=evidence_root,
+                    transient_parent=first_transient,
+                    repository_root=repository,
+                    execution_mode="SYNTHETIC_TEST",
+                )
+
+            self.assertEqual(first.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertIsNone(first.receipt_path)
+            claim_path = (
+                evidence_root
+                / "provider-request-claims"
+                / f"{hashlib.sha256(provider_request_id.encode('utf-8')).hexdigest()}.json"
+            )
+            self.assertTrue(
+                claim_path.is_file(),
+                "the provider request claim must survive receipt publication failure",
+            )
+            claim_bytes = claim_path.read_bytes()
+
+            second_prepared, second_material = _prepared_v1(
+                run_id="run-provider-reentry-b",
+                context_id="context-provider-reentry-b",
+            )
+            second_backend = _fake_backend(
+                canonical_json_bytes(second_material["output"]),
+                metadata_drift={"provider_request_id": provider_request_id},
+            )
+            second_preflight, second_freshness = _fake_preflight(second_backend)
+            second = execute_review(
+                second_prepared,
+                backend=second_backend,
+                preflight=second_preflight,
+                current_freshness=second_freshness,
+                evidence_root=evidence_root,
+                transient_parent=second_transient,
+                repository_root=repository,
+                execution_mode="SYNTHETIC_TEST",
+            )
+
+            self.assertEqual(second.state, RunnerState.PACKAGE_BINDING_MISMATCH)
+            self.assertIsNone(second.receipt_path)
+            self.assertEqual(claim_path.read_bytes(), claim_bytes)
+            self.assertEqual(len(first_backend.received_request_bytes), 1)
+            self.assertEqual(len(second_backend.received_request_bytes), 1)
+
+    def test_provider_claim_hashes_unsafe_ids_and_rejects_reparse_claim_root(self):
+        unsafe_provider_id = "../provider\\request/☃"
+        prepared, material = _prepared_v1(
+            run_id="run-provider-hashed-path",
+            context_id="context-provider-hashed-path",
+        )
+        backend = _fake_backend(
+            canonical_json_bytes(material["output"]),
+            metadata_drift={"provider_request_id": unsafe_provider_id},
+        )
+        preflight, freshness = _fake_preflight(backend)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            outcome, _, _, evidence_root = self._execute(
+                prepared,
+                backend,
+                preflight,
+                freshness,
+                base,
+            )
+            self.assertEqual(outcome.state, RunnerState.REVIEW_COMPLETED)
+            claim_path = (
+                evidence_root
+                / "provider-request-claims"
+                / f"{hashlib.sha256(unsafe_provider_id.encode('utf-8')).hexdigest()}.json"
+            )
+            self.assertTrue(claim_path.is_file())
+            self.assertEqual(
+                json.loads(claim_path.read_bytes())["provider_request_id"],
+                unsafe_provider_id,
+            )
+
+        prepared, material = _prepared_v1(
+            run_id="run-provider-reparse-claim-root",
+            context_id="context-provider-reparse-claim-root",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repository = _init_clean_repository(base)
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            evidence_root = base / "evidence"
+            evidence_root.mkdir()
+            outside = base / "outside-provider-claims"
+            outside.mkdir()
+            outside_marker = outside / "marker.bin"
+            outside_marker.write_bytes(b"must-remain-byte-identical")
+            provider_claim_root = evidence_root / "provider-request-claims"
+            delegate = _fake_backend(
+                canonical_json_bytes(material["output"]),
+                metadata_drift={
+                    "provider_request_id": "provider-reparse-claim-root"
+                },
+            )
+            backend = _PostInvokeSideEffectBackend(
+                delegate,
+                lambda: provider_claim_root.symlink_to(
+                    outside,
+                    target_is_directory=True,
+                ),
+            )
+            preflight, freshness = _fake_preflight(backend)
+            outside_before = _tree_bytes_sha256(outside)
+
+            outcome = execute_review(
+                prepared,
+                backend=backend,
+                preflight=preflight,
+                current_freshness=freshness,
+                evidence_root=evidence_root,
+                transient_parent=transient_parent,
+                repository_root=repository,
+                execution_mode="SYNTHETIC_TEST",
+            )
+
+            self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
+            self.assertIsNone(outcome.receipt_path)
+            self.assertEqual(len(backend.received_request_bytes), 1)
+            self.assertEqual(_tree_bytes_sha256(outside), outside_before)
+            self.assertEqual(outside_marker.read_bytes(), b"must-remain-byte-identical")
 
     def test_durable_claim_store_failure_blocks_invoke_and_checks_source(self):
         prepared, material = _prepared_v1(
