@@ -30,6 +30,9 @@ _RECEIPT_FILENAMES = frozenset(
     {"receipt.json", "runner-receipt.json", "reviewer-runner-receipt.json"}
 )
 _SAFE_PATH_COMPONENT = re.compile(r"[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?")
+_ATOMIC_PUBLICATION_SCRATCH = re.compile(
+    r"\..+(?:\.freeze\.lock|\.[0-9a-f]{32}\.tmp)"
+)
 _MAX_PATH_COMPONENT_LENGTH = 128
 _WINDOWS_FILE_READ_ATTRIBUTES = 0x00000080
 _WINDOWS_DELETE = 0x00010000
@@ -555,6 +558,8 @@ def load_used_provider_request_ids(evidence_root: Path) -> frozenset[str]:
             candidate = current_path / name
             if _is_reparse_point(candidate):
                 raise EvidenceLifecycleError("evidence index contains a symlink or junction")
+            if name in files and _ATOMIC_PUBLICATION_SCRATCH.fullmatch(name):
+                continue
             _require_resolved_descendant_or_same(candidate, root, "evidence path")
         for name in files:
             if name not in _RECEIPT_FILENAMES:

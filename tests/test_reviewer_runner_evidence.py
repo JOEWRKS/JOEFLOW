@@ -887,6 +887,63 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 self.assertTrue(path.is_absolute())
                 self.assertEqual(path, path.resolve(strict=True))
 
+    def test_replay_index_tolerates_vanishing_atomic_publication_scratch(self):
+        scratch_names = (
+            ".claim.json.freeze.lock",
+            ".claim.json.0123456789abcdef0123456789abcdef.tmp",
+        )
+        for scratch_name in scratch_names:
+            with self.subTest(scratch_name=scratch_name), tempfile.TemporaryDirectory() as directory:
+                evidence_root = Path(directory).resolve() / "evidence"
+                evidence_root.mkdir()
+                scratch = evidence_root / scratch_name
+                scratch.write_bytes(b"in-flight-atomic-publication")
+                original_is_reparse_point = evidence_module._is_reparse_point
+                vanished = False
+
+                def inspect_then_vanish(path):
+                    nonlocal vanished
+                    result = original_is_reparse_point(path)
+                    if Path(path) == scratch and os.path.lexists(scratch):
+                        scratch.unlink()
+                        vanished = True
+                    return result
+
+                observed = None
+                observed_error = None
+                with mock.patch.object(
+                    evidence_module,
+                    "_is_reparse_point",
+                    side_effect=inspect_then_vanish,
+                ):
+                    try:
+                        observed = load_used_provider_request_ids(evidence_root)
+                    except Exception as error:  # capture the exact race boundary
+                        observed_error = error
+
+                self.assertTrue(vanished)
+                self.assertIsNone(
+                    observed_error,
+                    "an in-flight atomic scratch file may disappear after enumeration",
+                )
+                self.assertEqual(observed, frozenset())
+
+    def test_replay_index_rejects_reparse_even_with_atomic_scratch_name(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            evidence_root = base / "evidence"
+            evidence_root.mkdir()
+            outside = base / "outside.bin"
+            outside.write_bytes(b"outside-evidence")
+            scratch_alias = evidence_root / ".claim.json.freeze.lock"
+            scratch_alias.symlink_to(outside)
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "evidence index contains a symlink or junction",
+            ):
+                load_used_provider_request_ids(evidence_root)
+
     def test_evidence_is_frozen_before_transient_package_response_and_canary_cleanup(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
