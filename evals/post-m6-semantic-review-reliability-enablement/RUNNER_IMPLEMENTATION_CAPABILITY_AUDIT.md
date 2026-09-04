@@ -17,12 +17,12 @@ This audit verifies the runner implementation and its deterministic synthetic te
 
 - Implementation base commit: `71ffc0a66618c11e2fe08a442df5fd2d67718f7b`
 - Implementation base tree: `d77b8b0570543ebd9dbcfc03e3663819e64dc9e9`
-- Audited Task 7 code commit: `64d93045438e41fc324e81d929d46490a7169776`
-- Audited Task 7 code tree: `78bfb71a1ec29bb46e76f0ec72c4d6e453f6f41e`
+- Audited runner code commit: `e8da895b1b864b6ff9bdf93a6bf53ba98ae342aa`
+- Audited runner code tree: `56514ce3083186ba5cd8716fb28c2a52bdc88d26`
 - Runner contract: `joewrks.reviewer-runner/1.0`
 - Backend kind: `STATELESS_TOOLLESS_EXTERNAL_INFERENCE`
 
-The machine-readable evidence is bound to the Task 7 code commit rather than this audit commit, avoiding a self-referential commit identity.
+The machine-readable evidence is bound to the audited runner code commit rather than this audit commit, avoiding a self-referential commit identity.
 
 The audit accepts that code identity only when the supplied revision has a non-empty complete tracked runner mode/blob inventory, the resolved repository is the repository containing the actually imported audit and runner modules, the live runner path is clean with no untracked entries, and the live tracked inventory exactly matches the supplied revision. A revision without the runner cannot claim `RUNNER_IMPLEMENTED`.
 
@@ -57,15 +57,15 @@ Test and policy modules:
 
 ## Synthetic and Adversarial Results
 
-- Runner plus capability-audit focused suite: `116/116 PASS`, `0` skipped.
+- Runner plus capability-audit focused suite: `125/125 PASS`, `0` skipped.
 - Package dependency-policy suite: `5/5 PASS`, `0` skipped.
 - The audit CLI emitted bytes exactly equal to `RUNNER_CAPABILITY_EVIDENCE.json` on Windows: UTF-8 canonical JSON plus one LF, with no CRLF translation. A task-owned bytecode-prefix probe observed no audit-created files, and the module/CLI bytecode guard restored the caller's original `sys.dont_write_bytecode` state.
 - All Git inspection runs with optional locking disabled, preventing read-only status inspection from refreshing or rewriting the index.
 - The deterministic fake backend stayed marked `is_test_double = true` and `fake_backend_authoritative = false`.
 - Synthetic positive paths verified deterministic request, identity, raw-response, receipt, cleanup, and source-readback behavior without claiming a real preflight PASS.
 - Adversarial preflight coverage passed for forbidden host-data canaries, tool/retrieval events, continuation state, model/settings/policy drift, capacity mismatch, duplicate JSON keys, repeated nonce, path aliases, and unknown or inferred capability.
-- Response and controller coverage passed for binding drift, malformed or duplicate output, replay, transport failure, evidence publication, cleanup, source drift, durable run claims, evidence-root identity pinning, and fail-closed early exits.
-- Post-audit whole-branch review restored the approved Task 1/2 identity/request boundaries: exact nested receipt dataclass types with declared-field serialization, bidirectional semantic-review version comparison, immutable canonical-request inventory, keyword-only controller hashes, and controller consumption of that bound inventory.
+- Response and controller coverage passed for binding drift, malformed or duplicate output, replay, transport failure, evidence publication, cleanup, source drift, durable run claims, evidence-root identity pinning, and fail-closed early exits. Raw-response publication now uses the hardened exclusive no-clobber path, including different pre-existing bytes, identical idempotent bytes, and intervening publication.
+- Post-audit whole-branch review restored the approved Task 1/2 identity/request boundaries and the raw-response immutable-evidence boundary: exact nested receipt dataclass types with declared-field serialization, bidirectional semantic-review version comparison, immutable canonical-request inventory, keyword-only controller hashes, controller consumption of that bound inventory, and exclusive raw-response publication. Direct parser/controller coverage also confirms `NaN`, `Infinity`, and `-Infinity` remain rejected as `REVIEW_OUTPUT_INVALID` without a production semantic change.
 
 Synthetic fake success remains non-authoritative and cannot change `UNAVAILABLE`, `CALIBRATION_NOT_RUN`, or `NOT_MEASURED`.
 
@@ -83,7 +83,7 @@ The current blocker is the absence of a registered production adapter and indepe
 
 ## Frozen Authority Readback
 
-The read-only audit compared exact Git mode/blob commitments at the implementation base and Task 7 code commit across:
+The read-only audit compared exact Git mode/blob commitments at the implementation base and audited runner code commit across:
 
 - `product-definition/**`
 - semantic-review/1.0 implementation and schemas
@@ -98,7 +98,8 @@ The required historical M6 replay fixture was created as a fresh detached, byte-
 ## Regression Results
 
 - Task 1/2 boundary remediation plus affected runner and semantic-contract regression: `162/162 PASS`, `0` skipped.
-- The broader counts below are the committed implementation-audit record; this bounded whole-branch review reran the focused 162-test set rather than a new full repository audit.
+- Important #7 and Minor #2 remediation: runner plus capability-audit suite `125/125 PASS`, `0` skipped; affected semantic-output, semantic-review/2.1, filesystem-migration, and dependency-policy regression `70/70 PASS`, `0` skipped.
+- The broader counts below are the committed implementation-audit record; this bounded remediation reran the focused and affected suites above rather than a new full repository audit.
 - Existing semantic-review/1.0 and repaired calibration-controller regression: `146/146 PASS`, `0` skipped.
 - semantic-review/2.1, action-conformance/2.1, M5.1/M6, runtime, and frozen-boundary regression: `142/142 PASS`, `0` skipped.
 - Legacy frozen regression: `37/37 PASS`, `0` skipped.

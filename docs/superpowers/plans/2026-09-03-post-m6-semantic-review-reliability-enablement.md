@@ -1452,11 +1452,13 @@ After the commit, set `$runnerCodeRevision = git rev-parse HEAD^` and rerun the 
 
 ## Whole-branch review remediation ledger
 
-| Review finding | Approved Task 1/2 boundary restored | Regression evidence | Disposition |
+| Review finding | Approved boundary restored | Regression evidence | Disposition |
 | --- | --- | --- | --- |
 | Identity dataclass subclasses could add fields that recursive `asdict` persisted | `RunIdentity`, `BackendIdentity`, `InputCommitment`, and `ResponseIdentity` require exact types; receipt serialization reads only each declared base field and rejects extended values before persistence | `test_nested_identity_subclasses_are_rejected_before_receipt_serialization` | `FIXED` |
 | Expected run comparison omitted `semantic_review_contract_version` | Both admitted versions are compared and any 1.0/2.1 drift returns `SEMANTIC_REVIEW_CONTRACT_VERSION_MISMATCH` | `test_expected_semantic_review_contract_version_mismatch_is_rejected_bidirectionally` | `FIXED` |
 | `CanonicalRequest` dropped its immutable inventory and the controller rebuilt it | `CanonicalRequest.inventory` is the role-sorted tuple created with the request; `controller_only_hashes` is keyword-only; the controller consumes `request.inventory` for the receipt | `test_exact_four_roles_are_sorted_and_inlined`, `test_controller_only_hashes_is_keyword_only`, and `test_success_receipt_consumes_inventory_from_the_canonical_request` | `FIXED` |
+| Raw-response freeze used replacement publication and could clobber immutable evidence already present at the run/context path | Raw responses use the hardened exclusive no-clobber evidence publisher: different existing bytes fail closed without overwrite, identical bytes are an idempotent readback without rewrite, and an intervening exclusive publication wins without being clobbered | `test_preexisting_different_raw_response_fails_closed_without_overwrite`, `test_preexisting_identical_raw_response_is_idempotent_without_rewrite`, and `test_intervening_raw_response_publication_fails_closed_without_clobber` | `FIXED` |
+| Strict JSON rejection of direct `NaN`, `Infinity`, and `-Infinity` tokens lacked explicit parser and controller-state regression coverage | The existing non-finite constant rejection remains unchanged and is now exercised directly through the frozen-response parser and the controller mapping to `REVIEW_OUTPUT_INVALID` | `test_non_finite_json_constants_are_rejected_by_parser` and `test_non_finite_json_constants_map_to_review_output_invalid` | `FIXED (TEST-ONLY)` |
 
 The bounded remediation changes no semantic-review contract, provider capability, calibration authority, reliability result, Product Definition state, frozen M6 evidence, or real-review authorization.
 
