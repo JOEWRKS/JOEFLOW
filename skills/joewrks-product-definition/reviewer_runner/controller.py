@@ -53,6 +53,10 @@ from .semantic_review import PreparedReview
 _EXECUTION_MODES = frozenset({"REAL_REVIEW", "SYNTHETIC_TEST"})
 
 
+class _InvocationAuthorizationError(ValueError):
+    """Raised when the live authorization binding changes before invocation."""
+
+
 @dataclass(frozen=True)
 class RunOutcome:
     state: RunnerState
@@ -190,6 +194,8 @@ def execute_review(
                 backend=backend,
                 descriptor=descriptor,
                 preflight=preflight,
+                caller_freshness=current_freshness,
+                authorized_freshness=live_freshness,
                 isolation=isolation,
                 request=request,
                 transient_parent=transient_parent,
@@ -234,6 +240,8 @@ def _execute_with_evidence_root_lease(
     backend: ToollessInferenceBackend,
     descriptor: BackendDescriptor,
     preflight: PreflightResult,
+    caller_freshness: PreflightFreshness,
+    authorized_freshness: PreflightFreshness,
     isolation: IsolationReceipt,
     request,
     transient_parent: Path,
@@ -312,6 +320,13 @@ def _execute_with_evidence_root_lease(
     preserved_paths: list[Path] = []
     try:
         evidence_lease.verify()
+        _verify_invocation_authorization(
+            backend,
+            authorized_descriptor=descriptor,
+            preflight=preflight,
+            caller_freshness=caller_freshness,
+            authorized_freshness=authorized_freshness,
+        )
         response = backend.invoke(
             request.content,
             timeout_seconds=timeout_seconds,
@@ -339,6 +354,9 @@ def _execute_with_evidence_root_lease(
             isolation_receipt_sha256=isolation.receipt_sha256,
             response_identity=bound.identity,
         )
+    except _InvocationAuthorizationError as error:
+        state = RunnerState.ISOLATION_PREFLIGHT_FAILED
+        errors.append(str(error))
     except BackendInvocationError as error:
         state = RunnerState.REVIEWER_EXECUTION_FAILED
         errors.append(f"{error.code}: {error}")
@@ -526,6 +544,52 @@ def _describe_backend(
     except Exception:
         return None
     return descriptor
+
+
+def _verify_invocation_authorization(
+    backend: ToollessInferenceBackend,
+    *,
+    authorized_descriptor: BackendDescriptor,
+    preflight: PreflightResult,
+    caller_freshness: PreflightFreshness,
+    authorized_freshness: PreflightFreshness,
+) -> None:
+    """Rebuild the complete authorization binding at the semantic byte boundary."""
+
+    live_descriptor = _describe_backend(backend)
+    if live_descriptor is None:
+        raise _InvocationAuthorizationError(
+            "backend descriptor is unavailable immediately before invocation"
+        )
+    try:
+        live_freshness = build_preflight_freshness(live_descriptor)
+    except (TypeError, ValueError) as error:
+        raise _InvocationAuthorizationError(
+            "live preflight freshness could not be rebuilt immediately before "
+            f"invocation: {error}"
+        ) from error
+    if (
+        caller_freshness != authorized_freshness
+        or caller_freshness != live_freshness
+    ):
+        raise _InvocationAuthorizationError(
+            "caller preflight freshness changed before invocation"
+        )
+    if (
+        live_descriptor != authorized_descriptor
+        or live_freshness != authorized_freshness
+    ):
+        raise _InvocationAuthorizationError(
+            "backend descriptor or live preflight freshness changed before invocation"
+        )
+    try:
+        stale = validate_preflight_freshness(preflight, live_freshness)
+    except (TypeError, ValueError):
+        stale = RunnerState.ISOLATION_PREFLIGHT_FAILED
+    if stale is not None:
+        raise _InvocationAuthorizationError(
+            "preflight proof changed before invocation"
+        )
 
 
 def _authorize_execution(

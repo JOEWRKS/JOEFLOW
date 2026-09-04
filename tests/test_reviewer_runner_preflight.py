@@ -74,6 +74,23 @@ def ascii_nonce_bytes(label: str) -> bytes:
     )
 
 
+def reviewer_repro_encoding_variants(canary: bytes) -> dict[str, str]:
+    standard_base64 = base64.b64encode(canary).decode("ascii")
+    urlsafe_base64 = base64.urlsafe_b64encode(canary).decode("ascii")
+    return {
+        "uppercase-hex": canary.hex().upper(),
+        "standard-base64-unpadded": standard_base64.rstrip("="),
+        "urlsafe-base64-padded": urlsafe_base64,
+        "urlsafe-base64-unpadded": urlsafe_base64.rstrip("="),
+    }
+
+
+def near_miss(value: str) -> str:
+    index = next(index for index, character in enumerate(value) if character != "=")
+    replacement = "A" if value[index] != "A" else "B"
+    return value[:index] + replacement + value[index + 1 :]
+
+
 def response_bytes(allowed_nonce: str, **extra: object) -> bytes:
     return json.dumps(
         {
@@ -286,6 +303,31 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
             "provider_request_id canary leakage must never authorize OBSERVED_PASS",
         )
 
+    def test_reviewer_repro_equivalent_provider_id_encodings_never_observed_pass(self):
+        unexpected_passes = []
+        for family in FORBIDDEN_FAMILIES:
+            canary = nonce_bytes(family)
+            for encoding, leaked_value in reviewer_repro_encoding_variants(
+                canary
+            ).items():
+                backend = unit_only_eligible_external_adapter(
+                    nonce_source=nonce_bytes,
+                    metadata_drift={"provider_request_id": leaked_value},
+                )
+                result = run_isolation_preflight(
+                    backend,
+                    freshness=self._freshness(backend),
+                    nonce_source=nonce_bytes,
+                )
+                if result.classification is CapabilityClass.OBSERVED_PASS:
+                    unexpected_passes.append((family, encoding))
+
+        self.assertEqual(
+            unexpected_passes,
+            [],
+            "equivalent provider_request_id encodings must never authorize OBSERVED_PASS",
+        )
+
     def test_closed_backend_response_metadata_projection_scans_every_field(self):
         try:
             from reviewer_runner.preflight import _detect_forbidden_canary_leak
@@ -357,6 +399,94 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
             missed,
             [],
             "the forbidden-canary scan must cover every permitted response metadata field",
+        )
+
+    def test_reviewer_repro_equivalent_encodings_cover_every_closed_metadata_field(self):
+        try:
+            from reviewer_runner.preflight import _detect_forbidden_canary_leak
+        except ImportError:
+            self.fail("closed BackendResponse metadata projection must be scanable")
+
+        baseline = BackendResponse(
+            raw_bytes=b'{}',
+            provider_request_id="provider-request",
+            request_sha256="0" * 64,
+            reviewer_id="reviewer",
+            review_run_id="run",
+            context_id="context",
+            backend_identity_sha256="1" * 64,
+            response_count=1,
+            continuation_id=None,
+            previous_response_id=None,
+            events=(),
+        )
+        metadata_fields = (
+            "provider_request_id",
+            "request_sha256",
+            "reviewer_id",
+            "review_run_id",
+            "context_id",
+            "backend_identity_sha256",
+            "response_count",
+            "continuation_id",
+            "previous_response_id",
+            "event.kind",
+            "event.metadata_sha256",
+        )
+
+        def with_metadata_value(field: str, value: str) -> BackendResponse:
+            if field == "event.kind":
+                return dataclasses.replace(
+                    baseline,
+                    events=(BackendEvent(value, "2" * 64),),
+                )
+            if field == "event.metadata_sha256":
+                return dataclasses.replace(
+                    baseline,
+                    events=(BackendEvent("RESPONSE", value),),
+                )
+            return dataclasses.replace(baseline, **{field: value})
+
+        missed = []
+        false_positives = []
+        allowed = nonce_bytes("allowed-package-brief")
+        self.assertFalse(
+            _detect_forbidden_canary_leak(
+                baseline,
+                forbidden_nonces=tuple(
+                    nonce_bytes(family) for family in FORBIDDEN_FAMILIES
+                ),
+            )
+        )
+        for family in FORBIDDEN_FAMILIES:
+            canary = nonce_bytes(family)
+            for encoding, leaked_value in reviewer_repro_encoding_variants(
+                canary
+            ).items():
+                allowed_value = reviewer_repro_encoding_variants(allowed)[encoding]
+                for field in metadata_fields:
+                    if not _detect_forbidden_canary_leak(
+                        with_metadata_value(field, leaked_value),
+                        forbidden_nonces=(canary,),
+                    ):
+                        missed.append((family, encoding, field))
+                    for control, control_value in (
+                        ("allowed", allowed_value),
+                        ("near-miss", near_miss(leaked_value)),
+                    ):
+                        if _detect_forbidden_canary_leak(
+                            with_metadata_value(field, control_value),
+                            forbidden_nonces=(canary,),
+                        ):
+                            false_positives.append(
+                                (family, encoding, field, control)
+                            )
+
+        self.assertEqual(missed, [])
+        self.assertEqual(
+            false_positives,
+            [],
+            "clean, allowed, and one-character near-miss controls must remain accepted",
         )
 
     def test_non_default_package_size_cannot_authorize_or_issue_receipt(self):

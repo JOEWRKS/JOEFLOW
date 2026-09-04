@@ -481,6 +481,107 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             "capacity and complete capability-observation drift must stop semantic bytes",
         )
 
+    def test_descriptor_drift_during_guarded_setup_stops_at_invoke_boundary(self):
+        prepared, material = _prepared_v1(
+            run_id="run-invoke-boundary-drift",
+            context_id="context-invoke-boundary-drift",
+        )
+        seed_backend = _fake_backend(canonical_json_bytes(material["output"]))
+        baseline = seed_backend.describe()
+        drifts = {
+            "evidence-observation-method": dataclasses.replace(
+                baseline,
+                observations=(
+                    dataclasses.replace(
+                        baseline.observations[0],
+                        method="workspace-stage-observation-method-drift",
+                    ),
+                    *baseline.observations[1:],
+                ),
+            ),
+            "claim-capacity": dataclasses.replace(
+                baseline,
+                max_request_bytes=baseline.max_request_bytes - 1,
+            ),
+            "workspace-identity": dataclasses.replace(
+                baseline,
+                identity=dataclasses.replace(
+                    baseline.identity,
+                    model_revision_identity="workspace-stage-identity-drift",
+                ),
+            ),
+        }
+
+        wrong_states = []
+        transmitted = []
+        for index, (label, changed_descriptor) in enumerate(drifts.items()):
+            case_prepared, case_material = _prepared_v1(
+                run_id=f"run-invoke-boundary-drift-{index}",
+                context_id=f"context-invoke-boundary-drift-{index}",
+            )
+            backend = _fake_backend(canonical_json_bytes(case_material["output"]))
+            preflight, freshness = _fake_preflight(backend)
+
+            if label.startswith("evidence-"):
+                original_boundary = controller_module.acquire_evidence_root_lease
+
+                def drift_at_boundary(*args, changed=changed_descriptor, **kwargs):
+                    result = original_boundary(*args, **kwargs)
+                    backend._descriptor = changed
+                    return result
+
+                patcher = mock.patch.object(
+                    controller_module,
+                    "acquire_evidence_root_lease",
+                    side_effect=drift_at_boundary,
+                )
+            elif label.startswith("claim-"):
+                original_boundary = controller_module._acquire_durable_run_claim
+
+                def drift_at_boundary(*args, changed=changed_descriptor, **kwargs):
+                    result = original_boundary(*args, **kwargs)
+                    backend._descriptor = changed
+                    return result
+
+                patcher = mock.patch.object(
+                    controller_module,
+                    "_acquire_durable_run_claim",
+                    side_effect=drift_at_boundary,
+                )
+            else:
+                original_boundary = controller_module.TaskWorkspace.create
+
+                def drift_at_boundary(*args, changed=changed_descriptor, **kwargs):
+                    result = original_boundary(*args, **kwargs)
+                    backend._descriptor = changed
+                    return result
+
+                patcher = mock.patch.object(
+                    controller_module.TaskWorkspace,
+                    "create",
+                    side_effect=drift_at_boundary,
+                )
+
+            with tempfile.TemporaryDirectory() as directory, patcher:
+                outcome, _, _, _ = self._execute(
+                    case_prepared,
+                    backend,
+                    preflight,
+                    freshness,
+                    Path(directory),
+                )
+            if outcome.state is not RunnerState.ISOLATION_PREFLIGHT_FAILED:
+                wrong_states.append((label, outcome.state))
+            if backend.received_request_bytes:
+                transmitted.append(label)
+
+        self.assertEqual(wrong_states, [])
+        self.assertEqual(
+            transmitted,
+            [],
+            "guarded setup descriptor drift must stop before semantic invocation",
+        )
+
     def test_v1_adapter_delegates_to_existing_envelope_and_output_validators(self):
         prepared, material = _prepared_v1()
         self.assertIsInstance(prepared, PreparedReview)

@@ -652,27 +652,29 @@ def _closed_backend_response_projection(response: BackendResponse) -> tuple[obje
 
 def _projection_value_contains_canary(value: object, forbidden: bytes) -> bool:
     digest = sha256_bytes(forbidden)
-    byte_tokens = (
-        forbidden,
+    standard_base64 = base64.b64encode(forbidden)
+    urlsafe_base64 = base64.urlsafe_b64encode(forbidden)
+    encoded_tokens = {
         forbidden.hex().encode("ascii"),
-        base64.b64encode(forbidden),
+        forbidden.hex().upper().encode("ascii"),
+        standard_base64,
+        standard_base64.rstrip(b"="),
+        urlsafe_base64,
+        urlsafe_base64.rstrip(b"="),
         digest.encode("ascii"),
-    )
+    }
+    byte_tokens = {forbidden, *encoded_tokens}
     if isinstance(value, bytes):
         return any(token in value for token in byte_tokens)
-    if isinstance(value, str):
-        text_tokens = {
-            forbidden.decode("latin-1"),
-            forbidden.hex(),
-            base64.b64encode(forbidden).decode("ascii"),
-            digest,
-        }
-        try:
-            text_tokens.add(forbidden.decode("utf-8"))
-        except UnicodeDecodeError:
-            pass
-        return any(token in value for token in text_tokens)
-    return False
+    if not isinstance(value, str):
+        return False
+    text_tokens = {token.decode("ascii") for token in encoded_tokens}
+    text_tokens.add(forbidden.decode("latin-1"))
+    try:
+        text_tokens.add(forbidden.decode("utf-8"))
+    except UnicodeDecodeError:
+        pass
+    return any(token in value for token in text_tokens)
 
 
 def _has_exactly_one_serialized_allowed_nonce(
