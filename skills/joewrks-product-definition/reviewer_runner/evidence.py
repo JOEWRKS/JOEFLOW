@@ -152,18 +152,11 @@ class TaskWorkspace:
                 if not _same_path(runner_parent.resolve(strict=True), runner_parent):
                     raise EvidenceLifecycleError("runner workspace parent is path-aliased")
             else:
-                runner_parent.mkdir()
-                runner_parent_created = True
-                runner_parent_identity = _entry_identity_no_follow(runner_parent)
-                if not stat.S_ISDIR(runner_parent_identity[2]):
-                    raise EvidenceLifecycleError(
-                        "new runner workspace parent is not a plain directory"
-                    )
-                _require_directory_identity(
+                runner_parent_identity = _create_plain_directory_transactionally(
                     runner_parent,
-                    runner_parent_identity,
                     "new runner workspace parent",
                 )
+                runner_parent_created = True
             if not _is_strict_descendant(runner_parent.resolve(strict=True), parent):
                 raise EvidenceLifecycleError(
                     "runner workspace parent escapes transient_parent"

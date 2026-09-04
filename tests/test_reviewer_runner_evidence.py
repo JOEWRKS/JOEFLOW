@@ -552,6 +552,81 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
 
             self.assertFalse(os.path.lexists(runner_parent))
 
+    def test_first_runner_parent_identity_capture_failure_restores_exact_prestate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            transient_parent = Path(directory).resolve() / "transient"
+            transient_parent.mkdir()
+            sibling = transient_parent / "preexisting-sibling"
+            sibling.mkdir()
+            sibling.joinpath("prior.bin").write_bytes(b"prior-bytes-must-survive")
+            before = _tree_bytes_sha256(transient_parent)
+            runner_parent = transient_parent / "joewrks-reviewer-runner"
+            original_identity = evidence_module._entry_identity_no_follow
+            injected = False
+
+            def fail_first_runner_parent_identity(path):
+                nonlocal injected
+                if Path(path) == runner_parent and not injected:
+                    injected = True
+                    raise EvidenceLifecycleError(
+                        "injected first runner-parent identity-capture failure"
+                    )
+                return original_identity(path)
+
+            with mock.patch.object(
+                evidence_module,
+                "_entry_identity_no_follow",
+                side_effect=fail_first_runner_parent_identity,
+            ), self.assertRaisesRegex(
+                ValueError,
+                "first runner-parent identity-capture failure",
+            ):
+                TaskWorkspace.create(
+                    transient_parent,
+                    "run-first-runner-parent-identity-failure",
+                    repository_root=ROOT,
+                )
+
+            self.assertTrue(injected)
+            self.assertFalse(os.path.lexists(runner_parent))
+            self.assertEqual(_tree_bytes_sha256(transient_parent), before)
+
+    def test_runner_parent_persistent_identity_ambiguity_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            transient_parent = Path(directory).resolve() / "transient"
+            transient_parent.mkdir()
+            sibling = transient_parent / "preexisting-sibling"
+            sibling.mkdir()
+            sibling_file = sibling / "prior.bin"
+            sibling_bytes = b"prior-bytes-must-survive"
+            sibling_file.write_bytes(sibling_bytes)
+            runner_parent = transient_parent / "joewrks-reviewer-runner"
+            original_identity = evidence_module._entry_identity_no_follow
+
+            def fail_runner_parent_identity(path):
+                if Path(path) == runner_parent:
+                    raise EvidenceLifecycleError(
+                        "injected persistent runner-parent identity ambiguity"
+                    )
+                return original_identity(path)
+
+            with mock.patch.object(
+                evidence_module,
+                "_entry_identity_no_follow",
+                side_effect=fail_runner_parent_identity,
+            ), self.assertRaisesRegex(
+                ValueError,
+                "(rollback|cleanup) failed",
+            ):
+                TaskWorkspace.create(
+                    transient_parent,
+                    "run-persistent-runner-parent-identity-ambiguity",
+                    repository_root=ROOT,
+                )
+
+            self.assertTrue(os.path.lexists(runner_parent))
+            self.assertEqual(sibling_file.read_bytes(), sibling_bytes)
+
     def test_workspace_revalidates_captured_source_before_mutation(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
