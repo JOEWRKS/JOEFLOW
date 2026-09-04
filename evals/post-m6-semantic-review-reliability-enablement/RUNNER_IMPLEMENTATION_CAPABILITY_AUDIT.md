@@ -17,14 +17,14 @@ This audit verifies the runner implementation and its deterministic synthetic te
 
 - Implementation base commit: `71ffc0a66618c11e2fe08a442df5fd2d67718f7b`
 - Implementation base tree: `d77b8b0570543ebd9dbcfc03e3663819e64dc9e9`
-- Audited runner code commit: `e6fa9b7e664a3e94889bcbfeea8ac8d0b1ddc71b`
-- Audited runner code tree: `1f2535a3806f86cd580c12e30c538eda76330054`
+- Audited runner code commit: `2d91fa33f3cd7588a67db0ebbc464f599da1db06`
+- Audited runner code tree: `dba27b88042856fe4dd6f5e85477379eb3aa853e`
 - Runner contract: `joewrks.reviewer-runner/1.0`
 - Backend kind: `STATELESS_TOOLLESS_EXTERNAL_INFERENCE`
 
 The machine-readable evidence is bound to the audited runner code commit rather than this audit commit, avoiding a self-referential commit identity.
 
-The audit accepts that code identity only when the supplied revision has a non-empty complete tracked runner mode/blob inventory, the resolved repository is the repository containing the audit module, the live runner path is clean with no untracked entries, and every indexed path/mode plus every raw live-file Git blob identity exactly matches the supplied revision. The verified raw bytes are retained in memory, and the runner contract/descriptor validator execute from that source snapshot through a bytecode-independent loader only after all files pass. A revision without the runner, a same-size stat-stale edit, a mode/path mismatch, or a stale/poisoned `.pyc` cannot claim `RUNNER_IMPLEMENTED`.
+The audit accepts that code identity only when the supplied revision has a non-empty complete tracked runner mode/blob inventory, the resolved repository is the repository containing the audit module, the live runner path is clean with no untracked entries, and every indexed path/mode plus every raw live-file Git blob identity exactly matches the supplied revision. The verified raw bytes are retained in memory, and exactly the package, identity, and backend modules execute from that source snapshot through a bytecode-independent `SourceFileLoader` only after all files pass. Any pre-seeded package, direct submodule, or transitive private-namespace entry fails closed; loader/spec/origin/source-byte bindings are checked, and every private module is removed on success or failure. A revision without the runner, a same-size stat-stale edit, a mode/path mismatch, a stale/poisoned `.pyc`, or a private module-cache collision cannot claim `RUNNER_IMPLEMENTED`.
 
 ## Implementation Surface Reviewed
 
@@ -57,7 +57,7 @@ Test and policy modules:
 
 ## Synthetic and Adversarial Results
 
-- Runner plus capability-audit focused suite: `144/144 PASS`, `0` skipped.
+- Runner plus capability-audit focused suite: `149/149 PASS`, `0` skipped.
 - Package dependency-policy suite: `5/5 PASS`, `0` skipped.
 - The audit CLI emitted bytes exactly equal to `RUNNER_CAPABILITY_EVIDENCE.json` on Windows: UTF-8 canonical JSON plus one LF, with no CRLF translation. A task-owned bytecode-prefix probe observed no audit-created files, the module/CLI bytecode guard restored the caller's original `sys.dont_write_bytecode` state, and a valid-timestamp poisoned `.pyc` in an external cache could not override the verified source bytes.
 - All Git inspection and source snapshot/readback runs use `--no-optional-locks`; a stat-stale clean-repository regression preserves the exact index bytes, identity, mode, link count, size, write/change times, attributes, and reparse metadata across both capture and readback.
@@ -70,6 +70,7 @@ Test and policy modules:
 - Independent-review follow-up closes the remaining pre-return setup windows: directory creation retains local ownership until identity validation completes, reservation identity is pinned from its open descriptor before write/fsync/readback, and every failure removes only identity-matched newly created state with explicit absence readback. Persistent identity ambiguity remains fail-closed and leaves unrelated siblings unchanged.
 - The final adjacent runner-parent window now uses that same local transactional directory helper: the first post-`mkdir` identity-capture failure either removes the exact new empty parent and proves absence or fails closed on persistent ambiguity without modifying prior siblings.
 - The final audit-source remediation no longer trusts Git status/index stat freshness: every tracked runner path is opened and hashed from raw live bytes, its live regular-file mode and resolved tracked path are checked against the revision inventory, and only the captured verified source snapshot can supply the runner code executed by the audit.
+- The private verified-runner namespace is now a fail-closed transaction: package, identity, backend, and unused transitive pre-seeding all stop before load, the three permitted modules must carry the expected snapshot loader/spec/origin/byte binding, and the entire private namespace is absent after every return or exception.
 
 Synthetic fake success remains non-authoritative and cannot change `UNAVAILABLE`, `CALIBRATION_NOT_RUN`, or `NOT_MEASURED`.
 
@@ -109,10 +110,11 @@ The required historical M6 replay fixture was created as a fresh detached, byte-
 - Follow-up Important #1 transactional setup remediation: runner plus capability-audit suite `140/140 PASS`, `0` skipped; affected semantic-review, filesystem-migration, and package-policy regression `120/120 PASS`, `0` skipped. One-shot and persistent directory identity-capture failures plus reservation write, fsync, and readback failures cover both new and pre-existing reservation-directory prestates with exact absence and sibling-byte readback.
 - Final adjacent Important #1 remediation: runner plus capability-audit suite `142/142 PASS`, `0` skipped; affected semantic-review, filesystem-migration, and package-policy regression `120/120 PASS`, `0` skipped. First-capture runner-parent failure restores exact absence and byte-identical prior siblings, while persistent identity ambiguity remains explicit and fail-closed.
 - Final Important #8 remediation: runner plus capability-audit suite `144/144 PASS`, `0` skipped; affected semantic-review, filesystem-migration, and package-policy regression `120/120 PASS`, `0` skipped; package dependency-policy suite `5/5 PASS`, `0` skipped. A same-size live edit with restored mtime is rejected even when status is forced empty, and valid-timestamp stale bytecode from an external cache cannot override the source snapshot or mutate the repository.
+- Independent-review Important #8 and package-policy follow-up: runner plus capability-audit suite `149/149 PASS`, `0` skipped; package dependency-policy suite `5/5 PASS`, `0` skipped. Pre-seeded private package, identity, backend, and transitive modules all fail closed and are removed; successful audit loads also leave no private cache entries. The script dependency policy now exactly equals the minimal current direct-import set and no longer permits `reviewer_runner` reintroduction.
 - Existing semantic-review/1.0 and repaired calibration-controller regression: `146/146 PASS`, `0` skipped.
 - semantic-review/2.1, action-conformance/2.1, M5.1/M6, runtime, and frozen-boundary regression: `142/142 PASS`, `0` skipped.
 - Legacy frozen regression: `37/37 PASS`, `0` skipped.
-- Full repository suite: `1070` tests run, `0` failures, `0` errors, `1` skipped.
+- Full repository suite: `1075` tests run, `0` failures, `0` errors, `1` skipped.
 - Full-suite skip: frozen A/B runtime regression requires both `JOEWRKS_FROZEN_A_ROOT` and `JOEWRKS_FROZEN_B_WORKTREE`; this pre-existing environment-dependent test was not part of runner work.
 - Runner test skips: `0`.
 - `git diff --check`: `PASS`.
