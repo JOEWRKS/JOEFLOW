@@ -13,6 +13,7 @@ try:
     from reviewer_runner.identity import (
         BackendIdentity,
         InputCommitment,
+        ResponseIdentity,
         RunIdentity,
         RunnerIdentityError,
         RunnerState,
@@ -115,6 +116,92 @@ class ReviewerRunnerIdentityTests(unittest.TestCase):
             with self.assertRaises(RunnerIdentityError) as raised:
                 validate_receipt_document(candidate)
             self.assertEqual(raised.exception.code, "RECEIPT_SCHEMA_INVALID")
+
+    def test_nested_identity_subclasses_are_rejected_before_receipt_serialization(self):
+        @dataclasses.dataclass(frozen=True)
+        class ExtendedRunIdentity(RunIdentity):
+            controller_secret: str
+
+        @dataclasses.dataclass(frozen=True)
+        class ExtendedBackendIdentity(BackendIdentity):
+            controller_secret: str
+
+        @dataclasses.dataclass(frozen=True)
+        class ExtendedInputCommitment(InputCommitment):
+            controller_secret: str
+
+        @dataclasses.dataclass(frozen=True)
+        class ExtendedResponseIdentity(ResponseIdentity):
+            controller_secret: str
+
+        secret = "controller-only-oracle-material"
+        base_parts = valid_receipt_parts()
+        base_response = ResponseIdentity(**base_parts["response_identity"])
+        cases = (
+            (
+                "run_identity",
+                ExtendedRunIdentity(
+                    **dataclasses.asdict(base_parts["run_identity"]),
+                    controller_secret=secret,
+                ),
+                "RUN_IDENTITY_INVALID",
+            ),
+            (
+                "backend_identity",
+                ExtendedBackendIdentity(
+                    **dataclasses.asdict(base_parts["backend_identity"]),
+                    controller_secret=secret,
+                ),
+                "BACKEND_IDENTITY_INVALID",
+            ),
+            (
+                "permitted_input_inventory",
+                (
+                    ExtendedInputCommitment(
+                        **dataclasses.asdict(base_parts["permitted_input_inventory"][0]),
+                        controller_secret=secret,
+                    ),
+                    *base_parts["permitted_input_inventory"][1:],
+                ),
+                "INPUT_INVENTORY_INVALID",
+            ),
+            (
+                "response_identity",
+                ExtendedResponseIdentity(
+                    **dataclasses.asdict(base_response),
+                    controller_secret=secret,
+                ),
+                "RESPONSE_IDENTITY_INVALID",
+            ),
+        )
+
+        valid_receipt = build_runner_receipt(**valid_receipt_parts())
+        for field_name, extended_value, code in cases:
+            with self.subTest(field_name=field_name, boundary="build"):
+                parts = valid_receipt_parts()
+                parts[field_name] = extended_value
+                with self.assertRaises(RunnerIdentityError) as raised:
+                    build_runner_receipt(**parts)
+                self.assertEqual(raised.exception.code, code)
+
+            extended_receipt = dataclasses.replace(
+                valid_receipt,
+                **{field_name: extended_value},
+            )
+            with self.subTest(field_name=field_name, boundary="validate"):
+                with self.assertRaises(RunnerIdentityError) as raised:
+                    validate_runner_receipt(extended_receipt)
+                self.assertEqual(raised.exception.code, code)
+
+            with self.subTest(field_name=field_name, boundary="serialize"):
+                with self.assertRaises(RunnerIdentityError) as raised:
+                    receipt_document(extended_receipt)
+                self.assertEqual(raised.exception.code, code)
+
+        self.assertNotIn(
+            secret.encode("utf-8"),
+            canonical_json_bytes(receipt_document(valid_receipt)),
+        )
 
     def test_package_digest_mismatch_is_rejected(self):
         parts = valid_receipt_parts()
@@ -241,6 +328,32 @@ class ReviewerRunnerIdentityTests(unittest.TestCase):
                 expected_run_identity=receipt.run_identity,
             )
         self.assertEqual(raised.exception.code, "SEMANTIC_REVIEW_CONTRACT_VERSION_MISMATCH")
+
+    def test_expected_semantic_review_contract_version_mismatch_is_rejected_bidirectionally(self):
+        for actual_version, expected_version in (
+            ("joewrks.semantic-review/1.0", "joewrks.semantic-review/2.1"),
+            ("joewrks.semantic-review/2.1", "joewrks.semantic-review/1.0"),
+        ):
+            with self.subTest(actual=actual_version, expected=expected_version):
+                parts = valid_receipt_parts()
+                parts["run_identity"] = dataclasses.replace(
+                    parts["run_identity"],
+                    semantic_review_contract_version=actual_version,
+                )
+                receipt = build_runner_receipt(**parts)
+                expected = dataclasses.replace(
+                    receipt.run_identity,
+                    semantic_review_contract_version=expected_version,
+                )
+                with self.assertRaises(RunnerIdentityError) as raised:
+                    validate_runner_receipt(
+                        receipt,
+                        expected_run_identity=expected,
+                    )
+                self.assertEqual(
+                    raised.exception.code,
+                    "SEMANTIC_REVIEW_CONTRACT_VERSION_MISMATCH",
+                )
 
     def test_v21_receipt_accepts_distinct_semantic_and_artifact_digests(self):
         parts = valid_receipt_parts()

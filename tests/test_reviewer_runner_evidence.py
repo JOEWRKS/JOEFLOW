@@ -1409,7 +1409,11 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 cohort_id=None,
                 case_id=None,
             )
-            request = build_canonical_request(run, artifacts, {})
+            request = build_canonical_request(
+                run,
+                artifacts,
+                controller_only_hashes={},
+            )
             request_document = json.loads(request.content)
             decoded_inputs = tuple(
                 base64.b64decode(item["content_base64"], validate=True)

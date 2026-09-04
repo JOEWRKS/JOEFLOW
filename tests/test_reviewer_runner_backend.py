@@ -64,7 +64,11 @@ def _request_bytes():
         InputArtifact("run_envelope", "application/json", b'{"run":true}'),
         InputArtifact("output_schema", "application/schema+json", b'{"type":"object"}'),
     )
-    return build_canonical_request(_run_identity(), artifacts, {}).content
+    return build_canonical_request(
+        _run_identity(),
+        artifacts,
+        controller_only_hashes={},
+    ).content
 
 
 class ReviewerRunnerBackendTests(unittest.TestCase):

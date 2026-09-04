@@ -44,6 +44,7 @@ class CanonicalRequest:
 
     content: bytes
     sha256: str
+    inventory: tuple[InputCommitment, ...]
 
 
 def build_permitted_inventory(
@@ -66,6 +67,7 @@ def build_permitted_inventory(
 def build_canonical_request(
     run_identity: RunIdentity,
     artifacts: Sequence[InputArtifact],
+    *,
     controller_only_hashes: Mapping[str, str],
 ) -> CanonicalRequest:
     """Build one exact-four-role request whose inputs are inline base64 bytes."""
@@ -114,7 +116,11 @@ def build_canonical_request(
     content = canonical_json_bytes(document)
     if content != canonical_json_bytes(document):
         raise RequestError("REQUEST_CANONICALIZATION_MISMATCH", "request bytes are not canonical")
-    return CanonicalRequest(content=content, sha256=sha256_bytes(content))
+    return CanonicalRequest(
+        content=content,
+        sha256=sha256_bytes(content),
+        inventory=inventory,
+    )
 
 
 def _validate_artifacts(artifacts: Sequence[InputArtifact]) -> tuple[InputArtifact, ...]:

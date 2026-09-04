@@ -65,6 +65,7 @@ Test and policy modules:
 - Synthetic positive paths verified deterministic request, identity, raw-response, receipt, cleanup, and source-readback behavior without claiming a real preflight PASS.
 - Adversarial preflight coverage passed for forbidden host-data canaries, tool/retrieval events, continuation state, model/settings/policy drift, capacity mismatch, duplicate JSON keys, repeated nonce, path aliases, and unknown or inferred capability.
 - Response and controller coverage passed for binding drift, malformed or duplicate output, replay, transport failure, evidence publication, cleanup, source drift, durable run claims, evidence-root identity pinning, and fail-closed early exits.
+- Post-audit whole-branch review restored the approved Task 1/2 identity/request boundaries: exact nested receipt dataclass types with declared-field serialization, bidirectional semantic-review version comparison, immutable canonical-request inventory, keyword-only controller hashes, and controller consumption of that bound inventory.
 
 Synthetic fake success remains non-authoritative and cannot change `UNAVAILABLE`, `CALIBRATION_NOT_RUN`, or `NOT_MEASURED`.
 
@@ -96,6 +97,8 @@ The required historical M6 replay fixture was created as a fresh detached, byte-
 
 ## Regression Results
 
+- Task 1/2 boundary remediation plus affected runner and semantic-contract regression: `162/162 PASS`, `0` skipped.
+- The broader counts below are the committed implementation-audit record; this bounded whole-branch review reran the focused 162-test set rather than a new full repository audit.
 - Existing semantic-review/1.0 and repaired calibration-controller regression: `146/146 PASS`, `0` skipped.
 - semantic-review/2.1, action-conformance/2.1, M5.1/M6, runtime, and frozen-boundary regression: `142/142 PASS`, `0` skipped.
 - Legacy frozen regression: `37/37 PASS`, `0` skipped.

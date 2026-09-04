@@ -69,9 +69,17 @@ class ReviewerRunnerRequestTests(unittest.TestCase):
         inventory = build_permitted_inventory(tuple(reversed(artifacts())))
         self.assertEqual(tuple(item.logical_role for item in inventory), tuple(sorted(REQUIRED_ROLES)))
 
-        request = build_canonical_request(run_identity(), tuple(reversed(artifacts())), {})
-        self.assertEqual(set(dataclasses.asdict(request)), {"content", "sha256"})
+        request = build_canonical_request(
+            run_identity(),
+            tuple(reversed(artifacts())),
+            controller_only_hashes={},
+        )
+        self.assertEqual(
+            set(dataclasses.asdict(request)),
+            {"content", "sha256", "inventory"},
+        )
         self.assertEqual(request.sha256, sha256_bytes(request.content))
+        self.assertEqual(request.inventory, inventory)
         document = json.loads(request.content)
         self.assertEqual(
             set(document),
@@ -141,7 +149,11 @@ class ReviewerRunnerRequestTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             build_permitted_inventory(extended_artifacts)
         with self.assertRaises(ValueError):
-            build_canonical_request(run_identity(), extended_artifacts, {})
+            build_canonical_request(
+                run_identity(),
+                extended_artifacts,
+                controller_only_hashes={},
+            )
 
     def test_controller_only_oracle_sibling_and_prior_hashes_are_rejected(self):
         for artifact in artifacts():
@@ -150,18 +162,28 @@ class ReviewerRunnerRequestTests(unittest.TestCase):
                     build_canonical_request(
                         run_identity(),
                         artifacts(),
-                        {"oracle": sha256_bytes(artifact.content)},
+                        controller_only_hashes={
+                            "oracle": sha256_bytes(artifact.content)
+                        },
                     )
 
         request = build_canonical_request(
-            run_identity(), artifacts(), {"oracle": sha256_bytes(b"other")}
+            run_identity(),
+            artifacts(),
+            controller_only_hashes={"oracle": sha256_bytes(b"other")},
         )
         serialized = request.content.decode("utf-8")
         self.assertNotIn("oracle", serialized)
         self.assertNotIn(sha256_bytes(b"other"), serialized)
 
     def test_request_has_no_tools_retrieval_environment_or_continuation_fields(self):
-        document = json.loads(build_canonical_request(run_identity(), artifacts(), {}).content)
+        document = json.loads(
+            build_canonical_request(
+                run_identity(),
+                artifacts(),
+                controller_only_hashes={},
+            ).content
+        )
         serialized = json.dumps(document, sort_keys=True)
         for forbidden in (
             "tools",
@@ -183,10 +205,22 @@ class ReviewerRunnerRequestTests(unittest.TestCase):
             InputArtifact("run_envelope", "application/json", b'{"run":"\xe2\x9c\x93"}'),
             InputArtifact("output_schema", "application/schema+json", b'{"type":"object"}'),
         )
-        first = build_canonical_request(run_identity(), unicode_and_binary, {})
-        second = build_canonical_request(run_identity(), tuple(reversed(unicode_and_binary)), {})
+        first = build_canonical_request(
+            run_identity(),
+            unicode_and_binary,
+            controller_only_hashes={},
+        )
+        second = build_canonical_request(
+            run_identity(),
+            tuple(reversed(unicode_and_binary)),
+            controller_only_hashes={},
+        )
         self.assertEqual(first, second)
         self.assertEqual(first.content, canonical_json_bytes(json.loads(first.content)))
+
+    def test_controller_only_hashes_is_keyword_only(self):
+        with self.assertRaises(TypeError):
+            build_canonical_request(run_identity(), artifacts(), {})
 
     def test_319066_byte_package_is_one_unsplit_inline_artifact(self):
         large_artifacts = tuple(

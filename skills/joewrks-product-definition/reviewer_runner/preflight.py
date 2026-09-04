@@ -508,7 +508,11 @@ def _build_probe_request(allowed_nonce: bytes, required_package_bytes: int):
             canonical_json_bytes(_PROBE_RESPONSE_SCHEMA),
         ),
     )
-    return build_canonical_request(run_identity, artifacts, {})
+    return build_canonical_request(
+        run_identity,
+        artifacts,
+        controller_only_hashes={},
+    )
 
 
 def _response_failure_reason(

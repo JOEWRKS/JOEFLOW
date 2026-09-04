@@ -38,6 +38,7 @@ from reviewer_runner.preflight import (  # noqa: E402
     build_preflight_freshness,
     run_isolation_preflight,
 )
+from reviewer_runner.request import build_canonical_request  # noqa: E402
 import reviewer_runner.controller as controller_module  # noqa: E402
 import reviewer_runner.evidence as evidence_module  # noqa: E402
 from tests.downstream_v21_support import closed_v2_state  # noqa: E402
@@ -671,6 +672,40 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
             self.assertIsNone(outcome.receipt_path)
             self.assertEqual(len(backend.received_request_bytes), 1)
+
+    def test_success_receipt_consumes_inventory_from_the_canonical_request(self):
+        prepared, material = _prepared_v1(
+            run_id="run-request-inventory",
+            context_id="context-request-inventory",
+        )
+        request = build_canonical_request(
+            prepared.run_identity,
+            prepared.artifacts,
+            controller_only_hashes=dict(prepared.controller_only_hashes),
+        )
+        backend = _fake_backend(canonical_json_bytes(material["output"]))
+        preflight, freshness = _fake_preflight(backend)
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            controller_module,
+            "build_permitted_inventory",
+            side_effect=AssertionError(
+                "controller must consume the inventory already bound to the request"
+            ),
+            create=True,
+        ):
+            outcome, _, _, _ = self._execute(
+                prepared,
+                backend,
+                preflight,
+                freshness,
+                Path(directory),
+            )
+            self.assertEqual(outcome.state, RunnerState.REVIEW_COMPLETED)
+            receipt = json.loads(outcome.receipt_path.read_bytes())
+            self.assertEqual(
+                receipt["permitted_input_inventory"],
+                [dataclasses.asdict(item) for item in request.inventory],
+            )
 
     def test_completed_run_identity_is_permanently_reserved_before_second_invoke(self):
         prepared, material = _prepared_v1(

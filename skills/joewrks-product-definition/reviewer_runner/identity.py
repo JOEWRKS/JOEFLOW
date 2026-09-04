@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, fields, replace
+from dataclasses import dataclass, fields, replace
 from enum import Enum
 import hashlib
 import json
@@ -143,17 +143,39 @@ def receipt_content(receipt: RunnerReceipt) -> dict[str, object]:
     """Return the exact self-hashed, JSON-compatible receipt content."""
 
     _require_instance(receipt, RunnerReceipt, "RECEIPT_SCHEMA_INVALID")
+    _validate_state(receipt.state)
+    _validate_run_identity(receipt.run_identity)
+    _validate_backend_identity(receipt.backend_identity)
+    _validate_inventory(receipt.permitted_input_inventory)
+    _validate_response_identity(receipt.response_identity)
     return {
         "state": receipt.state.value,
-        "run_identity": _json_value(receipt.run_identity),
-        "backend_identity": _json_value(receipt.backend_identity),
+        "run_identity": _declared_dataclass_json_value(
+            receipt.run_identity,
+            RunIdentity,
+            "RUN_IDENTITY_INVALID",
+        ),
+        "backend_identity": _declared_dataclass_json_value(
+            receipt.backend_identity,
+            BackendIdentity,
+            "BACKEND_IDENTITY_INVALID",
+        ),
         "permitted_input_inventory": [
-            _json_value(item) for item in receipt.permitted_input_inventory
+            _declared_dataclass_json_value(
+                item,
+                InputCommitment,
+                "INPUT_INVENTORY_INVALID",
+            )
+            for item in receipt.permitted_input_inventory
         ],
         "request_sha256": receipt.request_sha256,
         "capability_preflight_sha256": receipt.capability_preflight_sha256,
         "isolation_receipt_sha256": receipt.isolation_receipt_sha256,
-        "response_identity": _json_value(receipt.response_identity),
+        "response_identity": _declared_dataclass_json_value(
+            receipt.response_identity,
+            ResponseIdentity,
+            "RESPONSE_IDENTITY_INVALID",
+        ),
     }
 
 
@@ -167,7 +189,15 @@ def backend_identity_sha256(identity: BackendIdentity) -> str:
     """Return the canonical hash binding a response to one backend identity."""
 
     _require_instance(identity, BackendIdentity, "BACKEND_IDENTITY_INVALID")
-    return sha256_bytes(canonical_json_bytes(_json_value(identity)))
+    return sha256_bytes(
+        canonical_json_bytes(
+            _declared_dataclass_json_value(
+                identity,
+                BackendIdentity,
+                "BACKEND_IDENTITY_INVALID",
+            )
+        )
+    )
 
 
 def build_runner_receipt(
@@ -386,6 +416,7 @@ def _validate_expected_run_identity(actual: RunIdentity, expected: RunIdentity |
         return
     _validate_run_identity(expected)
     codes = {
+        "semantic_review_contract_version": "SEMANTIC_REVIEW_CONTRACT_VERSION_MISMATCH",
         "package_schema_version": "PACKAGE_SCHEMA_VERSION_MISMATCH",
         "package_digest": "PACKAGE_DIGEST_MISMATCH",
         "source_action_contract_hash": "SOURCE_ACTION_CONTRACT_HASH_MISMATCH",
@@ -448,8 +479,6 @@ def _inventory_by_role(inventory: tuple[InputCommitment, ...]) -> dict[str, Inpu
 def _json_value(value: object) -> object:
     if isinstance(value, Enum):
         return value.value
-    if hasattr(value, "__dataclass_fields__"):
-        return {key: _json_value(item) for key, item in asdict(value).items()}
     if isinstance(value, tuple):
         return [_json_value(item) for item in value]
     if isinstance(value, list):
@@ -457,6 +486,18 @@ def _json_value(value: object) -> object:
     if isinstance(value, dict):
         return {key: _json_value(item) for key, item in value.items()}
     return value
+
+
+def _declared_dataclass_json_value(
+    value: object,
+    expected_type: type[object],
+    code: str,
+) -> dict[str, object]:
+    _require_instance(value, expected_type, code)
+    return {
+        field.name: _json_value(getattr(value, field.name))
+        for field in fields(expected_type)
+    }
 
 
 def _field_names(cls: type[object]) -> set[str]:
@@ -511,7 +552,7 @@ def _response_identity_from_document(value: object) -> ResponseIdentity:
 
 
 def _require_instance(value: object, expected_type: type[object], code: str) -> None:
-    if not isinstance(value, expected_type):
+    if type(value) is not expected_type:
         _fail(code, f"expected {expected_type.__name__}")
 
 

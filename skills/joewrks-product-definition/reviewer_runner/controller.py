@@ -44,7 +44,6 @@ from .preflight import (
 from .request import (
     RequestError,
     build_canonical_request,
-    build_permitted_inventory,
 )
 from .response import BoundResponse, ResponseValidationError, freeze_validate_bind_response
 from .semantic_review import PreparedReview
@@ -320,7 +319,7 @@ def _execute_with_evidence_root_lease(
             state=RunnerState.REVIEW_COMPLETED,
             run_identity=prepared.run_identity,
             backend_identity=descriptor.identity,
-            permitted_input_inventory=build_permitted_inventory(prepared.artifacts),
+            permitted_input_inventory=request.inventory,
             request_sha256=request.sha256,
             capability_preflight_sha256=preflight.evidence_sha256,
             isolation_receipt_sha256=isolation.receipt_sha256,

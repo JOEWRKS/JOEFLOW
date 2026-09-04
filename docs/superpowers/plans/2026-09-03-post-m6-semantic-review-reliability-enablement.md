@@ -1450,6 +1450,16 @@ After the commit, set `$runnerCodeRevision = git rev-parse HEAD^` and rerun the 
 | Exact cleanup/evidence/sibling/repository safety | Task 6 tests 2–7 |
 | Fake never establishes capability | Task 3 test 7; Task 4 test 10; Task 8 test 2 |
 
+## Whole-branch review remediation ledger
+
+| Review finding | Approved Task 1/2 boundary restored | Regression evidence | Disposition |
+| --- | --- | --- | --- |
+| Identity dataclass subclasses could add fields that recursive `asdict` persisted | `RunIdentity`, `BackendIdentity`, `InputCommitment`, and `ResponseIdentity` require exact types; receipt serialization reads only each declared base field and rejects extended values before persistence | `test_nested_identity_subclasses_are_rejected_before_receipt_serialization` | `FIXED` |
+| Expected run comparison omitted `semantic_review_contract_version` | Both admitted versions are compared and any 1.0/2.1 drift returns `SEMANTIC_REVIEW_CONTRACT_VERSION_MISMATCH` | `test_expected_semantic_review_contract_version_mismatch_is_rejected_bidirectionally` | `FIXED` |
+| `CanonicalRequest` dropped its immutable inventory and the controller rebuilt it | `CanonicalRequest.inventory` is the role-sorted tuple created with the request; `controller_only_hashes` is keyword-only; the controller consumes `request.inventory` for the receipt | `test_exact_four_roles_are_sorted_and_inlined`, `test_controller_only_hashes_is_keyword_only`, and `test_success_receipt_consumes_inventory_from_the_canonical_request` | `FIXED` |
+
+The bounded remediation changes no semantic-review contract, provider capability, calibration authority, reliability result, Product Definition state, frozen M6 evidence, or real-review authorization.
+
 ## Implementation commit sequence
 
 The future implementation branch is `feat/post-m6-semantic-review-reliability-runner`. Create it only after PM approves this plan, from the then-current remote tip containing this exact plan. Preserve these eight GREEN commits in order:
