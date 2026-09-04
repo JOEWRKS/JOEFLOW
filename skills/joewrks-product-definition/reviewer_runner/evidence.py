@@ -35,14 +35,12 @@ _WINDOWS_FILE_READ_ATTRIBUTES = 0x00000080
 _WINDOWS_DELETE = 0x00010000
 _WINDOWS_FILE_SHARE_READ = 0x00000001
 _WINDOWS_FILE_SHARE_WRITE = 0x00000002
-_WINDOWS_FILE_SHARE_DELETE = 0x00000004
 _WINDOWS_OPEN_EXISTING = 3
 _WINDOWS_FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000
 _WINDOWS_FILE_FLAG_BACKUP_SEMANTICS = 0x02000000
 _WINDOWS_FILE_DISPOSITION_INFO_CLASS = 4
 _WINDOWS_FILE_ID_INFO_CLASS = 0x12
 _WINDOWS_INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
-_WINDOWS_DUPLICATE_SAME_ACCESS = 0x00000002
 _WINDOWS_KERNEL32 = None
 _WINDOWS_RESERVED_PATH_STEMS = frozenset(
     {
@@ -64,53 +62,6 @@ class EvidenceClaimConflict(EvidenceLifecycleError):
     """A one-shot durable evidence claim already exists or is in progress."""
 
 
-@dataclass
-class EvidenceRootLease:
-    """Pin one lexical evidence root for a complete runner execution."""
-
-    root: Path
-    _pinned_components: tuple[tuple[Path, int, "_WindowsFileIdentity"], ...]
-    _released: bool = field(default=False, init=False, repr=False)
-
-    def verify(self) -> None:
-        """Require every lexical component to still name its pinned directory."""
-
-        if self._released:
-            raise EvidenceLifecycleError("evidence-root lease is already released")
-        _reject_reparse_components(self.root, "leased evidence_root")
-        for path, _handle, expected_identity in self._pinned_components:
-            _require_plain_directory(path, "leased evidence-root component")
-            observed_handle = _open_windows_directory_verification_handle(path)
-            try:
-                observed_identity = _windows_directory_identity_from_handle(
-                    observed_handle
-                )
-            finally:
-                _close_windows_handle(
-                    observed_handle,
-                    "evidence-root verification handle",
-                )
-            if observed_identity != expected_identity:
-                raise EvidenceLifecycleError(
-                    "leased evidence-root component identity changed"
-                )
-
-    def close(self) -> None:
-        """Release every pin, attempting all closes before reporting an error."""
-
-        if self._released:
-            return
-        self._released = True
-        failures: list[str] = []
-        for _path, handle, _identity in reversed(self._pinned_components):
-            try:
-                _close_windows_handle(handle, "evidence-root pin handle")
-            except EvidenceLifecycleError as error:
-                failures.append(str(error))
-        if failures:
-            raise EvidenceLifecycleError("; ".join(failures))
-
-
 @dataclass(frozen=True)
 class _WindowsFileIdentity:
     volume_serial_number: int
@@ -130,6 +81,15 @@ class _WindowsFileIdInfo(ctypes.Structure):
 
 class _WindowsFileDispositionInfo(ctypes.Structure):
     _fields_ = (("delete_file", ctypes.c_ubyte),)
+
+
+@dataclass(frozen=True)
+class _RunReservation:
+    path: Path
+    path_identity: tuple[int, int, int]
+    directory: Path
+    directory_identity: tuple[int, int, int]
+    directory_created: bool
 
 
 @dataclass(frozen=True)
@@ -163,47 +123,97 @@ class TaskWorkspace:
     _terminal: bool = field(default=False, init=False, repr=False)
 
     @classmethod
-    def create(cls, transient_parent: Path, review_run_id: str) -> "TaskWorkspace":
+    def create(
+        cls,
+        transient_parent: Path,
+        review_run_id: str,
+        *,
+        repository_root: Path,
+        source_snapshot: SourceSnapshot | None = None,
+    ) -> "TaskWorkspace":
         """Create one new marker-owned workspace without reusing prior output."""
 
+        repository = _require_existing_directory(repository_root, "repository_root")
+        if source_snapshot is None:
+            source_snapshot = _capture_source_snapshot(repository)
+        else:
+            verify_source_unchanged(source_snapshot, repository)
         parent = _require_existing_directory(transient_parent, "transient_parent")
         _require_safe_path_component(review_run_id, "review_run_id")
         runner_parent = parent / _RUNNER_DIRECTORY
-        if os.path.lexists(runner_parent):
-            _require_plain_directory(runner_parent, "runner workspace parent")
-            if not _same_path(runner_parent.resolve(strict=True), runner_parent):
-                raise EvidenceLifecycleError("runner workspace parent is path-aliased")
-        else:
-            runner_parent.mkdir()
-        if not _is_strict_descendant(runner_parent.resolve(strict=True), parent):
-            raise EvidenceLifecycleError("runner workspace parent escapes transient_parent")
-
+        runner_parent_created = False
+        runner_parent_identity: tuple[int, int, int] | None = None
         task_root = runner_parent / review_run_id
-        if os.path.lexists(task_root):
-            raise EvidenceLifecycleError(
-                "review workspace already exists; prior execution state is ambiguous"
+        reservation: _RunReservation | None = None
+        task_root_identity: tuple[int, int, int] | None = None
+        try:
+            if os.path.lexists(runner_parent):
+                _require_plain_directory(runner_parent, "runner workspace parent")
+                if not _same_path(runner_parent.resolve(strict=True), runner_parent):
+                    raise EvidenceLifecycleError("runner workspace parent is path-aliased")
+            else:
+                runner_parent.mkdir()
+                runner_parent_created = True
+                runner_parent_identity = _entry_identity_no_follow(runner_parent)
+                if not stat.S_ISDIR(runner_parent_identity[2]):
+                    raise EvidenceLifecycleError(
+                        "new runner workspace parent is not a plain directory"
+                    )
+                _require_directory_identity(
+                    runner_parent,
+                    runner_parent_identity,
+                    "new runner workspace parent",
+                )
+            if not _is_strict_descendant(runner_parent.resolve(strict=True), parent):
+                raise EvidenceLifecycleError(
+                    "runner workspace parent escapes transient_parent"
+                )
+            if os.path.lexists(task_root):
+                raise EvidenceLifecycleError(
+                    "review workspace already exists; prior execution state is ambiguous"
+                )
+            reservation = _create_run_reservation(
+                runner_parent,
+                task_root,
+                review_run_id,
             )
-        _create_run_reservation(runner_parent, task_root, review_run_id)
-        task_root.mkdir()
-        resolved_root = task_root.resolve(strict=True)
-        if not _is_strict_descendant(resolved_root, parent):
-            raise EvidenceLifecycleError("review workspace escapes transient_parent")
-        marker_path = resolved_root / _OWNER_MARKER
-        atomic_freeze_evidence(
-            canonical_json_bytes(
-                {
-                    "resolved_root": str(resolved_root),
-                    "review_run_id": review_run_id,
-                }
-            ),
-            marker_path,
-        )
-        owned_paths = tuple(resolved_root / name for name in _OWNED_DIRECTORIES)
-        for owned_path in owned_paths:
-            owned_path.mkdir()
+            task_root.mkdir()
+            task_root_identity = _plain_directory_identity(
+                task_root,
+                "new review workspace",
+            )
+            resolved_root = task_root.resolve(strict=True)
+            if not _is_strict_descendant(resolved_root, parent):
+                raise EvidenceLifecycleError("review workspace escapes transient_parent")
+            marker_path = resolved_root / _OWNER_MARKER
+            atomic_freeze_evidence(
+                canonical_json_bytes(
+                    {
+                        "resolved_root": str(resolved_root),
+                        "review_run_id": review_run_id,
+                    }
+                ),
+                marker_path,
+            )
+            owned_paths = tuple(resolved_root / name for name in _OWNED_DIRECTORIES)
+            for owned_path in owned_paths:
+                owned_path.mkdir()
+        except Exception as setup_error:
+            try:
+                _rollback_workspace_setup(
+                    runner_parent,
+                    runner_parent_created=runner_parent_created,
+                    runner_parent_identity=runner_parent_identity,
+                    reservation=reservation,
+                    task_root=task_root,
+                    task_root_identity=task_root_identity,
+                )
+            except EvidenceLifecycleError as rollback_error:
+                raise EvidenceLifecycleError(
+                    f"workspace setup failed: {setup_error}; rollback failed: {rollback_error}"
+                ) from setup_error
+            raise
 
-        repository_root = Path.cwd().resolve(strict=True)
-        source_snapshot = _capture_source_snapshot(repository_root)
         return cls(
             transient_parent=parent,
             review_run_id=review_run_id,
@@ -212,7 +222,7 @@ class TaskWorkspace:
             inputs_path=owned_paths[0],
             response_working_path=owned_paths[1],
             synthetic_canaries_path=owned_paths[2],
-            repository_root=repository_root,
+            repository_root=repository,
             source_snapshot=source_snapshot,
         )
 
@@ -326,47 +336,6 @@ def atomic_claim_evidence(content: bytes, target_path: Path) -> Path:
         target_path,
         existing_is_conflict=True,
     )
-
-
-def acquire_evidence_root_lease(evidence_root: Path) -> EvidenceRootLease:
-    """Create and pin the exact lexical evidence root against path replacement."""
-
-    if not isinstance(evidence_root, Path):
-        raise EvidenceLifecycleError("evidence_root must be a Path")
-    if os.name != "nt":
-        raise EvidenceLifecycleError(
-            "continuous evidence-root identity protection requires Windows"
-        )
-    root = Path(os.path.abspath(evidence_root))
-    _reject_reparse_components(root, "evidence_root")
-    try:
-        root.mkdir(parents=True, exist_ok=True)
-    except OSError as error:
-        raise EvidenceLifecycleError(
-            f"evidence_root cannot be created: {error}"
-        ) from error
-    _reject_reparse_components(root, "evidence_root")
-    _require_plain_directory(root, "evidence_root")
-
-    components = (root,)
-    pinned: list[tuple[Path, int, _WindowsFileIdentity]] = []
-    try:
-        for component in components:
-            handle, identity = _acquire_windows_directory_pin(component)
-            pinned.append((component, handle, identity))
-        lease = EvidenceRootLease(root=root, _pinned_components=tuple(pinned))
-        lease.verify()
-        return lease
-    except Exception:
-        failures: list[str] = []
-        for _path, handle, _identity in reversed(pinned):
-            try:
-                _close_windows_handle(handle, "incomplete evidence-root pin handle")
-            except EvidenceLifecycleError as error:
-                failures.append(str(error))
-        if failures:
-            raise EvidenceLifecycleError("; ".join(failures))
-        raise
 
 
 def _atomic_publish_evidence(
@@ -573,7 +542,7 @@ def _capture_source_snapshot(repository_root: Path) -> SourceSnapshot:
 def _run_git(repository_root: Path, *arguments: str) -> bytes:
     try:
         completed = subprocess.run(
-            ["git", *arguments],
+            ["git", "--no-optional-locks", *arguments],
             cwd=repository_root,
             check=True,
             shell=False,
@@ -711,15 +680,21 @@ def _create_run_reservation(
     runner_parent: Path,
     task_root: Path,
     review_run_id: str,
-) -> None:
+) -> _RunReservation:
     reservation_directory = runner_parent / _RESERVATION_DIRECTORY
+    directory_created = False
     if os.path.lexists(reservation_directory):
         _require_plain_directory(reservation_directory, "run reservation directory")
     else:
         reservation_directory.mkdir()
+        directory_created = True
     _require_resolved_descendant_or_same(
         reservation_directory,
         runner_parent,
+        "run reservation directory",
+    )
+    directory_identity = _plain_directory_identity(
+        reservation_directory,
         "run reservation directory",
     )
     reservation_path = reservation_directory / f"{review_run_id}.json"
@@ -728,8 +703,10 @@ def _create_run_reservation(
             "review run is reserved by a prior or active execution"
         )
     content = _reservation_bytes(task_root, review_run_id)
+    reservation_created = False
     try:
         with reservation_path.open("xb") as stream:
+            reservation_created = True
             written = stream.write(content)
             if written != len(content):
                 raise EvidenceLifecycleError("run reservation write was incomplete")
@@ -739,8 +716,147 @@ def _create_run_reservation(
         raise EvidenceLifecycleError(
             "review run is reserved by a concurrent execution"
         ) from error
-    if reservation_path.read_bytes() != content:
-        raise EvidenceLifecycleError("run reservation readback changed")
+    try:
+        if reservation_path.read_bytes() != content:
+            raise EvidenceLifecycleError("run reservation readback changed")
+        path_identity = _entry_identity_no_follow(reservation_path)
+        if not stat.S_ISREG(path_identity[2]):
+            raise EvidenceLifecycleError("run reservation is not a plain file")
+    except Exception as error:
+        if reservation_created:
+            try:
+                path_identity = _entry_identity_no_follow(reservation_path)
+                _remove_created_file(
+                    reservation_path,
+                    path_identity,
+                    reservation_directory,
+                    directory_identity,
+                    "incomplete run reservation",
+                )
+                if directory_created:
+                    _remove_created_empty_directory(
+                        reservation_directory,
+                        directory_identity,
+                        "incomplete run reservation directory",
+                    )
+            except EvidenceLifecycleError as cleanup_error:
+                raise EvidenceLifecycleError(
+                    f"run reservation setup failed: {error}; cleanup failed: {cleanup_error}"
+                ) from error
+        raise
+    return _RunReservation(
+        path=reservation_path,
+        path_identity=path_identity,
+        directory=reservation_directory,
+        directory_identity=directory_identity,
+        directory_created=directory_created,
+    )
+
+
+def _rollback_workspace_setup(
+    runner_parent: Path,
+    *,
+    runner_parent_created: bool,
+    runner_parent_identity: tuple[int, int, int] | None,
+    reservation: _RunReservation | None,
+    task_root: Path,
+    task_root_identity: tuple[int, int, int] | None,
+) -> None:
+    failures: list[str] = []
+    if task_root_identity is not None:
+        try:
+            _remove_owned_directory(
+                task_root,
+                task_root,
+                expected_identity=task_root_identity,
+            )
+        except EvidenceLifecycleError as error:
+            failures.append(str(error))
+    if reservation is not None:
+        try:
+            _remove_created_file(
+                reservation.path,
+                reservation.path_identity,
+                reservation.directory,
+                reservation.directory_identity,
+                "failed workspace run reservation",
+            )
+        except EvidenceLifecycleError as error:
+            failures.append(str(error))
+        if reservation.directory_created:
+            try:
+                _remove_created_empty_directory(
+                    reservation.directory,
+                    reservation.directory_identity,
+                    "failed workspace reservation directory",
+                )
+            except EvidenceLifecycleError as error:
+                failures.append(str(error))
+    if runner_parent_created and runner_parent_identity is not None:
+        try:
+            _remove_created_empty_directory(
+                runner_parent,
+                runner_parent_identity,
+                "failed workspace runner parent",
+            )
+        except EvidenceLifecycleError as error:
+            failures.append(str(error))
+    expected_absent = [task_root]
+    if reservation is not None:
+        expected_absent.append(reservation.path)
+        if reservation.directory_created:
+            expected_absent.append(reservation.directory)
+    if runner_parent_created:
+        expected_absent.append(runner_parent)
+    for path in expected_absent:
+        if os.path.lexists(path):
+            failures.append(f"failed workspace setup path still exists: {path}")
+    if failures:
+        raise EvidenceLifecycleError("; ".join(failures))
+
+
+def _remove_created_file(
+    path: Path,
+    expected_identity: tuple[int, int, int],
+    parent: Path,
+    parent_identity: tuple[int, int, int],
+    label: str,
+) -> None:
+    _require_directory_identity(parent, parent_identity, f"{label} parent")
+    if _entry_identity_no_follow(path) != expected_identity:
+        raise EvidenceLifecycleError(f"{label} identity changed")
+    quarantined = _quarantine_owned_entry(
+        path,
+        parent,
+        parent_identity,
+        expected_identity,
+        label,
+    )
+    _unlink_quarantined_file(
+        quarantined,
+        expected_identity,
+        parent,
+        parent_identity,
+    )
+    if os.path.lexists(path) or os.path.lexists(quarantined):
+        raise EvidenceLifecycleError(f"{label} still exists after rollback")
+
+
+def _remove_created_empty_directory(
+    path: Path,
+    expected_identity: tuple[int, int, int],
+    label: str,
+) -> None:
+    _require_directory_identity(path, expected_identity, label)
+    with os.scandir(path) as iterator:
+        if next(iterator, None) is not None:
+            raise EvidenceLifecycleError(f"{label} is not empty")
+    windows_identity = _capture_windows_directory_identity(path)
+    _remove_empty_windows_directory_by_handle(
+        path,
+        expected_identity,
+        windows_identity,
+    )
 
 
 def _verify_run_reservation(
@@ -910,18 +1026,6 @@ def _windows_kernel32():
             wintypes.DWORD,
         )
         kernel32.GetFileInformationByHandleEx.restype = wintypes.BOOL
-        kernel32.GetCurrentProcess.argtypes = ()
-        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
-        kernel32.DuplicateHandle.argtypes = (
-            wintypes.HANDLE,
-            wintypes.HANDLE,
-            wintypes.HANDLE,
-            ctypes.POINTER(wintypes.HANDLE),
-            wintypes.DWORD,
-            wintypes.BOOL,
-            wintypes.DWORD,
-        )
-        kernel32.DuplicateHandle.restype = wintypes.BOOL
         kernel32.SetFileInformationByHandle.argtypes = (
             wintypes.HANDLE,
             wintypes.DWORD,
@@ -957,123 +1061,6 @@ def _open_windows_directory_delete_handle(directory: Path) -> int:
     )
     if handle in (None, _WINDOWS_INVALID_HANDLE_VALUE):
         raise _win32_lifecycle_error("opening exact removable directory handle")
-    return handle
-
-
-def _open_windows_directory_pin_handle(directory: Path) -> int:
-    kernel32 = _windows_kernel32()
-    handle = kernel32.CreateFileW(
-        str(directory),
-        _WINDOWS_FILE_READ_ATTRIBUTES | _WINDOWS_DELETE,
-        _WINDOWS_FILE_SHARE_READ | _WINDOWS_FILE_SHARE_WRITE,
-        None,
-        _WINDOWS_OPEN_EXISTING,
-        (
-            _WINDOWS_FILE_FLAG_BACKUP_SEMANTICS
-            | _WINDOWS_FILE_FLAG_OPEN_REPARSE_POINT
-        ),
-        None,
-    )
-    if handle in (None, _WINDOWS_INVALID_HANDLE_VALUE):
-        raise _win32_lifecycle_error("opening evidence-root pin handle")
-    return handle
-
-
-def _duplicate_windows_directory_pin_handle(authority_handle: int) -> int:
-    kernel32 = _windows_kernel32()
-    process = kernel32.GetCurrentProcess()
-    duplicated = wintypes.HANDLE()
-    if not kernel32.DuplicateHandle(
-        process,
-        authority_handle,
-        process,
-        ctypes.byref(duplicated),
-        0,
-        False,
-        _WINDOWS_DUPLICATE_SAME_ACCESS,
-    ):
-        raise _win32_lifecycle_error("duplicating evidence-root pin handle")
-    if duplicated.value in (None, _WINDOWS_INVALID_HANDLE_VALUE):
-        raise EvidenceLifecycleError("duplicated evidence-root pin handle is invalid")
-    return duplicated.value
-
-
-def _acquire_windows_directory_pin(
-    directory: Path,
-) -> tuple[int, _WindowsFileIdentity]:
-    """Atomically hand first-open authority to one long-lived duplicate handle."""
-
-    _require_plain_directory(directory, "evidence-root lexical component")
-    authority_handle = _open_windows_directory_pin_handle(directory)
-    lease_handle: int | None = None
-    try:
-        authority_identity = _windows_directory_identity_from_handle(authority_handle)
-        _require_plain_directory(
-            directory,
-            "authority-pinned evidence-root lexical component",
-        )
-        lease_handle = _duplicate_windows_directory_pin_handle(authority_handle)
-        lease_identity = _windows_directory_identity_from_handle(lease_handle)
-        if lease_identity != authority_identity:
-            raise EvidenceLifecycleError(
-                "evidence-root authority and lease handle identities differ"
-            )
-        _require_plain_directory(
-            directory,
-            "lease-pinned evidence-root lexical component",
-        )
-    except Exception as error:
-        handles = tuple(
-            handle for handle in (lease_handle, authority_handle) if handle is not None
-        )
-        try:
-            _close_windows_handles(handles, "failed evidence-root acquisition handle")
-        except EvidenceLifecycleError as close_error:
-            raise EvidenceLifecycleError(f"{error}; {close_error}") from error
-        raise
-
-    try:
-        _close_windows_handle(authority_handle, "evidence-root authority handle")
-    except EvidenceLifecycleError as error:
-        try:
-            _close_windows_handle(lease_handle, "failed evidence-root lease handle")
-        except EvidenceLifecycleError as close_error:
-            raise EvidenceLifecycleError(f"{error}; {close_error}") from error
-        raise
-    return lease_handle, lease_identity
-
-
-def _close_windows_handles(handles: Sequence[int], label: str) -> None:
-    failures: list[str] = []
-    for handle in handles:
-        try:
-            _close_windows_handle(handle, label)
-        except EvidenceLifecycleError as error:
-            failures.append(str(error))
-    if failures:
-        raise EvidenceLifecycleError("; ".join(failures))
-
-
-def _open_windows_directory_verification_handle(directory: Path) -> int:
-    kernel32 = _windows_kernel32()
-    handle = kernel32.CreateFileW(
-        str(directory),
-        _WINDOWS_FILE_READ_ATTRIBUTES,
-        (
-            _WINDOWS_FILE_SHARE_READ
-            | _WINDOWS_FILE_SHARE_WRITE
-            | _WINDOWS_FILE_SHARE_DELETE
-        ),
-        None,
-        _WINDOWS_OPEN_EXISTING,
-        (
-            _WINDOWS_FILE_FLAG_BACKUP_SEMANTICS
-            | _WINDOWS_FILE_FLAG_OPEN_REPARSE_POINT
-        ),
-        None,
-    )
-    if handle in (None, _WINDOWS_INVALID_HANDLE_VALUE):
-        raise _win32_lifecycle_error("opening evidence-root verification handle")
     return handle
 
 

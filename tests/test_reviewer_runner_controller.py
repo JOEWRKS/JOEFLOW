@@ -40,7 +40,6 @@ from reviewer_runner.preflight import (  # noqa: E402
 )
 from reviewer_runner.request import build_canonical_request  # noqa: E402
 import reviewer_runner.controller as controller_module  # noqa: E402
-import reviewer_runner.evidence as evidence_module  # noqa: E402
 from tests.downstream_v21_support import closed_v2_state  # noqa: E402
 from tests.reviewer_runner_support import DeterministicFakeBackend  # noqa: E402
 from tests.semantic_review_support import make_run_set  # noqa: E402
@@ -489,7 +488,7 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
         seed_backend = _fake_backend(canonical_json_bytes(material["output"]))
         baseline = seed_backend.describe()
         drifts = {
-            "evidence-observation-method": dataclasses.replace(
+            "claim-observation-method": dataclasses.replace(
                 baseline,
                 observations=(
                     dataclasses.replace(
@@ -522,20 +521,7 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             backend = _fake_backend(canonical_json_bytes(case_material["output"]))
             preflight, freshness = _fake_preflight(backend)
 
-            if label.startswith("evidence-"):
-                original_boundary = controller_module.acquire_evidence_root_lease
-
-                def drift_at_boundary(*args, changed=changed_descriptor, **kwargs):
-                    result = original_boundary(*args, **kwargs)
-                    backend._descriptor = changed
-                    return result
-
-                patcher = mock.patch.object(
-                    controller_module,
-                    "acquire_evidence_root_lease",
-                    side_effect=drift_at_boundary,
-                )
-            elif label.startswith("claim-"):
+            if label.startswith("claim-"):
                 original_boundary = controller_module._acquire_durable_run_claim
 
                 def drift_at_boundary(*args, changed=changed_descriptor, **kwargs):
@@ -1055,7 +1041,7 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
         self.assertEqual(verify.call_count, 1)
         self.assertTrue(any("durable run claim failed" in e for e in outcome.errors))
 
-    def test_guarded_early_source_failure_still_records_diagnostic(self):
+    def test_post_claim_source_failure_still_records_diagnostic(self):
         prepared, material = _prepared_v1(
             run_id="run-guarded-source-diagnostic",
             context_id="context-guarded-source-diagnostic",
@@ -1070,8 +1056,8 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             evidence_root = base / "evidence"
             with mock.patch.object(
                 controller_module,
-                "atomic_claim_evidence",
-                side_effect=OSError("forced guarded claim failure"),
+                "load_used_provider_request_ids",
+                side_effect=ValueError("forced replay index failure"),
             ), mock.patch.object(
                 controller_module,
                 "verify_source_unchanged",
@@ -1138,7 +1124,7 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             )
             self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
             self.assertEqual(len(backend.received_request_bytes), 0)
-            self.assertTrue(any("evidence-root lease failed" in e for e in outcome.errors))
+            self.assertTrue(any("durable run claim failed" in e for e in outcome.errors))
             self.assertEqual(
                 {
                     path.relative_to(outside).as_posix(): path.read_bytes()
@@ -1191,230 +1177,6 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             self.assertEqual(second.state, RunnerState.PACKAGE_BINDING_MISMATCH)
             self.assertEqual(len(backend.received_request_bytes), 0)
             self.assertEqual(claims[0].read_bytes(), claim_bytes)
-
-    def test_evidence_root_identity_is_pinned_after_claim_before_index_scan(self):
-        prepared, material = _prepared_v1(
-            run_id="run-root-identity-pin",
-            context_id="context-root-identity-pin",
-        )
-        backend = _fake_backend(canonical_json_bytes(material["output"]))
-        preflight, freshness = _fake_preflight(backend)
-        with tempfile.TemporaryDirectory() as directory:
-            base = Path(directory)
-            repository = _init_clean_repository(base)
-            transient_parent = base / "transient"
-            transient_parent.mkdir()
-            evidence_root = base / "evidence"
-            parked_root = base / "parked-evidence"
-            outside = base / "outside-evidence"
-            outside_receipt = outside / "runs" / "prior" / "context"
-            outside_receipt.mkdir(parents=True)
-            external_receipt = outside_receipt / "runner-receipt.json"
-            external_receipt.write_bytes(b'{"external":"must-not-be-read"}')
-            outside_before = {
-                path.relative_to(outside).as_posix(): path.read_bytes()
-                for path in outside.rglob("*")
-                if path.is_file()
-            }
-            original_claim = controller_module.atomic_claim_evidence
-            original_read_bytes = Path.read_bytes
-            claim_record = {}
-            external_reads = []
-
-            def claim_then_attempt_root_swap(content, target_path):
-                claim_path = original_claim(content, target_path)
-                claim_record["content"] = content
-                claim_record["name"] = claim_path.name
-                evidence_root.rename(parked_root)
-                evidence_root.symlink_to(outside, target_is_directory=True)
-                claim_record["swap_succeeded"] = True
-                return claim_path
-
-            external_path_key = str(external_receipt.resolve()).casefold()
-
-            def monitor_read_bytes(path):
-                if str(Path(path).resolve()).casefold() == external_path_key:
-                    external_reads.append(str(path))
-                return original_read_bytes(path)
-
-            with mock.patch.object(
-                controller_module,
-                "atomic_claim_evidence",
-                side_effect=claim_then_attempt_root_swap,
-            ), mock.patch.object(Path, "read_bytes", monitor_read_bytes):
-                outcome = execute_review(
-                    prepared,
-                    backend=backend,
-                    preflight=preflight,
-                    current_freshness=freshness,
-                    evidence_root=evidence_root,
-                    transient_parent=transient_parent,
-                    repository_root=repository,
-                    execution_mode="SYNTHETIC_TEST",
-                )
-
-            self.assertNotEqual(outcome.state, RunnerState.REVIEW_COMPLETED)
-            self.assertEqual(len(backend.received_request_bytes), 0)
-            self.assertEqual(
-                external_reads,
-                [],
-                "the swapped external evidence root must never be traversed",
-            )
-            self.assertEqual(
-                {
-                    path.relative_to(outside).as_posix(): path.read_bytes()
-                    for path in outside.rglob("*")
-                    if path.is_file()
-                },
-                outside_before,
-            )
-            claim_parent = (
-                parked_root if parked_root.exists() else evidence_root
-            ) / "run-claims"
-            preserved_claim = claim_parent / claim_record["name"]
-            self.assertEqual(preserved_claim.read_bytes(), claim_record["content"])
-            self.assertFalse(parked_root.exists())
-            evidence_root.rename(parked_root)
-            self.assertTrue(parked_root.is_dir())
-            parked_root.rename(evidence_root)
-
-    def test_evidence_root_handle_handoff_mismatch_fails_before_invoke(self):
-        prepared, material = _prepared_v1(
-            run_id="run-root-handoff-mismatch",
-            context_id="context-root-handoff-mismatch",
-        )
-        backend = _fake_backend(canonical_json_bytes(material["output"]))
-        preflight, freshness = _fake_preflight(backend)
-        with tempfile.TemporaryDirectory() as directory:
-            base = Path(directory)
-            repository = _init_clean_repository(base)
-            transient_parent = base / "transient"
-            transient_parent.mkdir()
-            evidence_root = base / "evidence"
-            outside = base / "outside"
-            outside.mkdir()
-            marker = outside / "external-marker.bin"
-            marker.write_bytes(b"must-not-be-read-or-written")
-            marker_before = marker.read_bytes()
-            external_reads = []
-            original_read_bytes = Path.read_bytes
-            first_identity = evidence_module._WindowsFileIdentity(
-                volume_serial_number=1,
-                file_id=b"a" * 16,
-            )
-            substituted_identity = evidence_module._WindowsFileIdentity(
-                volume_serial_number=1,
-                file_id=b"b" * 16,
-            )
-
-            def monitor_read_bytes(path):
-                if Path(path) == marker:
-                    external_reads.append(str(path))
-                return original_read_bytes(path)
-
-            with mock.patch.object(
-                evidence_module,
-                "_windows_directory_identity_from_handle",
-                side_effect=(first_identity, substituted_identity),
-            ), mock.patch.object(Path, "read_bytes", monitor_read_bytes):
-                outcome = execute_review(
-                    prepared,
-                    backend=backend,
-                    preflight=preflight,
-                    current_freshness=freshness,
-                    evidence_root=evidence_root,
-                    transient_parent=transient_parent,
-                    repository_root=repository,
-                    execution_mode="SYNTHETIC_TEST",
-                )
-
-            self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
-            self.assertEqual(len(backend.received_request_bytes), 0)
-            self.assertTrue(
-                any("handle identities differ" in error for error in outcome.errors)
-            )
-            self.assertEqual(external_reads, [])
-            self.assertEqual(marker.read_bytes(), marker_before)
-            self.assertEqual(list(evidence_root.rglob("*")), [])
-            evidence_root.rename(base / "released-evidence")
-
-    def test_prelease_source_failure_never_writes_through_replaced_plain_root(self):
-        prepared, material = _prepared_v1(
-            run_id="run-prelease-source-failure",
-            context_id="context-prelease-source-failure",
-        )
-        backend = _fake_backend(canonical_json_bytes(material["output"]))
-        preflight, freshness = _fake_preflight(backend)
-        with tempfile.TemporaryDirectory() as directory:
-            base = Path(directory)
-            repository = _init_clean_repository(base)
-            transient_parent = base / "transient"
-            transient_parent.mkdir()
-            evidence_root = base / "evidence"
-            parked_root = base / "parked-evidence"
-            replacement_root = base / "external-replacement"
-            replacement_root.mkdir()
-            marker = replacement_root / "external-marker.bin"
-            marker.write_bytes(b"must-remain-byte-identical")
-            external_before = {
-                path.relative_to(replacement_root).as_posix(): path.read_bytes()
-                for path in replacement_root.rglob("*")
-                if path.is_file()
-            }
-            verify_calls = []
-            first_identity = evidence_module._WindowsFileIdentity(
-                volume_serial_number=1,
-                file_id=b"a" * 16,
-            )
-            substituted_identity = evidence_module._WindowsFileIdentity(
-                volume_serial_number=1,
-                file_id=b"b" * 16,
-            )
-
-            def replace_root_during_source_readback(*_args, **_kwargs):
-                verify_calls.append("CALLED")
-                evidence_root.rename(parked_root)
-                replacement_root.rename(evidence_root)
-                raise ValueError("forced source drift after lease acquisition failure")
-
-            with mock.patch.object(
-                evidence_module,
-                "_windows_directory_identity_from_handle",
-                side_effect=(first_identity, substituted_identity),
-            ), mock.patch.object(
-                controller_module,
-                "verify_source_unchanged",
-                side_effect=replace_root_during_source_readback,
-            ):
-                outcome = execute_review(
-                    prepared,
-                    backend=backend,
-                    preflight=preflight,
-                    current_freshness=freshness,
-                    evidence_root=evidence_root,
-                    transient_parent=transient_parent,
-                    repository_root=repository,
-                    execution_mode="SYNTHETIC_TEST",
-                )
-
-            self.assertEqual(outcome.state, RunnerState.REVIEWER_EXECUTION_FAILED)
-            self.assertEqual(verify_calls, ["CALLED"])
-            self.assertEqual(len(backend.received_request_bytes), 0)
-            self.assertEqual(list(parked_root.iterdir()), [])
-            self.assertEqual(
-                {
-                    path.relative_to(evidence_root).as_posix(): path.read_bytes()
-                    for path in evidence_root.rglob("*")
-                    if path.is_file()
-                },
-                external_before,
-            )
-            self.assertFalse(
-                any(
-                    path.name == "source-readback-failure.json"
-                    for path in evidence_root.rglob("*")
-                )
-            )
 
     def test_durable_evidence_claim_blocks_same_identity_across_transient_parents(self):
         prepared, material = _prepared_v1(
@@ -1575,17 +1337,13 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
             transient_parent = base / "transient"
             transient_parent.mkdir()
             evidence_root = base / "evidence"
-            delegate = _fake_backend(canonical_json_bytes(material["output"]))
-
-            def mutate_source():
-                (repository / "unexpected.txt").write_bytes(b"drift")
-
-            backend = _PostInvokeSideEffectBackend(delegate, mutate_source)
+            backend = _fake_backend(canonical_json_bytes(material["output"]))
             preflight, freshness = _fake_preflight(backend)
             original_freeze = controller_module.atomic_freeze_evidence
 
             def fail_cleanup_evidence(content, target_path):
                 if Path(target_path).name == "cleanup.json":
+                    (repository / "unexpected.txt").write_bytes(b"drift")
                     raise OSError("forced cleanup evidence error")
                 return original_freeze(content, target_path)
 

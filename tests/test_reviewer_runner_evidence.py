@@ -1,3 +1,4 @@
+import ast
 import base64
 import concurrent.futures
 import ctypes
@@ -51,11 +52,6 @@ else:
     atomic_claim_evidence = getattr(
         evidence_module,
         "atomic_claim_evidence",
-        None,
-    )
-    acquire_evidence_root_lease = getattr(
-        evidence_module,
-        "acquire_evidence_root_lease",
         None,
     )
     _EVIDENCE_IMPORT_ERROR = None
@@ -176,6 +172,14 @@ def _preserve(base: Path, label: str, content: bytes = b"diagnostic") -> Path:
     return atomic_freeze_evidence(content, base / "evidence" / label / "receipt.json")
 
 
+def _create_workspace(transient_parent: Path, review_run_id: str) -> TaskWorkspace:
+    return TaskWorkspace.create(
+        transient_parent,
+        review_run_id,
+        repository_root=ROOT,
+    )
+
+
 class ReviewerRunnerEvidenceTests(unittest.TestCase):
     def setUp(self):
         if _EVIDENCE_IMPORT_ERROR is not None:
@@ -183,13 +187,157 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 "reviewer_runner.evidence must implement the evidence lifecycle contract"
             )
 
+    def test_workspace_creation_requires_explicit_repository_before_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            transient_parent = Path(directory).resolve() / "transient"
+            transient_parent.mkdir()
+            runner_parent = transient_parent / "joewrks-reviewer-runner"
+
+            with self.assertRaises(TypeError):
+                TaskWorkspace.create(transient_parent, "run-explicit-repository")
+
+            self.assertFalse(os.path.lexists(runner_parent))
+
+    def test_workspace_creation_uses_explicit_repository_from_non_git_cwd(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            repository = base / "repository"
+            repository.mkdir()
+            _git(repository, "init", "-q")
+            _git(repository, "config", "user.email", "reviewer-runner@example.invalid")
+            _git(repository, "config", "user.name", "Reviewer Runner Test")
+            repository.joinpath("source.txt").write_bytes(b"immutable-source\n")
+            _git(repository, "add", "source.txt")
+            _git(repository, "commit", "-q", "-m", "fixture")
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            non_git_cwd = base / "not-a-repository"
+            non_git_cwd.mkdir()
+
+            original_cwd = Path.cwd()
+            try:
+                os.chdir(non_git_cwd)
+                workspace = TaskWorkspace.create(
+                    transient_parent,
+                    "run-explicit-source",
+                    repository_root=repository,
+                )
+            finally:
+                os.chdir(original_cwd)
+
+            self.assertEqual(workspace.repository_root, repository)
+            self.assertEqual(workspace.source_snapshot, capture_source_snapshot(repository))
+
+    def test_workspace_setup_failures_restore_exact_prestate(self):
+        for failure_point in ("marker", "owned-directory"):
+            with self.subTest(failure_point=failure_point), tempfile.TemporaryDirectory() as directory:
+                base = Path(directory).resolve()
+                transient_parent = base / "transient"
+                transient_parent.mkdir()
+                runner_parent = transient_parent / "joewrks-reviewer-runner"
+                reservation_directory = runner_parent / ".joewrks-run-reservations"
+                reservation_directory.mkdir(parents=True)
+                prior_reservation = reservation_directory / "prior-run.json"
+                prior_reservation.write_bytes(b"prior-reservation-must-survive")
+                sibling = runner_parent / "sibling-run"
+                sibling.mkdir()
+                sibling.joinpath("sibling.bin").write_bytes(b"sibling-must-survive")
+                before = _tree_bytes_sha256(runner_parent)
+
+                if failure_point == "marker":
+                    patcher = mock.patch.object(
+                        evidence_module,
+                        "atomic_freeze_evidence",
+                        side_effect=EvidenceLifecycleError("injected marker failure"),
+                    )
+                else:
+                    original_mkdir = Path.mkdir
+
+                    def fail_owned_directory(path, *args, **kwargs):
+                        if Path(path).name == "response-working":
+                            raise OSError("injected owned-directory failure")
+                        return original_mkdir(path, *args, **kwargs)
+
+                    patcher = mock.patch.object(
+                        Path,
+                        "mkdir",
+                        autospec=True,
+                        side_effect=fail_owned_directory,
+                    )
+
+                with patcher, self.assertRaises((OSError, ValueError)):
+                    TaskWorkspace.create(
+                        transient_parent,
+                        f"run-rollback-{failure_point}",
+                        repository_root=ROOT,
+                    )
+
+                task_root = runner_parent / f"run-rollback-{failure_point}"
+                reservation = reservation_directory / f"run-rollback-{failure_point}.json"
+                self.assertFalse(os.path.lexists(task_root))
+                self.assertFalse(os.path.lexists(reservation))
+                self.assertEqual(_tree_bytes_sha256(runner_parent), before)
+
+    def test_new_runner_parent_identity_failure_restores_absence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            transient_parent = Path(directory).resolve() / "transient"
+            transient_parent.mkdir()
+            runner_parent = transient_parent / "joewrks-reviewer-runner"
+            original_identity = evidence_module._plain_directory_identity
+
+            def fail_new_runner_parent(path, label):
+                if label == "new runner workspace parent":
+                    raise EvidenceLifecycleError("injected runner-parent identity failure")
+                return original_identity(path, label)
+
+            with mock.patch.object(
+                evidence_module,
+                "_plain_directory_identity",
+                side_effect=fail_new_runner_parent,
+            ), self.assertRaisesRegex(ValueError, "runner-parent identity failure"):
+                TaskWorkspace.create(
+                    transient_parent,
+                    "run-runner-parent-rollback",
+                    repository_root=ROOT,
+                )
+
+            self.assertFalse(os.path.lexists(runner_parent))
+
+    def test_workspace_revalidates_captured_source_before_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            repository = base / "repository"
+            repository.mkdir()
+            _git(repository, "init", "-q")
+            _git(repository, "config", "user.email", "reviewer-runner@example.invalid")
+            _git(repository, "config", "user.name", "Reviewer Runner Test")
+            source = repository / "source.txt"
+            source.write_bytes(b"immutable-source\n")
+            _git(repository, "add", "source.txt")
+            _git(repository, "commit", "-q", "-m", "fixture")
+            snapshot = capture_source_snapshot(repository)
+            source.write_bytes(b"drifted-source\n")
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            runner_parent = transient_parent / "joewrks-reviewer-runner"
+
+            with self.assertRaisesRegex(ValueError, "source snapshot changed"):
+                TaskWorkspace.create(
+                    transient_parent,
+                    "run-stale-source",
+                    repository_root=repository,
+                    source_snapshot=snapshot,
+                )
+
+            self.assertFalse(os.path.lexists(runner_parent))
+
     def test_task_workspace_has_unique_owned_marker_and_resolved_paths(self):
         with tempfile.TemporaryDirectory() as directory:
             transient_parent = Path(directory).resolve() / "transient"
             transient_parent.mkdir()
 
-            first = TaskWorkspace.create(transient_parent, "run-001")
-            second = TaskWorkspace.create(transient_parent, "run-002")
+            first = _create_workspace(transient_parent, "run-001")
+            second = _create_workspace(transient_parent, "run-002")
 
             self.assertEqual(
                 first.root,
@@ -228,7 +376,7 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-freeze")
+            workspace = _create_workspace(transient_parent, "run-freeze")
             workspace.inputs_path.joinpath("package.json").write_bytes(b"transient-package")
             workspace.response_working_path.joinpath("response.json").write_bytes(
                 b"transient-response"
@@ -541,7 +689,7 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-cleanup")
+            workspace = _create_workspace(transient_parent, "run-cleanup")
             workspace.inputs_path.joinpath("input.bin").write_bytes(b"owned-input")
             preserved = _preserve(base, "run-cleanup")
             runner_parent = workspace.root.parent
@@ -565,15 +713,15 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 EvidenceLifecycleError,
                 "reserved by a prior or active execution",
             ):
-                TaskWorkspace.create(transient_parent, "run-cleanup")
+                _create_workspace(transient_parent, "run-cleanup")
 
     def test_sibling_root_and_sibling_output_remain_byte_identical(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            selected = TaskWorkspace.create(transient_parent, "run-selected")
-            sibling = TaskWorkspace.create(transient_parent, "run-sibling")
+            selected = _create_workspace(transient_parent, "run-selected")
+            sibling = _create_workspace(transient_parent, "run-sibling")
             selected.inputs_path.joinpath("selected.bin").write_bytes(b"selected-only-bytes")
             sibling.inputs_path.joinpath("sibling.bin").write_bytes(b"sibling-root-bytes")
             sibling_output = sibling.response_working_path / "result.json"
@@ -603,7 +751,7 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-framed-sibling")
+            workspace = _create_workspace(transient_parent, "run-framed-sibling")
             preserved = _preserve(base, "framed-sibling")
             sibling = base / "sibling-tree"
             sibling.mkdir()
@@ -640,7 +788,7 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             transient_parent.mkdir()
             preserved = _preserve(base, "ownership")
 
-            mismatched = TaskWorkspace.create(transient_parent, "run-mismatch")
+            mismatched = _create_workspace(transient_parent, "run-mismatch")
             mismatched.marker_path.write_bytes(
                 canonical_json_bytes(
                     {
@@ -656,9 +804,9 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 )
             self.assertTrue(mismatched.root.is_dir())
             with self.assertRaises(ValueError):
-                TaskWorkspace.create(transient_parent, "run-mismatch")
+                _create_workspace(transient_parent, "run-mismatch")
 
-            missing = TaskWorkspace.create(transient_parent, "run-missing-marker")
+            missing = _create_workspace(transient_parent, "run-missing-marker")
             missing.marker_path.unlink()
             with self.assertRaises(ValueError):
                 missing.cleanup(
@@ -667,7 +815,7 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 )
             self.assertTrue(missing.root.is_dir())
 
-            escaped = TaskWorkspace.create(transient_parent, "run-symlink")
+            escaped = _create_workspace(transient_parent, "run-symlink")
             outside = base / "outside-owned-root"
             outside.mkdir()
             outside.joinpath("must-survive.bin").write_bytes(b"outside-survivor")
@@ -692,7 +840,7 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-delete-race")
+            workspace = _create_workspace(transient_parent, "run-delete-race")
             removed_before_swap = workspace.inputs_path / "partial.bin"
             removed_before_swap.write_bytes(b"owned-partial-cleanup")
             outside = base / "outside-delete-boundary"
@@ -730,14 +878,14 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             self.assertTrue(os.path.lexists(workspace.root))
             self.assertEqual(outside_file.read_bytes(), b"external-target-bytes")
             with self.assertRaises(ValueError):
-                TaskWorkspace.create(transient_parent, "run-delete-race")
+                _create_workspace(transient_parent, "run-delete-race")
 
     def test_parent_reparse_swap_before_child_recursion_never_traverses_target(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-parent-swap")
+            workspace = _create_workspace(transient_parent, "run-parent-swap")
             preserved = _preserve(base, "parent-swap")
             outside = base / "outside-parent-swap"
             outside_marker_directory = outside / ".joewrks-runner-owner.json"
@@ -776,14 +924,14 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             if outside_file.is_file():
                 self.assertEqual(outside_file.read_bytes(), b"external-parent-swap-bytes")
             with self.assertRaises(ValueError):
-                TaskWorkspace.create(transient_parent, "run-parent-swap")
+                _create_workspace(transient_parent, "run-parent-swap")
 
     def test_plain_directory_swap_at_final_recursion_boundary_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-recursion-boundary")
+            workspace = _create_workspace(transient_parent, "run-recursion-boundary")
             owned_file = workspace.inputs_path / "owned.bin"
             owned_file.write_bytes(b"owned-directory-content")
             parked_owned = base / "parked-owned-inputs"
@@ -830,14 +978,14 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             self.assertTrue(swapped)
             self.assertEqual(outside.read_bytes(), b"external-recursion-survivor")
             with self.assertRaises(ValueError):
-                TaskWorkspace.create(transient_parent, "run-recursion-boundary")
+                _create_workspace(transient_parent, "run-recursion-boundary")
 
     def test_plain_file_swap_at_final_unlink_boundary_is_detected(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-unlink-boundary")
+            workspace = _create_workspace(transient_parent, "run-unlink-boundary")
             owned_file = workspace.inputs_path / "race.bin"
             owned_file.write_bytes(b"owned-file-content")
             parked_owned = base / "parked-owned-unlink-boundary.bin"
@@ -885,14 +1033,14 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             self.assertTrue(swapped)
             self.assertEqual(outside.read_bytes(), b"external-unlink-survivor")
             with self.assertRaises(ValueError):
-                TaskWorkspace.create(transient_parent, "run-unlink-boundary")
+                _create_workspace(transient_parent, "run-unlink-boundary")
 
     def test_empty_directory_swap_at_final_rmdir_boundary_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-rmdir-boundary")
+            workspace = _create_workspace(transient_parent, "run-rmdir-boundary")
             preserved = _preserve(base, "rmdir-boundary")
             parked_owned = base / "parked-owned-empty-directory"
             outside = base / "outside-rmdir-boundary.bin"
@@ -967,7 +1115,7 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             self.assertTrue(parked_owned.is_dir())
             self.assertEqual(outside.read_bytes(), b"external-rmdir-survivor")
             with self.assertRaises(ValueError):
-                TaskWorkspace.create(transient_parent, "run-rmdir-boundary")
+                _create_workspace(transient_parent, "run-rmdir-boundary")
 
     def test_windows_delete_handle_excludes_delete_sharing_and_stays_pinned(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1115,12 +1263,44 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             )
             self.assertFalse(os.path.lexists(target))
 
+    def test_win32_native_api_inventory_matches_task6_approval(self):
+        source_path = (
+            ROOT
+            / "skills"
+            / "joewrks-product-definition"
+            / "reviewer_runner"
+            / "evidence.py"
+        )
+        tree = ast.parse(source_path.read_text(encoding="utf-8"))
+        observed = set()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Attribute):
+                continue
+            if isinstance(node.value, ast.Name) and node.value.id == "kernel32":
+                observed.add(node.attr)
+            if (
+                isinstance(node.value, ast.Call)
+                and isinstance(node.value.func, ast.Name)
+                and node.value.func.id == "_windows_kernel32"
+            ):
+                observed.add(node.attr)
+
+        self.assertEqual(
+            observed,
+            {
+                "CreateFileW",
+                "GetFileInformationByHandleEx",
+                "SetFileInformationByHandle",
+                "CloseHandle",
+            },
+        )
+
     def test_completed_reservation_remains_canonical_and_blocks_reuse(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-reservation-complete")
+            workspace = _create_workspace(transient_parent, "run-reservation-complete")
             preserved = _preserve(base, "reservation-complete")
             reservation = (
                 workspace.root.parent
@@ -1138,7 +1318,7 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 reservation.with_name("run-reservation-complete.completed.json").is_file()
             )
             with self.assertRaises(ValueError):
-                TaskWorkspace.create(transient_parent, "run-reservation-complete")
+                _create_workspace(transient_parent, "run-reservation-complete")
 
     def test_atomic_claim_is_permanent_and_non_idempotent_for_identical_bytes(self):
         self.assertIsNotNone(
@@ -1175,83 +1355,12 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             self.assertEqual(sorted(outcomes), ["ACQUIRED", "REJECTED"])
             self.assertEqual(target.read_bytes(), content)
 
-    def test_evidence_root_lease_blocks_root_and_ancestor_rename_until_release(self):
-        self.assertIsNotNone(
-            acquire_evidence_root_lease,
-            "acquire_evidence_root_lease implementation is missing",
-        )
-        with tempfile.TemporaryDirectory() as directory:
-            base = Path(directory)
-            owned_parent = base / "owned"
-            evidence_root = owned_parent / "evidence"
-            moved_root = owned_parent / "moved-evidence"
-            moved_parent = base / "moved-owned"
-            lease = acquire_evidence_root_lease(evidence_root)
-            try:
-                with self.assertRaises(PermissionError):
-                    evidence_root.rename(moved_root)
-                with self.assertRaises(PermissionError):
-                    owned_parent.rename(moved_parent)
-                lease.verify()
-            finally:
-                lease.close()
-
-            evidence_root.rename(moved_root)
-            moved_root.rename(evidence_root)
-            owned_parent.rename(moved_parent)
-            moved_parent.rename(owned_parent)
-
-    def test_evidence_root_lease_handoff_blocks_plain_directory_substitution(self):
-        duplicate_pin = getattr(
-            evidence_module,
-            "_duplicate_windows_directory_pin_handle",
-            None,
-        )
-        self.assertIsNotNone(
-            duplicate_pin,
-            "evidence-root acquisition lacks an atomic authority-to-lease handoff",
-        )
-        with tempfile.TemporaryDirectory() as directory:
-            base = Path(directory)
-            evidence_root = base / "evidence"
-            parked_root = base / "parked-evidence"
-            replacement_root = base / "replacement-evidence"
-            replacement_root.mkdir()
-            marker = replacement_root / "external-marker.bin"
-            marker.write_bytes(b"must-not-be-read-or-written")
-            marker_before = marker.read_bytes()
-            substitution_attempts = []
-
-            def attempt_substitution_during_handoff(authority_handle):
-                substitution_attempts.append("ATTEMPTED")
-                try:
-                    evidence_root.rename(parked_root)
-                    replacement_root.rename(evidence_root)
-                    substitution_attempts.append("SUCCEEDED")
-                except PermissionError:
-                    substitution_attempts.append("DENIED")
-                return duplicate_pin(authority_handle)
-
-            with mock.patch.object(
-                evidence_module,
-                "_duplicate_windows_directory_pin_handle",
-                side_effect=attempt_substitution_during_handoff,
-            ):
-                lease = acquire_evidence_root_lease(evidence_root)
-            try:
-                self.assertEqual(substitution_attempts, ["ATTEMPTED", "DENIED"])
-                self.assertFalse(parked_root.exists())
-                self.assertEqual(marker.read_bytes(), marker_before)
-                lease.verify()
-            finally:
-                lease.close()
-
     def test_reservation_completion_never_renames_the_canonical_blocker(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-reservation-no-rename")
+            workspace = _create_workspace(transient_parent, "run-reservation-no-rename")
             preserved = _preserve(base, "reservation-no-rename")
             reservation = (
                 workspace.root.parent
@@ -1283,7 +1392,7 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             self.assertTrue(os.path.lexists(reservation))
             self.assertEqual(reservation.read_bytes(), reservation_bytes)
             with self.assertRaises(ValueError):
-                TaskWorkspace.create(transient_parent, "run-reservation-no-rename")
+                _create_workspace(transient_parent, "run-reservation-no-rename")
 
     def test_repository_head_tree_and_clean_status_are_unchanged(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1317,12 +1426,85 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             source.write_bytes(b"immutable-source\n")
             self.assertTrue(verify_source_unchanged(before, repository))
 
+    def test_source_snapshot_git_invocations_disable_optional_locks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory).resolve()
+            responses = (
+                subprocess.CompletedProcess([], 0, stdout=b"a" * 40 + b"\n", stderr=b""),
+                subprocess.CompletedProcess([], 0, stdout=b"b" * 40 + b"\n", stderr=b""),
+                subprocess.CompletedProcess([], 0, stdout=b"", stderr=b""),
+            )
+            with mock.patch.object(
+                evidence_module.subprocess,
+                "run",
+                side_effect=responses,
+            ) as run:
+                capture_source_snapshot(repository)
+
+            self.assertEqual(run.call_count, 3)
+            for invocation in run.call_args_list:
+                self.assertEqual(
+                    invocation.args[0][:2],
+                    ["git", "--no-optional-locks"],
+                )
+
+    def test_source_snapshot_and_readback_leave_index_bytes_and_metadata_unchanged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory).resolve() / "repository"
+            repository.mkdir()
+            _git(repository, "init", "-q")
+            _git(repository, "config", "user.email", "reviewer-runner@example.invalid")
+            _git(repository, "config", "user.name", "Reviewer Runner Test")
+            source = repository / "source.txt"
+            source.write_bytes(b"immutable-source\n")
+            _git(repository, "add", "source.txt")
+            _git(repository, "commit", "-q", "-m", "fixture")
+            source_stat = source.stat()
+            os.utime(
+                source,
+                ns=(source_stat.st_atime_ns, source_stat.st_mtime_ns + 2_000_000_000),
+            )
+            index = repository / ".git" / "index"
+
+            before_bytes = index.read_bytes()
+            before_stat = index.stat()
+            before_metadata = (
+                before_stat.st_dev,
+                before_stat.st_ino,
+                before_stat.st_mode,
+                before_stat.st_nlink,
+                before_stat.st_size,
+                before_stat.st_mtime_ns,
+                before_stat.st_ctime_ns,
+                getattr(before_stat, "st_file_attributes", None),
+                getattr(before_stat, "st_reparse_tag", None),
+            )
+
+            snapshot = capture_source_snapshot(repository)
+            self.assertTrue(verify_source_unchanged(snapshot, repository))
+
+            after_bytes = index.read_bytes()
+            after_stat = index.stat()
+            after_metadata = (
+                after_stat.st_dev,
+                after_stat.st_ino,
+                after_stat.st_mode,
+                after_stat.st_nlink,
+                after_stat.st_size,
+                after_stat.st_mtime_ns,
+                after_stat.st_ctime_ns,
+                getattr(after_stat, "st_file_attributes", None),
+                getattr(after_stat, "st_reparse_tag", None),
+            )
+            self.assertEqual(after_bytes, before_bytes)
+            self.assertEqual(after_metadata, before_metadata)
+
     def test_cleanup_failure_is_terminal_and_preserves_diagnostic_evidence(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-cleanup-failure")
+            workspace = _create_workspace(transient_parent, "run-cleanup-failure")
             transient_diagnostic = workspace.response_working_path / "failure.txt"
             transient_diagnostic.write_bytes(b"transient-failure-detail")
             preserved = _preserve(base, "cleanup-failure", b"preserved-failure-detail")
@@ -1347,14 +1529,14 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                     sibling_paths=(),
                 )
             with self.assertRaises(ValueError):
-                TaskWorkspace.create(transient_parent, "run-cleanup-failure")
+                _create_workspace(transient_parent, "run-cleanup-failure")
 
     def test_post_deletion_verification_failure_blocks_same_run_recreation(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            workspace = TaskWorkspace.create(transient_parent, "run-post-delete")
+            workspace = _create_workspace(transient_parent, "run-post-delete")
             preserved = _preserve(base, "post-delete", b"before-cleanup")
             original_remove_owned_tree = evidence_module._remove_owned_tree
 
@@ -1379,15 +1561,15 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
 
             self.assertFalse(os.path.lexists(workspace.root))
             with self.assertRaises(ValueError):
-                TaskWorkspace.create(transient_parent, "run-post-delete")
+                _create_workspace(transient_parent, "run-post-delete")
 
     def test_prior_output_bytes_do_not_enter_the_next_workspace_or_request(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             transient_parent = base / "transient"
             transient_parent.mkdir()
-            prior = TaskWorkspace.create(transient_parent, "run-prior")
-            next_workspace = TaskWorkspace.create(transient_parent, "run-next")
+            prior = _create_workspace(transient_parent, "run-prior")
+            next_workspace = _create_workspace(transient_parent, "run-next")
             prior_output = b"PRIOR-OUTPUT-SECRET-6eea37aa"
             prior.response_working_path.joinpath("review.json").write_bytes(prior_output)
 
