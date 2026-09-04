@@ -38,6 +38,7 @@ from .preflight import (
     PreflightFreshness,
     PreflightResult,
     build_per_run_isolation_receipt,
+    build_preflight_freshness,
     classify_backend_eligibility,
     validate_preflight_freshness,
 )
@@ -106,11 +107,24 @@ def execute_review(
         )
 
     descriptor = _describe_backend(backend)
+    try:
+        live_freshness = build_preflight_freshness(descriptor)
+    except (TypeError, ValueError) as error:
+        return _finish_early(
+            RunnerState.ISOLATION_PREFLIGHT_FAILED,
+            classification,
+            execution_mode,
+            before=before,
+            repository_root=repository_root,
+            prepared=prepared,
+            errors=(f"live preflight freshness could not be rebuilt: {error}",),
+        )
     authorization = _authorize_execution(
         execution_mode,
         descriptor,
         preflight,
         current_freshness,
+        live_freshness,
         request_byte_count=len(request.content),
     )
     if authorization is not None:
@@ -140,7 +154,7 @@ def execute_review(
             execution_mode,
             descriptor,
             preflight,
-            current_freshness,
+            live_freshness,
             request.sha256,
         )
     except (RunnerIdentityError, TypeError, ValueError) as error:
@@ -518,7 +532,8 @@ def _authorize_execution(
     execution_mode: str,
     descriptor: BackendDescriptor | None,
     preflight: PreflightResult,
-    current_freshness: PreflightFreshness,
+    caller_freshness: PreflightFreshness,
+    live_freshness: PreflightFreshness,
     *,
     request_byte_count: int,
 ) -> tuple[RunnerState, CapabilityClass, str] | None:
@@ -535,26 +550,19 @@ def _authorize_execution(
             classification,
             "backend descriptor is unavailable",
         )
-    eligibility = classify_backend_eligibility(descriptor)
-    if request_byte_count > descriptor.max_request_bytes:
-        return (
-            RunnerState.ISOLATION_CAPABILITY_UNAVAILABLE,
-            eligibility,
-            "backend request capacity is insufficient",
-        )
     if execution_mode == "REAL_REVIEW":
-        if eligibility is not CapabilityClass.OBSERVED_PASS:
+        if descriptor.identity.is_test_double:
             return (
                 RunnerState.ISOLATION_CAPABILITY_UNAVAILABLE,
-                eligibility,
-                "real review requires an eligible observed backend",
+                CapabilityClass.UNTESTED,
+                "real review requires a non-test backend",
             )
         required_classification = CapabilityClass.OBSERVED_PASS
     else:
         if not descriptor.identity.is_test_double:
             return (
                 RunnerState.ISOLATION_CAPABILITY_UNAVAILABLE,
-                eligibility,
+                classify_backend_eligibility(descriptor),
                 "synthetic execution requires the deterministic test boundary",
             )
         required_classification = CapabilityClass.UNTESTED
@@ -570,6 +578,18 @@ def _authorize_execution(
             classification,
             "preflight classification does not authorize this execution mode",
         )
+    if type(caller_freshness) is not PreflightFreshness:
+        return (
+            RunnerState.ISOLATION_PREFLIGHT_FAILED,
+            classification,
+            "caller preflight freshness is invalid",
+        )
+    if caller_freshness != live_freshness:
+        return (
+            RunnerState.ISOLATION_PREFLIGHT_FAILED,
+            classification,
+            "caller preflight freshness does not match live state",
+        )
     if preflight.backend_identity_sha256 != backend_identity_sha256(descriptor.identity):
         return (
             RunnerState.ISOLATION_PREFLIGHT_FAILED,
@@ -577,7 +597,7 @@ def _authorize_execution(
             "preflight backend identity changed",
         )
     try:
-        stale = validate_preflight_freshness(preflight, current_freshness)
+        stale = validate_preflight_freshness(preflight, live_freshness)
     except (TypeError, ValueError):
         stale = RunnerState.ISOLATION_PREFLIGHT_FAILED
     if stale is not None:
@@ -585,6 +605,22 @@ def _authorize_execution(
             RunnerState.ISOLATION_PREFLIGHT_FAILED,
             classification,
             "preflight freshness changed",
+        )
+    eligibility = classify_backend_eligibility(descriptor)
+    if request_byte_count > descriptor.max_request_bytes:
+        return (
+            RunnerState.ISOLATION_CAPABILITY_UNAVAILABLE,
+            eligibility,
+            "backend request capacity is insufficient",
+        )
+    if (
+        execution_mode == "REAL_REVIEW"
+        and eligibility is not CapabilityClass.OBSERVED_PASS
+    ):
+        return (
+            RunnerState.ISOLATION_CAPABILITY_UNAVAILABLE,
+            eligibility,
+            "real review requires an eligible observed backend",
         )
     return None
 

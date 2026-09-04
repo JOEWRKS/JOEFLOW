@@ -179,7 +179,7 @@ def _fake_backend(raw_response: bytes, **kwargs) -> DeterministicFakeBackend:
 
 
 def _fake_preflight(backend):
-    freshness = build_preflight_freshness(backend.describe().identity)
+    freshness = build_preflight_freshness(backend.describe())
     preflight = run_isolation_preflight(
         backend,
         freshness=freshness,
@@ -375,6 +375,111 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
                     RunnerState.ISOLATION_PREFLIGHT_FAILED,
                 )
                 self.assertEqual(backend.received_request_bytes, [])
+
+    def test_live_os_runtime_freshness_is_rebuilt_before_semantic_invocation(self):
+        prepared, material = _prepared_v1(
+            run_id="run-live-runtime-drift",
+            context_id="context-live-runtime-drift",
+        )
+        backend = _fake_backend(canonical_json_bytes(material["output"]))
+        preflight, caller_freshness = _fake_preflight(backend)
+        live_freshness = dataclasses.replace(
+            caller_freshness,
+            operating_environment_sha256=sha256_bytes(b"live-runtime-drift"),
+        )
+
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            controller_module,
+            "build_preflight_freshness",
+            return_value=live_freshness,
+        ):
+            outcome, _, _, _ = self._execute(
+                prepared,
+                backend,
+                preflight,
+                caller_freshness,
+                Path(directory),
+            )
+
+        self.assertEqual(outcome.state, RunnerState.ISOLATION_PREFLIGHT_FAILED)
+        self.assertEqual(
+            backend.received_request_bytes,
+            [],
+            "live runtime drift must stop before semantic request transmission",
+        )
+
+    def test_stale_caller_freshness_cannot_authorize_live_descriptor_drift(self):
+        prepared, material = _prepared_v1(
+            run_id="run-live-descriptor-drift",
+            context_id="context-live-descriptor-drift",
+        )
+        drifts = {}
+        seed_backend = _fake_backend(canonical_json_bytes(material["output"]))
+        baseline_descriptor = seed_backend.describe()
+        drifts["capacity"] = dataclasses.replace(
+            baseline_descriptor,
+            max_request_bytes=baseline_descriptor.max_request_bytes - 1,
+        )
+        drifts["observation-method"] = dataclasses.replace(
+            baseline_descriptor,
+            observations=(
+                dataclasses.replace(
+                    baseline_descriptor.observations[0],
+                    method="changed-test-observation-method",
+                ),
+                *baseline_descriptor.observations[1:],
+            ),
+        )
+        drifts["observation-evidence"] = dataclasses.replace(
+            baseline_descriptor,
+            observations=(
+                dataclasses.replace(
+                    baseline_descriptor.observations[0],
+                    evidence_sha256=sha256_bytes(b"changed-test-observation-evidence"),
+                ),
+                *baseline_descriptor.observations[1:],
+            ),
+        )
+        drifts["observation-classification"] = dataclasses.replace(
+            baseline_descriptor,
+            observations=(
+                dataclasses.replace(
+                    baseline_descriptor.observations[0],
+                    classification=CapabilityClass.UNTESTED,
+                ),
+                *baseline_descriptor.observations[1:],
+            ),
+        )
+
+        wrong_states = []
+        transmitted = []
+        for index, (label, changed_descriptor) in enumerate(drifts.items()):
+            case_prepared, case_material = _prepared_v1(
+                run_id=f"run-live-descriptor-drift-{index}",
+                context_id=f"context-live-descriptor-drift-{index}",
+            )
+            backend = _fake_backend(canonical_json_bytes(case_material["output"]))
+            preflight, stale_caller_freshness = _fake_preflight(backend)
+            backend._descriptor = changed_descriptor
+            with tempfile.TemporaryDirectory() as directory:
+                outcome, _, _, _ = self._execute(
+                    case_prepared,
+                    backend,
+                    preflight,
+                    stale_caller_freshness,
+                    Path(directory),
+                )
+            if outcome.state is not RunnerState.ISOLATION_PREFLIGHT_FAILED:
+                wrong_states.append((label, outcome.state))
+            if backend.received_request_bytes:
+                transmitted.append(label)
+
+        self.assertEqual(wrong_states, [])
+        self.assertEqual(
+            transmitted,
+            [],
+            "capacity and complete capability-observation drift must stop semantic bytes",
+        )
 
     def test_v1_adapter_delegates_to_existing_envelope_and_output_validators(self):
         prepared, material = _prepared_v1()

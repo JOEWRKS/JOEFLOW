@@ -112,6 +112,26 @@ def hash_evidence_record(evidence_record: object) -> str:
     return sha256_bytes(canonical_json_bytes(evidence_record))
 
 
+def backend_descriptor_sha256(descriptor: BackendDescriptor) -> str:
+    """Bind identity, capacity, and every capability-observation field."""
+
+    validate_backend_descriptor(descriptor)
+    content = {
+        "backend_identity_sha256": backend_identity_sha256(descriptor.identity),
+        "max_request_bytes": descriptor.max_request_bytes,
+        "observations": [
+            {
+                "capability": observation.capability,
+                "classification": observation.classification.value,
+                "method": observation.method,
+                "evidence_sha256": observation.evidence_sha256,
+            }
+            for observation in descriptor.observations
+        ],
+    }
+    return sha256_bytes(canonical_json_bytes(content))
+
+
 def validate_backend_descriptor(descriptor: BackendDescriptor) -> None:
     """Validate the immutable, exact capability metadata for one backend."""
 

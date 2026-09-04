@@ -13,6 +13,7 @@ if str(SKILL_ROOT) not in sys.path:
 
 from reviewer_runner.backend import (  # noqa: E402
     BackendEvent,
+    BackendResponse,
     REQUIRED_CAPABILITIES,
 )
 from reviewer_runner.identity import (  # noqa: E402
@@ -65,6 +66,12 @@ FORBIDDEN_FAMILIES = (
 
 def nonce_bytes(label: str) -> bytes:
     return bytes.fromhex(sha256_bytes(("nonce:" + label).encode("utf-8")))
+
+
+def ascii_nonce_bytes(label: str) -> bytes:
+    return sha256_bytes(("ascii-nonce:" + label).encode("utf-8"))[:32].encode(
+        "ascii"
+    )
 
 
 def response_bytes(allowed_nonce: str, **extra: object) -> bytes:
@@ -134,7 +141,7 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
             self.fail("reviewer_runner.preflight must implement the synthetic isolation preflight")
 
     def _freshness(self, backend):
-        return build_preflight_freshness(backend.describe().identity)
+        return build_preflight_freshness(backend.describe())
 
     def test_positive_probe_returns_exact_allowed_nonce_once(self):
         backend = unit_only_eligible_external_adapter(nonce_source=nonce_bytes)
@@ -250,6 +257,107 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
                 )
                 self.assertEqual(result.classification, CapabilityClass.OBSERVED_FAIL)
                 self.assertIn(sha256_bytes(nonce_bytes(family)), result.forbidden_canary_hashes)
+
+    def test_provider_request_id_leak_for_every_canary_family_and_encoding_prevents_observed_pass(self):
+        unexpected_passes = []
+        for family in FORBIDDEN_FAMILIES:
+            canary = ascii_nonce_bytes(family)
+            representations = {
+                "raw": canary.decode("ascii"),
+                "hex": canary.hex(),
+                "base64": base64.b64encode(canary).decode("ascii"),
+            }
+            for encoding, leaked_value in representations.items():
+                backend = unit_only_eligible_external_adapter(
+                    nonce_source=ascii_nonce_bytes,
+                    metadata_drift={"provider_request_id": leaked_value},
+                )
+                result = run_isolation_preflight(
+                    backend,
+                    freshness=self._freshness(backend),
+                    nonce_source=ascii_nonce_bytes,
+                )
+                if result.classification is CapabilityClass.OBSERVED_PASS:
+                    unexpected_passes.append((family, encoding))
+
+        self.assertEqual(
+            unexpected_passes,
+            [],
+            "provider_request_id canary leakage must never authorize OBSERVED_PASS",
+        )
+
+    def test_closed_backend_response_metadata_projection_scans_every_field(self):
+        try:
+            from reviewer_runner.preflight import _detect_forbidden_canary_leak
+        except ImportError:
+            self.fail("closed BackendResponse metadata projection must be scanable")
+
+        baseline = BackendResponse(
+            raw_bytes=b'{}',
+            provider_request_id="provider-request",
+            request_sha256="0" * 64,
+            reviewer_id="reviewer",
+            review_run_id="run",
+            context_id="context",
+            backend_identity_sha256="1" * 64,
+            response_count=1,
+            continuation_id=None,
+            previous_response_id=None,
+            events=(),
+        )
+        metadata_fields = (
+            "provider_request_id",
+            "request_sha256",
+            "reviewer_id",
+            "review_run_id",
+            "context_id",
+            "backend_identity_sha256",
+            "response_count",
+            "continuation_id",
+            "previous_response_id",
+            "event.kind",
+            "event.metadata_sha256",
+        )
+        missed = []
+        for family in FORBIDDEN_FAMILIES:
+            canary = ascii_nonce_bytes(family)
+            representations = {
+                "raw": canary.decode("ascii"),
+                "hex": canary.hex(),
+                "base64": base64.b64encode(canary).decode("ascii"),
+            }
+            for encoding, leaked_value in representations.items():
+                for field in metadata_fields:
+                    if field == "event.kind":
+                        response = dataclasses.replace(
+                            baseline,
+                            events=(BackendEvent(leaked_value, "2" * 64),),
+                        )
+                    elif field == "event.metadata_sha256":
+                        response = dataclasses.replace(
+                            baseline,
+                            events=(BackendEvent("RESPONSE", leaked_value),),
+                        )
+                    else:
+                        response = dataclasses.replace(
+                            baseline,
+                            **{field: leaked_value},
+                        )
+                    try:
+                        detected = _detect_forbidden_canary_leak(
+                            response,
+                            forbidden_nonces=(canary,),
+                        )
+                    except TypeError:
+                        detected = False
+                    if not detected:
+                        missed.append((family, encoding, field))
+
+        self.assertEqual(
+            missed,
+            [],
+            "the forbidden-canary scan must cover every permitted response metadata field",
+        )
 
     def test_non_default_package_size_cannot_authorize_or_issue_receipt(self):
         backend = unit_only_eligible_external_adapter(nonce_source=nonce_bytes)
@@ -448,6 +556,82 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
             RunnerState.ISOLATION_PREFLIGHT_FAILED,
         )
 
+    def test_full_backend_descriptor_drift_after_probe_fails_observed_proof(self):
+        baseline_descriptor = unit_only_eligible_external_descriptor()
+        drifts = {
+            "capacity": dataclasses.replace(
+                baseline_descriptor,
+                max_request_bytes=baseline_descriptor.max_request_bytes + 1,
+            ),
+            "observation-method": dataclasses.replace(
+                baseline_descriptor,
+                observations=(
+                    dataclasses.replace(
+                        baseline_descriptor.observations[0],
+                        method="direct:changed-method",
+                    ),
+                    *baseline_descriptor.observations[1:],
+                ),
+            ),
+            "observation-evidence": dataclasses.replace(
+                baseline_descriptor,
+                observations=(
+                    dataclasses.replace(
+                        baseline_descriptor.observations[0],
+                        evidence_sha256=sha256_bytes(b"changed-evidence"),
+                    ),
+                    *baseline_descriptor.observations[1:],
+                ),
+            ),
+            "observation-classification": dataclasses.replace(
+                baseline_descriptor,
+                observations=(
+                    dataclasses.replace(
+                        baseline_descriptor.observations[0],
+                        classification=CapabilityClass.UNTESTED,
+                    ),
+                    *baseline_descriptor.observations[1:],
+                ),
+            ),
+        }
+
+        unexpected_passes = []
+        for label, changed_descriptor in drifts.items():
+            delegate = unit_only_eligible_external_adapter(
+                nonce_source=nonce_bytes,
+                descriptor=baseline_descriptor,
+            )
+
+            class DescriptorDriftAfterProbe:
+                received_request_bytes = delegate.received_request_bytes
+
+                def describe(self):
+                    if self.received_request_bytes:
+                        return changed_descriptor
+                    return baseline_descriptor
+
+                def invoke(self, request_bytes: bytes, *, timeout_seconds: int):
+                    return delegate.invoke(
+                        request_bytes,
+                        timeout_seconds=timeout_seconds,
+                    )
+
+            backend = DescriptorDriftAfterProbe()
+            result = run_isolation_preflight(
+                backend,
+                freshness=self._freshness(backend),
+                nonce_source=nonce_bytes,
+            )
+            if result.classification is CapabilityClass.OBSERVED_PASS:
+                unexpected_passes.append(label)
+            self.assertEqual(len(backend.received_request_bytes), 1)
+
+        self.assertEqual(
+            unexpected_passes,
+            [],
+            "the descriptor compared after the probe must include capacity and observations",
+        )
+
     def test_exact_319066_package_capacity_is_sent_without_split(self):
         backend = unit_only_eligible_external_adapter(nonce_source=nonce_bytes)
         result = run_isolation_preflight(
@@ -491,7 +675,7 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
         fake = DeterministicFakeBackend(response_bytes(allowed))
         fake_result = run_isolation_preflight(
             fake,
-            freshness=build_preflight_freshness(fake.describe().identity),
+            freshness=build_preflight_freshness(fake.describe()),
             nonce_source=nonce_bytes,
         )
         self.assertEqual(fake_result.classification, CapabilityClass.UNTESTED)

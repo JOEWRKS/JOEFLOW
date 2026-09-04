@@ -7,7 +7,7 @@ measure reviewer quality and a local test double can never earn an observed pass
 from __future__ import annotations
 
 import base64
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from enum import Enum
 import json
 from pathlib import Path
@@ -18,10 +18,13 @@ from typing import Callable
 
 from .backend import (
     BackendDescriptor,
+    BackendEvent,
     BackendInvocationError,
+    BackendResponse,
     CapabilityObservation,
     REQUIRED_CAPABILITIES,
     ToollessInferenceBackend,
+    backend_descriptor_sha256,
     validate_backend_descriptor,
     validate_backend_response,
 )
@@ -81,6 +84,7 @@ _PROBE_RESPONSE_SCHEMA = {
 class PreflightResult:
     classification: CapabilityClass
     backend_identity_sha256: str
+    backend_descriptor_sha256: str
     freshness_sha256: str
     request_sha256: str
     response_sha256: str | None
@@ -94,6 +98,7 @@ class PreflightResult:
 @dataclass(frozen=True)
 class PreflightFreshness:
     backend_identity_sha256: str
+    backend_descriptor_sha256: str
     runner_code_sha256: str
     request_schema_sha256: str
     capability_policy_sha256: str
@@ -111,15 +116,19 @@ class IsolationReceipt:
 
 
 def build_preflight_freshness(
-    backend_identity: BackendIdentity | None,
+    descriptor: BackendDescriptor | None,
 ) -> PreflightFreshness:
-    """Hash backend, runner code, schemas, policy, and safe runtime identifiers."""
+    """Hash the full backend descriptor, code, policy, and safe runtime state."""
 
-    identity_hash = (
-        backend_identity_sha256(backend_identity)
-        if backend_identity is not None
-        else sha256_bytes(canonical_json_bytes({"backend": "unavailable"}))
-    )
+    if descriptor is None:
+        identity_hash = sha256_bytes(canonical_json_bytes({"backend": "unavailable"}))
+        descriptor_hash = sha256_bytes(
+            canonical_json_bytes({"backend_descriptor": "unavailable"})
+        )
+    else:
+        validate_backend_descriptor(descriptor)
+        identity_hash = backend_identity_sha256(descriptor.identity)
+        descriptor_hash = backend_descriptor_sha256(descriptor)
     runner_root = Path(__file__).resolve().parent
     code_records = [
         {
@@ -163,6 +172,7 @@ def build_preflight_freshness(
     }
     return PreflightFreshness(
         backend_identity_sha256=identity_hash,
+        backend_descriptor_sha256=descriptor_hash,
         runner_code_sha256=sha256_bytes(canonical_json_bytes(code_records)),
         request_schema_sha256=sha256_bytes(canonical_json_bytes(request_shape)),
         capability_policy_sha256=sha256_bytes(canonical_json_bytes(capability_policy)),
@@ -239,6 +249,7 @@ def run_isolation_preflight(
         return _build_result(
             CapabilityClass.UNAVAILABLE,
             backend_identity_hash=freshness.backend_identity_sha256,
+            backend_descriptor_hash=freshness.backend_descriptor_sha256,
             freshness_hash=freshness_hash,
             request_hash=sha256_bytes(b""),
             response_hash=None,
@@ -256,6 +267,7 @@ def run_isolation_preflight(
         return _build_result(
             CapabilityClass.UNAVAILABLE,
             backend_identity_hash=freshness.backend_identity_sha256,
+            backend_descriptor_hash=freshness.backend_descriptor_sha256,
             freshness_hash=freshness_hash,
             request_hash=sha256_bytes(b""),
             response_hash=None,
@@ -267,11 +279,13 @@ def run_isolation_preflight(
         )
 
     identity_hash = backend_identity_sha256(descriptor_before.identity)
-    current_freshness = build_preflight_freshness(descriptor_before.identity)
+    descriptor_hash = backend_descriptor_sha256(descriptor_before)
+    current_freshness = build_preflight_freshness(descriptor_before)
     if freshness != current_freshness:
         return _build_result(
             CapabilityClass.UNAVAILABLE,
             backend_identity_hash=identity_hash,
+            backend_descriptor_hash=descriptor_hash,
             freshness_hash=freshness_hash,
             request_hash=sha256_bytes(b""),
             response_hash=None,
@@ -292,6 +306,7 @@ def run_isolation_preflight(
         return _build_result(
             noninvoked_class,
             backend_identity_hash=identity_hash,
+            backend_descriptor_hash=descriptor_hash,
             freshness_hash=freshness_hash,
             request_hash=sha256_bytes(b""),
             response_hash=None,
@@ -306,6 +321,7 @@ def run_isolation_preflight(
         return _build_result(
             CapabilityClass.UNAVAILABLE,
             backend_identity_hash=identity_hash,
+            backend_descriptor_hash=descriptor_hash,
             freshness_hash=freshness_hash,
             request_hash=sha256_bytes(b""),
             response_hash=None,
@@ -324,6 +340,7 @@ def run_isolation_preflight(
         return _build_result(
             CapabilityClass.UNAVAILABLE,
             backend_identity_hash=identity_hash,
+            backend_descriptor_hash=descriptor_hash,
             freshness_hash=freshness_hash,
             request_hash=canonical_request.sha256,
             response_hash=None,
@@ -343,6 +360,7 @@ def run_isolation_preflight(
         return _build_result(
             CapabilityClass.UNTESTED,
             backend_identity_hash=identity_hash,
+            backend_descriptor_hash=descriptor_hash,
             freshness_hash=freshness_hash,
             request_hash=canonical_request.sha256,
             response_hash=None,
@@ -371,8 +389,8 @@ def run_isolation_preflight(
     except (AttributeError, TypeError, ValueError):
         failure_reason = failure_reason or "backend-identity-unavailable-after-invocation"
     else:
-        if descriptor_after.identity != descriptor_before.identity:
-            failure_reason = failure_reason or "backend-identity-drift"
+        if backend_descriptor_sha256(descriptor_after) != descriptor_hash:
+            failure_reason = failure_reason or "backend-descriptor-drift"
 
     classification = (
         CapabilityClass.OBSERVED_FAIL
@@ -382,6 +400,7 @@ def run_isolation_preflight(
     return _build_result(
         classification,
         backend_identity_hash=identity_hash,
+        backend_descriptor_hash=descriptor_hash,
         freshness_hash=freshness_hash,
         request_hash=canonical_request.sha256,
         response_hash=response_hash,
@@ -411,6 +430,13 @@ def validate_preflight_freshness(
         raise TypeError("preflight must be an exact PreflightResult")
     if type(current_freshness) is not PreflightFreshness:
         raise TypeError("current_freshness must be an exact PreflightFreshness")
+    if (
+        preflight.backend_identity_sha256
+        != current_freshness.backend_identity_sha256
+        or preflight.backend_descriptor_sha256
+        != current_freshness.backend_descriptor_sha256
+    ):
+        return RunnerState.ISOLATION_PREFLIGHT_FAILED
     if preflight.freshness_sha256 != _freshness_sha256(current_freshness):
         return RunnerState.ISOLATION_PREFLIGHT_FAILED
     return None
@@ -432,6 +458,11 @@ def build_per_run_isolation_receipt(
     identity_hash = backend_identity_sha256(backend_identity)
     if identity_hash != preflight.backend_identity_sha256:
         raise ValueError("ISOLATION_PREFLIGHT_FAILED: backend identity changed")
+    if (
+        current_freshness.backend_descriptor_sha256
+        != preflight.backend_descriptor_sha256
+    ):
+        raise ValueError("ISOLATION_PREFLIGHT_FAILED: backend descriptor changed")
     _require_sha256(request_sha256, "request_sha256")
     content = {
         "classification": preflight.classification.value,
@@ -535,8 +566,7 @@ def _response_failure_reason(
     except (AttributeError, TypeError, ValueError):
         return "response-boundary-invalid"
     if _detect_forbidden_canary_leak(
-        response.raw_bytes,
-        events=response.events,
+        response,
         forbidden_nonces=forbidden_nonces,
     ):
         return "forbidden-canary-leak"
@@ -570,25 +600,78 @@ def _response_failure_reason(
 
 
 def _detect_forbidden_canary_leak(
-    raw_bytes: bytes,
+    response_or_raw_bytes,
     *,
-    events: tuple,
+    events: tuple = (),
     forbidden_nonces: tuple[bytes, ...],
 ) -> bool:
-    """Detect raw forbidden values before schema parsing can mask the evidence."""
+    """Scan a closed response projection before parsing can mask leakage."""
 
-    for forbidden in forbidden_nonces:
-        forbidden_hash = sha256_bytes(forbidden)
-        if (
-            forbidden in raw_bytes
-            or forbidden.hex().encode("ascii") in raw_bytes
-            or base64.b64encode(forbidden) in raw_bytes
-            or any(
-                getattr(event, "metadata_sha256", None) == forbidden_hash
-                for event in events
+    if type(response_or_raw_bytes) is BackendResponse:
+        projection = _closed_backend_response_projection(response_or_raw_bytes)
+    else:
+        projection = (response_or_raw_bytes, *(
+            value
+            for event in events
+            for value in (
+                getattr(event, "kind", None),
+                getattr(event, "metadata_sha256", None),
             )
-        ):
+        ))
+    for forbidden in forbidden_nonces:
+        if any(_projection_value_contains_canary(value, forbidden) for value in projection):
             return True
+    return False
+
+
+def _closed_backend_response_projection(response: BackendResponse) -> tuple[object, ...]:
+    response_fields = (
+        "raw_bytes",
+        "provider_request_id",
+        "request_sha256",
+        "reviewer_id",
+        "review_run_id",
+        "context_id",
+        "backend_identity_sha256",
+        "response_count",
+        "continuation_id",
+        "previous_response_id",
+        "events",
+    )
+    if tuple(field.name for field in fields(BackendResponse)) != response_fields:
+        raise RuntimeError("BackendResponse projection is not closed over its fields")
+    event_fields = ("kind", "metadata_sha256")
+    if tuple(field.name for field in fields(BackendEvent)) != event_fields:
+        raise RuntimeError("BackendEvent projection is not closed over its fields")
+    projected = [getattr(response, name) for name in response_fields[:-1]]
+    for event in response.events:
+        if type(event) is BackendEvent:
+            projected.extend((event.kind, event.metadata_sha256))
+    return tuple(projected)
+
+
+def _projection_value_contains_canary(value: object, forbidden: bytes) -> bool:
+    digest = sha256_bytes(forbidden)
+    byte_tokens = (
+        forbidden,
+        forbidden.hex().encode("ascii"),
+        base64.b64encode(forbidden),
+        digest.encode("ascii"),
+    )
+    if isinstance(value, bytes):
+        return any(token in value for token in byte_tokens)
+    if isinstance(value, str):
+        text_tokens = {
+            forbidden.decode("latin-1"),
+            forbidden.hex(),
+            base64.b64encode(forbidden).decode("ascii"),
+            digest,
+        }
+        try:
+            text_tokens.add(forbidden.decode("utf-8"))
+        except UnicodeDecodeError:
+            pass
+        return any(token in value for token in text_tokens)
     return False
 
 
@@ -614,6 +697,7 @@ def _build_result(
     classification: CapabilityClass,
     *,
     backend_identity_hash: str,
+    backend_descriptor_hash: str,
     freshness_hash: str,
     request_hash: str,
     response_hash: str | None,
@@ -626,6 +710,7 @@ def _build_result(
     evidence = {
         "classification": classification.value,
         "backend_identity_sha256": backend_identity_hash,
+        "backend_descriptor_sha256": backend_descriptor_hash,
         "freshness_sha256": freshness_hash,
         "request_sha256": request_hash,
         "response_sha256": response_hash,
@@ -638,6 +723,7 @@ def _build_result(
     return PreflightResult(
         classification=classification,
         backend_identity_sha256=backend_identity_hash,
+        backend_descriptor_sha256=backend_descriptor_hash,
         freshness_sha256=freshness_hash,
         request_sha256=request_hash,
         response_sha256=response_hash,
