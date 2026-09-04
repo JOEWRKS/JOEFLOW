@@ -5,13 +5,12 @@ from __future__ import annotations
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 import json
-import os
 from pathlib import Path
 import re
 from typing import Callable
-import uuid
 
 from .backend import BackendEvent, BackendResponse
+from .evidence import EvidenceLifecycleError, atomic_freeze_evidence
 from .identity import (
     BackendIdentity,
     ResponseIdentity,
@@ -91,23 +90,12 @@ def atomic_freeze_raw_response(
     except ValueError:
         _fail("raw response path escapes the evidence root")
 
-    target.parent.mkdir(parents=True, exist_ok=True)
     expected_count = len(raw_bytes)
     expected_sha256 = sha256_bytes(raw_bytes)
-    temporary = target.with_name(f".{target.name}.{uuid.uuid4().hex}.tmp")
     try:
-        with temporary.open("xb") as stream:
-            written = stream.write(raw_bytes)
-            if written != expected_count:
-                _fail("raw response temporary write was incomplete")
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, target)
-    finally:
-        try:
-            temporary.unlink(missing_ok=True)
-        except OSError:
-            pass
+        atomic_freeze_evidence(raw_bytes, target)
+    except EvidenceLifecycleError as error:
+        _fail(f"raw response freeze failed: {error}")
 
     observed = target.read_bytes()
     if len(observed) != expected_count or sha256_bytes(observed) != expected_sha256:

@@ -22,6 +22,7 @@ from reviewer_runner.identity import (  # noqa: E402
     canonical_json_bytes,
     sha256_bytes,
 )
+import reviewer_runner.evidence as evidence_module  # noqa: E402
 
 
 def _response_contract():
@@ -193,6 +194,89 @@ class ReviewerRunnerResponseTests(unittest.TestCase):
                 ),
             )
 
+    def test_preexisting_different_raw_response_fails_closed_without_overwrite(self):
+        _, _, _, atomic_freeze_raw_response, _, _ = _response_contract()
+        existing_bytes = b'{"status":"existing-immutable-evidence"}'
+        returned_bytes = b'{"status":"different-backend-response"}'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "evidence"
+            target = root / "runs" / "run-001" / "context-001" / "raw-response.json"
+            target.parent.mkdir(parents=True)
+            target.write_bytes(existing_bytes)
+
+            _assert_invalid(
+                self,
+                lambda: atomic_freeze_raw_response(
+                    returned_bytes,
+                    evidence_root=root,
+                    review_run_id="run-001",
+                    context_id="context-001",
+                ),
+            )
+
+            self.assertEqual(target.read_bytes(), existing_bytes)
+
+    def test_preexisting_identical_raw_response_is_idempotent_without_rewrite(self):
+        _, _, FrozenResponse, atomic_freeze_raw_response, _, _ = _response_contract()
+        raw_bytes = b'{"status":"existing-identical-evidence"}'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "evidence"
+            target = root / "runs" / "run-001" / "context-001" / "raw-response.json"
+            target.parent.mkdir(parents=True)
+            target.write_bytes(raw_bytes)
+            target.touch()
+            target_mtime = target.stat().st_mtime_ns
+
+            frozen = atomic_freeze_raw_response(
+                raw_bytes,
+                evidence_root=root,
+                review_run_id="run-001",
+                context_id="context-001",
+            )
+
+            self.assertIsInstance(frozen, FrozenResponse)
+            self.assertEqual(frozen.path, target.resolve())
+            self.assertEqual(frozen.byte_count, len(raw_bytes))
+            self.assertEqual(frozen.sha256, sha256_bytes(raw_bytes))
+            self.assertEqual(target.read_bytes(), raw_bytes)
+            self.assertEqual(target.stat().st_mtime_ns, target_mtime)
+
+    def test_intervening_raw_response_publication_fails_closed_without_clobber(self):
+        _, _, _, atomic_freeze_raw_response, _, _ = _response_contract()
+        returned_bytes = b'{"status":"returned-backend-response"}'
+        intervening_bytes = b'{"status":"intervening-publication"}'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "evidence"
+            target = root / "runs" / "run-001" / "context-001" / "raw-response.json"
+            original_link = evidence_module.os.link
+            published = []
+
+            def link_after_intervening_publication(source, destination, *args, **kwargs):
+                with Path(destination).open("xb") as stream:
+                    stream.write(intervening_bytes)
+                    stream.flush()
+                    evidence_module.os.fsync(stream.fileno())
+                published.append(Path(destination).read_bytes())
+                return original_link(source, destination, *args, **kwargs)
+
+            with mock.patch.object(
+                evidence_module.os,
+                "link",
+                side_effect=link_after_intervening_publication,
+            ):
+                _assert_invalid(
+                    self,
+                    lambda: atomic_freeze_raw_response(
+                        returned_bytes,
+                        evidence_root=root,
+                        review_run_id="run-001",
+                        context_id="context-001",
+                    ),
+                )
+
+            self.assertEqual(published, [intervening_bytes])
+            self.assertEqual(target.read_bytes(), intervening_bytes)
+
     def test_malformed_and_truncated_json_are_review_output_invalid(self):
         invalid_documents = (
             b'{"status":',
@@ -252,6 +336,19 @@ class ReviewerRunnerResponseTests(unittest.TestCase):
                     self,
                     lambda: _bind(response, Path(directory) / "evidence", run=run),
                 )
+
+    def test_non_finite_json_constants_are_rejected_by_parser(self):
+        _, _, _, atomic_freeze_raw_response, _, parse_document = _response_contract()
+        for index, constant in enumerate((b"NaN", b"Infinity", b"-Infinity")):
+            with self.subTest(constant=constant), tempfile.TemporaryDirectory() as directory:
+                frozen = atomic_freeze_raw_response(
+                    b'{"value":' + constant + b"}",
+                    evidence_root=Path(directory) / "evidence",
+                    review_run_id=f"run-non-finite-{index}",
+                    context_id=f"context-non-finite-{index}",
+                )
+
+                _assert_invalid(self, lambda: parse_document(frozen))
 
     def test_schema_invalid_output_is_rejected_without_scoring(self):
         raw_bytes = b'{"status":"schema-invalid"}'
@@ -385,22 +482,23 @@ class ReviewerRunnerResponseTests(unittest.TestCase):
         self.assertEqual(validator_calls, [])
 
     def test_modified_frozen_bytes_fail_readback_hash(self):
-        response_module, _, _, atomic_freeze_raw_response, _, parse_document = (
+        _, _, _, atomic_freeze_raw_response, _, parse_document = (
             _response_contract()
         )
         raw_bytes = b'{"status":"synthetic-ok"}'
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "evidence"
-            original_replace = response_module.os.replace
+            original_link = evidence_module.os.link
 
-            def replace_then_modify(source, target):
-                original_replace(source, target)
+            def link_then_modify(source, target, *args, **kwargs):
+                result = original_link(source, target, *args, **kwargs)
                 Path(target).write_bytes(b'{"status":"modified"}')
+                return result
 
             with mock.patch.object(
-                response_module.os,
-                "replace",
-                side_effect=replace_then_modify,
+                evidence_module.os,
+                "link",
+                side_effect=link_then_modify,
             ):
                 _assert_invalid(
                     self,
@@ -415,8 +513,8 @@ class ReviewerRunnerResponseTests(unittest.TestCase):
             frozen = atomic_freeze_raw_response(
                 raw_bytes,
                 evidence_root=root,
-                review_run_id="run-001",
-                context_id="context-001",
+                review_run_id="run-002",
+                context_id="context-002",
             )
             frozen.path.write_bytes(b'{"status":"modified-after-freeze"}')
             _assert_invalid(self, lambda: parse_document(frozen))

@@ -567,6 +567,31 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
                 self.assertIsNotNone(outcome.raw_response_path)
                 self.assertIsNone(outcome.receipt_path)
 
+    def test_non_finite_json_constants_map_to_review_output_invalid(self):
+        for index, constant in enumerate((b"NaN", b"Infinity", b"-Infinity")):
+            with self.subTest(constant=constant), tempfile.TemporaryDirectory() as directory:
+                prepared, _ = _prepared_v1(
+                    run_id=f"run-non-finite-{index}",
+                    context_id=f"context-non-finite-{index}",
+                )
+                raw_response = b'{"value":' + constant + b"}"
+                backend = _fake_backend(raw_response)
+                preflight, freshness = _fake_preflight(backend)
+
+                outcome, _, _, _ = self._execute(
+                    prepared,
+                    backend,
+                    preflight,
+                    freshness,
+                    Path(directory),
+                )
+
+                self.assertEqual(outcome.state, RunnerState.REVIEW_OUTPUT_INVALID)
+                self.assertEqual(len(backend.received_request_bytes), 1)
+                self.assertIsNotNone(outcome.raw_response_path)
+                self.assertEqual(outcome.raw_response_path.read_bytes(), raw_response)
+                self.assertIsNone(outcome.receipt_path)
+
     def test_valid_synthetic_test_flow_freezes_raw_response_receipt_and_cleanup_evidence(self):
         prepared, material = _prepared_v1()
         raw_response = canonical_json_bytes(material["output"])
