@@ -575,8 +575,6 @@ def _response_failure_reason(
         allowed_nonce,
     ):
         return "allowed-nonce-occurrence-invalid"
-    if response.events:
-        return "forbidden-backend-event"
     try:
         document = json.loads(
             response.raw_bytes,

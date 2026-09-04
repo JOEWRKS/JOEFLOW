@@ -212,13 +212,21 @@ def validate_backend_response(
         raise ValueError("response_count must be exactly one")
     if response.continuation_id is not None or response.previous_response_id is not None:
         raise ValueError("continuation identifiers are not permitted")
-    if not isinstance(response.events, tuple):
-        raise ValueError("events must be an immutable tuple")
-    for event in response.events:
-        if type(event) is not BackendEvent:
-            raise ValueError("events must be exact BackendEvent values")
-        if not _is_identifier(event.kind) or not _is_sha256(event.metadata_sha256):
-            raise ValueError("event metadata must be hash-bound")
+    validate_response_event_contract(response.events)
+
+
+def validate_response_event_contract(events: object) -> None:
+    """Require the one logical output event and reject every other event shape."""
+
+    if type(events) is not tuple or len(events) != 1:
+        raise ValueError("events must contain exactly one RESPONSE event")
+    event = events[0]
+    if type(event) is not BackendEvent:
+        raise ValueError("response event must be an exact BackendEvent")
+    if event.kind != "RESPONSE":
+        raise ValueError("response contains a forbidden or undeclared event kind")
+    if not _is_sha256(event.metadata_sha256):
+        raise ValueError("response event metadata must be hash-bound")
 
 
 def _is_identifier(value: object) -> bool:

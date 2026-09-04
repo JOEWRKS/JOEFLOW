@@ -118,6 +118,46 @@ class ReviewerRunnerBackendTests(unittest.TestCase):
         self.assertEqual(response.continuation_id, None)
         self.assertEqual(response.previous_response_id, None)
 
+    def test_backend_response_requires_exactly_one_declared_response_event(self):
+        from reviewer_runner.backend import validate_backend_response
+        from tests.reviewer_runner_support import DeterministicFakeBackend
+
+        request_bytes = _request_bytes()
+        response_event = _backend_contract()[0](
+            "RESPONSE",
+            sha256_bytes(b"backend-response-event"),
+        )
+        fake = DeterministicFakeBackend(
+            b'{"verdict":"recorded"}',
+            events=(response_event,),
+        )
+        response = fake.invoke(request_bytes, timeout_seconds=5)
+        descriptor = fake.describe()
+        validate_backend_response(
+            response,
+            request_bytes=request_bytes,
+            reviewer_id="reviewer-001",
+            review_run_id="run-001",
+            context_id="context-001",
+            descriptor=descriptor,
+        )
+
+        for label, events in (
+            ("missing", ()),
+            ("duplicate", (response_event, response_event)),
+            ("wrong-container-type", [response_event]),
+            ("wrong-event-type", ("RESPONSE",)),
+        ):
+            with self.subTest(label=label), self.assertRaises(ValueError):
+                validate_backend_response(
+                    replace(response, events=events),
+                    request_bytes=request_bytes,
+                    reviewer_id="reviewer-001",
+                    review_run_id="run-001",
+                    context_id="context-001",
+                    descriptor=descriptor,
+                )
+
     def test_no_tool_path_environment_retrieval_or_file_reference_parameter_exists(self):
         _, _, _, protocol, _, _ = _backend_contract()
         parameter_names = set(inspect.signature(protocol.invoke).parameters)

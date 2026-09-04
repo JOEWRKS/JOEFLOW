@@ -9,7 +9,10 @@ from pathlib import Path
 import re
 from typing import Callable
 
-from .backend import BackendEvent, BackendResponse
+from .backend import (
+    BackendResponse,
+    validate_response_event_contract,
+)
 from .evidence import EvidenceLifecycleError, atomic_freeze_evidence
 from .identity import (
     BackendIdentity,
@@ -263,17 +266,10 @@ def _validate_invocation_binding(
 
 
 def _validate_response_events(events: object) -> None:
-    if not isinstance(events, tuple) or len(events) != 1:
-        _binding_fail("response must contain exactly one RESPONSE event")
-    event = events[0]
-    if type(event) is not BackendEvent:
-        _binding_fail("response event must be an exact BackendEvent")
-    if event.kind != "RESPONSE":
-        _binding_fail("response contains a forbidden or extra event kind")
-    if not isinstance(event.metadata_sha256, str) or _SHA256.fullmatch(
-        event.metadata_sha256
-    ) is None:
-        _binding_fail("response event metadata must be hash-bound")
+    try:
+        validate_response_event_contract(events)
+    except ValueError as error:
+        _binding_fail(str(error))
 
 
 def _resolved_evidence_root(evidence_root: Path) -> Path:

@@ -539,8 +539,6 @@ class ReviewerRunnerResponseTests(unittest.TestCase):
             )
 
     def test_missing_or_multiple_response_count_is_rejected(self):
-        event = BackendEvent("RESPONSE", sha256_bytes(b"response-event-2"))
-        forbidden_event = BackendEvent("TOOL", sha256_bytes(b"tool-event"))
         cases = (
             {"response_count": None},
             {"response_count": 0},
@@ -549,10 +547,6 @@ class ReviewerRunnerResponseTests(unittest.TestCase):
             {"response_count": 1.0},
             {"continuation_id": "continuation"},
             {"previous_response_id": "previous"},
-            {"events": ()},
-            {"events": (event, event)},
-            {"events": (event, forbidden_event)},
-            {"events": (BackendEvent("OTHER", sha256_bytes(b"other")),)},
         )
         for index, changes in enumerate(cases):
             with self.subTest(changes=changes), tempfile.TemporaryDirectory() as directory:
@@ -561,6 +555,45 @@ class ReviewerRunnerResponseTests(unittest.TestCase):
                 _assert_invalid(
                     self,
                     lambda: _bind(response, Path(directory) / "evidence", run=run),
+                    RunnerState.PACKAGE_BINDING_MISMATCH,
+                )
+
+    def test_event_contract_rejects_missing_duplicate_wrong_order_type_and_forbidden_kinds(self):
+        response_event = BackendEvent(
+            "RESPONSE",
+            sha256_bytes(b"response-event-2"),
+        )
+        forbidden_events = tuple(
+            BackendEvent(kind, sha256_bytes(("event:" + kind).encode("utf-8")))
+            for kind in (
+                "TOOL",
+                "RETRIEVAL",
+                "FILE",
+                "WEB",
+                "CODE_EXECUTION",
+                "UNDECLARED",
+            )
+        )
+        cases = (
+            ("missing", ()),
+            ("duplicate-response", (response_event, response_event)),
+            ("forbidden-before-response", (forbidden_events[0], response_event)),
+            ("forbidden-after-response", (response_event, forbidden_events[0])),
+            ("wrong-container-type", [response_event]),
+            ("wrong-event-type", ("RESPONSE",)),
+            *((f"forbidden-{event.kind.lower()}", (event,)) for event in forbidden_events),
+        )
+        for index, (label, events) in enumerate(cases):
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                run = _run_identity(review_run_id=f"run-event-{index}")
+                response = _backend_response(run=run, events=events)
+                _assert_invalid(
+                    self,
+                    lambda: _bind(
+                        response,
+                        Path(directory) / "evidence",
+                        run=run,
+                    ),
                     RunnerState.PACKAGE_BINDING_MISMATCH,
                 )
 

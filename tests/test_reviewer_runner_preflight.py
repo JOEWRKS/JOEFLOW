@@ -345,7 +345,7 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
             response_count=1,
             continuation_id=None,
             previous_response_id=None,
-            events=(),
+            events=(BackendEvent("RESPONSE", "2" * 64),),
         )
         metadata_fields = (
             "provider_request_id",
@@ -418,7 +418,7 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
             response_count=1,
             continuation_id=None,
             previous_response_id=None,
-            events=(),
+            events=(BackendEvent("RESPONSE", "2" * 64),),
         )
         metadata_fields = (
             "provider_request_id",
@@ -572,14 +572,79 @@ class ReviewerRunnerPreflightTests(unittest.TestCase):
         package = json.loads(package_from_request(backend.received_request_bytes[0]))
         self.assertEqual(tuple(package["path_samples"]), PATH_SAMPLES)
         self.assertEqual(resolver_calls, [])
-        self.assertEqual(backend.returned_events, ())
+        self.assertEqual(
+            tuple(event.kind for event in backend.returned_events),
+            ("RESPONSE",),
+        )
 
-    def test_tool_or_retrieval_event_fails_preflight(self):
-        for kind in ("tool", "retrieval", "file"):
-            with self.subTest(kind=kind):
-                event = BackendEvent(kind, sha256_bytes(("event:" + kind).encode("utf-8")))
+    def test_exact_response_event_is_accepted_and_missing_event_fails_preflight(self):
+        response_event = BackendEvent(
+            "RESPONSE",
+            sha256_bytes(b"preflight-response-event"),
+        )
+        accepted = unit_only_eligible_external_adapter(
+            nonce_source=nonce_bytes,
+            events=(response_event,),
+        )
+        accepted_result = run_isolation_preflight(
+            accepted,
+            freshness=self._freshness(accepted),
+            nonce_source=nonce_bytes,
+        )
+        self.assertEqual(
+            accepted_result.classification,
+            CapabilityClass.OBSERVED_PASS,
+        )
+
+        missing = unit_only_eligible_external_adapter(
+            nonce_source=nonce_bytes,
+            events=(),
+        )
+        missing_result = run_isolation_preflight(
+            missing,
+            freshness=self._freshness(missing),
+            nonce_source=nonce_bytes,
+        )
+        self.assertEqual(
+            missing_result.classification,
+            CapabilityClass.OBSERVED_FAIL,
+        )
+
+    def test_duplicate_wrong_order_type_forbidden_and_undeclared_events_fail_preflight(self):
+        response_event = BackendEvent(
+            "RESPONSE",
+            sha256_bytes(b"preflight-response-event"),
+        )
+        forbidden_events = tuple(
+            BackendEvent(kind, sha256_bytes(("event:" + kind).encode("utf-8")))
+            for kind in (
+                "TOOL",
+                "RETRIEVAL",
+                "FILE",
+                "WEB",
+                "CODE_EXECUTION",
+                "UNDECLARED",
+            )
+        )
+        cases = (
+            ("duplicate-response", (response_event, response_event)),
+            ("forbidden-before-response", (forbidden_events[0], response_event)),
+            ("forbidden-after-response", (response_event, forbidden_events[0])),
+            ("wrong-container-type", [response_event]),
+            ("wrong-event-type", ("RESPONSE",)),
+            *((f"forbidden-{event.kind.lower()}", (event,)) for event in forbidden_events),
+        )
+        for label, events in cases:
+            with self.subTest(label=label):
+                backend_options = {"events": events}
+                if label == "wrong-container-type":
+                    backend_options = {
+                        "events": (response_event,),
+                        "metadata_drift": {"events": events},
+                    }
                 backend = unit_only_eligible_external_adapter(
-                    nonce_source=nonce_bytes, events=(event,)
+                    nonce_source=nonce_bytes,
+                    **backend_options,
                 )
                 result = run_isolation_preflight(
                     backend,

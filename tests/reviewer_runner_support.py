@@ -191,14 +191,22 @@ class UnitOnlyEligibleExternalAdapterSimulation:
         *,
         descriptor,
         response_factory=None,
-        events=(),
+        events=None,
         metadata_drift: Mapping[str, object] | None = None,
         resolver_callback=None,
     ):
-        from reviewer_runner.backend import BackendResponse
+        from reviewer_runner.backend import BackendEvent, BackendResponse
+        from reviewer_runner.identity import sha256_bytes
 
         self._descriptor = descriptor
         self._response_factory = response_factory
+        if events is None:
+            events = (
+                BackendEvent(
+                    "RESPONSE",
+                    sha256_bytes(b"synthetic-observed-response-event"),
+                ),
+            )
         self._events = tuple(events)
         self._metadata_drift = dict(metadata_drift or {})
         allowed_drift = {field.name for field in fields(BackendResponse)}
@@ -263,7 +271,7 @@ def unit_only_eligible_external_adapter(
     nonce_source,
     descriptor=None,
     response_factory=None,
-    events=(),
+    events=None,
     metadata_drift=None,
     resolver_callback=None,
 ):
