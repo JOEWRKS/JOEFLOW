@@ -42,7 +42,7 @@ class SkillPackageTest(unittest.TestCase):
         self.assertEqual(missing, [])
 
     def test_validator_scripts_only_import_standard_library_or_sibling_module(self):
-        allowed = {"__future__", "argparse", "copy", "datetime", "hashlib", "importlib", "json", "os", "pathlib", "re", "stat", "subprocess", "sys", "typing", "uuid", "migration_v2", "state_contract_dispatch", "state_validation", "state_validation_v2", "discovery_v2", "materiality_v2", "grill_v2", "authority_binding_v2", "approval_v2", "downstream_v2", "integration_v2", "reviewer_runner"}
+        allowed = {"__future__", "argparse", "copy", "datetime", "hashlib", "importlib", "json", "os", "pathlib", "re", "stat", "subprocess", "sys", "typing", "uuid", "migration_v2", "state_contract_dispatch", "state_validation", "state_validation_v2", "discovery_v2", "materiality_v2", "grill_v2", "authority_binding_v2", "approval_v2", "downstream_v2", "integration_v2"}
         imports = set()
         for script in (SKILL / "scripts").glob("*.py"):
             tree = ast.parse(script.read_text(encoding="utf-8"))
@@ -51,7 +51,7 @@ class SkillPackageTest(unittest.TestCase):
                     imports.update(alias.name.split(".")[0] for alias in node.names)
                 elif isinstance(node, ast.ImportFrom) and node.module:
                     imports.add(node.module.split(".")[0])
-        self.assertEqual(imports - allowed, set())
+        self.assertEqual(imports, allowed)
 
     def test_validator_scripts_do_not_hide_dependencies_from_ast_policy(self):
         hidden_imports = []

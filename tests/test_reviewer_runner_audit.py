@@ -5,6 +5,7 @@ import py_compile
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -54,6 +55,31 @@ class ReviewerRunnerAuditTests(unittest.TestCase):
         self.assertIsNotNone(canonical_audit_json)
         self.assertIsNotNone(frozen_blob_map)
 
+    def assert_private_namespace_collision_fails_closed(self, suffix, seeded_module):
+        namespace = f"_audit_verified_reviewer_runner_{self.revision}"
+        seeded_name = f"{namespace}{suffix}"
+        self.assertFalse(
+            any(
+                name == namespace or name.startswith(f"{namespace}.")
+                for name in sys.modules
+            )
+        )
+        sys.modules[seeded_name] = seeded_module
+        try:
+            with self.assertRaisesRegex(RuntimeError, "module namespace collision"):
+                build_capability_audit(ROOT, self.revision)
+            self.assertFalse(
+                any(
+                    name == namespace or name.startswith(f"{namespace}.")
+                    for name in sys.modules
+                ),
+                "private verified-runner modules survived a failed load",
+            )
+        finally:
+            for name in tuple(sys.modules):
+                if name == namespace or name.startswith(f"{namespace}."):
+                    sys.modules.pop(name, None)
+
     def test_no_registered_real_adapter_reports_unavailable_and_calibration_not_run(self):
         self.require_audit_implementation()
 
@@ -79,6 +105,58 @@ class ReviewerRunnerAuditTests(unittest.TestCase):
                 "implementation_code_commit": self.revision,
                 "implementation_code_tree": self.tree,
             },
+        )
+
+    def test_preseeded_private_package_fails_closed_and_is_removed(self):
+        namespace = f"_audit_verified_reviewer_runner_{self.revision}"
+        poisoned_package = types.ModuleType(namespace)
+        poisoned_package.__package__ = namespace
+        poisoned_package.__path__ = [str(SKILL_ROOT / "reviewer_runner")]
+        poisoned_package.__spec__ = importlib.util.spec_from_loader(
+            namespace,
+            loader=None,
+            is_package=True,
+        )
+
+        self.assert_private_namespace_collision_fails_closed("", poisoned_package)
+
+    def test_preseeded_private_identity_fails_closed_and_is_removed(self):
+        poisoned_identity = importlib.import_module("reviewer_runner.identity")
+
+        self.assert_private_namespace_collision_fails_closed(
+            ".identity",
+            poisoned_identity,
+        )
+
+    def test_preseeded_private_backend_fails_closed_and_is_removed(self):
+        poisoned_backend = importlib.import_module("reviewer_runner.backend")
+
+        self.assert_private_namespace_collision_fails_closed(
+            ".backend",
+            poisoned_backend,
+        )
+
+    def test_preseeded_private_transitive_module_fails_closed_and_is_removed(self):
+        namespace = f"_audit_verified_reviewer_runner_{self.revision}"
+        poisoned_controller = types.ModuleType(f"{namespace}.controller")
+
+        self.assert_private_namespace_collision_fails_closed(
+            ".controller",
+            poisoned_controller,
+        )
+
+    def test_private_verified_namespace_is_removed_after_successful_audit(self):
+        namespace = f"_audit_verified_reviewer_runner_{self.revision}"
+
+        result = build_capability_audit(ROOT, self.revision)
+
+        self.assertEqual(result["runner_contract_version"], "joewrks.reviewer-runner/1.0")
+        self.assertFalse(
+            any(
+                name == namespace or name.startswith(f"{namespace}.")
+                for name in sys.modules
+            ),
+            "private verified-runner modules survived a successful load",
         )
 
     def test_fake_backend_is_excluded_from_observed_pass(self):

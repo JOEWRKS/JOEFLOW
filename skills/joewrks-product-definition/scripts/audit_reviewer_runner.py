@@ -11,6 +11,7 @@ try:
     import argparse
     import importlib
     import importlib.abc
+    import importlib.machinery
     import importlib.util
     import json
     import os
@@ -232,13 +233,11 @@ def _verify_runner_source_binding(
     return snapshot
 
 
-class _SnapshotSourceLoader(importlib.abc.Loader):
-    def __init__(self, source: bytes, filename: Path):
+class _SnapshotSourceLoader(importlib.machinery.SourceFileLoader):
+    def __init__(self, fullname: str, source: bytes, filename: Path):
+        super().__init__(fullname, str(filename))
         self._source = source
         self._filename = filename
-
-    def create_module(self, spec):
-        return None
 
     def exec_module(self, module) -> None:
         module.__file__ = str(self._filename)
@@ -261,19 +260,21 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         if fullname == self._package_name:
             relative_source = f"{RUNNER_SOURCE_PATH}/__init__.py"
             is_package = True
-        elif fullname.startswith(f"{self._package_name}."):
-            module_name = fullname[len(self._package_name) + 1 :]
-            relative_source = (
-                f"{RUNNER_SOURCE_PATH}/{module_name.replace('.', '/')}.py"
-            )
+        elif fullname == f"{self._package_name}.identity":
+            relative_source = f"{RUNNER_SOURCE_PATH}/identity.py"
             is_package = False
+        elif fullname == f"{self._package_name}.backend":
+            relative_source = f"{RUNNER_SOURCE_PATH}/backend.py"
+            is_package = False
+        elif fullname.startswith(f"{self._package_name}."):
+            raise RuntimeError("verified runner attempted an unexpected module import")
         else:
             return None
         source = self._snapshot.get(relative_source)
         if source is None:
-            return None
+            raise RuntimeError("verified runner source snapshot is incomplete")
         filename = self._repository.joinpath(*PurePosixPath(relative_source).parts)
-        loader = _SnapshotSourceLoader(source, filename)
+        loader = _SnapshotSourceLoader(fullname, source, filename)
         return importlib.util.spec_from_loader(
             fullname,
             loader,
@@ -282,20 +283,83 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         )
 
 
+def _private_runner_module_names(package_name: str) -> tuple[str, ...]:
+    return tuple(
+        name
+        for name in sys.modules
+        if name == package_name or name.startswith(f"{package_name}.")
+    )
+
+
+def _remove_private_runner_modules(package_name: str) -> None:
+    for name in _private_runner_module_names(package_name):
+        sys.modules.pop(name, None)
+
+
+def _verify_snapshot_module(
+    module,
+    *,
+    fullname: str,
+    filename: Path,
+    source: bytes,
+) -> None:
+    spec = getattr(module, "__spec__", None)
+    loader = getattr(module, "__loader__", None)
+    if (
+        module.__name__ != fullname
+        or module.__file__ != str(filename)
+        or spec is None
+        or spec.name != fullname
+        or spec.origin != str(filename)
+        or type(spec.loader) is not _SnapshotSourceLoader
+        or loader is not spec.loader
+        or loader._filename != filename
+        or loader._source != source
+    ):
+        raise RuntimeError("verified runner module binding is invalid")
+
+
 def _load_verified_runner_api(
     repository: Path,
     revision: str,
     snapshot: dict[str, bytes],
 ):
     package_name = f"_audit_verified_reviewer_runner_{revision}"
-    finder = _SnapshotSourceFinder(package_name, repository, snapshot)
-    sys.meta_path.insert(0, finder)
+    finder = None
     try:
+        if _private_runner_module_names(package_name):
+            raise RuntimeError("verified runner module namespace collision")
+        finder = _SnapshotSourceFinder(package_name, repository, snapshot)
+        sys.meta_path.insert(0, finder)
+        package_module = importlib.import_module(package_name)
         identity_module = importlib.import_module(f"{package_name}.identity")
         backend_module = importlib.import_module(f"{package_name}.backend")
+        expected_modules = {
+            package_name: f"{RUNNER_SOURCE_PATH}/__init__.py",
+            f"{package_name}.identity": f"{RUNNER_SOURCE_PATH}/identity.py",
+            f"{package_name}.backend": f"{RUNNER_SOURCE_PATH}/backend.py",
+        }
+        loaded_names = set(_private_runner_module_names(package_name))
+        if loaded_names != set(expected_modules):
+            raise RuntimeError("verified runner loaded an unexpected module")
+        for module, fullname in (
+            (package_module, package_name),
+            (identity_module, f"{package_name}.identity"),
+            (backend_module, f"{package_name}.backend"),
+        ):
+            relative_source = expected_modules[fullname]
+            filename = repository.joinpath(*PurePosixPath(relative_source).parts)
+            _verify_snapshot_module(
+                module,
+                fullname=fullname,
+                filename=filename,
+                source=snapshot[relative_source],
+            )
+        return identity_module, backend_module
     finally:
-        sys.meta_path.remove(finder)
-    return identity_module, backend_module
+        if finder is not None and finder in sys.meta_path:
+            sys.meta_path.remove(finder)
+        _remove_private_runner_modules(package_name)
 
 
 def _rehydrate_backend_descriptor(descriptor, identity_module, backend_module):
