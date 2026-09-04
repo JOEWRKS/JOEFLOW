@@ -1,5 +1,7 @@
 import json
+import importlib.util
 import os
+import py_compile
 import subprocess
 import sys
 import tempfile
@@ -31,7 +33,7 @@ except ImportError:
 
 def _git(*arguments):
     return subprocess.run(
-        ["git", "-C", str(ROOT), *arguments],
+        ["git", "--no-optional-locks", "-C", str(ROOT), *arguments],
         check=True,
         capture_output=True,
         text=True,
@@ -181,6 +183,125 @@ class ReviewerRunnerAuditTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "runner source inventory"):
                 build_capability_audit(ROOT, self.revision)
 
+    def test_stat_stale_same_size_live_runner_edit_is_rejected_from_raw_bytes(self):
+        self.require_audit_implementation()
+        import audit_reviewer_runner as audit_module
+
+        source_path = SKILL_ROOT / "reviewer_runner" / "identity.py"
+        original_bytes = source_path.read_bytes()
+        original_stat = source_path.stat()
+        mutated_bytes = original_bytes.replace(
+            b"joewrks.reviewer-runner/1.0",
+            b"badwrks.reviewer-runner/1.0",
+            1,
+        )
+        self.assertNotEqual(mutated_bytes, original_bytes)
+        self.assertEqual(len(mutated_bytes), len(original_bytes))
+
+        real_git = audit_module._git
+
+        def stat_stale_git(repository, *arguments, binary=False):
+            if arguments[:3] == ("status", "--porcelain=v1", "-z"):
+                return b""
+            return real_git(repository, *arguments, binary=binary)
+
+        try:
+            source_path.write_bytes(mutated_bytes)
+            os.utime(
+                source_path,
+                ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns),
+            )
+            self.assertEqual(source_path.stat().st_size, original_stat.st_size)
+            self.assertEqual(source_path.stat().st_mtime_ns, original_stat.st_mtime_ns)
+
+            with patch.object(audit_module, "_git", side_effect=stat_stale_git):
+                with self.assertRaisesRegex(RuntimeError, "live runner source"):
+                    build_capability_audit(ROOT, self.revision)
+        finally:
+            source_path.write_bytes(original_bytes)
+            os.utime(
+                source_path,
+                ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns),
+            )
+
+        self.assertEqual(source_path.read_bytes(), original_bytes)
+        self.assertEqual(source_path.stat().st_mtime_ns, original_stat.st_mtime_ns)
+
+    def test_stale_runner_bytecode_cannot_override_verified_source(self):
+        self.require_audit_implementation()
+        evidence_path = (
+            ROOT
+            / "evals"
+            / "post-m6-semantic-review-reliability-enablement"
+            / "RUNNER_CAPABILITY_EVIDENCE.json"
+        )
+        evidence = json.loads(evidence_path.read_bytes())
+        identity_path = SKILL_ROOT / "reviewer_runner" / "identity.py"
+        source_bytes = identity_path.read_bytes()
+        source_stat = identity_path.stat()
+        poisoned_bytes = source_bytes.replace(
+            b"joewrks.reviewer-runner/1.0",
+            b"badwrks.reviewer-runner/1.0",
+            1,
+        )
+        self.assertNotEqual(poisoned_bytes, source_bytes)
+        self.assertEqual(len(poisoned_bytes), len(source_bytes))
+
+        with tempfile.TemporaryDirectory() as directory:
+            temporary_root = Path(directory)
+            cache_root = temporary_root / "external-bytecode-cache"
+            poison_source = temporary_root / "identity.py"
+            poison_source.write_bytes(poisoned_bytes)
+            os.utime(
+                poison_source,
+                ns=(source_stat.st_atime_ns, source_stat.st_mtime_ns),
+            )
+
+            previous_cache_prefix = sys.pycache_prefix
+            try:
+                sys.pycache_prefix = str(cache_root)
+                cache_path = Path(importlib.util.cache_from_source(str(identity_path)))
+            finally:
+                sys.pycache_prefix = previous_cache_prefix
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            py_compile.compile(
+                str(poison_source),
+                cfile=str(cache_path),
+                dfile=str(identity_path),
+                doraise=True,
+                invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP,
+            )
+
+            environment = os.environ.copy()
+            environment.pop("PYTHONDONTWRITEBYTECODE", None)
+            environment.pop("PYTHONPYCACHEPREFIX", None)
+            launcher = (
+                "import runpy,sys;"
+                "sys.pycache_prefix=sys.argv[1];"
+                "script=sys.argv[2];"
+                "sys.argv=[script,*sys.argv[3:]];"
+                "runpy.run_path(script,run_name='__main__')"
+            )
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    launcher,
+                    str(cache_root),
+                    str(SCRIPTS_ROOT / "audit_reviewer_runner.py"),
+                    "--repository",
+                    str(ROOT),
+                    "--revision",
+                    evidence["implementation_code_commit"],
+                    "--json",
+                ],
+                check=True,
+                capture_output=True,
+                env=environment,
+            )
+
+            self.assertEqual(completed.stdout, evidence_path.read_bytes())
+
     def test_cli_stdout_bytes_exactly_match_frozen_canonical_evidence(self):
         self.require_audit_implementation()
         evidence_path = (
@@ -231,16 +352,28 @@ class ReviewerRunnerAuditTests(unittest.TestCase):
         self.require_audit_implementation()
         import audit_reviewer_runner as audit_module
 
-        completed = subprocess.CompletedProcess([], 0, stdout="")
+        text_completed = subprocess.CompletedProcess([], 0, stdout="")
         with patch.object(
             audit_module.subprocess,
             "run",
-            return_value=completed,
+            return_value=text_completed,
         ) as run:
             audit_module._git(ROOT, "status")
 
         command = run.call_args.args[0]
         self.assertEqual(command[:3], ["git", "--no-optional-locks", "-C"])
+
+        binary_completed = subprocess.CompletedProcess([], 0, stdout=b"0" * 40 + b"\n")
+        with patch.object(
+            audit_module.subprocess,
+            "run",
+            return_value=binary_completed,
+        ) as run:
+            audit_module._git_blob_id(ROOT, b"source bytes")
+
+        command = run.call_args.args[0]
+        self.assertEqual(command[:3], ["git", "--no-optional-locks", "-C"])
+        self.assertEqual(command[-2:], ["hash-object", "--stdin"])
 
 
 if __name__ == "__main__":

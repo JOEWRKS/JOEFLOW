@@ -9,21 +9,21 @@ _previous_dont_write_bytecode = sys.dont_write_bytecode
 sys.dont_write_bytecode = True
 try:
     import argparse
+    import importlib
+    import importlib.abc
+    import importlib.util
     import json
+    import os
+    from pathlib import Path, PurePosixPath
+    import stat
     import subprocess
-    from pathlib import Path
     from typing import Iterable
-
-    _SKILL_ROOT = Path(__file__).resolve().parents[1]
-    if str(_SKILL_ROOT) not in sys.path:
-        sys.path.insert(0, str(_SKILL_ROOT))
-
-    import reviewer_runner as _loaded_runner_package  # noqa: E402
-    from reviewer_runner import RUNNER_CONTRACT_VERSION  # noqa: E402
-    from reviewer_runner.backend import validate_backend_descriptor  # noqa: E402
 finally:
     sys.dont_write_bytecode = _previous_dont_write_bytecode
     del _previous_dont_write_bytecode
+
+
+_SKILL_ROOT = Path(__file__).resolve().parents[1]
 
 
 AUDIT_SCHEMA_VERSION = "joewrks.reviewer-runner-capability-audit/1.0"
@@ -53,6 +53,23 @@ def _git(repository: Path, *arguments: str, binary: bool = False):
         text=not binary,
     )
     return result.stdout
+
+
+def _git_blob_id(repository: Path, content: bytes) -> str:
+    result = subprocess.run(
+        [
+            "git",
+            "--no-optional-locks",
+            "-C",
+            str(repository),
+            "hash-object",
+            "--stdin",
+        ],
+        check=True,
+        capture_output=True,
+        input=content,
+    )
+    return result.stdout.decode("ascii").strip()
 
 
 def _commit_and_tree(repository: Path, revision: str) -> tuple[str, str]:
@@ -139,18 +156,38 @@ def _runner_index_blob_map(repository: Path) -> dict[str, str]:
     return dict(sorted(records.items()))
 
 
-def _verify_runner_source_binding(repository: Path, revision: str) -> None:
+def _read_bound_regular_file(path: Path) -> tuple[str, bytes]:
+    path_stat = path.lstat()
+    if not stat.S_ISREG(path_stat.st_mode):
+        raise RuntimeError("live runner source is not a regular file")
+    with path.open("rb") as source_file:
+        opened_before = os.fstat(source_file.fileno())
+        content = source_file.read()
+        opened_after = os.fstat(source_file.fileno())
+    path_after = path.lstat()
+    identity_fields = ("st_dev", "st_ino", "st_mode", "st_size", "st_mtime_ns")
+    identities = [
+        tuple(getattr(value, field) for field in identity_fields)
+        for value in (path_stat, opened_before, opened_after, path_after)
+    ]
+    if any(identity != identities[0] for identity in identities[1:]):
+        raise RuntimeError("live runner source changed while it was read")
+    live_mode = "100755" if path_stat.st_mode & 0o111 else "100644"
+    return live_mode, content
+
+
+def _verify_runner_source_binding(
+    repository: Path,
+    revision: str,
+) -> dict[str, bytes]:
     repository_root = repository.resolve(strict=True)
-    loaded_repository_root = _SKILL_ROOT.parents[1].resolve(strict=True)
-    if repository_root != loaded_repository_root:
-        raise RuntimeError("runner source repository does not match the loaded runner")
+    audit_repository_root = _SKILL_ROOT.parents[1].resolve(strict=True)
+    if repository_root != audit_repository_root:
+        raise RuntimeError("runner source repository does not match the audit module")
 
     runner_root = repository_root / RUNNER_SOURCE_PATH
     if runner_root.resolve(strict=True) != runner_root:
         raise RuntimeError("runner source path does not resolve to its tracked location")
-    loaded_package = Path(_loaded_runner_package.__file__).resolve(strict=True)
-    if loaded_package.parent != runner_root:
-        raise RuntimeError("loaded runner source is outside the audited repository")
 
     status = _git(
         repository_root,
@@ -172,15 +209,165 @@ def _verify_runner_source_binding(repository: Path, revision: str) -> None:
             "runner source inventory is absent, incomplete, or differs from loaded source"
         )
 
+    snapshot: dict[str, bytes] = {}
+    runner_prefix = f"{RUNNER_SOURCE_PATH}/"
+    for path, commitment in revision_inventory.items():
+        relative_path = PurePosixPath(path)
+        if (
+            relative_path.is_absolute()
+            or ".." in relative_path.parts
+            or not path.startswith(runner_prefix)
+        ):
+            raise RuntimeError("runner source inventory contains an invalid path")
+        live_path = repository_root.joinpath(*relative_path.parts)
+        if live_path.resolve(strict=True) != live_path:
+            raise RuntimeError("live runner source path does not resolve to its tracked location")
 
-def _real_adapter_count(registered_adapters: Iterable[object]) -> int:
+        expected_mode, expected_blob_id = commitment.split(":", 1)
+        live_mode, content = _read_bound_regular_file(live_path)
+        live_blob_id = _git_blob_id(repository_root, content)
+        if live_mode != expected_mode or live_blob_id != expected_blob_id:
+            raise RuntimeError("live runner source bytes or mode differ from revision")
+        snapshot[path] = content
+    return snapshot
+
+
+class _SnapshotSourceLoader(importlib.abc.Loader):
+    def __init__(self, source: bytes, filename: Path):
+        self._source = source
+        self._filename = filename
+
+    def create_module(self, spec):
+        return None
+
+    def exec_module(self, module) -> None:
+        module.__file__ = str(self._filename)
+        code = compile(self._source, str(self._filename), "exec", dont_inherit=True)
+        exec(code, module.__dict__)
+
+
+class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
+    def __init__(
+        self,
+        package_name: str,
+        repository: Path,
+        snapshot: dict[str, bytes],
+    ):
+        self._package_name = package_name
+        self._repository = repository
+        self._snapshot = snapshot
+
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == self._package_name:
+            relative_source = f"{RUNNER_SOURCE_PATH}/__init__.py"
+            is_package = True
+        elif fullname.startswith(f"{self._package_name}."):
+            module_name = fullname[len(self._package_name) + 1 :]
+            relative_source = (
+                f"{RUNNER_SOURCE_PATH}/{module_name.replace('.', '/')}.py"
+            )
+            is_package = False
+        else:
+            return None
+        source = self._snapshot.get(relative_source)
+        if source is None:
+            return None
+        filename = self._repository.joinpath(*PurePosixPath(relative_source).parts)
+        loader = _SnapshotSourceLoader(source, filename)
+        return importlib.util.spec_from_loader(
+            fullname,
+            loader,
+            origin=str(filename),
+            is_package=is_package,
+        )
+
+
+def _load_verified_runner_api(
+    repository: Path,
+    revision: str,
+    snapshot: dict[str, bytes],
+):
+    package_name = f"_audit_verified_reviewer_runner_{revision}"
+    finder = _SnapshotSourceFinder(package_name, repository, snapshot)
+    sys.meta_path.insert(0, finder)
+    try:
+        identity_module = importlib.import_module(f"{package_name}.identity")
+        backend_module = importlib.import_module(f"{package_name}.backend")
+    finally:
+        sys.meta_path.remove(finder)
+    return identity_module, backend_module
+
+
+def _rehydrate_backend_descriptor(descriptor, identity_module, backend_module):
+    try:
+        if (
+            type(descriptor).__module__ != "reviewer_runner.backend"
+            or type(descriptor).__qualname__ != "BackendDescriptor"
+        ):
+            raise ValueError("backend descriptor must be an exact BackendDescriptor")
+        identity = descriptor.identity
+        if (
+            type(identity).__module__ != "reviewer_runner.identity"
+            or type(identity).__qualname__ != "BackendIdentity"
+        ):
+            raise ValueError("backend identity must be an exact BackendIdentity")
+        trusted_identity = identity_module.BackendIdentity(
+            backend_kind=identity.backend_kind,
+            adapter_id=identity.adapter_id,
+            adapter_version=identity.adapter_version,
+            endpoint_identity=identity.endpoint_identity,
+            deployment_identity=identity.deployment_identity,
+            model_revision_identity=identity.model_revision_identity,
+            model_identity_stability=identity.model_identity_stability,
+            inference_settings_sha256=identity.inference_settings_sha256,
+            retention_policy_identity=identity.retention_policy_identity,
+            privacy_policy_identity=identity.privacy_policy_identity,
+            is_test_double=identity.is_test_double,
+        )
+        trusted_observations = []
+        for observation in descriptor.observations:
+            if (
+                type(observation).__module__ != "reviewer_runner.backend"
+                or type(observation).__qualname__ != "CapabilityObservation"
+            ):
+                raise ValueError(
+                    "observations must be exact CapabilityObservation values"
+                )
+            trusted_observations.append(
+                backend_module.CapabilityObservation(
+                    capability=observation.capability,
+                    classification=identity_module.CapabilityClass(
+                        observation.classification.value
+                    ),
+                    method=observation.method,
+                    evidence_sha256=observation.evidence_sha256,
+                )
+            )
+        return backend_module.BackendDescriptor(
+            identity=trusted_identity,
+            max_request_bytes=descriptor.max_request_bytes,
+            observations=tuple(trusted_observations),
+        )
+    except (AttributeError, TypeError, ValueError) as error:
+        raise ValueError("registered adapter returned an invalid descriptor") from error
+
+
+def _real_adapter_count(
+    registered_adapters: Iterable[object],
+    identity_module,
+    backend_module,
+) -> int:
     count = 0
     for adapter in registered_adapters:
         describe = getattr(adapter, "describe", None)
         if not callable(describe):
             raise ValueError("registered adapter must expose describe()")
-        descriptor = describe()
-        validate_backend_descriptor(descriptor)
+        descriptor = _rehydrate_backend_descriptor(
+            describe(),
+            identity_module,
+            backend_module,
+        )
+        backend_module.validate_backend_descriptor(descriptor)
         if not descriptor.identity.is_test_double:
             count += 1
     return count
@@ -196,13 +383,22 @@ def build_capability_audit(
 
     repository = Path(repository)
     commit, tree = _commit_and_tree(repository, revision)
-    _verify_runner_source_binding(repository, commit)
+    runner_snapshot = _verify_runner_source_binding(repository, commit)
+    identity_module, backend_module = _load_verified_runner_api(
+        repository.resolve(strict=True),
+        commit,
+        runner_snapshot,
+    )
     baseline = frozen_blob_map(repository, IMPLEMENTATION_BASE_REVISION)
     observed = frozen_blob_map(repository, commit)
     if not baseline or observed != baseline:
         raise RuntimeError("frozen Product Definition, semantic-review, or M6 paths changed")
 
-    real_adapter_count = _real_adapter_count(tuple(registered_adapters))
+    real_adapter_count = _real_adapter_count(
+        tuple(registered_adapters),
+        identity_module,
+        backend_module,
+    )
     if real_adapter_count == 0:
         capability = "UNAVAILABLE"
         runner_state = "ISOLATION_CAPABILITY_UNAVAILABLE"
@@ -212,7 +408,7 @@ def build_capability_audit(
 
     return {
         "schema_version": AUDIT_SCHEMA_VERSION,
-        "runner_contract_version": RUNNER_CONTRACT_VERSION,
+        "runner_contract_version": identity_module.RUNNER_CONTRACT_VERSION,
         "implementation_status": "RUNNER_IMPLEMENTED",
         "backend_kind": BACKEND_KIND,
         "registered_real_adapter_count": real_adapter_count,
