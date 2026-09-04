@@ -278,6 +278,255 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                 self.assertFalse(os.path.lexists(reservation))
                 self.assertEqual(_tree_bytes_sha256(runner_parent), before)
 
+    def test_new_reservation_directory_identity_failure_restores_exact_prestate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            runner_parent = transient_parent / "joewrks-reviewer-runner"
+            runner_parent.mkdir()
+            sibling = runner_parent / "sibling-run"
+            sibling.mkdir()
+            sibling.joinpath("sibling.bin").write_bytes(b"sibling-must-survive")
+            reservation_directory = runner_parent / ".joewrks-run-reservations"
+            before = _tree_bytes_sha256(runner_parent)
+            original_identity = evidence_module._entry_identity_no_follow
+            injected = False
+
+            def fail_first_reservation_directory_identity(path):
+                nonlocal injected
+                if Path(path) == reservation_directory and not injected:
+                    injected = True
+                    raise EvidenceLifecycleError(
+                        "injected reservation-directory identity failure"
+                    )
+                return original_identity(path)
+
+            with mock.patch.object(
+                evidence_module,
+                "_entry_identity_no_follow",
+                side_effect=fail_first_reservation_directory_identity,
+            ), self.assertRaisesRegex(
+                ValueError,
+                "reservation-directory identity failure",
+            ):
+                TaskWorkspace.create(
+                    transient_parent,
+                    "run-reservation-directory-rollback",
+                    repository_root=ROOT,
+                )
+
+            self.assertTrue(injected)
+            self.assertFalse(os.path.lexists(reservation_directory))
+            self.assertFalse(
+                os.path.lexists(runner_parent / "run-reservation-directory-rollback")
+            )
+            self.assertEqual(_tree_bytes_sha256(runner_parent), before)
+
+    def test_reservation_io_failures_restore_exact_prestate(self):
+        for failure_point in ("write", "fsync", "readback"):
+            for directory_preexisted in (False, True):
+                with (
+                    self.subTest(
+                        failure_point=failure_point,
+                        directory_preexisted=directory_preexisted,
+                    ),
+                    tempfile.TemporaryDirectory() as directory,
+                ):
+                    base = Path(directory).resolve()
+                    transient_parent = base / "transient"
+                    transient_parent.mkdir()
+                    runner_parent = transient_parent / "joewrks-reviewer-runner"
+                    runner_parent.mkdir()
+                    sibling = runner_parent / "sibling-run"
+                    sibling.mkdir()
+                    sibling.joinpath("sibling.bin").write_bytes(
+                        b"sibling-must-survive"
+                    )
+                    reservation_directory = (
+                        runner_parent / ".joewrks-run-reservations"
+                    )
+                    prior_reservation = reservation_directory / "prior-run.json"
+                    if directory_preexisted:
+                        reservation_directory.mkdir()
+                        prior_reservation.write_bytes(
+                            b"prior-reservation-must-survive"
+                        )
+                    before = _tree_bytes_sha256(runner_parent)
+                    review_run_id = (
+                        f"run-reservation-{failure_point}-"
+                        f"{'existing' if directory_preexisted else 'new'}"
+                    )
+                    reservation = reservation_directory / f"{review_run_id}.json"
+
+                    if failure_point == "write":
+                        original_write_descriptor_exact = (
+                            evidence_module._write_descriptor_exact
+                        )
+
+                        def fail_reservation_write(
+                            descriptor,
+                            content,
+                            label,
+                        ):
+                            if label == "run reservation":
+                                raise EvidenceLifecycleError(
+                                    "injected reservation write failure"
+                                )
+                            return original_write_descriptor_exact(
+                                descriptor,
+                                content,
+                                label,
+                            )
+
+                        patcher = mock.patch.object(
+                            evidence_module,
+                            "_write_descriptor_exact",
+                            side_effect=fail_reservation_write,
+                        )
+                    elif failure_point == "fsync":
+                        patcher = mock.patch.object(
+                            evidence_module.os,
+                            "fsync",
+                            side_effect=OSError("injected reservation fsync failure"),
+                        )
+                    else:
+                        original_read_bytes = Path.read_bytes
+                        injected = False
+
+                        def fail_first_reservation_readback(path):
+                            nonlocal injected
+                            if Path(path) == reservation and not injected:
+                                injected = True
+                                raise OSError(
+                                    "injected reservation readback failure"
+                                )
+                            return original_read_bytes(path)
+
+                        patcher = mock.patch.object(
+                            Path,
+                            "read_bytes",
+                            autospec=True,
+                            side_effect=fail_first_reservation_readback,
+                        )
+
+                    with patcher, self.assertRaisesRegex(
+                        (OSError, ValueError),
+                        f"reservation {failure_point} failure",
+                    ):
+                        TaskWorkspace.create(
+                            transient_parent,
+                            review_run_id,
+                            repository_root=ROOT,
+                        )
+
+                    self.assertFalse(os.path.lexists(reservation))
+                    self.assertFalse(os.path.lexists(runner_parent / review_run_id))
+                    self.assertEqual(
+                        os.path.lexists(reservation_directory),
+                        directory_preexisted,
+                    )
+                    if directory_preexisted:
+                        self.assertEqual(
+                            prior_reservation.read_bytes(),
+                            b"prior-reservation-must-survive",
+                        )
+                    self.assertEqual(_tree_bytes_sha256(runner_parent), before)
+
+    def test_task_root_identity_capture_failure_restores_exact_prestate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            runner_parent = transient_parent / "joewrks-reviewer-runner"
+            reservation_directory = runner_parent / ".joewrks-run-reservations"
+            reservation_directory.mkdir(parents=True)
+            prior_reservation = reservation_directory / "prior-run.json"
+            prior_reservation.write_bytes(b"prior-reservation-must-survive")
+            sibling = runner_parent / "sibling-run"
+            sibling.mkdir()
+            sibling.joinpath("sibling.bin").write_bytes(b"sibling-must-survive")
+            before = _tree_bytes_sha256(runner_parent)
+            review_run_id = "run-task-root-identity-rollback"
+            task_root = runner_parent / review_run_id
+            reservation = reservation_directory / f"{review_run_id}.json"
+            original_identity = evidence_module._entry_identity_no_follow
+            injected = False
+
+            def fail_first_task_root_identity(path):
+                nonlocal injected
+                if Path(path) == task_root and not injected:
+                    injected = True
+                    raise EvidenceLifecycleError(
+                        "injected task-root identity-capture failure"
+                    )
+                return original_identity(path)
+
+            with mock.patch.object(
+                evidence_module,
+                "_entry_identity_no_follow",
+                side_effect=fail_first_task_root_identity,
+            ), self.assertRaisesRegex(
+                ValueError,
+                "task-root identity-capture failure",
+            ):
+                TaskWorkspace.create(
+                    transient_parent,
+                    review_run_id,
+                    repository_root=ROOT,
+                )
+
+            self.assertTrue(injected)
+            self.assertFalse(os.path.lexists(task_root))
+            self.assertFalse(os.path.lexists(reservation))
+            self.assertEqual(_tree_bytes_sha256(runner_parent), before)
+
+    def test_task_root_persistent_identity_ambiguity_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            runner_parent = transient_parent / "joewrks-reviewer-runner"
+            reservation_directory = runner_parent / ".joewrks-run-reservations"
+            reservation_directory.mkdir(parents=True)
+            prior_reservation = reservation_directory / "prior-run.json"
+            prior_reservation.write_bytes(b"prior-reservation-must-survive")
+            sibling = runner_parent / "sibling-run"
+            sibling.mkdir()
+            sibling_bytes = b"sibling-must-survive"
+            sibling_file = sibling / "sibling.bin"
+            sibling_file.write_bytes(sibling_bytes)
+            review_run_id = "run-task-root-identity-ambiguous"
+            task_root = runner_parent / review_run_id
+            reservation = reservation_directory / f"{review_run_id}.json"
+            original_identity = evidence_module._entry_identity_no_follow
+
+            def fail_task_root_identity(path):
+                if Path(path) == task_root:
+                    raise EvidenceLifecycleError(
+                        "injected persistent task-root identity ambiguity"
+                    )
+                return original_identity(path)
+
+            with mock.patch.object(
+                evidence_module,
+                "_entry_identity_no_follow",
+                side_effect=fail_task_root_identity,
+            ), self.assertRaisesRegex(
+                ValueError,
+                "rollback failed.*path still exists",
+            ):
+                TaskWorkspace.create(
+                    transient_parent,
+                    review_run_id,
+                    repository_root=ROOT,
+                )
+
+            self.assertTrue(os.path.lexists(task_root))
+            self.assertFalse(os.path.lexists(reservation))
+            self.assertEqual(prior_reservation.read_bytes(), b"prior-reservation-must-survive")
+            self.assertEqual(sibling_file.read_bytes(), sibling_bytes)
+
     def test_new_runner_parent_identity_failure_restores_absence(self):
         with tempfile.TemporaryDirectory() as directory:
             transient_parent = Path(directory).resolve() / "transient"

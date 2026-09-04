@@ -177,8 +177,7 @@ class TaskWorkspace:
                 task_root,
                 review_run_id,
             )
-            task_root.mkdir()
-            task_root_identity = _plain_directory_identity(
+            task_root_identity = _create_plain_directory_transactionally(
                 task_root,
                 "new review workspace",
             )
@@ -676,6 +675,45 @@ def _require_directory_identity(
         raise EvidenceLifecycleError(f"{label} identity changed")
 
 
+def _create_plain_directory_transactionally(
+    path: Path,
+    label: str,
+) -> tuple[int, int, int]:
+    if os.path.lexists(path):
+        raise EvidenceLifecycleError(f"{label} already exists")
+    path.mkdir()
+    identity: tuple[int, int, int] | None = None
+    try:
+        identity = _entry_identity_no_follow(path)
+        if not stat.S_ISDIR(identity[2]):
+            raise EvidenceLifecycleError(f"{label} is not a plain directory")
+        _require_directory_identity(path, identity, label)
+        return identity
+    except Exception as setup_error:
+        try:
+            if identity is None:
+                identity = _entry_identity_no_follow(path)
+            if not stat.S_ISDIR(identity[2]):
+                raise EvidenceLifecycleError(
+                    f"{label} rollback target is not a plain directory"
+                )
+            _remove_created_empty_directory(
+                path,
+                identity,
+                f"incomplete {label}",
+            )
+        except EvidenceLifecycleError as cleanup_error:
+            raise EvidenceLifecycleError(
+                f"{label} setup failed: {setup_error}; "
+                f"cleanup failed: {cleanup_error}"
+            ) from setup_error
+        if os.path.lexists(path):
+            raise EvidenceLifecycleError(
+                f"{label} setup failed: {setup_error}; cleanup left the path present"
+            ) from setup_error
+        raise
+
+
 def _create_run_reservation(
     runner_parent: Path,
     task_root: Path,
@@ -685,47 +723,75 @@ def _create_run_reservation(
     directory_created = False
     if os.path.lexists(reservation_directory):
         _require_plain_directory(reservation_directory, "run reservation directory")
-    else:
-        reservation_directory.mkdir()
-        directory_created = True
-    _require_resolved_descendant_or_same(
-        reservation_directory,
-        runner_parent,
-        "run reservation directory",
-    )
-    directory_identity = _plain_directory_identity(
-        reservation_directory,
-        "run reservation directory",
-    )
-    reservation_path = reservation_directory / f"{review_run_id}.json"
-    if os.path.lexists(reservation_path):
-        raise EvidenceLifecycleError(
-            "review run is reserved by a prior or active execution"
+        directory_identity = _plain_directory_identity(
+            reservation_directory,
+            "run reservation directory",
         )
+    else:
+        directory_identity = _create_plain_directory_transactionally(
+            reservation_directory,
+            "run reservation directory",
+        )
+        directory_created = True
+    reservation_path = reservation_directory / f"{review_run_id}.json"
     content = _reservation_bytes(task_root, review_run_id)
     reservation_created = False
+    path_identity: tuple[int, int, int] | None = None
     try:
-        with reservation_path.open("xb") as stream:
-            reservation_created = True
-            written = stream.write(content)
-            if written != len(content):
-                raise EvidenceLifecycleError("run reservation write was incomplete")
-            stream.flush()
-            os.fsync(stream.fileno())
-    except FileExistsError as error:
-        raise EvidenceLifecycleError(
-            "review run is reserved by a concurrent execution"
-        ) from error
-    try:
+        _require_resolved_descendant_or_same(
+            reservation_directory,
+            runner_parent,
+            "run reservation directory",
+        )
+        _require_directory_identity(
+            reservation_directory,
+            directory_identity,
+            "run reservation directory",
+        )
+        if os.path.lexists(reservation_path):
+            raise EvidenceLifecycleError(
+                "review run is reserved by a prior or active execution"
+            )
+        try:
+            with reservation_path.open("xb") as stream:
+                reservation_created = True
+                path_identity = _opened_plain_file_identity(
+                    stream.fileno(),
+                    "run reservation",
+                )
+                _verify_opened_file_path(
+                    reservation_path,
+                    path_identity,
+                    "run reservation",
+                )
+                _write_descriptor_exact(
+                    stream.fileno(),
+                    content,
+                    "run reservation",
+                )
+        except FileExistsError as error:
+            raise EvidenceLifecycleError(
+                "review run is reserved by a concurrent execution"
+            ) from error
         if reservation_path.read_bytes() != content:
             raise EvidenceLifecycleError("run reservation readback changed")
-        path_identity = _entry_identity_no_follow(reservation_path)
-        if not stat.S_ISREG(path_identity[2]):
-            raise EvidenceLifecycleError("run reservation is not a plain file")
-    except Exception as error:
+        if path_identity is None:
+            raise EvidenceLifecycleError("run reservation identity was not captured")
+        _verify_opened_file_path(
+            reservation_path,
+            path_identity,
+            "run reservation",
+        )
+    except Exception as setup_error:
+        cleanup_failures: list[str] = []
         if reservation_created:
             try:
-                path_identity = _entry_identity_no_follow(reservation_path)
+                if path_identity is None:
+                    path_identity = _entry_identity_no_follow(reservation_path)
+                if not stat.S_ISREG(path_identity[2]):
+                    raise EvidenceLifecycleError(
+                        "incomplete run reservation is not a plain file"
+                    )
                 _remove_created_file(
                     reservation_path,
                     path_identity,
@@ -733,16 +799,32 @@ def _create_run_reservation(
                     directory_identity,
                     "incomplete run reservation",
                 )
-                if directory_created:
-                    _remove_created_empty_directory(
-                        reservation_directory,
-                        directory_identity,
-                        "incomplete run reservation directory",
-                    )
             except EvidenceLifecycleError as cleanup_error:
-                raise EvidenceLifecycleError(
-                    f"run reservation setup failed: {error}; cleanup failed: {cleanup_error}"
-                ) from error
+                cleanup_failures.append(str(cleanup_error))
+        if directory_created:
+            try:
+                _remove_created_empty_directory(
+                    reservation_directory,
+                    directory_identity,
+                    "incomplete run reservation directory",
+                )
+            except EvidenceLifecycleError as cleanup_error:
+                cleanup_failures.append(str(cleanup_error))
+        expected_absent = []
+        if reservation_created:
+            expected_absent.append(reservation_path)
+        if directory_created:
+            expected_absent.append(reservation_directory)
+        for path in expected_absent:
+            if os.path.lexists(path):
+                cleanup_failures.append(
+                    f"incomplete run reservation setup path still exists: {path}"
+                )
+        if cleanup_failures:
+            raise EvidenceLifecycleError(
+                f"run reservation setup failed: {setup_error}; cleanup failed: "
+                + "; ".join(cleanup_failures)
+            ) from setup_error
         raise
     return _RunReservation(
         path=reservation_path,
