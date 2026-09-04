@@ -481,7 +481,7 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             self.assertFalse(os.path.lexists(reservation))
             self.assertEqual(_tree_bytes_sha256(runner_parent), before)
 
-    def test_windows_task_root_identity_capture_failure_restores_exact_prestate(self):
+    def test_windows_task_root_identity_capture_failure_preserves_unproven_root(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
             transient_parent = base / "transient"
@@ -492,6 +492,7 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             sibling = runner_parent / "sibling-run"
             sibling.mkdir()
             sibling.joinpath("sibling.bin").write_bytes(b"sibling-must-survive")
+            sibling_digest = _tree_bytes_sha256(sibling)
             before = _tree_bytes_sha256(runner_parent)
             review_run_id = "run-task-root-win-id-rollback"
             task_root = runner_parent / review_run_id
@@ -508,24 +509,169 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                     )
                 return original_capture(path)
 
+            observed_error = None
             with mock.patch.object(
                 evidence_module,
                 "_capture_windows_directory_identity",
                 side_effect=fail_first_task_root_windows_identity,
-            ), self.assertRaisesRegex(
-                ValueError,
-                "Windows identity-capture failure",
             ):
-                TaskWorkspace.create(
-                    transient_parent,
-                    review_run_id,
-                    repository_root=ROOT,
-                )
+                try:
+                    TaskWorkspace.create(
+                        transient_parent,
+                        review_run_id,
+                        repository_root=ROOT,
+                    )
+                except Exception as error:  # capture the transactional outcome
+                    observed_error = error
 
+            self.assertIsInstance(observed_error, EvidenceLifecycleError)
+            self.assertRegex(str(observed_error), "rollback failed.*Windows identity")
             self.assertTrue(injected)
-            self.assertFalse(os.path.lexists(task_root))
+            self.assertTrue(task_root.is_dir())
             self.assertFalse(os.path.lexists(reservation))
-            self.assertEqual(_tree_bytes_sha256(runner_parent), before)
+            self.assertEqual(_tree_bytes_sha256(sibling), sibling_digest)
+            self.assertNotEqual(_tree_bytes_sha256(runner_parent), before)
+
+    def test_post_capture_setup_failure_rejects_replacement_during_rollback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            runner_parent = transient_parent / "joewrks-reviewer-runner"
+            reservation_directory = runner_parent / ".joewrks-run-reservations"
+            reservation_directory.mkdir(parents=True)
+            sibling = runner_parent / "sibling-run"
+            sibling.mkdir()
+            sibling_file = sibling / "sibling.bin"
+            sibling_file.write_bytes(b"sibling-must-survive")
+            sibling_digest = _tree_bytes_sha256(sibling)
+            review_run_id = "run-post-capture-rollback-swap"
+            task_root = runner_parent / review_run_id
+            marker = task_root / ".joewrks-runner-owner.json"
+            reservation = reservation_directory / f"{review_run_id}.json"
+            parked_original = base / "parked-original-task-root"
+            original_freeze = evidence_module.atomic_freeze_evidence
+            original_plain_identity = evidence_module._plain_directory_identity
+            creation_path_identity = None
+            creation_windows_identity = None
+            replacement_windows_identity = None
+            replacement_installed = False
+
+            def replace_root_then_fail(content, target):
+                nonlocal creation_path_identity
+                nonlocal creation_windows_identity
+                nonlocal replacement_windows_identity
+                nonlocal replacement_installed
+                if Path(target) != marker:
+                    return original_freeze(content, target)
+                creation_path_identity = original_plain_identity(
+                    task_root,
+                    "test original task root",
+                )
+                creation_windows_identity = (
+                    evidence_module._capture_windows_directory_identity(task_root)
+                )
+                os.rename(task_root, parked_original)
+                task_root.mkdir()
+                task_root.joinpath("replacement.bin").write_bytes(
+                    b"replacement-must-not-be-deleted"
+                )
+                replacement_windows_identity = (
+                    evidence_module._capture_windows_directory_identity(task_root)
+                )
+                replacement_installed = True
+                raise EvidenceLifecycleError("injected post-capture setup failure")
+
+            def collide_replacement_path_identity(path, label):
+                identity = original_plain_identity(path, label)
+                if replacement_installed and Path(path) == task_root:
+                    return creation_path_identity
+                return identity
+
+            observed_error = None
+            with mock.patch.object(
+                evidence_module,
+                "atomic_freeze_evidence",
+                side_effect=replace_root_then_fail,
+            ), mock.patch.object(
+                evidence_module,
+                "_plain_directory_identity",
+                side_effect=collide_replacement_path_identity,
+            ):
+                try:
+                    TaskWorkspace.create(
+                        transient_parent,
+                        review_run_id,
+                        repository_root=ROOT,
+                    )
+                except Exception as error:  # capture the transactional outcome
+                    observed_error = error
+
+            self.assertIsInstance(observed_error, EvidenceLifecycleError)
+            self.assertTrue(replacement_installed)
+            self.assertNotEqual(
+                creation_windows_identity,
+                replacement_windows_identity,
+            )
+            self.assertRegex(str(observed_error), "rollback failed.*Windows identity")
+            self.assertTrue(task_root.is_dir())
+            self.assertEqual(
+                task_root.joinpath("replacement.bin").read_bytes(),
+                b"replacement-must-not-be-deleted",
+            )
+            self.assertTrue(parked_original.is_dir())
+            self.assertFalse(os.path.lexists(reservation))
+            self.assertEqual(_tree_bytes_sha256(sibling), sibling_digest)
+
+    def test_persistent_windows_identity_capture_failure_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            runner_parent = transient_parent / "joewrks-reviewer-runner"
+            reservation_directory = runner_parent / ".joewrks-run-reservations"
+            reservation_directory.mkdir(parents=True)
+            sibling = runner_parent / "sibling-run"
+            sibling.mkdir()
+            sibling_file = sibling / "sibling.bin"
+            sibling_file.write_bytes(b"sibling-must-survive")
+            sibling_digest = _tree_bytes_sha256(sibling)
+            review_run_id = "run-persistent-win-id-failure"
+            task_root = runner_parent / review_run_id
+            reservation = reservation_directory / f"{review_run_id}.json"
+            original_capture = evidence_module._capture_windows_directory_identity
+            task_root_capture_attempts = 0
+
+            def fail_task_root_windows_identity(path):
+                nonlocal task_root_capture_attempts
+                if Path(path) == task_root:
+                    task_root_capture_attempts += 1
+                    raise EvidenceLifecycleError(
+                        "injected persistent task-root Windows identity failure"
+                    )
+                return original_capture(path)
+
+            observed_error = None
+            with mock.patch.object(
+                evidence_module,
+                "_capture_windows_directory_identity",
+                side_effect=fail_task_root_windows_identity,
+            ):
+                try:
+                    TaskWorkspace.create(
+                        transient_parent,
+                        review_run_id,
+                        repository_root=ROOT,
+                    )
+                except Exception as error:  # capture the transactional outcome
+                    observed_error = error
+
+            self.assertIsInstance(observed_error, EvidenceLifecycleError)
+            self.assertRegex(str(observed_error), "rollback failed.*Windows identity")
+            self.assertEqual(task_root_capture_attempts, 1)
+            self.assertTrue(task_root.is_dir())
+            self.assertFalse(os.path.lexists(reservation))
+            self.assertEqual(_tree_bytes_sha256(sibling), sibling_digest)
 
     def test_task_root_persistent_identity_ambiguity_fails_closed(self):
         with tempfile.TemporaryDirectory() as directory:

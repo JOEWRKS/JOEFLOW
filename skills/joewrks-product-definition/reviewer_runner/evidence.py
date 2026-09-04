@@ -224,6 +224,7 @@ class TaskWorkspace:
                     reservation=reservation,
                     task_root=task_root,
                     task_root_identity=task_root_identity,
+                    task_root_windows_identity=task_root_windows_identity,
                 )
             except EvidenceLifecycleError as rollback_error:
                 raise EvidenceLifecycleError(
@@ -894,14 +895,20 @@ def _rollback_workspace_setup(
     reservation: _RunReservation | None,
     task_root: Path,
     task_root_identity: tuple[int, int, int] | None,
+    task_root_windows_identity: _WindowsFileIdentity | None,
 ) -> None:
     failures: list[str] = []
     if task_root_identity is not None:
         try:
+            if os.name == "nt" and task_root_windows_identity is None:
+                raise EvidenceLifecycleError(
+                    "failed workspace task root Windows identity is unavailable"
+                )
             _remove_owned_directory(
                 task_root,
                 task_root,
                 expected_identity=task_root_identity,
+                expected_windows_identity=task_root_windows_identity,
             )
         except EvidenceLifecycleError as error:
             failures.append(str(error))
