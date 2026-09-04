@@ -24,6 +24,8 @@ This audit verifies the runner implementation and its deterministic synthetic te
 
 The machine-readable evidence is bound to the Task 7 code commit rather than this audit commit, avoiding a self-referential commit identity.
 
+The audit accepts that code identity only when the supplied revision has a non-empty complete tracked runner mode/blob inventory, the resolved repository is the repository containing the actually imported audit and runner modules, the live runner path is clean with no untracked entries, and the live tracked inventory exactly matches the supplied revision. A revision without the runner cannot claim `RUNNER_IMPLEMENTED`.
+
 ## Implementation Surface Reviewed
 
 Production runner modules:
@@ -55,8 +57,10 @@ Test and policy modules:
 
 ## Synthetic and Adversarial Results
 
-- Runner plus capability-audit focused suite: `112/112 PASS`, `0` skipped.
+- Runner plus capability-audit focused suite: `116/116 PASS`, `0` skipped.
 - Package dependency-policy suite: `5/5 PASS`, `0` skipped.
+- The audit CLI emitted bytes exactly equal to `RUNNER_CAPABILITY_EVIDENCE.json` on Windows: UTF-8 canonical JSON plus one LF, with no CRLF translation. A task-owned bytecode-prefix probe observed no audit-created files, and the module/CLI bytecode guard restored the caller's original `sys.dont_write_bytecode` state.
+- All Git inspection runs with optional locking disabled, preventing read-only status inspection from refreshing or rewriting the index.
 - The deterministic fake backend stayed marked `is_test_double = true` and `fake_backend_authoritative = false`.
 - Synthetic positive paths verified deterministic request, identity, raw-response, receipt, cleanup, and source-readback behavior without claiming a real preflight PASS.
 - Adversarial preflight coverage passed for forbidden host-data canaries, tool/retrieval events, continuation state, model/settings/policy drift, capacity mismatch, duplicate JSON keys, repeated nonce, path aliases, and unknown or inferred capability.
@@ -95,7 +99,7 @@ The required historical M6 replay fixture was created as a fresh detached, byte-
 - Existing semantic-review/1.0 and repaired calibration-controller regression: `146/146 PASS`, `0` skipped.
 - semantic-review/2.1, action-conformance/2.1, M5.1/M6, runtime, and frozen-boundary regression: `142/142 PASS`, `0` skipped.
 - Legacy frozen regression: `37/37 PASS`, `0` skipped.
-- Full repository suite: `1038` tests run, `0` failures, `0` errors, `1` skipped.
+- Full repository suite: `1042` tests run, `0` failures, `0` errors, `1` skipped.
 - Full-suite skip: frozen A/B runtime regression requires both `JOEWRKS_FROZEN_A_ROOT` and `JOEWRKS_FROZEN_B_WORKTREE`; this pre-existing environment-dependent test was not part of runner work.
 - Runner test skips: `0`.
 - `git diff --check`: `PASS`.

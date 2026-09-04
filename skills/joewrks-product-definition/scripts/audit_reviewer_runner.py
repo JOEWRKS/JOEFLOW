@@ -2,26 +2,35 @@
 
 from __future__ import annotations
 
-import argparse
-import json
-import subprocess
 import sys
-from pathlib import Path
-from typing import Iterable
 
 
-_SKILL_ROOT = Path(__file__).resolve().parents[1]
-if str(_SKILL_ROOT) not in sys.path:
-    sys.path.insert(0, str(_SKILL_ROOT))
+_previous_dont_write_bytecode = sys.dont_write_bytecode
+sys.dont_write_bytecode = True
+try:
+    import argparse
+    import json
+    import subprocess
+    from pathlib import Path
+    from typing import Iterable
 
-from reviewer_runner import RUNNER_CONTRACT_VERSION  # noqa: E402
-from reviewer_runner.backend import validate_backend_descriptor  # noqa: E402
+    _SKILL_ROOT = Path(__file__).resolve().parents[1]
+    if str(_SKILL_ROOT) not in sys.path:
+        sys.path.insert(0, str(_SKILL_ROOT))
+
+    import reviewer_runner as _loaded_runner_package  # noqa: E402
+    from reviewer_runner import RUNNER_CONTRACT_VERSION  # noqa: E402
+    from reviewer_runner.backend import validate_backend_descriptor  # noqa: E402
+finally:
+    sys.dont_write_bytecode = _previous_dont_write_bytecode
+    del _previous_dont_write_bytecode
 
 
 AUDIT_SCHEMA_VERSION = "joewrks.reviewer-runner-capability-audit/1.0"
 IMPLEMENTATION_BASE_REVISION = "71ffc0a66618c11e2fe08a442df5fd2d67718f7b"
 BACKEND_KIND = "STATELESS_TOOLLESS_EXTERNAL_INFERENCE"
 REGISTERED_PRODUCTION_ADAPTERS: tuple[object, ...] = ()
+RUNNER_SOURCE_PATH = "skills/joewrks-product-definition/reviewer_runner"
 
 FROZEN_PATHS = (
     "product-definition",
@@ -38,7 +47,7 @@ FROZEN_PATHS = (
 
 def _git(repository: Path, *arguments: str, binary: bool = False):
     result = subprocess.run(
-        ["git", "-C", str(repository), *arguments],
+        ["git", "--no-optional-locks", "-C", str(repository), *arguments],
         check=True,
         capture_output=True,
         text=not binary,
@@ -82,6 +91,88 @@ def frozen_blob_map(repository: Path | str, revision: str) -> dict[str, str]:
     return dict(sorted(records.items()))
 
 
+def _runner_revision_blob_map(repository: Path, revision: str) -> dict[str, str]:
+    raw = _git(
+        repository,
+        "ls-tree",
+        "-r",
+        "-z",
+        revision,
+        "--",
+        RUNNER_SOURCE_PATH,
+        binary=True,
+    )
+    records: dict[str, str] = {}
+    for entry in raw.split(b"\0"):
+        if not entry:
+            continue
+        metadata, path_bytes = entry.split(b"\t", 1)
+        mode, object_type, object_id = metadata.decode("ascii").split(" ")
+        if object_type != "blob":
+            raise RuntimeError("runner source inventory contains a non-blob object")
+        records[path_bytes.decode("utf-8")] = f"{mode}:{object_id}"
+    return dict(sorted(records.items()))
+
+
+def _runner_index_blob_map(repository: Path) -> dict[str, str]:
+    raw = _git(
+        repository,
+        "ls-files",
+        "--stage",
+        "-z",
+        "--",
+        RUNNER_SOURCE_PATH,
+        binary=True,
+    )
+    records: dict[str, str] = {}
+    for entry in raw.split(b"\0"):
+        if not entry:
+            continue
+        metadata, path_bytes = entry.split(b"\t", 1)
+        mode, object_id, stage = metadata.decode("ascii").split(" ")
+        if stage != "0":
+            raise RuntimeError("runner source inventory contains an unmerged entry")
+        path = path_bytes.decode("utf-8")
+        if path in records:
+            raise RuntimeError("runner source inventory contains a duplicate path")
+        records[path] = f"{mode}:{object_id}"
+    return dict(sorted(records.items()))
+
+
+def _verify_runner_source_binding(repository: Path, revision: str) -> None:
+    repository_root = repository.resolve(strict=True)
+    loaded_repository_root = _SKILL_ROOT.parents[1].resolve(strict=True)
+    if repository_root != loaded_repository_root:
+        raise RuntimeError("runner source repository does not match the loaded runner")
+
+    runner_root = repository_root / RUNNER_SOURCE_PATH
+    if runner_root.resolve(strict=True) != runner_root:
+        raise RuntimeError("runner source path does not resolve to its tracked location")
+    loaded_package = Path(_loaded_runner_package.__file__).resolve(strict=True)
+    if loaded_package.parent != runner_root:
+        raise RuntimeError("loaded runner source is outside the audited repository")
+
+    status = _git(
+        repository_root,
+        "status",
+        "--porcelain=v1",
+        "-z",
+        "--untracked-files=all",
+        "--",
+        RUNNER_SOURCE_PATH,
+        binary=True,
+    )
+    if status:
+        raise RuntimeError("live runner source is modified or contains untracked files")
+
+    revision_inventory = _runner_revision_blob_map(repository_root, revision)
+    current_inventory = _runner_index_blob_map(repository_root)
+    if not revision_inventory or revision_inventory != current_inventory:
+        raise RuntimeError(
+            "runner source inventory is absent, incomplete, or differs from loaded source"
+        )
+
+
 def _real_adapter_count(registered_adapters: Iterable[object]) -> int:
     count = 0
     for adapter in registered_adapters:
@@ -105,6 +196,7 @@ def build_capability_audit(
 
     repository = Path(repository)
     commit, tree = _commit_and_tree(repository, revision)
+    _verify_runner_source_binding(repository, commit)
     baseline = frozen_blob_map(repository, IMPLEMENTATION_BASE_REVISION)
     observed = frozen_blob_map(repository, commit)
     if not baseline or observed != baseline:
@@ -150,21 +242,27 @@ def canonical_audit_json(document: dict[str, object]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repository", required=True, type=Path)
-    parser.add_argument("--revision", required=True)
-    parser.add_argument("--json", action="store_true")
-    arguments = parser.parse_args(argv)
-    if not arguments.json:
-        parser.error("--json is required")
+    previous_dont_write_bytecode = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument("--repository", required=True, type=Path)
+        parser.add_argument("--revision", required=True)
+        parser.add_argument("--json", action="store_true")
+        arguments = parser.parse_args(argv)
+        if not arguments.json:
+            parser.error("--json is required")
 
-    document = build_capability_audit(
-        arguments.repository,
-        arguments.revision,
-        registered_adapters=REGISTERED_PRODUCTION_ADAPTERS,
-    )
-    sys.stdout.write(canonical_audit_json(document))
-    return 0
+        document = build_capability_audit(
+            arguments.repository,
+            arguments.revision,
+            registered_adapters=REGISTERED_PRODUCTION_ADAPTERS,
+        )
+        sys.stdout.buffer.write(canonical_audit_json(document).encode("utf-8"))
+        sys.stdout.buffer.flush()
+        return 0
+    finally:
+        sys.dont_write_bytecode = previous_dont_write_bytecode
 
 
 if __name__ == "__main__":

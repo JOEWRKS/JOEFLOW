@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -141,6 +142,105 @@ class ReviewerRunnerAuditTests(unittest.TestCase):
 
         self.assertTrue(baseline)
         self.assertEqual(observed, baseline)
+
+    def test_revision_without_complete_runner_inventory_cannot_claim_implemented(self):
+        self.require_audit_implementation()
+
+        with self.assertRaisesRegex(RuntimeError, "runner source inventory"):
+            build_capability_audit(ROOT, IMPLEMENTATION_BASE_REVISION)
+
+    def test_live_runner_source_must_be_clean_tracked_and_revision_exact(self):
+        self.require_audit_implementation()
+        import audit_reviewer_runner as audit_module
+
+        real_git = audit_module._git
+        runner_path = "skills/joewrks-product-definition/reviewer_runner"
+
+        for status in (
+            f" M {runner_path}/identity.py\0".encode("utf-8"),
+            f"?? {runner_path}/extra.py\0".encode("utf-8"),
+        ):
+            with self.subTest(status=status):
+                def dirty_git(repository, *arguments, binary=False):
+                    if arguments[:3] == ("status", "--porcelain=v1", "-z"):
+                        return status
+                    return real_git(repository, *arguments, binary=binary)
+
+                with patch.object(audit_module, "_git", side_effect=dirty_git):
+                    with self.assertRaisesRegex(RuntimeError, "runner source"):
+                        build_capability_audit(ROOT, self.revision)
+
+        def incomplete_index_git(repository, *arguments, binary=False):
+            result = real_git(repository, *arguments, binary=binary)
+            if arguments[:3] == ("ls-files", "--stage", "-z"):
+                records = result.rstrip(b"\0").split(b"\0")
+                return b"\0".join(records[:-1]) + b"\0"
+            return result
+
+        with patch.object(audit_module, "_git", side_effect=incomplete_index_git):
+            with self.assertRaisesRegex(RuntimeError, "runner source inventory"):
+                build_capability_audit(ROOT, self.revision)
+
+    def test_cli_stdout_bytes_exactly_match_frozen_canonical_evidence(self):
+        self.require_audit_implementation()
+        evidence_path = (
+            ROOT
+            / "evals"
+            / "post-m6-semantic-review-reliability-enablement"
+            / "RUNNER_CAPABILITY_EVIDENCE.json"
+        )
+        evidence = json.loads(evidence_path.read_bytes())
+        with tempfile.TemporaryDirectory() as directory:
+            cache_root = Path(directory) / "audit-bytecode-cache"
+            environment = os.environ.copy()
+            environment.pop("PYTHONDONTWRITEBYTECODE", None)
+            environment.pop("PYTHONPYCACHEPREFIX", None)
+            launcher = (
+                "import runpy,sys,pkgutil,__future__;"
+                "sys.pycache_prefix=sys.argv[1];"
+                "script=sys.argv[2];"
+                "sys.argv=[script,*sys.argv[3:]];"
+                "runpy.run_path(script,run_name='__main__')"
+            )
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    launcher,
+                    str(cache_root),
+                    str(SCRIPTS_ROOT / "audit_reviewer_runner.py"),
+                    "--repository",
+                    str(ROOT),
+                    "--revision",
+                    evidence["implementation_code_commit"],
+                    "--json",
+                ],
+                check=True,
+                capture_output=True,
+                env=environment,
+            )
+
+            self.assertEqual(completed.stdout, evidence_path.read_bytes())
+            self.assertEqual(
+                list(Path(directory).rglob("*")),
+                [],
+                "read-only audit command created Python bytecode files",
+            )
+
+    def test_git_inspection_disables_optional_index_writes(self):
+        self.require_audit_implementation()
+        import audit_reviewer_runner as audit_module
+
+        completed = subprocess.CompletedProcess([], 0, stdout="")
+        with patch.object(
+            audit_module.subprocess,
+            "run",
+            return_value=completed,
+        ) as run:
+            audit_module._git(ROOT, "status")
+
+        command = run.call_args.args[0]
+        self.assertEqual(command[:3], ["git", "--no-optional-locks", "-C"])
 
 
 if __name__ == "__main__":
