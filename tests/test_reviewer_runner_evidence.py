@@ -481,6 +481,52 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             self.assertFalse(os.path.lexists(reservation))
             self.assertEqual(_tree_bytes_sha256(runner_parent), before)
 
+    def test_windows_task_root_identity_capture_failure_restores_exact_prestate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            runner_parent = transient_parent / "joewrks-reviewer-runner"
+            reservation_directory = runner_parent / ".joewrks-run-reservations"
+            reservation_directory.mkdir(parents=True)
+            sibling = runner_parent / "sibling-run"
+            sibling.mkdir()
+            sibling.joinpath("sibling.bin").write_bytes(b"sibling-must-survive")
+            before = _tree_bytes_sha256(runner_parent)
+            review_run_id = "run-task-root-win-id-rollback"
+            task_root = runner_parent / review_run_id
+            reservation = reservation_directory / f"{review_run_id}.json"
+            original_capture = evidence_module._capture_windows_directory_identity
+            injected = False
+
+            def fail_first_task_root_windows_identity(path):
+                nonlocal injected
+                if Path(path) == task_root and not injected:
+                    injected = True
+                    raise EvidenceLifecycleError(
+                        "injected task-root Windows identity-capture failure"
+                    )
+                return original_capture(path)
+
+            with mock.patch.object(
+                evidence_module,
+                "_capture_windows_directory_identity",
+                side_effect=fail_first_task_root_windows_identity,
+            ), self.assertRaisesRegex(
+                ValueError,
+                "Windows identity-capture failure",
+            ):
+                TaskWorkspace.create(
+                    transient_parent,
+                    review_run_id,
+                    repository_root=ROOT,
+                )
+
+            self.assertTrue(injected)
+            self.assertFalse(os.path.lexists(task_root))
+            self.assertFalse(os.path.lexists(reservation))
+            self.assertEqual(_tree_bytes_sha256(runner_parent), before)
+
     def test_task_root_persistent_identity_ambiguity_fails_closed(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory).resolve()
@@ -1082,11 +1128,11 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             sibling.joinpath("a").write_bytes(b"Xfile\0b\0Y")
             original_remove_owned_tree = evidence_module._remove_owned_tree
 
-            def delete_then_split_sibling_file(target):
+            def delete_then_split_sibling_file(target, *args, **kwargs):
                 resolved_target = Path(target).resolve(strict=True)
                 self.assertEqual(resolved_target, workspace.root)
                 self.assertTrue(resolved_target.is_relative_to(base))
-                original_remove_owned_tree(resolved_target)
+                original_remove_owned_tree(resolved_target, *args, **kwargs)
                 sibling.joinpath("a").unlink()
                 sibling.joinpath("a").write_bytes(b"X")
                 sibling.joinpath("b").write_bytes(b"Y")
@@ -1158,6 +1204,128 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
                     outside.joinpath("must-survive.bin").read_bytes(),
                     b"outside-survivor",
                 )
+
+    def test_plain_task_root_replacement_before_cleanup_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = _create_workspace(transient_parent, "run-root-replacement")
+            original_payload = workspace.inputs_path / "original.bin"
+            original_payload.write_bytes(b"original-workspace-bytes")
+            preserved = _preserve(base, "root-replacement", b"preserved-evidence")
+            sibling = base / "declared-sibling"
+            sibling.mkdir()
+            sibling.joinpath("sibling.bin").write_bytes(b"sibling-must-survive")
+
+            marker_bytes = workspace.marker_path.read_bytes()
+            original_digest = _tree_bytes_sha256(workspace.root)
+            preserved_digest = hashlib.sha256(preserved.read_bytes()).hexdigest()
+            sibling_digest = _tree_bytes_sha256(sibling)
+            parked_original = base / "parked-original-task-root"
+            os.rename(workspace.root, parked_original)
+
+            workspace.root.mkdir()
+            workspace.marker_path.write_bytes(marker_bytes)
+            workspace.inputs_path.mkdir()
+            workspace.response_working_path.mkdir()
+            workspace.synthetic_canaries_path.mkdir()
+            replacement_payload = workspace.inputs_path / "replacement.bin"
+            replacement_payload.write_bytes(b"replacement-must-not-be-deleted")
+            replacement_digest = _tree_bytes_sha256(workspace.root)
+
+            observed_error = None
+            try:
+                workspace.cleanup(
+                    preserved_evidence_paths=(preserved,),
+                    sibling_paths=(sibling,),
+                )
+            except Exception as error:  # capture the controlled lifecycle outcome
+                observed_error = error
+
+            self.assertIsInstance(
+                observed_error,
+                EvidenceLifecycleError,
+                "a copied marker must not transfer cleanup ownership",
+            )
+            self.assertTrue(workspace.root.is_dir())
+            self.assertEqual(_tree_bytes_sha256(workspace.root), replacement_digest)
+            self.assertTrue(parked_original.is_dir())
+            self.assertEqual(_tree_bytes_sha256(parked_original), original_digest)
+            self.assertEqual(
+                hashlib.sha256(preserved.read_bytes()).hexdigest(),
+                preserved_digest,
+            )
+            self.assertEqual(_tree_bytes_sha256(sibling), sibling_digest)
+
+    def test_creation_path_identity_mismatch_rejects_before_descendant_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = _create_workspace(transient_parent, "run-path-id-mismatch")
+            workspace.inputs_path.joinpath("owned.bin").write_bytes(b"owned-bytes")
+            preserved = _preserve(base, "path-id-mismatch")
+            before = _tree_bytes_sha256(workspace.root)
+            original_identity = evidence_module._plain_directory_identity
+
+            def mismatch_task_root_identity(path, label):
+                identity = original_identity(path, label)
+                if Path(path) == workspace.root:
+                    return identity[0], identity[1] + 1, identity[2]
+                return identity
+
+            observed_error = None
+            with mock.patch.object(
+                evidence_module,
+                "_plain_directory_identity",
+                side_effect=mismatch_task_root_identity,
+            ):
+                try:
+                    workspace.cleanup(
+                        preserved_evidence_paths=(preserved,),
+                        sibling_paths=(),
+                    )
+                except Exception as error:  # capture the controlled lifecycle outcome
+                    observed_error = error
+
+            self.assertIsInstance(observed_error, EvidenceLifecycleError)
+            self.assertRegex(str(observed_error), "creation path identity changed")
+            self.assertTrue(workspace.root.is_dir())
+            self.assertEqual(_tree_bytes_sha256(workspace.root), before)
+
+    def test_windows_creation_file_id_mismatch_rejects_before_descendant_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            transient_parent = base / "transient"
+            transient_parent.mkdir()
+            workspace = _create_workspace(transient_parent, "run-win-id-mismatch")
+            workspace.inputs_path.joinpath("owned.bin").write_bytes(b"owned-bytes")
+            preserved = _preserve(base, "win-id-mismatch")
+            before = _tree_bytes_sha256(workspace.root)
+            mismatched_identity = evidence_module._WindowsFileIdentity(
+                volume_serial_number=0xDEADBEEF,
+                file_id=bytes(reversed(range(16))),
+            )
+
+            observed_error = None
+            with mock.patch.object(
+                evidence_module,
+                "_capture_windows_directory_identity",
+                return_value=mismatched_identity,
+            ):
+                try:
+                    workspace.cleanup(
+                        preserved_evidence_paths=(preserved,),
+                        sibling_paths=(),
+                    )
+                except Exception as error:  # capture the controlled lifecycle outcome
+                    observed_error = error
+
+            self.assertIsInstance(observed_error, EvidenceLifecycleError)
+            self.assertRegex(str(observed_error), "creation Windows identity changed")
+            self.assertTrue(workspace.root.is_dir())
+            self.assertEqual(_tree_bytes_sha256(workspace.root), before)
 
     def test_reparse_swap_after_partial_cleanup_is_terminal_and_never_traversed(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1864,11 +2032,11 @@ class ReviewerRunnerEvidenceTests(unittest.TestCase):
             preserved = _preserve(base, "post-delete", b"before-cleanup")
             original_remove_owned_tree = evidence_module._remove_owned_tree
 
-            def delete_then_change_preserved_evidence(target):
+            def delete_then_change_preserved_evidence(target, *args, **kwargs):
                 resolved_target = Path(target).resolve(strict=True)
                 self.assertEqual(resolved_target, workspace.root)
                 self.assertTrue(resolved_target.is_relative_to(base))
-                original_remove_owned_tree(resolved_target)
+                original_remove_owned_tree(resolved_target, *args, **kwargs)
                 self.assertFalse(os.path.lexists(resolved_target))
                 preserved.write_bytes(b"changed-after-delete")
 

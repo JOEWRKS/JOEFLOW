@@ -133,6 +133,8 @@ class TaskWorkspace:
     synthetic_canaries_path: Path
     repository_root: Path
     source_snapshot: SourceSnapshot
+    _creation_root_identity: tuple[int, int, int] = field(repr=False)
+    _creation_windows_identity: _WindowsFileIdentity | None = field(repr=False)
     _terminal: bool = field(default=False, init=False, repr=False)
 
     @classmethod
@@ -159,6 +161,7 @@ class TaskWorkspace:
         task_root = runner_parent / review_run_id
         reservation: _RunReservation | None = None
         task_root_identity: tuple[int, int, int] | None = None
+        task_root_windows_identity: _WindowsFileIdentity | None = None
         try:
             if os.path.lexists(runner_parent):
                 _require_plain_directory(runner_parent, "runner workspace parent")
@@ -190,6 +193,15 @@ class TaskWorkspace:
             resolved_root = task_root.resolve(strict=True)
             if not _is_strict_descendant(resolved_root, parent):
                 raise EvidenceLifecycleError("review workspace escapes transient_parent")
+            if os.name == "nt":
+                task_root_windows_identity = _capture_windows_directory_identity(
+                    resolved_root
+                )
+                _require_directory_identity(
+                    resolved_root,
+                    task_root_identity,
+                    "new review workspace after Windows identity capture",
+                )
             marker_path = resolved_root / _OWNER_MARKER
             atomic_freeze_evidence(
                 canonical_json_bytes(
@@ -229,6 +241,8 @@ class TaskWorkspace:
             synthetic_canaries_path=owned_paths[2],
             repository_root=repository,
             source_snapshot=source_snapshot,
+            _creation_root_identity=task_root_identity,
+            _creation_windows_identity=task_root_windows_identity,
         )
 
     def cleanup(
@@ -257,7 +271,11 @@ class TaskWorkspace:
         verify_source_unchanged(self.source_snapshot, self.repository_root)
 
         try:
-            _remove_owned_tree(self.root)
+            _remove_owned_tree(
+                self.root,
+                expected_identity=self._creation_root_identity,
+                expected_windows_identity=self._creation_windows_identity,
+            )
         except OSError as error:
             raise EvidenceLifecycleError(
                 f"exact task-root cleanup failed: {error}"
@@ -1061,7 +1079,22 @@ def _verify_workspace_identity(workspace: TaskWorkspace) -> None:
     expected_root = parent / _RUNNER_DIRECTORY / workspace.review_run_id
     if not _same_path(workspace.root, expected_root):
         raise EvidenceLifecycleError("workspace root does not match its exact task path")
-    _require_plain_directory(workspace.root, "task root")
+    current_root_identity = _plain_directory_identity(workspace.root, "task root")
+    if current_root_identity != workspace._creation_root_identity:
+        raise EvidenceLifecycleError("workspace creation path identity changed")
+    if os.name == "nt":
+        if workspace._creation_windows_identity is None:
+            raise EvidenceLifecycleError("workspace creation Windows identity is missing")
+        current_windows_identity = _capture_windows_directory_identity(workspace.root)
+        if current_windows_identity != workspace._creation_windows_identity:
+            raise EvidenceLifecycleError("workspace creation Windows identity changed")
+        if (
+            _plain_directory_identity(workspace.root, "task root")
+            != workspace._creation_root_identity
+        ):
+            raise EvidenceLifecycleError(
+                "workspace creation path identity changed during Windows identity check"
+            )
     resolved_root = workspace.root.resolve(strict=True)
     if not _same_path(resolved_root, workspace.root):
         raise EvidenceLifecycleError("task root is path-aliased")
@@ -1250,10 +1283,21 @@ def _remove_empty_windows_directory_by_handle(
         )
 
 
-def _remove_owned_tree(root: Path) -> None:
+def _remove_owned_tree(
+    root: Path,
+    *,
+    expected_identity: tuple[int, int, int],
+    expected_windows_identity: _WindowsFileIdentity | None,
+) -> None:
     boundary = Path(os.path.abspath(root))
-    root_identity = _plain_directory_identity(boundary, "removable task root")
-    _remove_owned_directory(boundary, boundary, expected_identity=root_identity)
+    if os.name == "nt" and expected_windows_identity is None:
+        raise EvidenceLifecycleError("removable task root Windows identity is missing")
+    _remove_owned_directory(
+        boundary,
+        boundary,
+        expected_identity=expected_identity,
+        expected_windows_identity=expected_windows_identity,
+    )
 
 
 def _remove_owned_directory(
@@ -1261,12 +1305,20 @@ def _remove_owned_directory(
     boundary: Path,
     *,
     expected_identity: tuple[int, int, int] | None = None,
+    expected_windows_identity: _WindowsFileIdentity | None = None,
 ) -> None:
     _require_lexical_descendant_or_same(directory, boundary, "removable directory")
     directory_identity = _plain_directory_identity(directory, "removable directory")
     if expected_identity is not None and directory_identity != expected_identity:
         raise EvidenceLifecycleError("removable directory ownership changed before recursion")
     windows_identity = _capture_windows_directory_identity(directory)
+    if (
+        expected_windows_identity is not None
+        and windows_identity != expected_windows_identity
+    ):
+        raise EvidenceLifecycleError(
+            "removable directory Windows identity changed before recursion"
+        )
     with os.scandir(directory) as iterator:
         entries = sorted(iterator, key=lambda entry: entry.name)
     if _plain_directory_identity(directory, "removable directory") != directory_identity:
