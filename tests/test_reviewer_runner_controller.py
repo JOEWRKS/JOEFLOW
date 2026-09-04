@@ -594,6 +594,49 @@ class ReviewerRunnerControllerTests(unittest.TestCase):
                 run_identity=material["run_identity"],
             )
 
+    def test_v1_adapter_rejects_unbound_package_schema_versions_before_request_artifacts(self):
+        material = _v1_material()
+        for package_schema_version in (
+            "joewrks.semantic-review-input/999.0",
+            "joewrks.semantic-review/2.1",
+        ):
+            with self.subTest(package_schema_version=package_schema_version):
+                run_identity = dataclasses.replace(
+                    material["run_identity"],
+                    package_schema_version=package_schema_version,
+                )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "v1 package schema version does not match the authoritative schema",
+                ):
+                    prepare_semantic_review_v1(
+                        verified_package=material["package"],
+                        package_archive_bytes=material["package_bytes"],
+                        reviewer_brief_bytes=material["brief_bytes"],
+                        run_envelope=material["envelope"],
+                        output_schema_bytes=material["schema_bytes"],
+                        run_identity=run_identity,
+                    )
+
+    def test_v1_adapter_rejects_unbound_source_definition_digest_before_request_artifacts(self):
+        material = _v1_material()
+        run_identity = dataclasses.replace(
+            material["run_identity"],
+            source_definition_digest="a" * 64,
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "v1 source definition digest must be absent",
+        ):
+            prepare_semantic_review_v1(
+                verified_package=material["package"],
+                package_archive_bytes=material["package_bytes"],
+                reviewer_brief_bytes=material["brief_bytes"],
+                run_envelope=material["envelope"],
+                output_schema_bytes=material["schema_bytes"],
+                run_identity=run_identity,
+            )
+
     def test_v21_adapter_delegates_to_existing_package_and_output_validators_without_changing_output_fields(self):
         package = copy.deepcopy(self.v21_package)
         output = copy.deepcopy(self.v21_output)

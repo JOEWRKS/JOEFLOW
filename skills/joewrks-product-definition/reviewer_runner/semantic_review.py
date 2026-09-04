@@ -17,6 +17,7 @@ from .response import OutputValidator
 
 
 _V1_CONTRACT = "joewrks.semantic-review/1.0"
+_V1_PACKAGE_SCHEMA = "joewrks.semantic-review-input/1.0"
 _V21_CONTRACT = "joewrks.semantic-review/2.1"
 
 
@@ -40,6 +41,12 @@ def prepare_semantic_review_v1(
     """Bind exact v1 inputs to the existing envelope and output validators."""
 
     _require_run_identity(run_identity, _V1_CONTRACT)
+    if run_identity.package_schema_version != _V1_PACKAGE_SCHEMA:
+        raise ValueError(
+            "v1 package schema version does not match the authoritative schema"
+        )
+    if run_identity.source_definition_digest is not None:
+        raise ValueError("v1 source definition digest must be absent")
     if not isinstance(verified_package, dict) or not isinstance(run_envelope, dict):
         raise ValueError("v1 package and run envelope must be objects")
     _require_bytes(package_archive_bytes, "package_archive_bytes")
