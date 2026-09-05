@@ -5,8 +5,13 @@ from __future__ import annotations
 import base64
 from dataclasses import dataclass
 import hashlib
+import http.client
 import json
+import socket
+import ssl
+from typing import Callable
 
+from ..backend import BackendInvocationError
 from ..identity import (
     RUNNER_CONTRACT_VERSION,
     SEMANTIC_REVIEW_CONTRACT_VERSIONS,
@@ -70,6 +75,117 @@ class AnthropicProjection:
     context_id: str
     provider_body: bytes
     provider_body_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class AnthropicHttpResponse:
+    """One bounded HTTP response returned by the fixed Anthropic transport."""
+
+    status: int
+    headers: tuple[tuple[str, str], ...]
+    body: bytes
+
+
+class StdlibAnthropicTransport:
+    """Make one direct, non-streaming HTTPS request to the fixed endpoint."""
+
+    def __init__(
+        self,
+        *,
+        test_only_connection_factory: Callable[[str, int, int, ssl.SSLContext], object]
+        | None = None,
+    ):
+        self._test_only_connection_factory = test_only_connection_factory
+
+    @property
+    def is_test_double(self) -> bool:
+        """Return whether the explicit test-only connection seam is active."""
+
+        return self._test_only_connection_factory is not None
+
+    def post(
+        self,
+        body: bytes,
+        *,
+        api_key: str,
+        timeout_seconds: int,
+    ) -> AnthropicHttpResponse:
+        """Send exactly one fixed Messages POST and return one bounded response."""
+
+        if type(body) is not bytes:
+            raise ValueError("Anthropic request body must be exact bytes")
+        if not isinstance(api_key, str) or not api_key:
+            raise ValueError("Anthropic API key must be a non-empty string")
+        if (
+            isinstance(timeout_seconds, bool)
+            or not isinstance(timeout_seconds, int)
+            or timeout_seconds <= 0
+        ):
+            raise ValueError("Anthropic timeout_seconds must be a positive integer")
+
+        connection: object | None = None
+        response_exists = False
+        try:
+            context = ssl.create_default_context()
+            if self._test_only_connection_factory is None:
+                connection = http.client.HTTPSConnection(
+                    ANTHROPIC_HOST,
+                    port=443,
+                    timeout=timeout_seconds,
+                    context=context,
+                )
+            else:
+                connection = self._test_only_connection_factory(
+                    ANTHROPIC_HOST,
+                    443,
+                    timeout_seconds,
+                    context,
+                )
+            connection.request(
+                "POST",
+                ANTHROPIC_PATH,
+                body=body,
+                headers={
+                    "anthropic-version": ANTHROPIC_API_VERSION,
+                    "connection": "close",
+                    "content-type": "application/json",
+                    "x-api-key": api_key,
+                },
+            )
+            response = connection.getresponse()
+            response_exists = True
+            if response.status != 200:
+                raise BackendInvocationError(
+                    "NO_RESPONSE", "Anthropic API returned a non-success response"
+                )
+            response_body = response.read(ANTHROPIC_MAX_RESPONSE_BYTES + 1)
+            if len(response_body) > ANTHROPIC_MAX_RESPONSE_BYTES:
+                raise BackendInvocationError(
+                    "NO_RESPONSE", "Anthropic API response exceeded the configured size limit"
+                )
+            return AnthropicHttpResponse(
+                status=response.status,
+                headers=tuple(response.getheaders()),
+                body=response_body,
+            )
+        except BackendInvocationError:
+            raise
+        except (socket.timeout, TimeoutError):
+            raise BackendInvocationError("TIMEOUT", "Anthropic API request timed out") from None
+        except (OSError, EOFError, ssl.SSLError, http.client.HTTPException):
+            if response_exists:
+                raise BackendInvocationError(
+                    "NO_RESPONSE", "Anthropic API response could not be read"
+                ) from None
+            raise BackendInvocationError(
+                "TRANSPORT_ERROR", "Anthropic API transport failed"
+            ) from None
+        finally:
+            if connection is not None:
+                try:
+                    connection.close()
+                except Exception:
+                    pass
 
 
 def anthropic_settings_record() -> dict[str, object]:
