@@ -10,11 +10,16 @@
 
 **Spec:** docs/superpowers/specs/2026-09-05-post-m6-real-backend-capability-enablement-design.md
 
+**Approved design authority:** c1c06dca65ae007cb59353a75788eaf2096bd219, tree 7444b53a69520e629a4f828eab8f3727a03e5ebe
+
 **Candidate audit:** evals/post-m6-real-backend-capability-enablement/BACKEND_CANDIDATE_CAPABILITY_AUDIT.md
 
 ## Global Constraints
 
-- Execute from an isolated canonical-LF Git worktree created from exact approved planning commit c1c06dca65ae007cb59353a75788eaf2096bd219, tree 7444b53a69520e629a4f828eab8f3727a03e5ebe. The authoritative main remains ab95074704af0e93248d56344d6a220dfec88a93, tree 867bec6fcfe5f4dc9927beaaf143087178e09e7c.
+- The approved design authority is exact commit c1c06dca65ae007cb59353a75788eaf2096bd219, tree 7444b53a69520e629a4f828eab8f3727a03e5ebe. Use it only for design traceability, ancestry validation, and specification provenance.
+- The authoritative frozen product/runtime base is exact main commit ab95074704af0e93248d56344d6a220dfec88a93, tree 867bec6fcfe5f4dc9927beaaf143087178e09e7c. Use it for protected-path comparisons.
+- Create the isolated canonical-LF implementation worktree from the exact PM-approved final planning tip supplied through JOEWRKS_APPROVED_REAL_BACKEND_PLAN_TIP. Its tree must equal JOEWRKS_APPROVED_REAL_BACKEND_PLAN_TREE. Neither input has a default; missing or mismatched execution authority stops before Task 1.
+- The implementation plan never embeds its own final Git commit or tree as an execution prerequisite. The PM execution ticket supplies the externally audited final plan tip/tree.
 - Create the implementation branch as codex/post-m6-real-backend-capability-enablement. Do not merge or push main.
 - Use superpowers:using-git-worktrees before Task 1, then superpowers:subagent-driven-development with a fresh implementation subagent and a separate fresh reviewer for every Task. Use superpowers:test-driven-development for each behavior change, superpowers:requesting-code-review after each GREEN commit, superpowers:verification-before-completion before the final claim, and superpowers:finishing-a-development-branch only after every evidence gate passes.
 - The approved design controls. This plan controls execution beneath it. If implementing this plan would require changing ToollessInferenceBackend, BackendDescriptor, BackendResponse, REQUIRED_CAPABILITIES, run_isolation_preflight, the four-role CanonicalRequest, or either semantic output schema, stop with REAL_BACKEND_IMPLEMENTATION_BLOCKED — DESIGN_CONTRACT_CONFLICT.
@@ -360,15 +365,22 @@ The matrix has exactly 17 rows. A local fixture may satisfy structural rows, but
 ~~~powershell
 git fetch origin
 $expectedMain = "ab95074704af0e93248d56344d6a220dfec88a93"
-$expectedPlan = "c1c06dca65ae007cb59353a75788eaf2096bd219"
-$expectedPlanTree = "7444b53a69520e629a4f828eab8f3727a03e5ebe"
+$approvedDesign = "c1c06dca65ae007cb59353a75788eaf2096bd219"
+$approvedDesignTree = "7444b53a69520e629a4f828eab8f3727a03e5ebe"
+$expectedPlan = $env:JOEWRKS_APPROVED_REAL_BACKEND_PLAN_TIP
+$expectedPlanTree = $env:JOEWRKS_APPROVED_REAL_BACKEND_PLAN_TREE
+if ([string]::IsNullOrWhiteSpace($expectedPlan)) { throw "REAL_BACKEND_IMPLEMENTATION_BLOCKED — APPROVED_PLAN_TIP_MISSING" }
+if ([string]::IsNullOrWhiteSpace($expectedPlanTree)) { throw "REAL_BACKEND_IMPLEMENTATION_BLOCKED — APPROVED_PLAN_TREE_MISSING" }
 if ((git rev-parse origin/main) -ne $expectedMain) { throw "REAL_BACKEND_IMPLEMENTATION_BLOCKED — BASELINE_MOVED" }
 if ((git rev-parse origin/plan/post-m6-real-backend-capability-enablement) -ne $expectedPlan) { throw "REAL_BACKEND_IMPLEMENTATION_BLOCKED — BASELINE_MOVED" }
 if ((git rev-parse "$expectedPlan^{tree}") -ne $expectedPlanTree) { throw "REAL_BACKEND_IMPLEMENTATION_BLOCKED — BASELINE_MOVED" }
+if ((git rev-parse "$approvedDesign^{tree}") -ne $approvedDesignTree) { throw "REAL_BACKEND_IMPLEMENTATION_BLOCKED — DESIGN_AUTHORITY_MISMATCH" }
+git merge-base --is-ancestor $approvedDesign $expectedPlan
+if ($LASTEXITCODE -ne 0) { throw "REAL_BACKEND_IMPLEMENTATION_BLOCKED — DESIGN_LINEAGE_MISMATCH" }
 git status --short
 ~~~
 
-Expected: all three identities match and status is empty.
+Expected: both runtime authority inputs are present; main, remote planning tip, planning tree, and design tree match; the supplied plan tip descends from the approved design; and status is empty. Do not infer another plan tip from branch history after any mismatch.
 
 - [ ] Create the implementation worktree with command-scoped LF settings:
 
@@ -376,9 +388,12 @@ Expected: all three identities match and status is empty.
 $implementationWorktree = "D:/JOEWRKS/JOEWRKS-Product-post-m6-real-backend-implementation"
 git -c core.autocrlf=false -c core.eol=lf worktree add -b codex/post-m6-real-backend-capability-enablement $implementationWorktree $expectedPlan
 Set-Location -LiteralPath $implementationWorktree
+$implementationBase = $expectedPlan
+if ((git rev-parse HEAD) -ne $implementationBase) { throw "REAL_BACKEND_IMPLEMENTATION_BLOCKED — BASELINE_MOVED" }
+if ((git rev-parse 'HEAD^{tree}') -ne $expectedPlanTree) { throw "REAL_BACKEND_IMPLEMENTATION_BLOCKED — BASELINE_MOVED" }
 ~~~
 
-Expected: the new branch points exactly to c1c06dca65ae007cb59353a75788eaf2096bd219. Do not reuse a non-empty or pre-existing ambiguous path.
+Expected: the new branch points exactly to the externally supplied PM-approved plan tip and its exact tree. The branch therefore contains the approved design, candidate audit, and final approved implementation plan before Task 1. Do not reuse a non-empty or pre-existing ambiguous path.
 
 - [ ] Verify raw runner bytes against Git blobs:
 
@@ -1033,12 +1048,13 @@ Create REAL_BACKEND_IMPLEMENTATION_CAPABILITY_EVIDENCE.json as those exact canon
 
 ~~~powershell
 python -m unittest tests.test_reviewer_runner_audit tests.test_reviewer_runner_anthropic_offline -v
-git diff --exit-code c1c06dca65ae007cb59353a75788eaf2096bd219..HEAD -- product-definition
-git diff --exit-code c1c06dca65ae007cb59353a75788eaf2096bd219..HEAD -- skills/joewrks-product-definition/downstream
-git diff --exit-code c1c06dca65ae007cb59353a75788eaf2096bd219..HEAD -- skills/joewrks-product-definition/downstream_v21
-git diff --exit-code c1c06dca65ae007cb59353a75788eaf2096bd219..HEAD -- evals/semantic-review-v0.4.3
-git diff --exit-code c1c06dca65ae007cb59353a75788eaf2096bd219..HEAD -- evals/core-semantic-closure-v2-m6
-git diff --exit-code c1c06dca65ae007cb59353a75788eaf2096bd219..HEAD -- evals/post-m6-semantic-review-reliability-enablement/RUNNER_CAPABILITY_EVIDENCE.json
+$frozenAuthorityBase = "ab95074704af0e93248d56344d6a220dfec88a93"
+git diff --exit-code $frozenAuthorityBase..HEAD -- product-definition
+git diff --exit-code $frozenAuthorityBase..HEAD -- skills/joewrks-product-definition/downstream
+git diff --exit-code $frozenAuthorityBase..HEAD -- skills/joewrks-product-definition/downstream_v21
+git diff --exit-code $frozenAuthorityBase..HEAD -- evals/semantic-review-v0.4.3
+git diff --exit-code $frozenAuthorityBase..HEAD -- evals/core-semantic-closure-v2-m6
+git diff --exit-code $frozenAuthorityBase..HEAD -- evals/post-m6-semantic-review-reliability-enablement/RUNNER_CAPABILITY_EVIDENCE.json
 git diff --check
 ~~~
 
@@ -1100,9 +1116,9 @@ Only accepted provisioning plus passing P1 and P2 may support a later capability
 9. Product Definition, M6, semantic-review, v0.4.3, oracle, counters, contracts, four-role request, and output schemas are unchanged;
 10. origin/main remains ab95074704af0e93248d56344d6a220dfec88a93.
 
-- [ ] Run a fresh final whole-branch review against c1c06dca65ae007cb59353a75788eaf2096bd219.
+- [ ] Run a fresh final whole-branch review against the implementation-only base in $implementationBase.
 
-Give the reviewer the approved design, this complete plan, git diff c1c06dca65ae007cb59353a75788eaf2096bd219..HEAD, the full changed-file manifest, every Task review result, all final test outputs, both audit JSON readbacks, and frozen-boundary output. Require separate architecture, security/privacy, evidence-truthfulness, offline/network, compatibility, and test-coverage findings. Fix every Critical and Important finding in separate commits, rerun its exact failing regression plus every Task 8 verification command, and repeat final review until Critical = 0 and Important = 0.
+Give the reviewer the approved design, this complete plan, git diff $implementationBase..HEAD, git log --oneline $implementationBase..HEAD, the full changed-file manifest, every Task review result, all final test outputs, both audit JSON readbacks, and frozen-boundary output. Require separate architecture, security/privacy, evidence-truthfulness, offline/network, compatibility, and test-coverage findings. Fix every Critical and Important finding in separate commits, rerun its exact failing regression plus every Task 8 verification command, and repeat final review until Critical = 0 and Important = 0.
 
 - [ ] Run final Git readback:
 
@@ -1110,7 +1126,8 @@ Give the reviewer the approved design, this complete plan, git diff c1c06dca65ae
 git fetch origin
 git status --short
 git diff --check
-git diff --name-status c1c06dca65ae007cb59353a75788eaf2096bd219..HEAD
+git diff --name-status $implementationBase..HEAD
+git log --oneline $implementationBase..HEAD
 git rev-parse HEAD
 git rev-parse HEAD^{tree}
 git rev-parse origin/main
