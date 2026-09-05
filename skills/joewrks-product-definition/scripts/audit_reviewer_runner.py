@@ -33,6 +33,18 @@ BACKEND_KIND = "STATELESS_TOOLLESS_EXTERNAL_INFERENCE"
 REGISTERED_PRODUCTION_ADAPTERS: tuple[object, ...] = ()
 RUNNER_SOURCE_PATH = "skills/joewrks-product-definition/reviewer_runner"
 
+_SNAPSHOT_MODULE_SOURCES = {
+    "": f"{RUNNER_SOURCE_PATH}/__init__.py",
+    ".identity": f"{RUNNER_SOURCE_PATH}/identity.py",
+    ".backend": f"{RUNNER_SOURCE_PATH}/backend.py",
+    ".request": f"{RUNNER_SOURCE_PATH}/request.py",
+    ".providers": f"{RUNNER_SOURCE_PATH}/providers/__init__.py",
+    ".providers.anthropic": f"{RUNNER_SOURCE_PATH}/providers/anthropic.py",
+    ".providers.anthropic_admission": (
+        f"{RUNNER_SOURCE_PATH}/providers/anthropic_admission.py"
+    ),
+}
+
 FROZEN_PATHS = (
     "product-definition",
     "skills/joewrks-product-definition/downstream/semantic_review",
@@ -205,7 +217,19 @@ def _verify_runner_source_binding(
 
     revision_inventory = _runner_revision_blob_map(repository_root, revision)
     current_inventory = _runner_index_blob_map(repository_root)
-    if not revision_inventory or revision_inventory != current_inventory:
+    required_core_sources = {
+        _SNAPSHOT_MODULE_SOURCES[""],
+        _SNAPSHOT_MODULE_SOURCES[".identity"],
+        _SNAPSHOT_MODULE_SOURCES[".backend"],
+    }
+    if (
+        not revision_inventory
+        or not required_core_sources.issubset(revision_inventory)
+        or any(
+            current_inventory.get(path) != commitment
+            for path, commitment in revision_inventory.items()
+        )
+    ):
         raise RuntimeError(
             "runner source inventory is absent, incomplete, or differs from loaded source"
         )
@@ -258,18 +282,14 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
 
     def find_spec(self, fullname, path=None, target=None):
         if fullname == self._package_name:
-            relative_source = f"{RUNNER_SOURCE_PATH}/__init__.py"
-            is_package = True
-        elif fullname == f"{self._package_name}.identity":
-            relative_source = f"{RUNNER_SOURCE_PATH}/identity.py"
-            is_package = False
-        elif fullname == f"{self._package_name}.backend":
-            relative_source = f"{RUNNER_SOURCE_PATH}/backend.py"
-            is_package = False
+            suffix = ""
         elif fullname.startswith(f"{self._package_name}."):
-            raise RuntimeError("verified runner attempted an unexpected module import")
+            suffix = fullname[len(self._package_name):]
         else:
             return None
+        relative_source = _SNAPSHOT_MODULE_SOURCES.get(suffix)
+        if relative_source is None:
+            raise RuntimeError("verified runner attempted an unexpected module import")
         source = self._snapshot.get(relative_source)
         if source is None:
             raise RuntimeError("verified runner source snapshot is incomplete")
@@ -279,7 +299,7 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
             fullname,
             loader,
             origin=str(filename),
-            is_package=is_package,
+            is_package=suffix in ("", ".providers"),
         )
 
 
@@ -356,6 +376,72 @@ def _load_verified_runner_api(
                 source=snapshot[relative_source],
             )
         return identity_module, backend_module
+    finally:
+        if finder is not None and finder in sys.meta_path:
+            sys.meta_path.remove(finder)
+        _remove_private_runner_modules(package_name)
+
+
+def _load_verified_snapshot_registration(
+    repository: Path,
+    revision: str,
+    snapshot: dict[str, bytes],
+) -> tuple[object, ...]:
+    """Load only the revision-bound provider registration for audit tests."""
+
+    registration_source = _SNAPSHOT_MODULE_SOURCES[".providers"]
+    if registration_source not in snapshot:
+        return ()
+
+    required_sources = (
+        _SNAPSHOT_MODULE_SOURCES[""],
+        _SNAPSHOT_MODULE_SOURCES[".identity"],
+        _SNAPSHOT_MODULE_SOURCES[".backend"],
+        _SNAPSHOT_MODULE_SOURCES[".request"],
+        registration_source,
+        _SNAPSHOT_MODULE_SOURCES[".providers.anthropic"],
+        _SNAPSHOT_MODULE_SOURCES[".providers.anthropic_admission"],
+    )
+    revision_inventory = _runner_revision_blob_map(repository, revision)
+    for relative_source in required_sources:
+        source = snapshot.get(relative_source)
+        commitment = revision_inventory.get(relative_source)
+        if source is None or commitment is None:
+            raise RuntimeError("verified provider source snapshot is incomplete")
+        _, expected_blob_id = commitment.split(":", 1)
+        if _git_blob_id(repository, source) != expected_blob_id:
+            raise RuntimeError("verified provider source bytes differ from revision")
+
+    package_name = f"_audit_verified_reviewer_runner_{revision}"
+    finder = None
+    try:
+        if _private_runner_module_names(package_name):
+            raise RuntimeError("verified runner module namespace collision")
+        finder = _SnapshotSourceFinder(package_name, repository, snapshot)
+        sys.meta_path.insert(0, finder)
+        providers_module = importlib.import_module(f"{package_name}.providers")
+        expected_modules = {
+            f"{package_name}{suffix}": relative_source
+            for suffix, relative_source in _SNAPSHOT_MODULE_SOURCES.items()
+        }
+        loaded_names = set(_private_runner_module_names(package_name))
+        if loaded_names != set(expected_modules):
+            raise RuntimeError("verified runner loaded an unexpected module")
+        for fullname, relative_source in expected_modules.items():
+            module = sys.modules.get(fullname)
+            if module is None:
+                raise RuntimeError("verified runner source snapshot is incomplete")
+            filename = repository.joinpath(*PurePosixPath(relative_source).parts)
+            _verify_snapshot_module(
+                module,
+                fullname=fullname,
+                filename=filename,
+                source=snapshot[relative_source],
+            )
+        registered = getattr(providers_module, "REGISTERED_PRODUCTION_ADAPTERS", None)
+        if type(registered) is not tuple:
+            raise RuntimeError("verified provider registration is not an immutable tuple")
+        return registered
     finally:
         if finder is not None and finder in sys.meta_path:
             sys.meta_path.remove(finder)
