@@ -1038,6 +1038,45 @@ StdlibAnthropicTransport.__getattribute__ = _intercept_post
                 "module-post-replacement": module_post_replacement,
                 "class-getattribute-interception": class_getattribute_interception,
             }
+            invoke_wrapper = """\
+
+_approved_invoke = AnthropicBackend.invoke
+
+
+def _invoke_twice(self, request_bytes, *, timeout_seconds):
+    _approved_invoke(self, request_bytes, timeout_seconds=timeout_seconds)
+    return _approved_invoke(self, request_bytes, timeout_seconds=timeout_seconds)
+
+
+AnthropicBackend.invoke = _invoke_twice
+"""
+            invoke_interception = """\
+
+_approved_getattribute = AnthropicBackend.__getattribute__
+
+
+def _intercept_invoke(self, name):
+    value = _approved_getattribute(self, name)
+    if name != "invoke":
+        return value
+
+    def invoke_twice(request_bytes, *, timeout_seconds):
+        value(request_bytes, timeout_seconds=timeout_seconds)
+        return value(request_bytes, timeout_seconds=timeout_seconds)
+
+    return invoke_twice
+
+
+AnthropicBackend.__getattribute__ = _intercept_invoke
+"""
+            runtime_interception_registrations.update({
+                "module-invoke-replacement": (
+                    registration_prelude + invoke_wrapper + registration_suffix
+                ),
+                "backend-getattribute-interception": (
+                    registration_prelude + invoke_interception + registration_suffix
+                ),
+            })
             for label, registration in runtime_interception_registrations.items():
                 revision = _commit_provider_registration(
                     repository,
@@ -1063,6 +1102,28 @@ StdlibAnthropicTransport.__getattribute__ = _intercept_post
                                 "PASS",
                                 f"{label} complete offline report falsely passed: {report!r}",
                             )
+
+            # An unchanged callable identity also needs its approved source body.
+            original_registration = registration_prelude + registration_suffix
+            _commit_provider_registration(repository, original_registration, "restore registration")
+            invoke_post = "            transport_response = self._transport.post(\n"
+            self.assertEqual(original_source.count(invoke_post), 1)
+            repeated_invoke_post = """\
+            self._transport.post(
+                projection.provider_body,
+                api_key=api_key,
+                timeout_seconds=timeout_seconds,
+            )
+""" + invoke_post
+            revision = _commit_anthropic_source(
+                repository,
+                original_source.replace(invoke_post, repeated_invoke_post),
+                "invoke issues two transport requests",
+            )
+            with self.subTest(runtime_request_policy="invoke-body-two-posts"):
+                with patch.object(audit, "_SKILL_ROOT", repository / "skills" / "joewrks-product-definition"):
+                    with self.assertRaisesRegex(RuntimeError, "one request with zero retries"):
+                        self.require_guard()(repository, revision)
 
     def test_test_transport_descriptor_is_ineligible_and_preflight_does_not_invoke(self):
         self.require_guard()
@@ -1156,6 +1217,50 @@ __all__ = ("REGISTERED_PRODUCTION_ADAPTERS",)
                         with self.assertRaisesRegex(
                             RuntimeError, "exact verified AnthropicBackend"
                         ):
+                            self.require_guard()(repository, revision)
+
+            dependency_prelude = """\
+from . import anthropic as _anthropic_module
+from .anthropic import AnthropicBackend
+from .anthropic_admission import (
+    build_anthropic_backend_configuration,
+    unprovisioned_anthropic_admission,
+)
+
+_backend = AnthropicBackend(
+    build_anthropic_backend_configuration(unprovisioned_anthropic_admission())
+)
+_original_descriptor = _backend.describe()
+"""
+            dependency_mutations = {
+                "post-construction-connection-factory": (
+                    "_backend._transport._test_only_connection_factory = lambda *args: None\n"
+                ),
+                "post-construction-credential-reader": (
+                    "_backend._credential_reader = lambda name: 'offline-fake-key'\n"
+                ),
+                "module-http-replacement": """\
+class _FakeHTTP:
+    class client:
+        HTTPSConnection = staticmethod(lambda *args, **kwargs: None)
+
+_anthropic_module.http = _FakeHTTP
+""",
+            }
+            for label, mutation in dependency_mutations.items():
+                revision = _commit_provider_registration(
+                    repository,
+                    dependency_prelude + mutation + """\
+assert _backend.describe() is _original_descriptor
+assert not _backend.describe().identity.is_test_double
+REGISTERED_PRODUCTION_ADAPTERS = (_backend,)
+__all__ = ("REGISTERED_PRODUCTION_ADAPTERS",)
+""",
+                    label,
+                )
+                with self.subTest(mutable_dependency=label):
+                    with patch.object(audit, "_SKILL_ROOT", repository / "skills" / "joewrks-product-definition"):
+                        with self.assertRaisesRegex(RuntimeError, "verified Anthropic|one request with zero retries"):
                             self.require_guard()(repository, revision)
 
     def test_no_provider_call_exists_in_unit_test_or_audit_entry_points(self):

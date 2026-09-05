@@ -42,6 +42,9 @@ _PUBLIC_RUNNER_PACKAGE_NAME = "reviewer_runner"
 _APPROVED_ANTHROPIC_TRANSPORT_POST_AST_SHA256 = (
     "c87697941dc1440f821288e1b4dec51a8ed4933dc20597f713f7c1d5e81a9ff7"
 )
+_APPROVED_ANTHROPIC_BACKEND_INVOKE_AST_SHA256 = (
+    "31e29bb8df3629410e81cc3d7e782338915d7fd32fef8caf6119728598767cce"
+)
 
 _SNAPSHOT_MODULE_SOURCES = {
     "": f"{RUNNER_SOURCE_PATH}/__init__.py",
@@ -529,6 +532,15 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         self._verified_anthropic_transport_type = None
         self._verified_anthropic_post_function = None
         self._verified_anthropic_post_code = None
+        self._verified_anthropic_invoke_function = None
+        self._verified_anthropic_invoke_code = None
+        # Capture trusted dependencies before any verified provider code executes.
+        # During an offline report, HTTPSConnection/environ are the owned blockers.
+        self._verified_http = http
+        self._verified_http_client = http.client
+        self._verified_https_connection = http.client.HTTPSConnection
+        self._verified_os = os
+        self._verified_environment = os.environ
 
     def _capture_verified_export(
         self, fullname: str, module, module_code: types.CodeType
@@ -540,6 +552,24 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         self._anthropic_module_executed = True
         exported_type = module.__dict__.get("AnthropicBackend")
         self._verified_anthropic_backend_type = exported_type
+        if type(exported_type) is type:
+            self._verified_anthropic_invoke_function = type.__getattribute__(
+                exported_type, "__dict__"
+            ).get("invoke")
+        backend_code = tuple(
+            constant
+            for constant in module_code.co_consts
+            if isinstance(constant, types.CodeType)
+            and constant.co_name == "AnthropicBackend"
+        )
+        if len(backend_code) == 1:
+            invoke_code = tuple(
+                constant
+                for constant in backend_code[0].co_consts
+                if isinstance(constant, types.CodeType) and constant.co_name == "invoke"
+            )
+            if len(invoke_code) == 1:
+                self._verified_anthropic_invoke_code = invoke_code[0]
         transport_type = module.__dict__.get("StdlibAnthropicTransport")
         self._verified_anthropic_transport_type = transport_type
         if type(transport_type) is type:
@@ -568,34 +598,65 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         return exported_type
 
     def verify_anthropic_transport_binding(self, module, registered) -> None:
+        backend_type = self._verified_anthropic_backend_type
+        invoke_function = self._verified_anthropic_invoke_function
+        invoke_code = self._verified_anthropic_invoke_code
         transport_type = self._verified_anthropic_transport_type
         post_function = self._verified_anthropic_post_function
         post_code = self._verified_anthropic_post_code
         try:
-            current_post = type.__getattribute__(transport_type, "post")
+            current_invoke = type.__getattribute__(backend_type, "__dict__").get("invoke")
+            backend_getattribute = type.__getattribute__(backend_type, "__getattribute__")
+            current_post = type.__getattribute__(transport_type, "__dict__").get("post")
             current_getattribute = type.__getattribute__(
                 transport_type, "__getattribute__"
             )
         except (AttributeError, TypeError):
+            current_invoke = None
+            backend_getattribute = None
             current_post = None
             current_getattribute = None
         invalid = (
             not self._anthropic_module_executed
+            or module.__dict__.get("AnthropicBackend") is not backend_type
+            or type(backend_type) is not type
+            or type(invoke_function) is not types.FunctionType
+            or type(invoke_code) is not types.CodeType
+            or invoke_function.__code__ is not invoke_code
+            or invoke_function.__globals__ is not module.__dict__
+            or current_invoke is not invoke_function
+            or backend_getattribute is not object.__getattribute__
             or module.__dict__.get("StdlibAnthropicTransport") is not transport_type
             or type(transport_type) is not type
             or type(post_function) is not types.FunctionType
             or type(post_code) is not types.CodeType
             or post_function.__code__ is not post_code
+            or post_function.__globals__ is not module.__dict__
             or current_post is not post_function
             or current_getattribute is not object.__getattribute__
+            or module.__dict__.get("http") is not self._verified_http
+            or self._verified_http.__dict__.get("client") is not self._verified_http_client
+            or self._verified_http_client.__dict__.get("HTTPSConnection")
+            is not self._verified_https_connection
+            or module.__dict__.get("os") is not self._verified_os
+            or self._verified_os.__dict__.get("environ") is not self._verified_environment
         )
         if not invalid:
             try:
                 for adapter in registered:
                     transport = object.__getattribute__(adapter, "_transport")
+                    effective_invoke = getattr(adapter, "invoke")
                     effective_post = getattr(transport, "post")
                     if (
-                        type(transport) is not transport_type
+                        type(adapter) is not backend_type
+                        or type(effective_invoke) is not types.MethodType
+                        or effective_invoke.__self__ is not adapter
+                        or effective_invoke.__func__ is not invoke_function
+                        or object.__getattribute__(adapter, "_credential_reader") is not None
+                        or object.__getattribute__(adapter, "_transport_is_custom") is not False
+                        or object.__getattribute__(adapter, "_is_test_double") is not False
+                        or type(transport) is not transport_type
+                        or object.__getattribute__(transport, "_test_only_connection_factory") is not None
                         or type(effective_post) is not types.MethodType
                         or effective_post.__self__ is not transport
                         or effective_post.__func__ is not post_function
@@ -1040,6 +1101,24 @@ def _anthropic_transport_request_policy(snapshot: dict[str, bytes]) -> str:
         tree = ast.parse(source, filename=source_path)
     except (SyntaxError, UnicodeDecodeError) as error:
         raise RuntimeError("Anthropic provider source cannot be parsed") from error
+    invoke_methods = tuple(
+        method
+        for node in tree.body
+        if isinstance(node, ast.ClassDef) and node.name == "AnthropicBackend"
+        for method in node.body
+        if isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and method.name == "invoke"
+    )
+    if (
+        len(invoke_methods) != 1
+        or hashlib.sha256(
+            ast.dump(invoke_methods[0], annotate_fields=True, include_attributes=False)
+            .encode("utf-8")
+        ).hexdigest() != _APPROVED_ANTHROPIC_BACKEND_INVOKE_AST_SHA256
+    ):
+        raise RuntimeError(
+            "Anthropic backend does not prove one request with zero retries"
+        )
     transport_classes = tuple(
         node
         for node in tree.body
