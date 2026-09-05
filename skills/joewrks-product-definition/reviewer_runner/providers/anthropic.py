@@ -3,18 +3,27 @@
 from __future__ import annotations
 
 import base64
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import http.client
 import json
+import os
 import socket
 import ssl
 from typing import Callable
 
-from ..backend import BackendInvocationError
+from ..backend import (
+    BackendDescriptor,
+    BackendEvent,
+    BackendInvocationError,
+    BackendResponse,
+    hash_evidence_record,
+)
 from ..identity import (
     RUNNER_CONTRACT_VERSION,
     SEMANTIC_REVIEW_CONTRACT_VERSIONS,
+    CapabilityClass,
+    backend_identity_sha256,
     canonical_json_bytes,
     sha256_bytes,
 )
@@ -439,3 +448,264 @@ def _is_sha256(value: object) -> bool:
         and len(value) == 64
         and all(character in "0123456789abcdef" for character in value)
     )
+
+
+class AnthropicProvisioningRequired(RuntimeError):
+    """The adapter is registered locally but lacks approved provisioning proof."""
+
+    code = "BACKEND_PROVISIONING_REQUIRED"
+
+
+class AnthropicBackend:
+    """Bind one validated Anthropic Message response to the runner boundary."""
+
+    def __init__(
+        self,
+        configuration: object,
+        *,
+        transport: StdlibAnthropicTransport | None = None,
+        credential_reader: Callable[[str], str | None] | None = None,
+    ):
+        # This import intentionally remains local: admission imports fixed constants
+        # from this module, while adapter construction consumes its compiled record.
+        from .anthropic_admission import AnthropicBackendConfiguration
+
+        if type(configuration) is not AnthropicBackendConfiguration:
+            raise ValueError("Anthropic backend configuration is invalid")
+        self._configuration = configuration
+        self._transport = transport if transport is not None else StdlibAnthropicTransport()
+        if not callable(getattr(self._transport, "post", None)):
+            raise ValueError("Anthropic transport must provide post")
+        self._credential_reader = credential_reader if credential_reader is not None else os.environ.get
+        if not callable(self._credential_reader):
+            raise ValueError("Anthropic credential reader must be callable")
+        self._is_test_double = transport is not None or credential_reader is not None
+        self._descriptor = _descriptor_for_boundary(
+            configuration.descriptor,
+            is_test_double=self._is_test_double,
+        )
+
+    def describe(self) -> BackendDescriptor:
+        """Return the immutable descriptor without credential or transport I/O."""
+
+        return self._descriptor
+
+    def invoke(
+        self,
+        request_bytes: bytes,
+        *,
+        timeout_seconds: int,
+    ) -> BackendResponse:
+        """Make the one permitted call and translate its closed response contract."""
+
+        _validate_timeout(timeout_seconds)
+        from .anthropic_admission import AnthropicProvisioningStatus
+
+        if self._configuration.provisioning_status is not AnthropicProvisioningStatus.READY_FOR_PREFLIGHT:
+            raise AnthropicProvisioningRequired("Anthropic backend provisioning is required")
+        projection = project_anthropic_request(request_bytes)
+        api_key = self._credential_reader(ANTHROPIC_CREDENTIAL_SOURCE)
+        if not isinstance(api_key, str) or not api_key:
+            raise BackendInvocationError("NO_RESPONSE", "Anthropic API credential is unavailable")
+        transport_response = self._transport.post(
+            projection.provider_body,
+            api_key=api_key,
+            timeout_seconds=timeout_seconds,
+        )
+        envelope, request_id, workspace_id = _validate_anthropic_http_response(
+            transport_response,
+            expected_workspace_sha256=self._configuration.expected_anthropic_workspace_id_sha256,
+        )
+        text, content_block_types = _validate_message_envelope(envelope)
+        metadata = {
+            "schema_version": "joewrks.anthropic-response-event/1.0",
+            "http_body_byte_count": len(transport_response.body),
+            "http_body_sha256": sha256_bytes(transport_response.body),
+            "message_id": envelope["id"],
+            "model": envelope["model"],
+            "stop_reason": envelope["stop_reason"],
+            "content_block_types": content_block_types,
+            "usage": _normalized_usage(envelope["usage"]),
+            "inference_geo": "us",
+            "provider_request_body_sha256": projection.provider_body_sha256,
+            "provider_request_id_sha256": sha256_bytes(request_id.encode("utf-8", errors="strict")),
+            "anthropic_workspace_id_sha256": sha256_bytes(workspace_id.encode("utf-8", errors="strict")),
+        }
+        return BackendResponse(
+            raw_bytes=text.encode("utf-8", errors="strict"),
+            provider_request_id=request_id,
+            request_sha256=projection.canonical_request_sha256,
+            reviewer_id=projection.reviewer_id,
+            review_run_id=projection.review_run_id,
+            context_id=projection.context_id,
+            backend_identity_sha256=backend_identity_sha256(self._descriptor.identity),
+            response_count=1,
+            continuation_id=None,
+            previous_response_id=None,
+            events=(BackendEvent("RESPONSE", hash_evidence_record(metadata)),),
+        )
+
+
+def _descriptor_for_boundary(
+    descriptor: BackendDescriptor,
+    *,
+    is_test_double: bool,
+) -> BackendDescriptor:
+    if not is_test_double:
+        return descriptor
+    return replace(
+        descriptor,
+        identity=replace(descriptor.identity, is_test_double=True),
+        observations=tuple(
+            replace(observation, classification=CapabilityClass.UNTESTED)
+            for observation in descriptor.observations
+        ),
+    )
+
+
+def _validate_timeout(timeout_seconds: object) -> None:
+    if (
+        isinstance(timeout_seconds, bool)
+        or not isinstance(timeout_seconds, int)
+        or timeout_seconds <= 0
+    ):
+        raise ValueError("Anthropic timeout_seconds must be a positive integer")
+
+
+def _validate_anthropic_http_response(
+    response: object,
+    *,
+    expected_workspace_sha256: object,
+) -> tuple[dict[str, object], str, str]:
+    if type(response) is not AnthropicHttpResponse or response.status != 200:
+        _response_failure()
+    if type(response.headers) is not tuple or type(response.body) is not bytes:
+        _response_failure()
+    request_id, workspace_id = _required_response_headers(response.headers)
+    try:
+        workspace_digest = sha256_bytes(workspace_id.encode("utf-8", errors="strict"))
+    except UnicodeError:
+        _response_failure()
+    if not _is_sha256(expected_workspace_sha256) or workspace_digest != expected_workspace_sha256:
+        _response_failure()
+    return _parse_anthropic_envelope(response.body), request_id, workspace_id
+
+
+def _required_response_headers(headers: tuple[tuple[str, str], ...]) -> tuple[str, str]:
+    found: dict[str, list[str]] = {"request-id": [], "anthropic-workspace-id": []}
+    for header in headers:
+        if type(header) is not tuple or len(header) != 2:
+            _response_failure()
+        name, value = header
+        if not isinstance(name, str) or not isinstance(value, str):
+            _response_failure()
+        normalized_name = name.lower()
+        if normalized_name in found:
+            found[normalized_name].append(value)
+    if any(len(values) != 1 for values in found.values()):
+        _response_failure()
+    request_id = found["request-id"][0]
+    workspace_id = found["anthropic-workspace-id"][0]
+    if (
+        not request_id
+        or request_id != request_id.strip()
+        or not workspace_id
+        or workspace_id != workspace_id.strip()
+    ):
+        _response_failure()
+    try:
+        request_id.encode("utf-8", errors="strict")
+        workspace_id.encode("utf-8", errors="strict")
+    except UnicodeError:
+        _response_failure()
+    return request_id, workspace_id
+
+
+def _parse_anthropic_envelope(body: bytes) -> dict[str, object]:
+    try:
+        document = json.loads(
+            body.decode("utf-8", errors="strict"),
+            object_pairs_hook=_reject_duplicate_keys,
+            parse_constant=_reject_non_json_number,
+            parse_float=_reject_non_json_number,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
+        _response_failure()
+    if type(document) is not dict:
+        _response_failure()
+    return document
+
+
+def _validate_message_envelope(envelope: dict[str, object]) -> tuple[str, list[str]]:
+    expected_keys = {"id", "type", "role", "content", "model", "stop_reason", "stop_sequence", "usage"}
+    if set(envelope) != expected_keys:
+        _response_failure()
+    if (
+        not _is_identifier(envelope["id"])
+        or envelope["type"] != "message"
+        or envelope["role"] != "assistant"
+        or envelope["model"] != ANTHROPIC_MODEL
+        or envelope["stop_reason"] != "end_turn"
+        or envelope["stop_sequence"] is not None
+        or type(envelope["content"]) is not list
+    ):
+        _response_failure()
+    text: str | None = None
+    content_block_types: list[str] = []
+    content = envelope["content"]
+    for index, block in enumerate(content):
+        if type(block) is not dict or not isinstance(block.get("type"), str):
+            _response_failure()
+        block_type = block["type"]
+        content_block_types.append(block_type)
+        if block_type == "text":
+            if set(block) != {"type", "text"} or not isinstance(block["text"], str):
+                _response_failure()
+            if text is not None or index != len(content) - 1:
+                _response_failure()
+            text = block["text"]
+        elif block_type == "thinking":
+            if (
+                not {"type", "thinking"}.issubset(block)
+                or not set(block).issubset({"type", "thinking", "signature"})
+                or not isinstance(block["thinking"], str)
+                or ("signature" in block and not isinstance(block["signature"], str))
+            ):
+                _response_failure()
+        elif block_type == "redacted_thinking":
+            if set(block) != {"type", "data"} or not isinstance(block["data"], str):
+                _response_failure()
+        else:
+            _response_failure()
+    if text is None:
+        _response_failure()
+    return text, content_block_types
+
+
+def _normalized_usage(usage: object) -> dict[str, object]:
+    allowed = {
+        "input_tokens",
+        "output_tokens",
+        "service_tier",
+        "inference_geo",
+        "cache_creation_input_tokens",
+        "cache_read_input_tokens",
+    }
+    required = {"input_tokens", "output_tokens", "service_tier", "inference_geo"}
+    if type(usage) is not dict or not required.issubset(usage) or not set(usage).issubset(allowed):
+        _response_failure()
+    if usage["service_tier"] != "standard" or usage["inference_geo"] != "us":
+        _response_failure()
+    normalized: dict[str, object] = {}
+    for key in ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"):
+        if key in usage:
+            if type(usage[key]) is not int or usage[key] < 0:
+                _response_failure()
+            normalized[key] = usage[key]
+    normalized["service_tier"] = "standard"
+    normalized["inference_geo"] = "us"
+    return normalized
+
+
+def _response_failure() -> None:
+    raise BackendInvocationError("NO_RESPONSE", "Anthropic API response did not satisfy the closed contract")
