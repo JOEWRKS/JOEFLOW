@@ -599,6 +599,93 @@ class ReviewerRunnerAnthropicOfflineTests(unittest.TestCase):
         ):
             self.assertIs(observed, original)
 
+        owner_barrier = audit._AnthropicOfflineBarrier()
+        owner_barrier.__enter__()
+        owner_thread_id = threading.get_ident()
+        waiter_attempting = threading.Event()
+        waiter_entered = threading.Event()
+        release_waiter = threading.Event()
+        waiter_errors: list[BaseException] = []
+
+        def waiter():
+            try:
+                waiter_attempting.set()
+                with audit._AnthropicOfflineBarrier():
+                    waiter_entered.set()
+                    if not release_waiter.wait(5):
+                        raise AssertionError("tamper waiter release was not signaled")
+            except BaseException as error:
+                waiter_errors.append(error)
+                waiter_entered.set()
+
+        waiter_thread = threading.Thread(
+            target=waiter,
+            name="task7-offline-tamper-waiter",
+            daemon=True,
+        )
+        counterfeit_owner = object()
+        owner_tamper_error = None
+        waiter_woke_without_test_cleanup = False
+        globals_after_tampered_exit = None
+        try:
+            waiter_thread.start()
+            self.assertTrue(waiter_attempting.wait(5))
+            self.assertFalse(waiter_entered.wait(0.25))
+            with audit._ANTHROPIC_OFFLINE_CONDITION:
+                audit._ANTHROPIC_OFFLINE_ACTIVE_OWNER = counterfeit_owner
+                audit._ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID = owner_thread_id + 1
+            try:
+                owner_barrier.__exit__(None, None, None)
+            except BaseException as error:
+                owner_tamper_error = error
+            globals_after_tampered_exit = _offline_globals()
+            waiter_woke_without_test_cleanup = waiter_entered.wait(0.5)
+        finally:
+            if not waiter_woke_without_test_cleanup:
+                with audit._ANTHROPIC_OFFLINE_CONDITION:
+                    if audit._ANTHROPIC_OFFLINE_ACTIVE_OWNER is counterfeit_owner:
+                        audit._ANTHROPIC_OFFLINE_ACTIVE_OWNER = None
+                    if audit._ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID == owner_thread_id + 1:
+                        audit._ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID = None
+                    if (
+                        getattr(audit, "_ANTHROPIC_OFFLINE_ACTIVE_CONTEXT", None)
+                        is owner_barrier
+                    ):
+                        audit._ANTHROPIC_OFFLINE_ACTIVE_CONTEXT = None
+                    audit._ANTHROPIC_OFFLINE_CONDITION.notify_all()
+            self.assertTrue(waiter_entered.wait(5))
+            release_waiter.set()
+            waiter_thread.join(5)
+            _restore_offline_globals(concurrent_originals)
+
+        self.assertFalse(waiter_thread.is_alive())
+        self.assertEqual(waiter_errors, [])
+        self.assertIsInstance(owner_tamper_error, RuntimeError)
+        self.assertRegex(str(owner_tamper_error), "ownership")
+        self.assertTrue(waiter_woke_without_test_cleanup)
+        for observed, original in zip(
+            globals_after_tampered_exit, concurrent_originals, strict=True
+        ):
+            self.assertIs(observed, original)
+        with audit._ANTHROPIC_OFFLINE_CONDITION:
+            self.assertIsNone(audit._ANTHROPIC_OFFLINE_ACTIVE_OWNER)
+            self.assertIsNone(audit._ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID)
+
+        legitimate_owner = audit._AnthropicOfflineBarrier()
+        intruder = audit._AnthropicOfflineBarrier()
+        with legitimate_owner:
+            with audit._ANTHROPIC_OFFLINE_CONDITION:
+                legitimate_token = audit._ANTHROPIC_OFFLINE_ACTIVE_OWNER
+                legitimate_thread = audit._ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID
+            self.assertFalse(intruder._release_ownership())
+            with audit._ANTHROPIC_OFFLINE_CONDITION:
+                self.assertIs(audit._ANTHROPIC_OFFLINE_ACTIVE_OWNER, legitimate_token)
+                self.assertEqual(
+                    audit._ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID,
+                    legitimate_thread,
+                )
+        self.assertEqual(guard(ROOT, self.revision)["overall"], "PASS")
+
     def test_unexpected_real_named_credential_never_triggers_integration_execution(self):
         guard = self.require_guard()
         environment = _CountingEnvironment("ANTHROPIC_API_KEY", "offline-fake-key")
@@ -789,6 +876,20 @@ class ReviewerRunnerAnthropicOfflineTests(unittest.TestCase):
             request_alias()
             request_alias()
 """
+        direct_plus_method_alias = direct_request + """\
+            send_again = connection.request
+            send_again(
+                "POST",
+                ANTHROPIC_PATH,
+                body=body,
+                headers={
+                    "anthropic-version": ANTHROPIC_API_VERSION,
+                    "connection": "close",
+                    "content-type": "application/json",
+                    "x-api-key": api_key,
+                },
+            )
+"""
         with _temporary_runner_repository() as repository:
             source_path = (
                 repository
@@ -806,6 +907,9 @@ class ReviewerRunnerAnthropicOfflineTests(unittest.TestCase):
                 ),
                 "repeated-aliased-local-helper": original_source.replace(
                     direct_request, repeated_aliased_helper
+                ),
+                "direct-plus-method-alias": original_source.replace(
+                    direct_request, direct_plus_method_alias
                 ),
             }
             for label, source in adversarial_sources.items():
@@ -875,21 +979,50 @@ class AnthropicBackend:
 REGISTERED_PRODUCTION_ADAPTERS = (AnthropicBackend(),)
 __all__ = ("REGISTERED_PRODUCTION_ADAPTERS",)
 """
+        mutated_export_registration = """\
+from . import anthropic as _anthropic_module
+from .anthropic import AnthropicBackend as _VerifiedAnthropicBackend
+from .anthropic_admission import (
+    build_anthropic_backend_configuration,
+    unprovisioned_anthropic_admission,
+)
+
+
+class AnthropicBackend:
+    def __init__(self):
+        self._delegate = _VerifiedAnthropicBackend(
+            build_anthropic_backend_configuration(unprovisioned_anthropic_admission())
+        )
+
+    def describe(self):
+        return self._delegate.describe()
+
+
+_anthropic_module.AnthropicBackend = AnthropicBackend
+REGISTERED_PRODUCTION_ADAPTERS = (AnthropicBackend(),)
+__all__ = ("REGISTERED_PRODUCTION_ADAPTERS",)
+"""
         with _temporary_runner_repository() as repository:
-            revision = _commit_provider_registration(
-                repository,
-                counterfeit_registration,
-                "counterfeit AnthropicBackend registration",
-            )
-            with patch.object(
-                audit,
-                "_SKILL_ROOT",
-                repository / "skills" / "joewrks-product-definition",
-            ):
-                with self.assertRaisesRegex(
-                    RuntimeError, "exact verified AnthropicBackend"
-                ):
-                    self.require_guard()(repository, revision)
+            registrations = {
+                "counterfeit-class": counterfeit_registration,
+                "mutated-sibling-export": mutated_export_registration,
+            }
+            for label, registration in registrations.items():
+                revision = _commit_provider_registration(
+                    repository,
+                    registration,
+                    label,
+                )
+                with self.subTest(registration=label):
+                    with patch.object(
+                        audit,
+                        "_SKILL_ROOT",
+                        repository / "skills" / "joewrks-product-definition",
+                    ):
+                        with self.assertRaisesRegex(
+                            RuntimeError, "exact verified AnthropicBackend"
+                        ):
+                            self.require_guard()(repository, revision)
 
     def test_no_provider_call_exists_in_unit_test_or_audit_entry_points(self):
         guard = self.require_guard()

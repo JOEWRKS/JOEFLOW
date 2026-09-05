@@ -133,6 +133,7 @@ class _ForbiddenEnvironmentAccess:
 
 
 _ANTHROPIC_OFFLINE_CONDITION = threading.Condition(threading.Lock())
+_ANTHROPIC_OFFLINE_ACTIVE_CONTEXT: object | None = None
 _ANTHROPIC_OFFLINE_ACTIVE_OWNER: object | None = None
 _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID: int | None = None
 
@@ -181,6 +182,7 @@ class _AnthropicOfflineBarrier:
         ) = originals
 
     def _claim_ownership(self) -> None:
+        global _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT
         global _ANTHROPIC_OFFLINE_ACTIVE_OWNER
         global _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID
 
@@ -188,27 +190,34 @@ class _AnthropicOfflineBarrier:
         with _ANTHROPIC_OFFLINE_CONDITION:
             if _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID == thread_id:
                 raise RuntimeError("Anthropic offline guard reentrant ownership is prohibited")
-            while _ANTHROPIC_OFFLINE_ACTIVE_OWNER is not None:
+            while _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT is not None:
                 _ANTHROPIC_OFFLINE_CONDITION.wait()
                 if _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID == thread_id:
                     raise RuntimeError(
                         "Anthropic offline guard reentrant ownership is prohibited"
                     )
+            _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT = self
             _ANTHROPIC_OFFLINE_ACTIVE_OWNER = self._owner_token
             _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID = thread_id
             self._owner_thread_id = thread_id
 
     def _release_ownership(self) -> bool:
+        global _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT
         global _ANTHROPIC_OFFLINE_ACTIVE_OWNER
         global _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID
 
         with _ANTHROPIC_OFFLINE_CONDITION:
-            if _ANTHROPIC_OFFLINE_ACTIVE_OWNER is not self._owner_token:
+            if _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT is not self:
                 return False
+            exact_owner = (
+                _ANTHROPIC_OFFLINE_ACTIVE_OWNER is self._owner_token
+                and _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID == self._owner_thread_id
+            )
+            _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT = None
             _ANTHROPIC_OFFLINE_ACTIVE_OWNER = None
             _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID = None
             _ANTHROPIC_OFFLINE_CONDITION.notify_all()
-            return True
+            return exact_owner
 
     def __enter__(self):
         if self._entered:
@@ -247,7 +256,8 @@ class _AnthropicOfflineBarrier:
             raise RuntimeError("Anthropic offline guard barrier was not entered")
         with _ANTHROPIC_OFFLINE_CONDITION:
             ownership_mismatch = (
-                _ANTHROPIC_OFFLINE_ACTIVE_OWNER is not self._owner_token
+                _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT is not self
+                or _ANTHROPIC_OFFLINE_ACTIVE_OWNER is not self._owner_token
                 or _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID != self._owner_thread_id
                 or threading.get_ident() != self._owner_thread_id
             )
@@ -484,15 +494,20 @@ def _verify_runner_source_binding(
 
 
 class _SnapshotSourceLoader(importlib.machinery.SourceFileLoader):
-    def __init__(self, fullname: str, source: bytes, filename: Path):
+    def __init__(self, fullname: str, source: bytes, filename: Path, on_exec):
         super().__init__(fullname, str(filename))
         self._source = source
         self._filename = filename
+        self._on_exec = on_exec
 
     def exec_module(self, module) -> None:
         module.__file__ = str(self._filename)
         code = compile(self._source, str(self._filename), "exec", dont_inherit=True)
         exec(code, module.__dict__)
+        on_exec = self._on_exec
+        self._on_exec = None
+        if on_exec is not None:
+            on_exec(self.name, module)
 
 
 class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
@@ -505,6 +520,23 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         self._package_name = package_name
         self._repository = repository
         self._snapshot = snapshot
+        self._anthropic_module_executed = False
+        self._verified_anthropic_backend_type = None
+
+    def _capture_verified_export(self, fullname: str, module) -> None:
+        if fullname != f"{self._package_name}.providers.anthropic":
+            return
+        if self._anthropic_module_executed:
+            raise RuntimeError("verified AnthropicBackend export was captured twice")
+        self._anthropic_module_executed = True
+        exported_type = module.__dict__.get("AnthropicBackend")
+        self._verified_anthropic_backend_type = exported_type
+
+    def verified_anthropic_backend_type(self):
+        exported_type = self._verified_anthropic_backend_type
+        if not isinstance(exported_type, type):
+            raise RuntimeError("verified AnthropicBackend export was not captured")
+        return exported_type
 
     def find_spec(self, fullname, path=None, target=None):
         if (
@@ -525,7 +557,9 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         if source is None:
             raise RuntimeError("verified runner source snapshot is incomplete")
         filename = self._repository.joinpath(*PurePosixPath(relative_source).parts)
-        loader = _SnapshotSourceLoader(fullname, source, filename)
+        loader = _SnapshotSourceLoader(
+            fullname, source, filename, self._capture_verified_export
+        )
         return importlib.util.spec_from_loader(
             fullname,
             loader,
@@ -707,15 +741,8 @@ def _load_verified_snapshot_registration(
         registered = getattr(providers_module, "REGISTERED_PRODUCTION_ADAPTERS", None)
         if type(registered) is not tuple:
             raise RuntimeError("verified provider registration is not an immutable tuple")
-        anthropic_module = sys.modules.get(
-            f"{package_name}.providers.anthropic"
-        )
-        expected_backend_type = (
-            getattr(anthropic_module, "AnthropicBackend", None)
-            if anthropic_module is not None
-            else None
-        )
-        if not isinstance(expected_backend_type, type) or any(
+        expected_backend_type = finder.verified_anthropic_backend_type()
+        if any(
             type(adapter) is not expected_backend_type for adapter in registered
         ):
             raise RuntimeError(
@@ -966,6 +993,11 @@ def _anthropic_transport_request_policy(snapshot: dict[str, bytes]) -> str:
         and node.func.value.id == "connection"
         and node.func.attr == "request"
     )
+    request_references = tuple(
+        node
+        for node in ast.walk(post_method)
+        if isinstance(node, ast.Attribute) and node.attr == "request"
+    )
     request_has_repeating_ancestor = False
     if len(request_calls) == 1:
         ancestor = parents.get(request_calls[0])
@@ -1039,13 +1071,37 @@ def _anthropic_transport_request_policy(snapshot: dict[str, bytes]) -> str:
             )
         )
     )
+    reflective_request_calls = tuple(
+        node
+        for node in ast.walk(post_method)
+        if isinstance(node, ast.Call)
+        and (
+            (
+                isinstance(node.func, ast.Name)
+                and node.func.id == "getattr"
+                and len(node.args) >= 2
+                and isinstance(node.args[1], ast.Constant)
+                and node.args[1].value == "request"
+            )
+            or (
+                isinstance(node.func, ast.Attribute)
+                and node.func.attr == "__getattribute__"
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and node.args[0].value == "request"
+            )
+        )
+    )
     if (
         len(request_calls) != 1
+        or len(request_references) != 1
+        or request_references[0] is not request_calls[0].func
         or request_has_repeating_ancestor
         or prohibited_control_flow
         or retry_calls
         or recursive_post_calls
         or reflective_post_calls
+        or reflective_request_calls
     ):
         raise RuntimeError(
             "Anthropic transport does not prove one request with zero retries"
