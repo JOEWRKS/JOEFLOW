@@ -4,6 +4,7 @@ import os
 import socket
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -147,14 +148,117 @@ class ReviewerRunnerAnthropicRegistrationTests(unittest.TestCase):
             hasattr(audit, "_load_verified_snapshot_registration"),
             "Task 5 verified registration loader is missing",
         )
-        baseline_revision = audit.IMPLEMENTATION_BASE_REVISION
+        historical_revision = "0b754bdc2502be35a7f657275f17fe117e8c49bd"
+        snapshot = audit._verify_runner_source_binding(ROOT, historical_revision)
+        self.assertNotIn(
+            "skills/joewrks-product-definition/reviewer_runner/providers/__init__.py",
+            snapshot,
+        )
         registered = audit._load_verified_snapshot_registration(
             ROOT.resolve(),
-            baseline_revision,
-            {},
+            historical_revision,
+            snapshot,
         )
 
         self.assertEqual(registered, ())
+
+    def test_current_provider_revision_rejects_empty_or_partial_snapshot(self):
+        import audit_reviewer_runner as audit
+
+        snapshot = audit._verify_runner_source_binding(ROOT, self.revision)
+        registration_source = (
+            "skills/joewrks-product-definition/reviewer_runner/providers/__init__.py"
+        )
+        for incomplete_snapshot in (
+            {},
+            {registration_source: snapshot[registration_source]},
+        ):
+            with self.subTest(snapshot=tuple(incomplete_snapshot)):
+                with self.assertRaisesRegex(RuntimeError, "provider source snapshot"):
+                    audit._load_verified_snapshot_registration(
+                        ROOT.resolve(),
+                        self.revision,
+                        incomplete_snapshot,
+                    )
+
+    def test_absolute_public_runner_import_from_verified_provider_fails_and_restores_modules(self):
+        import audit_reviewer_runner as audit
+
+        importlib.import_module("reviewer_runner.controller")
+        original_public_modules = {
+            name: module
+            for name, module in sys.modules.items()
+            if name == "reviewer_runner" or name.startswith("reviewer_runner.")
+        }
+        source_root = "skills/joewrks-product-definition/reviewer_runner"
+        fixture_sources = {
+            f"{source_root}/__init__.py": b"",
+            f"{source_root}/identity.py": b"",
+            f"{source_root}/backend.py": b"",
+            f"{source_root}/request.py": b"",
+            f"{source_root}/providers/__init__.py": (
+                b"from .. import backend, identity, request\n"
+                b"from . import anthropic, anthropic_admission\n"
+                b"import reviewer_runner.controller\n"
+                b"REGISTERED_PRODUCTION_ADAPTERS = ()\n"
+            ),
+            f"{source_root}/providers/anthropic.py": b"",
+            f"{source_root}/providers/anthropic_admission.py": b"",
+        }
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                repository = Path(directory)
+                for relative_source, source in fixture_sources.items():
+                    target = repository.joinpath(*relative_source.split("/"))
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(source)
+                for arguments in (
+                    ("init", "-q"),
+                    ("config", "user.email", "snapshot-test@example.invalid"),
+                    ("config", "user.name", "snapshot-test"),
+                    ("add", "."),
+                    ("commit", "-qm", "absolute public import fixture"),
+                ):
+                    subprocess.run(
+                        ["git", "-C", str(repository), *arguments],
+                        check=True,
+                        capture_output=True,
+                    )
+                revision = subprocess.run(
+                    ["git", "-C", str(repository), "rev-parse", "HEAD"],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                ).stdout.strip()
+                snapshot = {
+                    relative_source: subprocess.run(
+                        ["git", "-C", str(repository), "show", f"{revision}:{relative_source}"],
+                        check=True,
+                        capture_output=True,
+                    ).stdout
+                    for relative_source in fixture_sources
+                }
+
+                with self.assertRaisesRegex(RuntimeError, "absolute public import"):
+                    audit._load_verified_snapshot_registration(
+                        repository,
+                        revision,
+                        snapshot,
+                    )
+
+            restored_public_modules = {
+                name: module
+                for name, module in sys.modules.items()
+                if name == "reviewer_runner" or name.startswith("reviewer_runner.")
+            }
+            self.assertEqual(set(restored_public_modules), set(original_public_modules))
+            for name, module in original_public_modules.items():
+                self.assertIs(restored_public_modules[name], module)
+        finally:
+            for name in tuple(sys.modules):
+                if name == "reviewer_runner" or name.startswith("reviewer_runner."):
+                    sys.modules.pop(name, None)
+            sys.modules.update(original_public_modules)
 
     def test_injected_transport_registration_cannot_count_as_authoritative(self):
         import audit_reviewer_runner as audit

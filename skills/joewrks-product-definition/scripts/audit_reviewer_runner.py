@@ -32,6 +32,7 @@ IMPLEMENTATION_BASE_REVISION = "71ffc0a66618c11e2fe08a442df5fd2d67718f7b"
 BACKEND_KIND = "STATELESS_TOOLLESS_EXTERNAL_INFERENCE"
 REGISTERED_PRODUCTION_ADAPTERS: tuple[object, ...] = ()
 RUNNER_SOURCE_PATH = "skills/joewrks-product-definition/reviewer_runner"
+_PUBLIC_RUNNER_PACKAGE_NAME = "reviewer_runner"
 
 _SNAPSHOT_MODULE_SOURCES = {
     "": f"{RUNNER_SOURCE_PATH}/__init__.py",
@@ -281,6 +282,11 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         self._snapshot = snapshot
 
     def find_spec(self, fullname, path=None, target=None):
+        if (
+            fullname == _PUBLIC_RUNNER_PACKAGE_NAME
+            or fullname.startswith(f"{_PUBLIC_RUNNER_PACKAGE_NAME}.")
+        ):
+            raise RuntimeError("verified runner attempted an absolute public import")
         if fullname == self._package_name:
             suffix = ""
         elif fullname.startswith(f"{self._package_name}."):
@@ -316,6 +322,32 @@ def _remove_private_runner_modules(package_name: str) -> None:
         sys.modules.pop(name, None)
 
 
+def _stash_public_runner_modules() -> dict[str, object]:
+    """Remove public runner modules so snapshot imports cannot reuse them."""
+
+    names = tuple(
+        name
+        for name in sys.modules
+        if (
+            name == _PUBLIC_RUNNER_PACKAGE_NAME
+            or name.startswith(f"{_PUBLIC_RUNNER_PACKAGE_NAME}.")
+        )
+    )
+    return {name: sys.modules.pop(name) for name in names}
+
+
+def _restore_public_runner_modules(stashed_modules: dict[str, object]) -> None:
+    """Discard public modules introduced during loading and restore caller state."""
+
+    for name in tuple(sys.modules):
+        if (
+            name == _PUBLIC_RUNNER_PACKAGE_NAME
+            or name.startswith(f"{_PUBLIC_RUNNER_PACKAGE_NAME}.")
+        ):
+            sys.modules.pop(name, None)
+    sys.modules.update(stashed_modules)
+
+
 def _verify_snapshot_module(
     module,
     *,
@@ -346,6 +378,7 @@ def _load_verified_runner_api(
 ):
     package_name = f"_audit_verified_reviewer_runner_{revision}"
     finder = None
+    stashed_public_modules = _stash_public_runner_modules()
     try:
         if _private_runner_module_names(package_name):
             raise RuntimeError("verified runner module namespace collision")
@@ -380,6 +413,7 @@ def _load_verified_runner_api(
         if finder is not None and finder in sys.meta_path:
             sys.meta_path.remove(finder)
         _remove_private_runner_modules(package_name)
+        _restore_public_runner_modules(stashed_public_modules)
 
 
 def _load_verified_snapshot_registration(
@@ -390,8 +424,15 @@ def _load_verified_snapshot_registration(
     """Load only the revision-bound provider registration for audit tests."""
 
     registration_source = _SNAPSHOT_MODULE_SOURCES[".providers"]
-    if registration_source not in snapshot:
+    revision_inventory = _runner_revision_blob_map(repository, revision)
+    registration_commitment = revision_inventory.get(registration_source)
+    registration_bytes = snapshot.get(registration_source)
+    if registration_commitment is None:
+        if registration_bytes is not None:
+            raise RuntimeError("verified provider source snapshot disagrees with revision")
         return ()
+    if registration_bytes is None:
+        raise RuntimeError("verified provider source snapshot is incomplete")
 
     required_sources = (
         _SNAPSHOT_MODULE_SOURCES[""],
@@ -402,7 +443,6 @@ def _load_verified_snapshot_registration(
         _SNAPSHOT_MODULE_SOURCES[".providers.anthropic"],
         _SNAPSHOT_MODULE_SOURCES[".providers.anthropic_admission"],
     )
-    revision_inventory = _runner_revision_blob_map(repository, revision)
     for relative_source in required_sources:
         source = snapshot.get(relative_source)
         commitment = revision_inventory.get(relative_source)
@@ -414,6 +454,7 @@ def _load_verified_snapshot_registration(
 
     package_name = f"_audit_verified_reviewer_runner_{revision}"
     finder = None
+    stashed_public_modules = _stash_public_runner_modules()
     try:
         if _private_runner_module_names(package_name):
             raise RuntimeError("verified runner module namespace collision")
@@ -446,6 +487,7 @@ def _load_verified_snapshot_registration(
         if finder is not None and finder in sys.meta_path:
             sys.meta_path.remove(finder)
         _remove_private_runner_modules(package_name)
+        _restore_public_runner_modules(stashed_public_modules)
 
 
 def _rehydrate_backend_descriptor(descriptor, identity_module, backend_module):
