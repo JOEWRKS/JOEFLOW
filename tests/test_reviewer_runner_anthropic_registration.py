@@ -45,8 +45,37 @@ class ReviewerRunnerAnthropicRegistrationTests(unittest.TestCase):
     def setUpClass(cls):
         cls.revision = _git("rev-parse", "HEAD")
 
+    def setUp(self):
+        self._prior_provider_modules = {
+            name: module for name, module in sys.modules.items()
+            if name == "reviewer_runner.providers" or name.startswith("reviewer_runner.providers.")
+        }
+        self._provider_parent = sys.modules.get("reviewer_runner")
+        self._missing_provider_attribute = object()
+        self._prior_provider_attribute = (
+            vars(self._provider_parent).get("providers", self._missing_provider_attribute)
+            if self._provider_parent is not None else self._missing_provider_attribute
+        )
+
     def tearDown(self):
         self._remove_live_provider_modules()
+        sys.modules.update(self._prior_provider_modules)
+        if self._provider_parent is not None:
+            if self._prior_provider_attribute is self._missing_provider_attribute:
+                vars(self._provider_parent).pop("providers", None)
+            else:
+                self._provider_parent.providers = self._prior_provider_attribute
+            self.assertIs(
+                vars(self._provider_parent).get("providers", self._missing_provider_attribute),
+                self._prior_provider_attribute,
+            )
+        restored = {
+            name: module for name, module in sys.modules.items()
+            if name == "reviewer_runner.providers" or name.startswith("reviewer_runner.providers.")
+        }
+        self.assertEqual(set(restored), set(self._prior_provider_modules))
+        for name, module in self._prior_provider_modules.items():
+            self.assertIs(restored[name], module)
 
     @staticmethod
     def _remove_live_provider_modules() -> None:
