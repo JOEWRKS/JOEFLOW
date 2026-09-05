@@ -1,3 +1,4 @@
+import http.client
 import inspect
 import socket
 import ssl
@@ -96,13 +97,20 @@ class ReviewerRunnerAnthropicTransportTests(unittest.TestCase):
         factory = _FakeConnectionFactory(connection)
         return transport_type(test_only_connection_factory=factory), factory
 
-    def _post(self, connection, *, body=b'{"request":true}', timeout_seconds=7):
+    def _post(
+        self,
+        connection,
+        *,
+        body=b'{"request":true}',
+        api_key="test-only-anthropic-key",
+        timeout_seconds=7,
+    ):
         transport, factory = self._transport(connection)
         if transport is None:
             return None, factory
         return transport.post(
             body,
-            api_key="test-only-anthropic-key",
+            api_key=api_key,
             timeout_seconds=timeout_seconds,
         ), factory
 
@@ -247,6 +255,107 @@ class ReviewerRunnerAnthropicTransportTests(unittest.TestCase):
         self.assertEqual(raised.exception.code, "NO_RESPONSE")
         self.assertEqual(len(incomplete.request_calls), 1)
         self.assertEqual(incomplete.close_calls, 1)
+
+    def test_declared_content_length_rejects_truncation_malformed_ambiguous_and_oversized_responses(self):
+        cases = (
+            ("truncated", (("Content-Length", "3"),), b"ok", 1),
+            ("malformed", (("Content-Length", "two"),), b"ok", 0),
+            ("ambiguous", (("Content-Length", "2"), ("content-length", "2")), b"ok", 0),
+            ("oversized", (("Content-Length", "16777217"),), b"ok", 0),
+        )
+        for label, headers, body, read_calls in cases:
+            with self.subTest(label=label):
+                connection = _FakeConnection(response=_FakeResponse(headers=headers, body=body))
+                with self.assertRaises(BackendInvocationError) as raised:
+                    self._post(connection)
+                self.assertEqual(raised.exception.code, "NO_RESPONSE")
+                self.assertEqual(str(raised.exception), "Anthropic API response could not be read")
+                self.assertEqual(connection.response.read_sizes, [16_777_217] * read_calls)
+                self.assertEqual(len(connection.request_calls), 1)
+                self.assertEqual(connection.getresponse_calls, 1)
+                self.assertEqual(connection.close_calls, 1)
+
+    def test_chunked_or_unbounded_response_remains_compatible_with_stdlib_read_behavior(self):
+        for headers in ((), (("Transfer-Encoding", "chunked"),)):
+            with self.subTest(headers=headers):
+                connection = _FakeConnection(response=_FakeResponse(headers=headers, body=b'{"ok":true}'))
+                result, _ = self._post(connection)
+                self.assertEqual(result.body, b'{"ok":true}')
+                self.assertEqual(connection.response.read_sizes, [16_777_217])
+                self.assertEqual(connection.close_calls, 1)
+
+    def test_invalid_api_key_header_characters_and_request_header_errors_are_controlled(self):
+        invalid_api_key = "test-key\r\nX-Injected: value"
+        connection = _FakeConnection()
+        with self.assertRaises(BackendInvocationError) as raised:
+            self._post(connection, api_key=invalid_api_key)
+        self.assertEqual(raised.exception.code, "TRANSPORT_ERROR")
+        self.assertEqual(str(raised.exception), "Anthropic API credential is not valid for an HTTP header")
+        self.assertNotIn(invalid_api_key, str(raised.exception))
+        self.assertEqual(connection.request_calls, [])
+        self.assertEqual(connection.close_calls, 0)
+
+        for error in (
+            ValueError("test-key header failure"),
+            UnicodeEncodeError("latin-1", "\u2603", 0, 1, "ordinal not in range"),
+        ):
+            with self.subTest(error=type(error).__name__):
+                connection = _FakeConnection(request_error=error)
+                with self.assertRaises(BackendInvocationError) as raised:
+                    self._post(connection)
+                self.assertEqual(raised.exception.code, "TRANSPORT_ERROR")
+                self.assertEqual(str(raised.exception), "Anthropic API transport failed")
+                self.assertNotIn("test-key", str(raised.exception))
+                self.assertEqual(len(connection.request_calls), 1)
+                self.assertEqual(connection.close_calls, 1)
+
+    def test_stdlib_request_serialization_adds_content_length_for_the_production_call_shape(self):
+        body = b'{"exact":true}'
+
+        class CapturingSocket:
+            def __init__(self):
+                self.sent = bytearray()
+                self.closed = False
+
+            def sendall(self, data):
+                self.sent.extend(data)
+
+            def close(self):
+                self.closed = True
+
+        class CapturingHttpConnection(http.client.HTTPConnection):
+            def __init__(self):
+                super().__init__("not-a-real-host", port=443, timeout=7)
+                self.capture = CapturingSocket()
+
+            def connect(self):
+                self.sock = self.capture
+
+            def getresponse(self):
+                return _FakeResponse()
+
+        connection = CapturingHttpConnection()
+        original_getaddrinfo = socket.getaddrinfo
+
+        def no_dns(*args, **kwargs):
+            raise AssertionError("stdlib serialization must not resolve DNS")
+
+        socket.getaddrinfo = no_dns
+        try:
+            result, _ = self._post(connection, body=body)
+        finally:
+            socket.getaddrinfo = original_getaddrinfo
+
+        self.assertEqual(result.body, b"{}")
+        header_bytes, separator, serialized_body = bytes(connection.capture.sent).partition(b"\r\n\r\n")
+        self.assertEqual(separator, b"\r\n\r\n")
+        self.assertEqual(serialized_body, body)
+        header_lines = header_bytes.decode("ascii").split("\r\n")[1:]
+        content_length_lines = [
+            line for line in header_lines if line.lower().startswith("content-length:")
+        ]
+        self.assertEqual(content_length_lines, [f"Content-Length: {len(body)}"])
+        self.assertTrue(connection.capture.closed)
 
     def test_proxy_environment_is_not_consulted_and_caller_url_is_impossible(self):
         transport_type = self.require_transport()

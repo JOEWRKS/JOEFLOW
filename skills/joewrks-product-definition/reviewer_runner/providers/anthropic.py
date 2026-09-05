@@ -116,6 +116,10 @@ class StdlibAnthropicTransport:
             raise ValueError("Anthropic request body must be exact bytes")
         if not isinstance(api_key, str) or not api_key:
             raise ValueError("Anthropic API key must be a non-empty string")
+        if any(ord(character) < 32 or ord(character) == 127 or ord(character) > 255 for character in api_key):
+            raise BackendInvocationError(
+                "TRANSPORT_ERROR", "Anthropic API credential is not valid for an HTTP header"
+            )
         if (
             isinstance(timeout_seconds, bool)
             or not isinstance(timeout_seconds, int)
@@ -158,21 +162,37 @@ class StdlibAnthropicTransport:
                 raise BackendInvocationError(
                     "NO_RESPONSE", "Anthropic API returned a non-success response"
                 )
+            response_headers = tuple(response.getheaders())
+            declared_content_length = _declared_content_length(response_headers)
+            if (
+                declared_content_length is not None
+                and declared_content_length > ANTHROPIC_MAX_RESPONSE_BYTES
+            ):
+                raise BackendInvocationError(
+                    "NO_RESPONSE", "Anthropic API response could not be read"
+                )
             response_body = response.read(ANTHROPIC_MAX_RESPONSE_BYTES + 1)
             if len(response_body) > ANTHROPIC_MAX_RESPONSE_BYTES:
                 raise BackendInvocationError(
                     "NO_RESPONSE", "Anthropic API response exceeded the configured size limit"
                 )
+            if (
+                declared_content_length is not None
+                and len(response_body) != declared_content_length
+            ):
+                raise BackendInvocationError(
+                    "NO_RESPONSE", "Anthropic API response could not be read"
+                )
             return AnthropicHttpResponse(
                 status=response.status,
-                headers=tuple(response.getheaders()),
+                headers=response_headers,
                 body=response_body,
             )
         except BackendInvocationError:
             raise
         except (socket.timeout, TimeoutError):
             raise BackendInvocationError("TIMEOUT", "Anthropic API request timed out") from None
-        except (OSError, EOFError, ssl.SSLError, http.client.HTTPException):
+        except (OSError, EOFError, ssl.SSLError, http.client.HTTPException, ValueError, UnicodeError):
             if response_exists:
                 raise BackendInvocationError(
                     "NO_RESPONSE", "Anthropic API response could not be read"
@@ -186,6 +206,29 @@ class StdlibAnthropicTransport:
                     connection.close()
                 except Exception:
                     pass
+
+
+def _declared_content_length(headers: tuple[tuple[str, str], ...]) -> int | None:
+    """Return one valid Content-Length, rejecting ambiguous response framing."""
+
+    content_lengths: list[str] = []
+    transfer_encoding_present = False
+    for name, value in headers:
+        if not isinstance(name, str) or not isinstance(value, str):
+            raise BackendInvocationError("NO_RESPONSE", "Anthropic API response could not be read")
+        normalized_name = name.lower()
+        if normalized_name == "content-length":
+            content_lengths.append(value)
+        elif normalized_name == "transfer-encoding":
+            transfer_encoding_present = True
+    if not content_lengths:
+        return None
+    if len(content_lengths) != 1 or transfer_encoding_present:
+        raise BackendInvocationError("NO_RESPONSE", "Anthropic API response could not be read")
+    declared = content_lengths[0]
+    if not declared or any(character < "0" or character > "9" for character in declared):
+        raise BackendInvocationError("NO_RESPONSE", "Anthropic API response could not be read")
+    return int(declared)
 
 
 def anthropic_settings_record() -> dict[str, object]:
