@@ -38,6 +38,9 @@ IMPLEMENTATION_BASE_REVISION = "71ffc0a66618c11e2fe08a442df5fd2d67718f7b"
 BACKEND_KIND = "STATELESS_TOOLLESS_EXTERNAL_INFERENCE"
 RUNNER_SOURCE_PATH = "skills/joewrks-product-definition/reviewer_runner"
 _PUBLIC_RUNNER_PACKAGE_NAME = "reviewer_runner"
+_APPROVED_ANTHROPIC_TRANSPORT_POST_AST_SHA256 = (
+    "c87697941dc1440f821288e1b4dec51a8ed4933dc20597f713f7c1d5e81a9ff7"
+)
 
 _SNAPSHOT_MODULE_SOURCES = {
     "": f"{RUNNER_SOURCE_PATH}/__init__.py",
@@ -979,6 +982,18 @@ def _anthropic_transport_request_policy(snapshot: dict[str, bytes]) -> str:
     if len(post_methods) != 1 or isinstance(post_methods[0], ast.AsyncFunctionDef):
         raise RuntimeError("Anthropic transport post definition is not exact")
     post_method = post_methods[0]
+    post_shape = ast.dump(
+        post_method,
+        annotate_fields=True,
+        include_attributes=False,
+    ).encode("utf-8")
+    if (
+        hashlib.sha256(post_shape).hexdigest()
+        != _APPROVED_ANTHROPIC_TRANSPORT_POST_AST_SHA256
+    ):
+        raise RuntimeError(
+            "Anthropic transport does not prove one request with zero retries"
+        )
     parents = {
         child: parent
         for parent in ast.walk(post_method)

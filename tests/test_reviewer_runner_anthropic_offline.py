@@ -890,6 +890,34 @@ class ReviewerRunnerAnthropicOfflineTests(unittest.TestCase):
                 },
             )
 """
+        direct_plus_computed_getattr = direct_request + """\
+            send_again = getattr(connection, "re" + "quest")
+            send_again(
+                "POST",
+                ANTHROPIC_PATH,
+                body=body,
+                headers={
+                    "anthropic-version": ANTHROPIC_API_VERSION,
+                    "connection": "close",
+                    "content-type": "application/json",
+                    "x-api-key": api_key,
+                },
+            )
+"""
+        direct_plus_vars_type_lookup = direct_request + """\
+            send_again = vars(type(connection))["request"]
+            send_again(
+                "POST",
+                ANTHROPIC_PATH,
+                body=body,
+                headers={
+                    "anthropic-version": ANTHROPIC_API_VERSION,
+                    "connection": "close",
+                    "content-type": "application/json",
+                    "x-api-key": api_key,
+                },
+            )
+"""
         with _temporary_runner_repository() as repository:
             source_path = (
                 repository
@@ -910,6 +938,12 @@ class ReviewerRunnerAnthropicOfflineTests(unittest.TestCase):
                 ),
                 "direct-plus-method-alias": original_source.replace(
                     direct_request, direct_plus_method_alias
+                ),
+                "direct-plus-computed-getattr": original_source.replace(
+                    direct_request, direct_plus_computed_getattr
+                ),
+                "direct-plus-vars-type-lookup": original_source.replace(
+                    direct_request, direct_plus_vars_type_lookup
                 ),
             }
             for label, source in adversarial_sources.items():
