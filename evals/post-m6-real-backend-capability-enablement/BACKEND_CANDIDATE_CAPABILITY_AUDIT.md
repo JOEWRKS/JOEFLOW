@@ -105,6 +105,12 @@ historical package-size class and inert bytes.
 - `UNTESTED` — provider token count. The planning band of approximately
   107,000–214,000 tokens assumes two to four ASCII bytes per token and is not a
   tokenizer result.
+- `DOCUMENTED` — Sonnet 5 current standard pricing is $2/MTok input and
+  $10/MTok output (A5/A10); US-only inference is a separate 1.1x multiplier
+  (A9).
+- `UNTESTED` — exact charge. At those documented rates, the rough input-only
+  planning band is about $0.21–$0.43 at base rates and $0.24–$0.47 with US-only
+  inference. This is not a bill or tokenizer measurement.
 - `UNTESTED` — provider wire-body byte count after deterministic role
   projection. It is expected to remain far below the smallest documented HTTP
   request limit, but the exact implementation bytes must be measured.
@@ -176,8 +182,8 @@ No value was read, copied, hashed, logged, tested, or included in this audit.
 | Stored conversation absent | `DOCUMENTED` — omit conversation and set `store=false` | `DOCUMENTED` — direct Messages is stateless; do not use managed agents/containers | `DOCUMENTED` — use `generateContent`, not stateful Interactions/Live APIs |
 | Tools absent | `DOCUMENTED` — tools are attached explicitly and may be omitted | `DOCUMENTED` — `tools` is optional and only activates tools when included | `DOCUMENTED` — `tools[]` is optional |
 | Full inline text | `DOCUMENTED` — text input supported without Files API | `DOCUMENTED` — one inline user message supported | `DOCUMENTED` — inline `contents` supported |
-| Context/input capacity | `DOCUMENTED` — GPT-4.1 1,047,576 context | `DOCUMENTED` — Sonnet 5 1M context and Messages body limit 32 MB | `DOCUMENTED` — Gemini 3.6 Flash input 1,048,576 |
-| Output capacity | `DOCUMENTED` — GPT-4.1 max 32,768 tokens | `DOCUMENTED` — Sonnet 5 max 128K; design caps at 65,536 | `DOCUMENTED` — Gemini 3.6 Flash max 65,536 |
+| Context/input capacity | `DOCUMENTED` — GPT-4.1 1,047,576 context | `DOCUMENTED` — Sonnet 5 1M context and Messages body limit 32 MB | `DOCUMENTED` — Gemini 3.8 Flash input 1,048,576 |
+| Output capacity | `DOCUMENTED` — GPT-4.1 max 32,768 tokens | `DOCUMENTED` — Sonnet 5 max 128K; design caps at 65,536 | `DOCUMENTED` — Gemini 3.8 Flash max 65,536 |
 | Pinned model | `DOCUMENTED` — `gpt-4.1-2025-04-14` snapshot | `DOCUMENTED` — `claude-sonnet-5` is a canonical pinned ID | `CONTRADICTED` — reviewed docs say stable IDs usually do not change; actual `modelVersion` is output-only, not a pre-call immutable guarantee |
 | Provider request identity | `DOCUMENTED` — unique `x-request-id` header | `DOCUMENTED` — unique `request-id` header | `DOCUMENTED` — response `responseId` |
 | One raw response without follow-up | `DOCUMENTED` — one non-streaming Responses result; no prior ID required | `DOCUMENTED` — one non-streaming Message result | `DOCUMENTED` — unary `generateContent` returns the full result |
@@ -185,7 +191,7 @@ No value was read, copied, hashed, logged, tested, or included in this audit.
 | Structured output | `DOCUMENTED` — JSON schema supported with subset restrictions | `DOCUMENTED` — `output_config.format` accepts JSON schema | `DOCUMENTED` — schema output supported with subset/complexity restrictions |
 | Exact frozen schema compatibility | `UNTESTED` | `UNTESTED` | `UNTESTED` |
 | Commercial training default | `DOCUMENTED` — API data not used for training unless opted in | `DOCUMENTED` — commercial API inputs/outputs not used for training by default | `DOCUMENTED` — paid-service prompts/responses not used to improve products |
-| Retention/account posture | `ACCOUNT_EVIDENCE_REQUIRED` — standard abuse logging and ZDR/MAM status must be accepted/read back | `ACCOUNT_EVIDENCE_REQUIRED` — standard 30-day deletion/exceptions or ZDR must be accepted/read back | `ACCOUNT_EVIDENCE_REQUIRED` — paid billing, logging, features, and ZDR approval must be read back |
+| Retention/account posture | `ACCOUNT_EVIDENCE_REQUIRED` — standard abuse logging and ZDR/MAM status need exact account evidence | `ACCOUNT_EVIDENCE_REQUIRED` — standard policy/exceptions or ZDR require accepted contract/Console/admin evidence; only documented workspace fields are API-readable | `ACCOUNT_EVIDENCE_REQUIRED` — paid billing, logging, features, and ZDR approval need exact project evidence |
 | Phase-0 real behavior | `UNTESTED` | `UNTESTED` | `UNTESTED` |
 | Credential source | `UNAVAILABLE` | `UNAVAILABLE` | `UNAVAILABLE` |
 | First-target disposition | documented fallback | **recommended candidate** | not currently eligible under immutable pre-call identity gate |
@@ -212,24 +218,49 @@ All sources were retrieved on `2026-09-05`.
 | A2 | Claude API errors | https://platform.claude.com/docs/en/api/errors | 32 MB Messages request limit, error shape, unique `request-id` header |
 | A3 | Model IDs and versioning | https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions | 4.6-and-later IDs such as `claude-sonnet-5` are pinned canonical snapshots; serving infrastructure may still change |
 | A4 | Context windows | https://platform.claude.com/docs/en/build-with-claude/context-windows | Sonnet 5 1M context and 128K maximum output |
-| A5 | Pricing | https://platform.claude.com/docs/en/about-claude/pricing | Sonnet 5 price effective 2026-09-01: $3/MTok input and $15/MTok output |
+| A5 | Claude Platform release notes — August 10, 2026 | https://platform.claude.com/docs/en/release-notes/overview | Sonnet 5 $2/MTok input and $10/MTok output became standard; scheduled September 1 increase to $3/$15 did not occur |
 | A6 | Python SDK | https://platform.claude.com/docs/en/api/sdks/python | SDK request-ID access and two default retries with configurable retry count |
 | A7 | Is my data used for model training? | https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training | commercial/API input and output are not used for model training by default; opt-in/feedback exceptions |
-| A8 | How long do you store my organization's data? | https://privacy.claude.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data | API inputs/outputs deleted within 30 days with Files, ZDR agreement, usage-policy, and legal exceptions |
+| A8 | How long do you store my organization's data? | https://privacy.claude.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data | API inputs/outputs deleted within 30 days with Files, ZDR agreement, usage-policy, legal, Covered Model, and feedback exceptions |
 | A9 | Data residency | https://platform.claude.com/docs/en/manage-claude/data-residency | explicit `inference_geo` values `us`/`global`, response usage readback, workspace restrictions, and US 1.1x pricing |
+| A10 | What's new in Claude Sonnet 5 | https://platform.claude.com/docs/en/models/sonnet-5/whats-new-sonnet-5 | current model-specific $2/MTok input and $10/MTok output pricing |
+| A11 | Workspaces | https://platform.claude.com/docs/en/manage-claude/workspaces | workspace IDs, scoped-key behavior, and `anthropic-workspace-id` response binding |
+| A12 | Workspaces — Claude API Reference | https://platform.claude.com/docs/en/api/beta/organization/workspaces | Admin/Workspace API exposes workspace `id` and `data_residency` fields including allowed/default inference geos and workspace geo; separate admin authorization required |
+| A13 | API and data retention | https://platform.claude.com/docs/en/manage-claude/api-and-data-retention | organization-level ZDR, Messages feature eligibility, feature-specific retention, and current Covered Model list |
+| A14 | Authentication | https://platform.claude.com/docs/en/manage-claude/authentication | workspace-scoped keys select one workspace without a request workspace selector; multi-workspace keys require a workspace ID header |
 
 ### Google Gemini
 
 | ID | Exact source title | URL | Supported claim |
 | --- | --- | --- | --- |
 | G1 | Generating content | https://ai.google.dev/api/generate-content | unary generate request, optional tools, generation settings, output-only `modelVersion`, and unique `responseId` |
-| G2 | Gemini 3.6 Flash | https://ai.google.dev/gemini-api/docs/models/gemini-3.6-flash | 1,048,576 input limit, 65,536 output limit, text/structured-output capabilities |
+| G2 | Gemini 3.8 Flash | https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash | current stable Flash model as of 2026-09-02; 1,048,576 input limit, 65,536 output limit, text/structured-output capabilities |
 | G3 | Gemini models | https://ai.google.dev/gemini-api/docs/models | stable/latest/preview/experimental naming; latest aliases hot-swap; stable models “usually” do not change |
 | G4 | Understand and count tokens | https://ai.google.dev/gemini-api/docs/tokens | context is combined input/output and exact count-token mechanism exists |
 | G5 | Zero data retention in the Gemini Developer API | https://ai.google.dev/gemini-api/docs/zdr | paid-service training restriction, abuse logging, ZDR approval, and state/storage feature caveats |
 | G6 | Data logging and sharing | https://ai.google.dev/gemini-api/docs/logs-policy | billing-enabled project log controls, 7/14/28/55-day choices, default non-training of paid logs, opt-in sharing caveat |
-| G7 | Gemini Developer API pricing | https://ai.google.dev/gemini-api/docs/pricing | Gemini 3.6 Flash current input/output price dimensions and paid/free training distinction |
+| G7 | Gemini Developer API pricing | https://ai.google.dev/gemini-api/docs/pricing | Gemini 3.8 Flash current input/output price dimensions and paid/free training distinction |
 | G8 | Structured outputs | https://ai.google.dev/gemini-api/docs/structured-output | JSON schema mode and subset/complexity limitations |
+
+## Official Source Conflict Handling
+
+When two official provider sources conflict:
+
+1. prefer the source with the most recent explicit publication/update date;
+2. prefer a product/model-specific current page over an undated cached generic
+   page when the provider explicitly announces a newer policy;
+3. record both sources and the conflict;
+4. classify the claim `DOCUMENTED` only after resolving it; and
+5. if freshness cannot be resolved, classify it `UNTESTED` or
+   `ACCOUNT_EVIDENCE_REQUIRED` as appropriate.
+
+Applied pricing conflict: a cached generic Anthropic Pricing rendering retrieved
+from `https://platform.claude.com/docs/en/about-claude/pricing` still stated the
+previously scheduled September 1, 2026 Sonnet 5 increase to $3/$15. The
+explicitly dated 2026-08-10 release note (A5) says that increase would not occur,
+and the current Sonnet 5 model-specific page (A10) states $2/$10. A5/A10
+therefore control, the stale value is rejected, and the resolved price claim is
+`DOCUMENTED`.
 
 ## Request-state capability
 
@@ -324,7 +355,7 @@ fields. The synthetic evidence must commit the exact sanitized wire body.
 
 ### Google Gemini API
 
-- `DOCUMENTED` — Gemini 3.6 Flash supports 1,048,576 input and 65,536 output
+- `DOCUMENTED` — Gemini 3.8 Flash supports 1,048,576 input and 65,536 output
   tokens (G2).
 - `DOCUMENTED` — an official count-token endpoint exists (G4).
 - `UNTESTED` — exact token count, HTTP body limit, and account quota.
@@ -382,8 +413,8 @@ untested alternative settings identity, not a requirement.
 
 ### Google Gemini API
 
-- `DOCUMENTED` — `gemini-3.6-flash` is a stable model ID and `*-latest` aliases
-  hot-swap (G3).
+- `DOCUMENTED` — `gemini-3.8-flash` is the current stable Flash model ID and
+  `*-latest` aliases hot-swap (G3).
 - `DOCUMENTED` — stable models “usually” do not change, which is weaker than an
   immutable guarantee (G3).
 - `DOCUMENTED` — `modelVersion` is returned only in the generation response
@@ -391,6 +422,43 @@ untested alternative settings identity, not a requirement.
 - `CONTRADICTED` — current evidence does not provide the immutable pre-call
   identity required by `BackendDescriptor`; output-only discovery is too late
   for preflight freshness authorization.
+
+## Deployment/workspace identity
+
+### Anthropic pre-call contract
+
+- `ACCOUNT_EVIDENCE_REQUIRED` — before P1, a user/admin must verify the exact
+  Anthropic workspace ID and provisioning must freeze
+  `expected_anthropic_workspace_id_sha256 = SHA-256(exact UTF-8 workspace ID)`.
+- `DOCUMENTED` — workspace-scoped API keys always run in their selected
+  workspace and need no workspace selector in the inference request (A14). The
+  first adapter therefore requires a workspace-scoped `ANTHROPIC_API_KEY`; an
+  otherwise valid multi-workspace key is not eligible for this narrow adapter.
+- `UNTESTED` — the future `BackendIdentity.deployment_identity` is determined
+  before P1 from a canonical record binding provider `anthropic`, platform
+  `direct_claude_api`, expected workspace-ID SHA-256, endpoint, API version,
+  inference-geo policy, and adapter identity/version. The later implementation
+  plan must freeze the exact serialization.
+- `DOCUMENTED` — every authenticated inference response that resolves to a
+  workspace includes `anthropic-workspace-id` (A5/A11). P1 and P2 must hash its
+  exact UTF-8 value and compare it with the pre-frozen commitment.
+- `UNTESTED` — actual header presence and equality for the future workspace.
+- `CONTRADICTED` — defining deployment identity from an API-key hash or prefix,
+  credential path/name, or a workspace ID first discovered after inference.
+
+The raw workspace ID need not be stored in Git and may exist transiently only
+in controller provisioning state. The persisted runner/audit identity contains
+the commitment, not the raw ID. The returned header verifies the descriptor; it
+cannot define or mutate it after P1. A missing or mismatched header fails closed
+as `ISOLATION_CAPABILITY_UNAVAILABLE` and produces no valid capability
+observation.
+
+`INFERENCE_ADAPTER_REQUIRES_ADMIN_CREDENTIAL = NO`. The inference adapter needs
+only controller-supplied `ANTHROPIC_API_KEY`. Any Admin API use is a separate,
+optional controller/admin provisioning operation and credential boundary; it is
+outside `ToollessInferenceBackend.invoke(...)`, never sent to the model, never
+retained by the adapter, and unnecessary when equivalent PM-approved Console or
+contract evidence is available.
 
 ## Inference settings identity
 
@@ -458,13 +526,47 @@ missing.
 - `DOCUMENTED` — commercial API inputs and outputs are not used for training by
   default; feedback/explicit opt-in are exceptions (A7).
 - `DOCUMENTED` — API inputs and outputs are automatically deleted within 30
-  days, with Files API, negotiated ZDR, usage-policy enforcement, and legal
-  exceptions (A8).
+  days under the standard commercial policy, with longer-lived features,
+  agreements, usage-policy enforcement, legal obligations, Covered Models,
+  feedback, and other stated exceptions (A8/A13).
+- `DOCUMENTED` — ZDR is enabled per organization through Anthropic; each
+  organization needs separate enablement. Direct Messages is ZDR-eligible when
+  the selected model and features are eligible, while stateful and feature-
+  specific services can have different retention (A13).
+- `DOCUMENTED` — the current Covered Model list names Claude Fable 5.1, Claude
+  Mythos 5.1, Claude Fable 5, and Claude Mythos 5. It does not list
+  `claude-sonnet-5` as of the 2026-09-05 refresh (A13). This does not prove an
+  eventual account's contract, workspace override, or future list membership.
 - `DOCUMENTED` — explicit `inference_geo=us` constrains inference to US
   infrastructure and adds a 1.1x pricing multiplier (A9).
-- `ACCOUNT_EVIDENCE_REQUIRED` — actual workspace retention/ZDR agreement,
-  training/feedback opt-in, allowed inference geography, and organizational
-  acceptance.
+- `ACCOUNT_EVIDENCE_REQUIRED` — actual organization/workspace retention or ZDR
+  arrangement, contractual exceptions, commercial data-use participation,
+  feedback/privacy controls, allowed inference geography, and organizational
+  acceptance must be established through the correct evidence channel below.
+
+### Anthropic evidence channels
+
+**A. Machine-readable provider account/workspace evidence** is limited to
+officially exposed fields. The Workspace/Admin API documents workspace `id` and
+`data_residency.allowed_inference_geos`, `default_inference_geo`, and
+`workspace_geo` (A9/A12). A later authorized provisioning operation may collect
+these with separate admin capability. No retention/ZDR/training field is
+claimed as API-readable.
+
+**B. Contract, Console, or administrator evidence** is a separately frozen,
+PM/user/admin-approved provisioning record for organization ZDR, any workspace
+30-day-retention override, contractual retention exceptions, explicit
+commercial training/data-use participation, and applicable feedback/privacy
+controls. These properties are not described as API readbacks unless a future
+official endpoint exposes the exact field.
+
+**C. Runtime response evidence** is the exact
+`anthropic-workspace-id` returned by P1/P2. Its UTF-8 SHA-256 must equal the
+pre-frozen expected workspace commitment. It proves which workspace the
+inference credential resolved to, not retention or privacy configuration.
+
+The three channels are not interchangeable. PM must accept the exact
+retention/privacy provisioning evidence before a capability proof can run.
 
 ### Google Gemini API
 
@@ -508,12 +610,14 @@ Product Definition material.
 
 | Unknown | Classification | Required future evidence |
 | --- | --- | --- |
-| Usable paid account/workspace | `ACCOUNT_EVIDENCE_REQUIRED` | controller-only authenticated account readback, no secret output |
+| Usable paid account/workspace | `ACCOUNT_EVIDENCE_REQUIRED` | PM/user/admin provisioning evidence; no secret output |
+| Expected Anthropic workspace commitment | `ACCOUNT_EVIDENCE_REQUIRED` | SHA-256 of exact user/admin-verified UTF-8 workspace ID frozen before P1 |
+| Workspace identity at runtime | `UNTESTED` | every P1/P2 `anthropic-workspace-id` response header hashes to the frozen commitment |
 | Model entitlement | `ACCOUNT_EVIDENCE_REQUIRED` | exact candidate model accessible before inference |
 | Long-context quota/rate limit | `ACCOUNT_EVIDENCE_REQUIRED` | exact token count plus account quota sufficient for P1/P2 |
-| Retention mode | `ACCOUNT_EVIDENCE_REQUIRED` | PM-accepted standard policy or verified ZDR contract/configuration |
-| Training/feedback/log-sharing opt-in | `ACCOUNT_EVIDENCE_REQUIRED` | disabled/read back for the selected project/workspace |
-| Inference geography | `ACCOUNT_EVIDENCE_REQUIRED` | explicit requested geo accepted and response usage matches |
+| Retention mode | `ACCOUNT_EVIDENCE_REQUIRED` | PM-accepted contract/Console/admin record for standard policy/exceptions or verified organizational ZDR and any workspace override |
+| Training/feedback/data-use controls | `ACCOUNT_EVIDENCE_REQUIRED` | PM-accepted contract/Console/admin record; no API readback claimed without an exact endpoint field |
+| Inference geography | `ACCOUNT_EVIDENCE_REQUIRED` | documented Workspace/Admin fields or approved Console evidence plus explicit requested geo and response usage match |
 | Spend approval | `ACCOUNT_EVIDENCE_REQUIRED` | PM-approved two-call ceiling before P1 |
 | Organizational provider prohibition | `ACCOUNT_EVIDENCE_REQUIRED` | PM confirmation provider is permitted |
 
@@ -524,7 +628,7 @@ default assumption.
 
 | Candidate/transport | Classification | Narrow implementation estimate | Principal risk |
 | --- | --- | --- | --- |
-| Anthropic + standard-library HTTPS | `DOCUMENTED` provider fit / `UNTESTED` implementation | one provider module, one explicit registration, unit/transport tests, capability evidence update only after P1/P2 | response block selection, account retention proof, no-retry enforcement |
+| Anthropic + standard-library HTTPS | `DOCUMENTED` provider fit / `UNTESTED` implementation | one provider module, one explicit registration, unit/transport tests, capability evidence update only after P1/P2 | response block selection, pre-call workspace commitment/runtime header binding, account retention proof, no-retry enforcement |
 | OpenAI + standard-library HTTPS | `DOCUMENTED` provider fit / `UNTESTED` implementation | comparable one-module adapter using pinned GPT-4.1 Responses request | smaller 32,768 output ceiling; Responses storage/settings details must be explicit |
 | Gemini + standard-library HTTPS | `CONTRADICTED` identity fit | adapter otherwise appears small | stable name lacks current immutable pre-call guarantee |
 | Any official SDK | `UNAVAILABLE` locally / `DOCUMENTED` retry behavior for OpenAI and Anthropic | new pinned dependency and raw transport tests | hidden serialization/default retry/state surface |
@@ -546,9 +650,13 @@ Rationale:
 - `DOCUMENTED` — 32 MB request body, 1M context, and 128K output capacity.
 - `DOCUMENTED` — `claude-sonnet-5` is a pinned canonical model ID.
 - `DOCUMENTED` — every response carries a unique `request-id` header.
+- `DOCUMENTED` — authenticated responses identify the resolved workspace; a
+  pre-call user/admin-verified workspace commitment can be checked after every
+  response without changing the descriptor.
 - `DOCUMENTED` — explicit API version and inference geography can be bound.
 - `ACCOUNT_EVIDENCE_REQUIRED` — retention/privacy, billing, model access, quota,
-  and geo must be verified and accepted.
+  geo, and the pre-frozen expected workspace commitment must be verified and
+  accepted through their applicable evidence channels.
 - `UNTESTED` — adapter behavior and P1/P2 synthetic isolation.
 
 ### OpenAI API
@@ -593,6 +701,16 @@ Rationale:
 `SEMANTIC_REVIEW_2_1_RELIABILITY = NOT_MEASURED`
 
 `V0_4_4 = BLOCKED`
+
+Correction re-evaluation: the pricing correction changes cost planning but not
+runner fit. The pre-call workspace commitment plus per-response workspace-ID
+comparison supplies a non-secret deployment-binding path without weakening the
+existing descriptor contract. The separated privacy evidence channels provide
+a truthful provisioning path without a fictional retention API field or hidden
+adapter admin credential. Gemini 3.8 Flash retains the same weaker “usually”
+stable pre-call identity evidence. Anthropic therefore remains the preferred
+candidate with no identified runner-contract contradiction, while all real
+behavior and account gates remain `UNTESTED` or `ACCOUNT_EVIDENCE_REQUIRED`.
 
 The next task, only after PM design approval, may write an implementation plan.
 It must not infer that this candidate disposition authorizes provider

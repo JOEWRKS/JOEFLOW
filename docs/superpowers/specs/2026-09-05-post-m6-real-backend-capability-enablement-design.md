@@ -193,7 +193,7 @@ Research detail and source mapping are frozen in
 | Stateless one-shot API | Documented with Responses API when conversation and previous-response fields are omitted | Documented single-query Messages API | Documented unary `generateContent` |
 | Tools can be absent | Documented optional tools | Documented optional tools; tools activate only when included | Documented optional `tools[]` |
 | Inline, no file/RAG | Documented text input | Documented single inline user content | Documented inline `contents` |
-| Candidate capacity | GPT-4.1: 1,047,576 input context / 32,768 max output | Sonnet 5: 1M context / 128K max output; Messages request limit 32 MB | Gemini 3.6 Flash: 1,048,576 input / 65,536 output |
+| Candidate capacity | GPT-4.1: 1,047,576 input context / 32,768 max output | Sonnet 5: 1M context / 128K max output; Messages request limit 32 MB | Gemini 3.8 Flash: 1,048,576 input / 65,536 output |
 | Immutable identity | Dated `gpt-4.1-2025-04-14` snapshot documented | `claude-sonnet-5` documented as a pinned canonical ID | Stable ID documented as usually unchanged, but no equivalent immutable guarantee found; response `modelVersion` is output-only |
 | Unique provider request ID | `x-request-id` header | `request-id` header | `responseId` body field |
 | Default commercial training use | API data not used for training unless opted in | Commercial API input/output not used for training by default | Paid Service prompt/response not used to improve products |
@@ -209,6 +209,12 @@ output ceiling, a 32 MB HTTP request limit, and a unique request header.
 Provider facts were taken only from current official API, model, SDK, pricing,
 and privacy documentation retrieved on 2026-09-05. Each source is named and
 linked in the candidate audit with its supported claim.
+
+When official sources conflict because a generic page or cached rendering is
+stale, the audit applies its normative source-conflict policy: the most recent
+explicitly dated official release or current product/model-specific source
+wins, and both the conflict and resolution are recorded. An unresolved
+freshness conflict cannot support a `DOCUMENTED` claim.
 
 No inference, authentication, model-list, token-count, or account-setting call
 was made. Thus provider feature statements are `DOCUMENTED`; credential names,
@@ -237,6 +243,30 @@ serving infrastructure can change. Evidence therefore binds:
 - adapter version and canonical settings hash;
 - provider response identity and sanitized transport-envelope commitment.
 
+### Pre-call workspace and deployment commitment
+
+Before P1, controller provisioning freezes
+`expected_anthropic_workspace_id_sha256`, defined as SHA-256 over the exact
+UTF-8 bytes of the Anthropic workspace ID verified by the user or an
+administrator. The raw workspace ID need not be committed to Git. It may exist
+transiently in controller-only provisioning state for verification, but the
+persisted runner and audit identity contain only the SHA-256 commitment.
+
+The future `BackendIdentity.deployment_identity` is deterministic from a
+canonical record that binds at least:
+
+- provider `anthropic`;
+- platform `direct_claude_api`;
+- `expected_anthropic_workspace_id_sha256`;
+- endpoint and API version;
+- inference-geo policy; and
+- adapter identity and version.
+
+That record contains no API key, API-key hash or prefix, credential path, or
+credential name. Its exact name and serialization are frozen by the later
+implementation plan. The deployment identity exists before P1 and is immutable
+after P1 begins; a response can verify it but cannot define or mutate it.
+
 The identity claim covers the pinned model ID, not immutable global serving
 infrastructure. A later provider model retirement or API-version change
 invalidates freshness and requires a new capability proof.
@@ -244,19 +274,24 @@ invalidates freshness and requires a new capability proof.
 ### Fallback identities
 
 OpenAI fallback uses only `gpt-4.1-2025-04-14`, not the floating `gpt-4.1`
-alias. Google `gemini-3.6-flash` is a stable model name, but the reviewed docs
-say stable models “usually” do not change and return actual `modelVersion` only
-after inference. That is insufficient for the current descriptor's pre-call
-immutable identity gate, so Gemini is not an eligible first implementation
-target without new official evidence. No runner-interface change is authorized.
+alias. Google `gemini-3.8-flash` is the current stable Flash model, but the
+reviewed docs say stable models “usually” do not change and return actual
+`modelVersion` only after inference. That is insufficient for the current
+descriptor's pre-call immutable identity gate, so Gemini is not an eligible
+first implementation target without new official evidence. No runner-interface
+change is authorized.
 
 ## 12. Authentication boundary
 
 The future adapter accepts credentials through one controller-only environment
 source named `ANTHROPIC_API_KEY`. The value is read only at invocation time and
-placed only in the `x-api-key` HTTPS header. The canonical reviewer request and
-provider-visible role payload contain no credential, credential name, secret
-identifier, or credential path.
+placed only in the `x-api-key` HTTPS header. For the first adapter, provisioning
+must supply a key scoped to the pre-approved workspace so no raw workspace ID or
+second credential is required by `invoke()`. A key that requires a caller-
+selected workspace is not eligible for this first adapter and yields
+`BACKEND_PROVISIONING_REQUIRED`. The canonical reviewer request and provider-
+visible role payload contain no credential, credential name, secret identifier,
+or credential path.
 
 Rules:
 
@@ -267,6 +302,11 @@ Rules:
 3. Tests use an unmistakably fake value and assert it is absent from every
    receipt, request fixture, error string, and evidence artifact.
 4. No general secret manager is introduced.
+5. `INFERENCE_ADAPTER_REQUIRES_ADMIN_CREDENTIAL = NO`. An Admin API credential,
+   if separately authorized for provisioning, never enters
+   `ToollessInferenceBackend.invoke(...)`, is never sent to the model, and is
+   neither required nor retained by the adapter. Equivalent PM-approved
+   Console or contract evidence may be used instead.
 
 ## 13. Retry/streaming policy
 
@@ -358,39 +398,66 @@ compatibility is proven; it is not hidden tooling.
 ### Response translation
 
 The adapter requires HTTP 200, one Anthropic Message object, one final text
-block containing the semantic JSON, no tool-use/server-tool block, and a
-non-empty `request-id` response header. Adaptive-thinking blocks may be present
-but are not semantic output. Any refusal, truncation, malformed envelope,
-multiple text results, missing request ID, or unexpected active-content block
-fails closed.
+block containing the semantic JSON, no tool-use/server-tool block, a non-empty
+`request-id` response header, and a non-empty `anthropic-workspace-id` response
+header. It hashes the exact UTF-8 workspace-header value and requires equality
+with the pre-frozen `expected_anthropic_workspace_id_sha256`. Adaptive-thinking
+blocks may be present but are not semantic output. Any refusal, truncation,
+malformed envelope, multiple text results, missing request ID, missing or
+mismatched workspace ID, or unexpected active-content block fails closed. The
+returned workspace ID verifies the descriptor; it never retroactively defines
+or changes it.
 
 `BackendResponse.raw_bytes` is the exact UTF-8 byte sequence of the sole final
 text block, with no stripping or JSON reserialization. `provider_request_id` is
 the `request-id` header. The sole `RESPONSE` event hashes sanitized metadata:
 HTTP body byte count/hash, Message `id`, `model`, `stop_reason`, content-block
-types, usage, inference geo, request-body hash, and request-id hash. No
-authorization header is included. The event hash does not replace the runner's
-raw semantic-output freeze.
+types, usage, inference geo, request-body hash, request-id hash, and returned
+workspace-ID hash. No raw workspace ID or authorization header is included. The
+event hash does not replace the runner's raw semantic-output freeze.
 
 ## 15. Privacy/retention requirements
 
-Anthropic documents that commercial API inputs and outputs are not used for
-model training by default and are automatically deleted from its backend within
-30 days, subject to Files API, negotiated ZDR, usage-policy enforcement, and
-legal exceptions. It also documents account/workspace data-routing controls.
+Current official documentation distinguishes general policy, model/feature
+eligibility, and account-specific configuration. Commercial API input and
+output are not used for model training by default unless the customer opts in
+or supplies eligible feedback. Standard API retention is documented as deletion
+within 30 days, subject to longer-lived features, agreements, usage-policy
+enforcement, legal obligations, feedback retention, and other stated
+exceptions. ZDR is enabled per organization through Anthropic, and each
+organization needs separate enablement. Direct Messages is ZDR-eligible when
+the selected model and features are eligible; stateful services and other
+features can have different retention.
 
-That documentation is not account evidence. Before implementation is enabled:
+The current Covered Model list names Claude Fable 5.1, Claude Mythos 5.1,
+Claude Fable 5, and Claude Mythos 5. `claude-sonnet-5` is not listed as a
+Covered Model as of the 2026-09-05 source refresh. This documentation finding
+does not prove the eventual organization's contract, workspace override, ZDR
+status, or future list membership.
 
-1. PM must accept either the documented standard 30-day policy and exceptions,
-   or require a verified ZDR agreement.
-2. The actual workspace must be read back without recording secrets, confirming
-   the selected retention/privacy mode and that feedback/training opt-in is not
-   enabled.
-3. `inference_geo` is sent explicitly. The initial design chooses `us` for a
-   stable request-level geography; the later account must allow it.
-4. No Files API, prompt cache breakpoint, container, skill, search, or external
-   data feature is used.
-5. Only the synthetic probe may run before the account evidence is accepted.
+Before the adapter is enabled, evidence is separated into three channels:
+
+1. **Machine-readable provider workspace evidence.** Only fields exposed by an
+   official Workspace/Admin API may be classified this way: workspace `id`,
+   `allowed_inference_geos`, `default_inference_geo`, and `workspace_geo`. A
+   separate authorized provisioning operation may collect them. It is optional
+   when equivalent PM-approved Console evidence suffices and never makes an
+   Admin credential an inference-adapter dependency.
+2. **Contract, Console, or administrator evidence.** A separately frozen,
+   PM/user/admin-approved provisioning record covers the organization ZDR
+   arrangement, any workspace 30-day-retention override, contractual retention
+   exceptions, explicit commercial data-use participation, and applicable
+   feedback/privacy controls. None is called an API readback unless an official
+   endpoint exposing that exact property is identified.
+3. **Runtime response binding.** P1 and P2 each require
+   `anthropic-workspace-id`; SHA-256 of its exact UTF-8 value must equal the
+   pre-approved workspace commitment. This proves only which workspace the
+   credential resolved to for that response.
+
+PM must accept the exact retention/ZDR evidence channel and contents before any
+capability-proof call. `inference_geo` is sent explicitly as `us`, and the
+later workspace must allow it. No Files API, prompt-cache breakpoint, container,
+skill, search, external-data, or other stateful feature is used.
 
 If standard retention is not acceptable and ZDR cannot be verified, the
 candidate becomes `UNAVAILABLE`; the design does not silently fall back.
@@ -421,11 +488,17 @@ provider token count or usage readback for the exact inert projection and prove
 that input plus configured maximum output fit without truncation. Automatic
 truncation is forbidden.
 
-At current official pricing retrieved on 2026-09-05, Sonnet 5 is $3 per million
-input tokens and $15 per million output tokens; US-only inference is documented
-at 1.1x. The planning band's input portion is therefore roughly $0.35–$0.71 per
-full-size synthetic call before the small probe output. This is not a quote and
-must be recomputed immediately before an authorized call.
+At current official pricing retrieved on 2026-09-05, Sonnet 5 is $2 per million
+input tokens and $10 per million output tokens. Anthropic's dated 2026-08-10
+release note says this became the standard price and the previously scheduled
+September 1 increase to $3/$15 did not occur. A stale cached generic pricing
+page still exposed the superseded scheduled value; the candidate audit records
+and resolves that conflict under its source policy. US-only inference remains a
+separate 1.1x multiplier. The 107K–214K input planning band is therefore about
+$0.21–$0.43 at base rates and about $0.24–$0.47 with US-only inference, before
+the small probe output. This is neither a tokenizer measurement nor an actual
+charge; exact token count and exact cost remain `UNTESTED` and must be recomputed
+immediately before an authorized call.
 
 ## 17. Synthetic real-backend preflight
 
@@ -437,8 +510,9 @@ data, Product Definition, or prior reviewer result is included.
 
 1. The implementation branch and adapter bytes are frozen.
 2. The selected endpoint, API version, model ID, projection version, settings,
-   retention decision, workspace identity, and credential-source status are
-   read back and hash-bound without secrets.
+   pre-verified workspace commitment, and credential-source status are frozen
+   and hash-bound without secrets; retention/privacy evidence is separately
+   frozen and PM-accepted through its declared contract/Console/admin channel.
 3. Static adapter/configuration evidence supports every descriptor observation.
 4. The provider model and quota accept the exact projected token/request size.
 5. The current runner capability evidence remains unchanged until the proof
@@ -453,6 +527,8 @@ Require:
 - exact allowed nonce once in the sole JSON output;
 - all forbidden canaries absent;
 - one non-empty, previously unused `request-id`;
+- one non-empty `anthropic-workspace-id` whose exact UTF-8 SHA-256 equals the
+  pre-frozen `expected_anthropic_workspace_id_sha256`;
 - exact request/run/context/backend/settings binding;
 - no tools, retrieval, web, code, files, containers, skills, continuation, or
   conversation state in sent bytes or response events;
@@ -465,7 +541,9 @@ Require:
 P2 is a separately declared fresh synthetic run, not a retry. It uses a new
 review run, context, nonce, and provider request ID, the same frozen backend
 identity, and no previous-response field. Require P2 to contain only its nonce,
-not P1's nonce, and require both receipts to bind distinct request identities.
+not P1's nonce, require both receipts to bind distinct request identities, and
+require P2's returned workspace-ID hash to equal the same immutable pre-call
+workspace commitment used by P1.
 The existing full-preflight helper owns its fixed synthetic identity, so P2 is
 constructed with the existing public `build_canonical_request`, backend
 response validator, and evidence/receipt primitives under a separately named
@@ -487,12 +565,14 @@ capability only. It does not prove reviewer quality or reliability.
 | Condition | Required result |
 | --- | --- |
 | Credential or paid workspace absent | `BACKEND_PROVISIONING_REQUIRED`; zero inference calls |
+| Expected workspace commitment absent or not pre-verified | `BACKEND_PROVISIONING_REQUIRED`; zero inference calls |
 | Retention/privacy decision or account evidence absent | `BACKEND_PROVISIONING_REQUIRED`; zero inference calls |
 | Model resolves to a floating/unknown identity | `ISOLATION_CAPABILITY_UNAVAILABLE`; zero inference calls |
 | Model, endpoint, settings, projection, or account policy drift | freshness invalid; complete capability proof required again |
 | Request/token/output capacity insufficient | `ISOLATION_CAPABILITY_UNAVAILABLE`; no semantic splitting or continuation |
 | HTTP redirect, timeout, EOF, 4xx, 5xx, malformed response | controlled invocation failure; no automatic retry |
 | Missing/reused request ID | package/response binding failure |
+| Missing or mismatched `anthropic-workspace-id` | `ISOLATION_CAPABILITY_UNAVAILABLE`; no valid capability observation |
 | Tool, retrieval, file, container, skill, code, web, or continuation evidence | observed capability failure |
 | Multiple text responses, truncation, refusal, or invalid JSON | review output invalid; fail closed |
 | Provider docs contradict the frozen runner | `BACKEND_CONTRACT_INCOMPATIBILITY`; PM review, no runner weakening |
@@ -512,7 +592,8 @@ The adapter's only job is to:
 - validate and project exactly four inline roles;
 - make one non-streaming `POST /v1/messages` request with no retry;
 - use the frozen endpoint/model/settings identity;
-- extract one exact JSON text result and the `request-id` header;
+- extract one exact JSON text result, `request-id`, and
+  `anthropic-workspace-id`, then verify the workspace commitment;
 - return the existing `BackendResponse` with one `RESPONSE` event;
 - expose no provider framework, tools, files, retrieval, or conversation state.
 
@@ -540,12 +621,13 @@ Reasons, in selection order:
 4. largest documented output headroom of the three reviewed candidates;
 5. ample request/body context margin;
 6. simple direct HTTPS shape and explicit inference geography;
-7. privacy posture that can be evaluated as one account provisioning gate.
+7. privacy posture that can be evaluated through explicit, non-conflated
+   provisioning evidence channels.
 
 This recommendation is not a capability PASS. Remaining gates are credential
-and paid-workspace provisioning, account retention/privacy acceptance and
-readback, model/quota access, exact token count, adapter implementation review,
-and P1/P2 real synthetic evidence.
+and paid-workspace provisioning, a pre-verified workspace commitment, account
+retention/privacy evidence and acceptance, model/quota access, exact token
+count, adapter implementation review, and P1/P2 real synthetic evidence.
 
 OpenAI with direct HTTPS and pinned `gpt-4.1-2025-04-14` is the documented
 fallback. Gemini is not selected because the reviewed stable model naming does
@@ -559,13 +641,32 @@ committed or printed:
 1. a user-controlled Anthropic commercial API workspace with billing enabled;
 2. access to `claude-sonnet-5` and enough token/request quota for two full-size
    synthetic requests;
-3. an `ANTHROPIC_API_KEY` supplied to the controller process only;
-4. PM acceptance of the observed account's retention/privacy mode, or verified
-   contractual ZDR if standard retention is not accepted;
-5. permission for explicit `inference_geo = us`;
-6. a reviewed spend ceiling for the two synthetic calls;
-7. confirmation that feedback/training opt-in and provider logging features are
-   not enabled for the probe path.
+3. a workspace-scoped `ANTHROPIC_API_KEY` supplied to the controller process
+   only;
+4. a user/admin-verified
+   `expected_anthropic_workspace_id_sha256 = sha256(exact UTF-8 workspace ID)`,
+   frozen before P1 without persisting the raw ID in runner/audit identity;
+5. PM acceptance of the exact contract/Console/administrator evidence for the
+   standard-retention policy and exceptions, or verified organizational ZDR and
+   any workspace override;
+6. permission for explicit `inference_geo = us`, supported by documented
+   machine-readable Workspace/Admin fields or equivalent approved Console
+   evidence;
+7. a reviewed spend ceiling for the two synthetic calls; and
+8. separately frozen evidence of applicable commercial data-use and
+   feedback/privacy controls without claiming an undocumented API readback.
+
+During both P1 and P2, the response `anthropic-workspace-id` hash must match the
+frozen expected workspace commitment, `request-id` must be unique, and the
+exact model/result/settings bindings must pass. The response header verifies
+the pre-call identity and can never replace or mutate it.
+
+`INFERENCE_ADAPTER_REQUIRES_ADMIN_CREDENTIAL = NO`. A separately authorized
+Admin API provisioning operation may read documented workspace fields, but it
+is outside `invoke()`, uses a separate credential boundary, is not sent to the
+model or retained by the adapter, and is unnecessary when approved Console or
+contract evidence is sufficient. This design creates no generic account-
+management subsystem.
 
 No provisioning action is performed in Phase 0. Missing any item produces
 `BACKEND_PROVISIONING_REQUIRED`.
@@ -631,6 +732,9 @@ the generic contract.
   proxies, and arbitrary headers are forbidden.
 - The API key is controller-only and is redacted by construction, not by a
   logging convention.
+- The workspace commitment is derived from the exact verified workspace ID,
+  never from an API key hash, prefix, name, or path; only the SHA-256 commitment
+  persists in runner/audit identity.
 - Request projection rejects unrecognized roles, media types, duplicate keys,
   invalid hashes, invalid UTF-8, and oversized inputs before network I/O.
 - The adapter keeps provider envelopes in memory, returns only exact semantic
@@ -669,8 +773,10 @@ would still have to be measured under separately frozen calibration authority.
 These are genuine PM/account decisions, each with a fail-closed default:
 
 1. **Retention:** accept Anthropic's documented standard commercial API
-   retention and exceptions, or require verified ZDR. Default: no real call
-   until one is explicitly accepted and observed for the workspace.
+   retention and exceptions through frozen contract/Console/administrator
+   evidence, or require verified organizational ZDR plus any applicable
+   workspace override. Default: no real call until the exact evidence is
+   explicitly accepted; no fictional API readback is allowed.
 2. **Provisioning/cost:** authorize creating or using an Anthropic paid workspace
    and funding two full-size synthetic calls. Default: no account or billing
    action.
