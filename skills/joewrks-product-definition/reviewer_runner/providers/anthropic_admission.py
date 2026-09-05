@@ -27,6 +27,8 @@ ANTHROPIC_PROVISIONING_SCHEMA_VERSION = "joewrks.anthropic-provisioning-evidence
 ANTHROPIC_ADMISSION_SCHEMA_VERSION = "joewrks.anthropic-admission-evidence/1.0"
 ANTHROPIC_CAPABILITY_EVIDENCE_SCHEMA_VERSION = "joewrks.anthropic-capability-evidence/1.0"
 ANTHROPIC_CAPACITY_SCHEMA_VERSION = "joewrks.anthropic-local-capacity-measurement/1.0"
+_CREDENTIAL_READINESS_EVIDENCE_KIND = "anthropic-credential-readiness"
+_CREDENTIAL_READINESS_EVIDENCE_SOURCE = "controller-boundary"
 
 
 class AnthropicProvisioningStatus(str, Enum):
@@ -142,6 +144,24 @@ def admission_record(evidence: AnthropicAdmissionEvidence) -> dict[str, object]:
     }
 
 
+def anthropic_credential_readiness_evidence_sha256(
+    provisioning: AnthropicProvisioningEvidence,
+) -> str:
+    """Commit fixed non-secret controller-readiness evidence for one workspace."""
+
+    _require_exact_instance(provisioning, AnthropicProvisioningEvidence, "provisioning")
+    bindings = {
+        field.name: getattr(provisioning, field.name)
+        for field in fields(AnthropicProvisioningEvidence)
+        if field.name != "credential_readiness_evidence_sha256"
+    }
+    return sha256_bytes(canonical_json_bytes({
+        "evidence_kind": _CREDENTIAL_READINESS_EVIDENCE_KIND,
+        "evidence_source": _CREDENTIAL_READINESS_EVIDENCE_SOURCE,
+        "provisioning_bindings": bindings,
+    }))
+
+
 def unprovisioned_anthropic_admission() -> AnthropicAdmissionEvidence:
     """Return the registered-production placeholder without account authority."""
 
@@ -179,9 +199,9 @@ def build_anthropic_backend_configuration(
     _validate_admission_shape(evidence)
     provisioning_hash = sha256_bytes(canonical_json_bytes(provisioning_record(evidence.provisioning)))
     admission_hash = sha256_bytes(canonical_json_bytes(admission_record(evidence)))
-    invalid = _has_invalid_or_contradictory_evidence(evidence)
+    invalid_fields = _invalid_evidence_fields(evidence)
     observations = tuple(
-        _observation(capability, method, evidence, provisioning_hash, invalid)
+        _observation(capability, method, evidence, provisioning_hash, invalid_fields)
         for capability, method in zip(REQUIRED_CAPABILITIES, _METHODS, strict=True)
     )
     status = (
@@ -232,10 +252,10 @@ def _observation(
     method: str,
     evidence: AnthropicAdmissionEvidence,
     provisioning_hash: str,
-    invalid: bool,
+    invalid_fields: frozenset[str],
 ) -> CapabilityObservation:
     dependencies = _DEPENDENCIES[capability]
-    if invalid:
+    if dependencies.intersection(invalid_fields):
         classification = CapabilityClass.OBSERVED_FAIL
     elif any(_evidence_value(evidence, dependency) is None for dependency in dependencies):
         classification = CapabilityClass.UNAVAILABLE
@@ -286,28 +306,46 @@ def _validate_admission_shape(evidence: AnthropicAdmissionEvidence) -> None:
             )
 
 
-def _has_invalid_or_contradictory_evidence(evidence: AnthropicAdmissionEvidence) -> bool:
+def _invalid_evidence_fields(evidence: AnthropicAdmissionEvidence) -> frozenset[str]:
     provisioning = evidence.provisioning
+    invalid: set[str] = set()
     if provisioning.workspace_key_scope not in (None, "WORKSPACE_SCOPED"):
-        return True
+        invalid.add("workspace_key_scope")
     if provisioning.workspace_evidence_channel not in (None, "MACHINE_READABLE", "CONSOLE_OR_ADMINISTRATOR"):
-        return True
+        invalid.add("workspace_evidence_channel")
     if provisioning.retention_privacy_evidence_channel not in (None, "CONTRACT_CONSOLE_OR_ADMINISTRATOR"):
-        return True
+        invalid.add("retention_privacy_evidence_channel")
     if provisioning.retention_privacy_approval not in (None, "STANDARD_RETENTION_ACCEPTED", "ZDR_VERIFIED"):
-        return True
-    digests = [
-        getattr(evidence, name) for name in (
+        invalid.add("retention_privacy_approval")
+    evidence_digest_names = (
             "adapter_source_manifest_sha256", "local_conformance_evidence_sha256",
             "canonical_provider_body_sha256", "provider_official_contract_sha256",
             "local_capacity_measurement_sha256",
         )
-    ] + [
-        getattr(provisioning, field.name) for field in fields(AnthropicProvisioningEvidence)
+    provisioning_digest_names = tuple(
+        field.name for field in fields(AnthropicProvisioningEvidence)
         if field.name.endswith("_sha256")
-    ]
-    present = [digest for digest in digests if digest is not None]
-    return any(not _is_sha256(digest) for digest in present) or len(present) != len(set(present))
+    )
+    named_digests = {
+        **{name: getattr(evidence, name) for name in evidence_digest_names},
+        **{name: getattr(provisioning, name) for name in provisioning_digest_names},
+    }
+    for name, digest in named_digests.items():
+        if digest is not None and not _is_sha256(digest):
+            invalid.add(name)
+    for name, digest in named_digests.items():
+        if digest is None:
+            continue
+        for other_name, other_digest in named_digests.items():
+            if name != other_name and digest == other_digest:
+                invalid.update({name, other_name})
+    credential_digest = provisioning.credential_readiness_evidence_sha256
+    if (
+        credential_digest is not None
+        and credential_digest != anthropic_credential_readiness_evidence_sha256(provisioning)
+    ):
+        invalid.add("credential_readiness_evidence_sha256")
+    return frozenset(invalid)
 
 
 def _require_exact_instance(value: object, expected: type[object], label: str) -> None:

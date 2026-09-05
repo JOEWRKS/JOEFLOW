@@ -39,10 +39,20 @@ def _provisioning(**changes):
         "capacity_and_quota_evidence_sha256": _digest("quota-evidence"),
         "spend_approval_evidence_sha256": _digest("spend-approval"),
         "provider_policy_approval_evidence_sha256": _digest("provider-policy"),
-        "credential_readiness_evidence_sha256": _digest("credential-readiness"),
+        "credential_readiness_evidence_sha256": None,
     }
     values.update(changes)
-    return admission.AnthropicProvisioningEvidence(**values)
+    evidence = admission.AnthropicProvisioningEvidence(**values)
+    if "credential_readiness_evidence_sha256" not in changes:
+        producer = getattr(admission, "anthropic_credential_readiness_evidence_sha256", None)
+        credential_evidence = (
+            producer(evidence) if producer is not None else _digest("credential-readiness")
+        )
+        return dataclasses.replace(
+            evidence,
+            credential_readiness_evidence_sha256=credential_evidence,
+        )
+    return evidence
 
 
 def _complete_evidence(**changes):
@@ -102,6 +112,28 @@ class ReviewerRunnerAnthropicAdmissionTests(unittest.TestCase):
         descriptor = module.build_anthropic_backend_configuration(_complete_evidence()).descriptor
         self.assertEqual(tuple(item.capability for item in descriptor.observations), REQUIRED_CAPABILITIES)
         self.assertEqual(len(descriptor.observations), 17)
+        self.assertEqual(
+            tuple((item.capability, item.method) for item in descriptor.observations),
+            (
+                ("stateless_fresh_request", "direct:anthropic-single-message-body"),
+                ("no_continuation_id", "direct:anthropic-no-continuation-fields"),
+                ("no_reviewer_memory", "direct:anthropic-direct-messages-stateless-contract"),
+                ("no_tools", "direct:anthropic-tool-fields-absent"),
+                ("no_retrieval", "direct:anthropic-retrieval-fields-absent"),
+                ("no_web_or_browser", "direct:anthropic-web-fields-absent"),
+                ("no_connectors_or_mcp", "direct:anthropic-connector-mcp-fields-absent"),
+                ("no_host_filesystem", "direct:anthropic-inline-text-only"),
+                ("no_code_execution", "direct:anthropic-code-execution-fields-absent"),
+                ("no_file_by_reference", "direct:anthropic-no-file-reference"),
+                ("immutable_model_or_deployment_identity", "direct:anthropic-pinned-model-workspace-commitment"),
+                ("immutable_inference_settings", "direct:anthropic-canonical-settings"),
+                ("sufficient_payload_capacity", "direct:anthropic-capacity-and-quota-record"),
+                ("exact_structured_output", "direct:anthropic-one-text-existing-json-validator"),
+                ("controller_only_authentication", "direct:anthropic-workspace-key-controller-boundary"),
+                ("accepted_retention_and_privacy", "direct:anthropic-approved-account-policy"),
+                ("request_response_commitments", "direct:anthropic-request-response-hash-binding"),
+            ),
+        )
 
     def test_every_observation_hashes_the_closed_capability_evidence_record(self):
         module = self.require_admission()
@@ -174,6 +206,8 @@ class ReviewerRunnerAnthropicAdmissionTests(unittest.TestCase):
         )
         privacy = next(item for item in configuration.descriptor.observations if item.capability == "accepted_retention_and_privacy")
         self.assertIs(privacy.classification, CapabilityClass.OBSERVED_FAIL)
+        stateless = next(item for item in configuration.descriptor.observations if item.capability == "stateless_fresh_request")
+        self.assertIs(stateless.classification, CapabilityClass.OBSERVED_PASS)
         header_configuration = module.build_anthropic_backend_configuration(
             _complete_evidence(provisioning=_provisioning(
                 retention_privacy_evidence_sha256="x-anthropic-workspace-id",
@@ -183,6 +217,30 @@ class ReviewerRunnerAnthropicAdmissionTests(unittest.TestCase):
             next(item for item in header_configuration.descriptor.observations if item.capability == "accepted_retention_and_privacy").classification,
             CapabilityClass.OBSERVED_FAIL,
         )
+
+    def test_credential_readiness_requires_the_domain_separated_non_secret_commitment(self):
+        module = self.require_admission()
+        arbitrary_digest = _digest("invented-api-key-value")
+        rejected = module.build_anthropic_backend_configuration(
+            _complete_evidence(provisioning=_provisioning(
+                credential_readiness_evidence_sha256=arbitrary_digest,
+            ))
+        )
+        authentication = next(
+            item for item in rejected.descriptor.observations
+            if item.capability == "controller_only_authentication"
+        )
+        self.assertIs(authentication.classification, CapabilityClass.OBSERVED_FAIL)
+        self.assertIs(
+            rejected.provisioning_status,
+            module.AnthropicProvisioningStatus.BACKEND_PROVISIONING_REQUIRED,
+        )
+        accepted = module.build_anthropic_backend_configuration(_complete_evidence())
+        accepted_authentication = next(
+            item for item in accepted.descriptor.observations
+            if item.capability == "controller_only_authentication"
+        )
+        self.assertIs(accepted_authentication.classification, CapabilityClass.OBSERVED_PASS)
 
     def test_api_key_value_hash_prefix_name_and_path_are_rejected_from_evidence(self):
         module = self.require_admission()
