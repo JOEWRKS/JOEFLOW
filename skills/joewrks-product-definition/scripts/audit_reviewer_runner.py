@@ -63,6 +63,14 @@ _ANTHROPIC_PROVIDER_SOURCES = (
     _SNAPSHOT_MODULE_SOURCES[".providers.anthropic"],
     _SNAPSHOT_MODULE_SOURCES[".providers.anthropic_admission"],
 )
+_APPROVED_ANTHROPIC_SOURCE_SHA256 = {
+    _SNAPSHOT_MODULE_SOURCES[".providers"]:
+        "f679e56a6d0924f55a16ae878f6d419dac1abbfe7b54a30be7af628ee2a012f4",
+    _SNAPSHOT_MODULE_SOURCES[".providers.anthropic"]:
+        "5d687e1ae6848a6aae7a2282d9c6ae1b1950ed1111c198382c4e092a9a7a3157",
+    _SNAPSHOT_MODULE_SOURCES[".providers.anthropic_admission"]:
+        "cbcc08ec853dc217d89745c7ee503dd6ce9946019afb8fe1c90b1b77afb45af3",
+}
 _EXPECTED_REQUIRED_CAPABILITIES = (
     "stateless_fresh_request",
     "no_continuation_id",
@@ -534,6 +542,8 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         self._verified_anthropic_post_code = None
         self._verified_anthropic_invoke_function = None
         self._verified_anthropic_invoke_code = None
+        self._provider_namespaces = []
+        self._provider_functions = []
         # Capture trusted dependencies before any verified provider code executes.
         # During an offline report, HTTPSConnection/environ are the owned blockers.
         self._verified_http = http
@@ -545,6 +555,30 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
     def _capture_verified_export(
         self, fullname: str, module, module_code: types.CodeType
     ) -> None:
+        if fullname in (
+            f"{self._package_name}.providers.anthropic",
+            f"{self._package_name}.providers.anthropic_admission",
+        ):
+            # Closed source is checked before execution. Retain all helper/global
+            # bindings, including imported aliases and generated class methods.
+            namespaces = [module.__dict__]
+            for value in tuple(module.__dict__.values()):
+                if isinstance(value, type) and type.__getattribute__(value, "__module__") == fullname:
+                    namespaces.append(type.__getattribute__(value, "__dict__"))
+            for namespace in namespaces:
+                self._provider_namespaces.append((namespace, dict(namespace)))
+                for value in tuple(namespace.values()):
+                    if type(value) in (staticmethod, classmethod):
+                        value = value.__func__
+                    functions = (value.fget, value.fset, value.fdel) if type(value) is property else (value,)
+                    for function in functions:
+                        if type(function) is types.FunctionType:
+                            self._provider_functions.append((
+                                function, function.__code__, function.__globals__,
+                                function.__defaults__, function.__kwdefaults__,
+                                dict(function.__kwdefaults__ or {}),
+                                tuple(cell.cell_contents for cell in function.__closure__ or ()),
+                            ))
         if fullname != f"{self._package_name}.providers.anthropic":
             return
         if self._anthropic_module_executed:
@@ -669,6 +703,26 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
             raise RuntimeError(
                 "Anthropic transport does not prove one request with zero retries"
             )
+        for source_path, expected_digest in _APPROVED_ANTHROPIC_SOURCE_SHA256.items():
+            if hashlib.sha256(self._snapshot[source_path]).hexdigest() != expected_digest:
+                raise RuntimeError("Anthropic provider source does not prove one request with zero retries")
+        for namespace, original in self._provider_namespaces:
+            if set(namespace) != set(original) or any(
+                namespace[name] is not value for name, value in original.items()
+            ):
+                raise RuntimeError("Anthropic helper binding does not prove one request with zero retries")
+        for function, code, globals_, defaults, kwdefaults, keywords, closure in self._provider_functions:
+            if (
+                function.__code__ is not code
+                or function.__globals__ is not globals_
+                or function.__defaults__ is not defaults
+                or function.__kwdefaults__ is not kwdefaults
+                or set(function.__kwdefaults__ or {}) != set(keywords)
+                or any(function.__kwdefaults__[name] is not value for name, value in keywords.items())
+                or len(function.__closure__ or ()) != len(closure)
+                or any(cell.cell_contents is not value for cell, value in zip(function.__closure__ or (), closure))
+            ):
+                raise RuntimeError("Anthropic helper callable does not prove one request with zero retries")
 
     def find_spec(self, fullname, path=None, target=None):
         if (
@@ -688,6 +742,9 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         source = self._snapshot.get(relative_source)
         if source is None:
             raise RuntimeError("verified runner source snapshot is incomplete")
+        if suffix in (".providers.anthropic", ".providers.anthropic_admission"):
+            if hashlib.sha256(source).hexdigest() != _APPROVED_ANTHROPIC_SOURCE_SHA256[relative_source]:
+                raise RuntimeError("Anthropic provider source does not prove one request with zero retries")
         filename = self._repository.joinpath(*PurePosixPath(relative_source).parts)
         loader = _SnapshotSourceLoader(
             fullname, source, filename, self._capture_verified_export

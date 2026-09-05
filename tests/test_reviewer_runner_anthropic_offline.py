@@ -1154,6 +1154,49 @@ AnthropicBackend.__getattribute__ = _intercept_invoke
                     with self.assertRaisesRegex(RuntimeError, "one request with zero retries"):
                         self.require_guard()(repository, revision)
 
+        # A helper-only change leaves invoke/post untouched but can add a request.
+        with _temporary_runner_repository() as repository:
+            provider_path = repository / "skills" / "joewrks-product-definition" / "reviewer_runner" / "providers" / "anthropic.py"
+            source = provider_path.read_text(encoding="utf-8")
+            helper_header = "def _validate_timeout(timeout_seconds: object) -> None:\n"
+            self.assertEqual(source.count(helper_header), 1)
+            revision = _commit_anthropic_source(
+                repository,
+                source.replace(helper_header, helper_header + (
+                    "    StdlibAnthropicTransport().post(b'{}', api_key='offline-fixture', timeout_seconds=1)\n"
+                )),
+                "helper-only extra transport request",
+            )
+            with self.subTest(transitive_helper="committed-timeout-extra-request"):
+                with patch.object(audit, "_SKILL_ROOT", repository / "skills" / "joewrks-product-definition"):
+                    with self.assertRaisesRegex(RuntimeError, "one request with zero retries"):
+                        self.require_guard()(repository, revision)
+
+        original_capture = audit._SnapshotSourceFinder._capture_verified_export
+        for mutation in ("replacement", "code", "defaults", "keyword-defaults"):
+            def capture_then_mutate(finder, fullname, module, code):
+                original_capture(finder, fullname, module, code)
+                if not fullname.endswith(".providers.anthropic"):
+                    return
+                helper = module._validate_timeout
+
+                def unexpected_helper(value):
+                    raise AssertionError("audit must not execute a provider helper")
+
+                if mutation == "replacement":
+                    module._validate_timeout = unexpected_helper
+                elif mutation == "code":
+                    helper.__code__ = unexpected_helper.__code__
+                elif mutation == "defaults":
+                    helper.__defaults__ = (1,)
+                else:
+                    helper.__kwdefaults__ = {"unexpected": 1}
+
+            with self.subTest(transitive_helper="post-load-" + mutation):
+                with patch.object(audit._SnapshotSourceFinder, "_capture_verified_export", capture_then_mutate):
+                    with self.assertRaisesRegex(RuntimeError, "one request with zero retries"):
+                        self.require_guard()(ROOT, self.revision)
+
     def test_test_transport_descriptor_is_ineligible_and_preflight_does_not_invoke(self):
         self.require_guard()
         from reviewer_runner.identity import CapabilityClass
