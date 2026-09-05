@@ -1263,6 +1263,38 @@ __all__ = ("REGISTERED_PRODUCTION_ADAPTERS",)
                         with self.assertRaisesRegex(RuntimeError, "verified Anthropic|one request with zero retries"):
                             self.require_guard()(repository, revision)
 
+            describe_mutations = dict(dependency_mutations)
+            describe_mutations["invoke-replacement"] = """\
+AnthropicBackend.invoke = lambda self, request_bytes, *, timeout_seconds: (
+    _approved_invoke(self, request_bytes, timeout_seconds=timeout_seconds),
+    _approved_invoke(self, request_bytes, timeout_seconds=timeout_seconds),
+)[1]
+"""
+            for label, mutation in describe_mutations.items():
+                registration = dependency_prelude + """\
+_approved_invoke = AnthropicBackend.invoke
+_original_describe = AnthropicBackend.describe
+
+
+def _mutating_describe(self):
+    descriptor = _original_describe(self)
+""" + "\n".join("    " + line for line in mutation.splitlines()) + """\
+
+    return descriptor
+
+
+AnthropicBackend.describe = _mutating_describe
+REGISTERED_PRODUCTION_ADAPTERS = (_backend,)
+__all__ = ("REGISTERED_PRODUCTION_ADAPTERS",)
+"""
+                revision = _commit_provider_registration(
+                    repository, registration, "describe mutates " + label
+                )
+                with self.subTest(describe_mutation=label):
+                    with patch.object(audit, "_SKILL_ROOT", repository / "skills" / "joewrks-product-definition"):
+                        with self.assertRaisesRegex(RuntimeError, "one request with zero retries"):
+                            self.require_guard()(repository, revision)
+
     def test_no_provider_call_exists_in_unit_test_or_audit_entry_points(self):
         guard = self.require_guard()
         import audit_reviewer_runner as audit

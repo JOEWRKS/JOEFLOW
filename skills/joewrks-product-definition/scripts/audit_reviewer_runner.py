@@ -811,6 +811,8 @@ def _load_verified_snapshot_registration(
     repository: Path,
     revision: str,
     snapshot: dict[str, bytes],
+    *,
+    binding_checks: list | None = None,
 ) -> tuple[object, ...]:
     """Load the revision-bound production registration for audit evaluation."""
 
@@ -886,6 +888,12 @@ def _load_verified_snapshot_registration(
         if anthropic_module is None:
             raise RuntimeError("verified runner source snapshot is incomplete")
         finder.verify_anthropic_transport_binding(anthropic_module, registered)
+        if binding_checks is not None:
+            # Retain this exact capture after the private import namespace closes.
+            def verify_binding():
+                finder.verify_anthropic_transport_binding(anthropic_module, registered)
+
+            binding_checks.append(verify_binding)
         return registered
     finally:
         if finder is not None and finder in sys.meta_path:
@@ -951,18 +959,29 @@ def _rehydrate_backend_descriptor(descriptor, identity_module, backend_module):
         raise ValueError("registered adapter returned an invalid descriptor") from error
 
 
+def _describe_adapter(adapter, binding_checks: tuple = ()):
+    describe = getattr(adapter, "describe", None)
+    if not callable(describe):
+        raise ValueError("registered adapter must expose describe()")
+    descriptor = describe()
+    # Describing an adapter is executable code; it cannot invalidate the proof
+    # whose production authority this descriptor is about to consume.
+    for verify_binding in binding_checks:
+        verify_binding()
+    return descriptor
+
+
 def _real_adapter_count(
     registered_adapters: Iterable[object],
     identity_module,
     backend_module,
+    *,
+    binding_checks: tuple = (),
 ) -> int:
     count = 0
     for adapter in registered_adapters:
-        describe = getattr(adapter, "describe", None)
-        if not callable(describe):
-            raise ValueError("registered adapter must expose describe()")
         descriptor = _rehydrate_backend_descriptor(
-            describe(),
+            _describe_adapter(adapter, binding_checks),
             identity_module,
             backend_module,
         )
@@ -976,16 +995,15 @@ def _verified_provider_candidate(
     registered_adapters: Iterable[object],
     identity_module,
     backend_module,
+    *,
+    binding_checks: tuple = (),
 ) -> str | None:
     """Return the one verified provider name, or None for historical revisions."""
 
     candidates: list[str] = []
     for adapter in registered_adapters:
-        describe = getattr(adapter, "describe", None)
-        if not callable(describe):
-            raise ValueError("registered adapter must expose describe()")
         descriptor = _rehydrate_backend_descriptor(
-            describe(),
+            _describe_adapter(adapter, binding_checks),
             identity_module,
             backend_module,
         )
@@ -1281,6 +1299,8 @@ def _unprovisioned_registration_classification(
     registered_adapters: Iterable[object],
     identity_module,
     backend_module,
+    *,
+    binding_checks: tuple = (),
 ) -> str:
     adapters = tuple(registered_adapters)
     if len(adapters) != 1:
@@ -1289,7 +1309,7 @@ def _unprovisioned_registration_classification(
     if type(adapter).__name__ != "AnthropicBackend":
         raise RuntimeError("Anthropic provider registration must contain AnthropicBackend")
     descriptor = _rehydrate_backend_descriptor(
-        adapter.describe(), identity_module, backend_module
+        _describe_adapter(adapter, binding_checks), identity_module, backend_module
     )
     backend_module.validate_backend_descriptor(descriptor)
     if descriptor.identity.is_test_double:
@@ -1328,11 +1348,13 @@ def build_anthropic_offline_guard_report(
         identity_module, backend_module = _load_verified_runner_api(
             repository_root, commit, snapshot
         )
+        binding_checks = []
         registration = _load_verified_snapshot_registration(
-            repository_root, commit, snapshot
+            repository_root, commit, snapshot, binding_checks=binding_checks
         )
         classification = _unprovisioned_registration_classification(
-            registration, identity_module, backend_module
+            registration, identity_module, backend_module,
+            binding_checks=tuple(binding_checks),
         )
     offline_barrier.require_no_attempts()
 
@@ -1381,10 +1403,12 @@ def build_capability_audit(
         commit,
         runner_snapshot,
     )
+    binding_checks = []
     verified_registration = _load_verified_snapshot_registration(
         repository.resolve(strict=True),
         commit,
         runner_snapshot,
+        binding_checks=binding_checks,
     )
     baseline = frozen_blob_map(repository, IMPLEMENTATION_BASE_REVISION)
     observed = frozen_blob_map(repository, commit)
@@ -1396,16 +1420,19 @@ def build_capability_audit(
             tuple(registered_adapters),
             identity_module,
             backend_module,
+            binding_checks=tuple(binding_checks),
         )
     real_adapter_count = _real_adapter_count(
         verified_registration,
         identity_module,
         backend_module,
+        binding_checks=tuple(binding_checks),
     )
     provider_candidate = _verified_provider_candidate(
         verified_registration,
         identity_module,
         backend_module,
+        binding_checks=tuple(binding_checks),
     )
     if provider_candidate is not None:
         return {
