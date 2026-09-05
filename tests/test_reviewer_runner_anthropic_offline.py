@@ -1,13 +1,18 @@
+import ast
+from contextlib import contextmanager
 import dataclasses
 import hashlib
 import http.client
 import importlib
 import inspect
+import io
 import json
 import os
+import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -34,6 +39,68 @@ def _git(*arguments: str) -> str:
     ).stdout.strip()
 
 
+def _git_at(repository: Path, *arguments: str) -> str:
+    return subprocess.run(
+        ["git", "--no-optional-locks", "-C", str(repository), *arguments],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+@contextmanager
+def _temporary_runner_repository():
+    with tempfile.TemporaryDirectory() as directory:
+        repository = Path(directory)
+        runner_target = (
+            repository / "skills" / "joewrks-product-definition" / "reviewer_runner"
+        )
+        shutil.copytree(
+            SKILL_ROOT / "reviewer_runner",
+            runner_target,
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        )
+        for arguments in (
+            ("init", "-q"),
+            ("config", "user.email", "offline-test@example.invalid"),
+            ("config", "user.name", "offline-test"),
+            ("add", "."),
+            ("commit", "-qm", "runner fixture"),
+        ):
+            _git_at(repository, *arguments)
+        yield repository
+
+
+def _commit_provider_registration(
+    repository: Path,
+    source: str,
+    message: str,
+) -> str:
+    registration_path = (
+        repository
+        / "skills"
+        / "joewrks-product-definition"
+        / "reviewer_runner"
+        / "providers"
+        / "__init__.py"
+    )
+    registration_path.write_text(source, encoding="utf-8", newline="\n")
+    _git_at(repository, "add", "--", registration_path.relative_to(repository).as_posix())
+    _git_at(repository, "commit", "-qm", message)
+    return _git_at(repository, "rev-parse", "HEAD")
+
+
+class _CapturedStdout:
+    def __init__(self):
+        self.buffer = io.BytesIO()
+
+    def write(self, value):
+        return len(value)
+
+    def flush(self):
+        pass
+
+
 class _CountingEnvironment(dict):
     def __init__(self, key: str, value: str):
         super().__init__({key: value})
@@ -41,11 +108,13 @@ class _CountingEnvironment(dict):
         self.reads: list[str] = []
 
     def __getitem__(self, key):
-        self.reads.append(key)
+        if key == self.key:
+            self.reads.append(key)
         return super().__getitem__(key)
 
     def get(self, key, default=None):
-        self.reads.append(key)
+        if key == self.key:
+            self.reads.append(key)
         return super().get(key, default)
 
 
@@ -268,6 +337,98 @@ class ReviewerRunnerAnthropicOfflineTests(unittest.TestCase):
         connection.assert_not_called()
         https.assert_not_called()
 
+        import audit_reviewer_runner as audit
+
+        system_originals = (
+            os.environ,
+            socket.getaddrinfo,
+            socket.socket,
+            socket.create_connection,
+            http.client.HTTPSConnection,
+        )
+        with _temporary_runner_repository() as repository:
+            registration_path = (
+                repository
+                / "skills"
+                / "joewrks-product-definition"
+                / "reviewer_runner"
+                / "providers"
+                / "__init__.py"
+            )
+            original_registration = registration_path.read_text(encoding="utf-8")
+            side_effects = {
+                "environment": 'import os\nos.environ.get("TASK7_OFFLINE_CANARY")\n',
+                "dns": 'import socket\nsocket.getaddrinfo("offline.invalid", 443)\n',
+                "raw-socket": "import socket\nsocket.socket()\n",
+                "create-connection": (
+                    'import socket\nsocket.create_connection(("offline.invalid", 443))\n'
+                ),
+                "https": (
+                    'import http.client\nhttp.client.HTTPSConnection("offline.invalid")\n'
+                ),
+            }
+            external_environment = _CountingEnvironment(
+                "TASK7_OFFLINE_CANARY", "present-but-inert"
+            )
+            external_dns = lambda *args, **kwargs: []
+            external_socket = lambda *args, **kwargs: object()
+            external_connection = lambda *args, **kwargs: object()
+            external_https = lambda *args, **kwargs: object()
+            with (
+                patch.object(os, "environ", external_environment),
+                patch.object(socket, "getaddrinfo", external_dns),
+                patch.object(socket, "socket", external_socket),
+                patch.object(socket, "create_connection", external_connection),
+                patch.object(http.client, "HTTPSConnection", external_https),
+            ):
+                external_originals = (
+                    os.environ,
+                    socket.getaddrinfo,
+                    socket.socket,
+                    socket.create_connection,
+                    http.client.HTTPSConnection,
+                )
+                for label, side_effect in side_effects.items():
+                    revision = _commit_provider_registration(
+                        repository,
+                        side_effect + original_registration,
+                        f"adversarial {label}",
+                    )
+                    with self.subTest(side_effect=label):
+                        with patch.object(
+                            audit,
+                            "_SKILL_ROOT",
+                            repository / "skills" / "joewrks-product-definition",
+                        ):
+                            with self.assertRaisesRegex(
+                                RuntimeError, "offline guard prohibited"
+                            ):
+                                guard(repository, revision)
+                        for observed, expected in zip(
+                            (
+                                os.environ,
+                                socket.getaddrinfo,
+                                socket.socket,
+                                socket.create_connection,
+                                http.client.HTTPSConnection,
+                            ),
+                            external_originals,
+                            strict=True,
+                        ):
+                            self.assertIs(observed, expected)
+        for observed, expected in zip(
+            (
+                os.environ,
+                socket.getaddrinfo,
+                socket.socket,
+                socket.create_connection,
+                http.client.HTTPSConnection,
+            ),
+            system_originals,
+            strict=True,
+        ):
+            self.assertIs(observed, expected)
+
     def test_unexpected_real_named_credential_never_triggers_integration_execution(self):
         guard = self.require_guard()
         environment = _CountingEnvironment("ANTHROPIC_API_KEY", "offline-fake-key")
@@ -435,22 +596,165 @@ class ReviewerRunnerAnthropicOfflineTests(unittest.TestCase):
         self.assertIsNone(result.response_sha256)
         self.assertEqual(transport.calls, [])
 
+        import audit_reviewer_runner as audit
+
+        counterfeit_registration = """\
+from .anthropic import AnthropicBackend as _VerifiedAnthropicBackend
+from .anthropic_admission import (
+    build_anthropic_backend_configuration,
+    unprovisioned_anthropic_admission,
+)
+
+
+class AnthropicBackend:
+    def __init__(self):
+        self._delegate = _VerifiedAnthropicBackend(
+            build_anthropic_backend_configuration(unprovisioned_anthropic_admission())
+        )
+
+    def describe(self):
+        return self._delegate.describe()
+
+
+REGISTERED_PRODUCTION_ADAPTERS = (AnthropicBackend(),)
+__all__ = ("REGISTERED_PRODUCTION_ADAPTERS",)
+"""
+        with _temporary_runner_repository() as repository:
+            revision = _commit_provider_registration(
+                repository,
+                counterfeit_registration,
+                "counterfeit AnthropicBackend registration",
+            )
+            with patch.object(
+                audit,
+                "_SKILL_ROOT",
+                repository / "skills" / "joewrks-product-definition",
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError, "exact verified AnthropicBackend"
+                ):
+                    self.require_guard()(repository, revision)
+
     def test_no_provider_call_exists_in_unit_test_or_audit_entry_points(self):
         guard = self.require_guard()
+        import audit_reviewer_runner as audit
+
+        environment = _CountingEnvironment("ANTHROPIC_API_KEY", "offline-fake-key")
+        captured_stdout = _CapturedStdout()
         with (
+            patch.object(os, "environ", environment),
             patch.object(socket, "getaddrinfo", side_effect=AssertionError("DNS")) as dns,
+            patch.object(socket, "socket", side_effect=AssertionError("raw socket")) as raw_socket,
             patch.object(socket, "create_connection", side_effect=AssertionError("socket")) as connection,
             patch.object(http.client, "HTTPSConnection", side_effect=AssertionError("HTTPS")) as https,
         ):
             report = guard(ROOT, self.revision)
+            capability_audit = audit.build_capability_audit(ROOT, self.revision)
+            with patch.object(sys, "stdout", captured_stdout):
+                exit_code = audit.main(
+                    [
+                        "--repository",
+                        str(ROOT),
+                        "--revision",
+                        self.revision,
+                        "--json",
+                    ]
+                )
         self.assertEqual(report["entry_points_provider_calls"], 0)
+        self.assertEqual(capability_audit["real_provider_request_count"], 0)
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(
+            json.loads(captured_stdout.buffer.getvalue()),
+            capability_audit,
+        )
+        self.assertEqual(environment.reads, [])
         dns.assert_not_called()
+        raw_socket.assert_not_called()
         connection.assert_not_called()
         https.assert_not_called()
 
+        audit_tree = ast.parse(
+            (SKILL_ROOT / "scripts" / "audit_reviewer_runner.py").read_bytes()
+        )
+        audit_entry_points = {
+            node.name: node
+            for node in audit_tree.body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name
+            in {"build_anthropic_offline_guard_report", "build_capability_audit", "main"}
+        }
+        self.assertEqual(
+            set(audit_entry_points),
+            {"build_anthropic_offline_guard_report", "build_capability_audit", "main"},
+        )
+        for name, entry_point in audit_entry_points.items():
+            with self.subTest(audit_entry_point=name):
+                calls = tuple(
+                    node for node in ast.walk(entry_point) if isinstance(node, ast.Call)
+                )
+                self.assertFalse(
+                    any(
+                        isinstance(call.func, ast.Attribute)
+                        and call.func.attr == "invoke"
+                        for call in calls
+                    )
+                )
+                self.assertFalse(
+                    any(
+                        isinstance(call.func, ast.Name)
+                        and call.func.id == "StdlibAnthropicTransport"
+                        for call in calls
+                    )
+                )
+
+        test_tree = ast.parse(Path(__file__).read_bytes())
+        for call in (
+            node for node in ast.walk(test_tree) if isinstance(node, ast.Call)
+        ):
+            called_name = (
+                call.func.id
+                if isinstance(call.func, ast.Name)
+                else call.func.attr
+                if isinstance(call.func, ast.Attribute)
+                else None
+            )
+            if called_name == "AnthropicBackend":
+                self.assertIn("transport", {keyword.arg for keyword in call.keywords})
+            if called_name == "StdlibAnthropicTransport":
+                self.assertIn(
+                    "test_only_connection_factory",
+                    {keyword.arg for keyword in call.keywords},
+                )
+
+        module_entry_points = tuple(
+            node for node in test_tree.body if isinstance(node, ast.If)
+        )
+        self.assertEqual(len(module_entry_points), 1)
+        self.assertFalse(
+            any(
+                isinstance(node, ast.Attribute) and node.attr == "invoke"
+                for node in ast.walk(module_entry_points[0])
+            )
+        )
+
     def test_required_capability_tuple_and_generic_runner_interfaces_are_unchanged(self):
         self.require_guard()
-        from reviewer_runner.backend import REQUIRED_CAPABILITIES, ToollessInferenceBackend
+        from reviewer_runner.backend import (
+            REQUIRED_CAPABILITIES,
+            BackendDescriptor,
+            BackendEvent,
+            BackendResponse,
+            CapabilityObservation,
+            ToollessInferenceBackend,
+        )
+        from reviewer_runner.identity import (
+            BackendIdentity,
+            InputCommitment,
+            ResponseIdentity,
+            RunIdentity,
+            RunnerReceipt,
+        )
+        from reviewer_runner.request import CanonicalRequest, InputArtifact
 
         expected_capabilities = (
             "stateless_fresh_request",
@@ -474,8 +778,156 @@ class ReviewerRunnerAnthropicOfflineTests(unittest.TestCase):
         report = self._report()
         self.assertEqual(report["required_capabilities_sha256"], report["expected_required_capabilities_sha256"])
         self.assertEqual(REQUIRED_CAPABILITIES, expected_capabilities)
-        self.assertEqual(tuple(inspect.signature(ToollessInferenceBackend.describe).parameters), ("self",))
-        self.assertEqual(tuple(inspect.signature(ToollessInferenceBackend.invoke).parameters), ("self", "request_bytes", "timeout_seconds"))
+
+        authority_revision = "ab95074704af0e93248d56344d6a220dfec88a93"
+        expected_blobs = {
+            "skills/joewrks-product-definition/reviewer_runner/backend.py": (
+                "100644:5c6c6883b0f27077762f9a240684ffcb6bfa369e"
+            ),
+            "skills/joewrks-product-definition/reviewer_runner/identity.py": (
+                "100644:f476b1da1d075d1495880483d40fdad2b49f1424"
+            ),
+            "skills/joewrks-product-definition/reviewer_runner/request.py": (
+                "100644:8b64bff1f2c6315b8b16d585b10886fe8585739f"
+            ),
+        }
+        source_paths = tuple(expected_blobs)
+        _git("merge-base", "--is-ancestor", authority_revision, self.revision)
+        for revision in (authority_revision, self.revision):
+            records = {}
+            for line in _git("ls-tree", "-r", revision, "--", *source_paths).splitlines():
+                metadata, path = line.split("\t", 1)
+                mode, object_type, object_id = metadata.split(" ")
+                self.assertEqual(object_type, "blob")
+                records[path] = f"{mode}:{object_id}"
+            self.assertEqual(records, expected_blobs)
+
+        describe_signature = inspect.signature(ToollessInferenceBackend.describe)
+        self.assertEqual(tuple(describe_signature.parameters), ("self",))
+        self.assertIs(
+            describe_signature.parameters["self"].kind,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        )
+        self.assertIs(
+            describe_signature.parameters["self"].default,
+            inspect.Parameter.empty,
+        )
+        self.assertIs(describe_signature.return_annotation, BackendDescriptor)
+
+        invoke_signature = inspect.signature(ToollessInferenceBackend.invoke)
+        self.assertEqual(
+            tuple(invoke_signature.parameters),
+            ("self", "request_bytes", "timeout_seconds"),
+        )
+        self.assertEqual(
+            tuple(
+                parameter.kind
+                for parameter in invoke_signature.parameters.values()
+            ),
+            (
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.KEYWORD_ONLY,
+            ),
+        )
+        self.assertTrue(
+            all(
+                parameter.default is inspect.Parameter.empty
+                for parameter in invoke_signature.parameters.values()
+            )
+        )
+        self.assertIs(invoke_signature.parameters["request_bytes"].annotation, bytes)
+        self.assertIs(invoke_signature.parameters["timeout_seconds"].annotation, int)
+        self.assertIs(invoke_signature.return_annotation, BackendResponse)
+
+        expected_dataclass_fields = {
+            RunIdentity: (
+                "semantic_review_contract_version",
+                "package_schema_version",
+                "package_digest",
+                "source_action_contract_hash",
+                "source_definition_digest",
+                "reviewer_id",
+                "review_run_id",
+                "context_id",
+                "cohort_id",
+                "case_id",
+            ),
+            BackendIdentity: (
+                "backend_kind",
+                "adapter_id",
+                "adapter_version",
+                "endpoint_identity",
+                "deployment_identity",
+                "model_revision_identity",
+                "model_identity_stability",
+                "inference_settings_sha256",
+                "retention_policy_identity",
+                "privacy_policy_identity",
+                "is_test_double",
+            ),
+            InputCommitment: ("logical_role", "media_type", "byte_count", "sha256"),
+            ResponseIdentity: (
+                "provider_request_id",
+                "request_sha256",
+                "reviewer_id",
+                "review_run_id",
+                "context_id",
+                "backend_identity_sha256",
+                "response_count",
+                "raw_response_byte_count",
+                "raw_response_sha256",
+                "parsed_output_sha256",
+            ),
+            RunnerReceipt: (
+                "state",
+                "run_identity",
+                "backend_identity",
+                "permitted_input_inventory",
+                "request_sha256",
+                "capability_preflight_sha256",
+                "isolation_receipt_sha256",
+                "response_identity",
+                "receipt_sha256",
+            ),
+            CapabilityObservation: (
+                "capability",
+                "classification",
+                "method",
+                "evidence_sha256",
+            ),
+            BackendDescriptor: ("identity", "max_request_bytes", "observations"),
+            BackendEvent: ("kind", "metadata_sha256"),
+            BackendResponse: (
+                "raw_bytes",
+                "provider_request_id",
+                "request_sha256",
+                "reviewer_id",
+                "review_run_id",
+                "context_id",
+                "backend_identity_sha256",
+                "response_count",
+                "continuation_id",
+                "previous_response_id",
+                "events",
+            ),
+            InputArtifact: ("logical_role", "media_type", "content"),
+            CanonicalRequest: ("content", "sha256", "inventory"),
+        }
+        for dataclass_type, expected_fields in expected_dataclass_fields.items():
+            with self.subTest(dataclass_type=dataclass_type.__name__):
+                fields = dataclasses.fields(dataclass_type)
+                self.assertEqual(tuple(field.name for field in fields), expected_fields)
+                self.assertTrue(dataclass_type.__dataclass_params__.frozen)
+                self.assertTrue(
+                    all(
+                        field.default is dataclasses.MISSING
+                        and field.default_factory is dataclasses.MISSING
+                        for field in fields
+                    )
+                )
+        self.assertEqual(InputArtifact.__slots__, ("logical_role", "media_type", "content"))
+        self.assertEqual(CanonicalRequest.__slots__, ("content", "sha256", "inventory"))
 
 
 if __name__ == "__main__":

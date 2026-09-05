@@ -477,8 +477,8 @@ class AnthropicBackend:
         self._transport_is_custom = transport is not None
         if not callable(getattr(self._transport, "post", None)):
             raise ValueError("Anthropic transport must provide post")
-        self._credential_reader = credential_reader if credential_reader is not None else os.environ.get
-        if not callable(self._credential_reader):
+        self._credential_reader = credential_reader
+        if self._credential_reader is not None and not callable(self._credential_reader):
             raise ValueError("Anthropic credential reader must be callable")
         self._is_test_double = transport is not None or credential_reader is not None
         self._descriptor = _descriptor_for_boundary(
@@ -506,7 +506,12 @@ class AnthropicBackend:
             raise AnthropicProvisioningRequired("Anthropic backend provisioning is required")
         projection = project_anthropic_request(request_bytes)
         try:
-            api_key = self._credential_reader(ANTHROPIC_CREDENTIAL_SOURCE)
+            credential_reader = (
+                self._credential_reader
+                if self._credential_reader is not None
+                else os.environ.get
+            )
+            api_key = credential_reader(ANTHROPIC_CREDENTIAL_SOURCE)
         except Exception:
             raise AnthropicProvisioningRequired(
                 "Anthropic credential provisioning is required"

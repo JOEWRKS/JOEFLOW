@@ -11,6 +11,7 @@ try:
     import argparse
     import ast
     import hashlib
+    import http.client
     import importlib
     import importlib.abc
     import importlib.machinery
@@ -18,6 +19,7 @@ try:
     import json
     import os
     from pathlib import Path, PurePosixPath
+    import socket
     import stat
     import subprocess
     from typing import Iterable
@@ -103,6 +105,86 @@ _ALLOWED_PROVIDER_IMPORT_ROOTS = frozenset(
         "typing",
     }
 )
+
+
+class _ForbiddenEnvironmentAccess:
+    """Reject every operation on the environment during offline verification."""
+
+    def __init__(self, prohibited):
+        object.__setattr__(self, "_prohibited", prohibited)
+
+    def __getattribute__(self, name):
+        if name == "_prohibited":
+            return object.__getattribute__(self, name)
+        return object.__getattribute__(self, "_prohibited")("environment")
+
+    def __getitem__(self, key):
+        return self._prohibited("environment")
+
+    def __iter__(self):
+        return self._prohibited("environment")
+
+    def __len__(self):
+        return self._prohibited("environment")
+
+    def __contains__(self, key):
+        return self._prohibited("environment")
+
+
+class _AnthropicOfflineBarrier:
+    """Temporarily make environment and network access fail closed."""
+
+    def __init__(self):
+        self.attempts: list[str] = []
+        self._originals: tuple[object, ...] | None = None
+
+    def _prohibited(self, kind: str, *args, **kwargs):
+        self.attempts.append(kind)
+        raise RuntimeError(
+            "Anthropic offline guard prohibited environment or network access"
+        )
+
+    def _blocker(self, kind: str):
+        def prohibit(*args, **kwargs):
+            return self._prohibited(kind, *args, **kwargs)
+
+        return prohibit
+
+    def __enter__(self):
+        if self._originals is not None:
+            raise RuntimeError("Anthropic offline guard barrier cannot be reused")
+        self._originals = (
+            os.environ,
+            socket.getaddrinfo,
+            socket.socket,
+            socket.create_connection,
+            http.client.HTTPSConnection,
+        )
+        os.environ = _ForbiddenEnvironmentAccess(self._prohibited)
+        socket.getaddrinfo = self._blocker("dns")
+        socket.socket = self._blocker("raw-socket")
+        socket.create_connection = self._blocker("socket-connection")
+        http.client.HTTPSConnection = self._blocker("https")
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> bool:
+        originals = self._originals
+        if originals is None:
+            raise RuntimeError("Anthropic offline guard barrier was not entered")
+        (
+            os.environ,
+            socket.getaddrinfo,
+            socket.socket,
+            socket.create_connection,
+            http.client.HTTPSConnection,
+        ) = originals
+        return False
+
+    def require_no_attempts(self) -> None:
+        if self.attempts:
+            raise RuntimeError(
+                "Anthropic offline guard prohibited environment or network access"
+            )
 
 FROZEN_PATHS = (
     "product-definition",
@@ -540,6 +622,20 @@ def _load_verified_snapshot_registration(
         registered = getattr(providers_module, "REGISTERED_PRODUCTION_ADAPTERS", None)
         if type(registered) is not tuple:
             raise RuntimeError("verified provider registration is not an immutable tuple")
+        anthropic_module = sys.modules.get(
+            f"{package_name}.providers.anthropic"
+        )
+        expected_backend_type = (
+            getattr(anthropic_module, "AnthropicBackend", None)
+            if anthropic_module is not None
+            else None
+        )
+        if not isinstance(expected_backend_type, type) or any(
+            type(adapter) is not expected_backend_type for adapter in registered
+        ):
+            raise RuntimeError(
+                "verified provider registration must use the exact verified AnthropicBackend"
+            )
         return registered
     finally:
         if finder is not None and finder in sys.meta_path:
@@ -746,6 +842,79 @@ def _anthropic_provider_imports(snapshot: dict[str, bytes]) -> dict[str, tuple[s
     return dict(sorted(imports.items()))
 
 
+def _anthropic_transport_request_policy(snapshot: dict[str, bytes]) -> str:
+    source_path = _SNAPSHOT_MODULE_SOURCES[".providers.anthropic"]
+    source = snapshot.get(source_path)
+    if source is None:
+        raise RuntimeError("Anthropic provider source snapshot is incomplete")
+    try:
+        tree = ast.parse(source, filename=source_path)
+    except (SyntaxError, UnicodeDecodeError) as error:
+        raise RuntimeError("Anthropic provider source cannot be parsed") from error
+    transport_classes = tuple(
+        node
+        for node in tree.body
+        if isinstance(node, ast.ClassDef) and node.name == "StdlibAnthropicTransport"
+    )
+    if len(transport_classes) != 1:
+        raise RuntimeError("Anthropic transport definition is not exact")
+    post_methods = tuple(
+        node
+        for node in transport_classes[0].body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.name == "post"
+    )
+    if len(post_methods) != 1 or isinstance(post_methods[0], ast.AsyncFunctionDef):
+        raise RuntimeError("Anthropic transport post definition is not exact")
+    post_method = post_methods[0]
+    request_calls = tuple(
+        node
+        for node in ast.walk(post_method)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "request"
+    )
+    prohibited_control_flow = tuple(
+        node
+        for node in ast.walk(post_method)
+        if isinstance(node, (ast.For, ast.AsyncFor, ast.While))
+    )
+    retry_calls = tuple(
+        node
+        for node in ast.walk(post_method)
+        if isinstance(node, ast.Call)
+        and (
+            (
+                isinstance(node.func, ast.Name)
+                and "retry" in node.func.id.lower()
+            )
+            or (
+                isinstance(node.func, ast.Attribute)
+                and "retry" in node.func.attr.lower()
+            )
+        )
+    )
+    recursive_post_calls = tuple(
+        node
+        for node in ast.walk(post_method)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "self"
+        and node.func.attr == "post"
+    )
+    if (
+        len(request_calls) != 1
+        or prohibited_control_flow
+        or retry_calls
+        or recursive_post_calls
+    ):
+        raise RuntimeError(
+            "Anthropic transport does not prove one request with zero retries"
+        )
+    return "ONE_REQUEST_ZERO_RETRIES"
+
+
 def _unprovisioned_registration_classification(
     registered_adapters: Iterable[object],
     identity_module,
@@ -789,17 +958,21 @@ def build_anthropic_offline_guard_report(
     repository = Path(repository)
     commit, tree = _commit_and_tree(repository, revision)
     snapshot = _verify_runner_source_binding(repository, commit)
-    identity_module, backend_module = _load_verified_runner_api(
-        repository.resolve(strict=True), commit, snapshot
-    )
     manifest = _anthropic_provider_manifest(repository, commit)
     imports = _anthropic_provider_imports(snapshot)
-    registration = _load_verified_snapshot_registration(
-        repository.resolve(strict=True), commit, snapshot
-    )
-    classification = _unprovisioned_registration_classification(
-        registration, identity_module, backend_module
-    )
+    request_retry_policy = _anthropic_transport_request_policy(snapshot)
+    repository_root = repository.resolve(strict=True)
+    with _AnthropicOfflineBarrier() as offline_barrier:
+        identity_module, backend_module = _load_verified_runner_api(
+            repository_root, commit, snapshot
+        )
+        registration = _load_verified_snapshot_registration(
+            repository_root, commit, snapshot
+        )
+        classification = _unprovisioned_registration_classification(
+            registration, identity_module, backend_module
+        )
+    offline_barrier.require_no_attempts()
 
     expected_capabilities_hash = _sha256_canonical_json(
         list(_EXPECTED_REQUIRED_CAPABILITIES)
@@ -825,7 +998,7 @@ def build_anthropic_offline_guard_report(
         "registered_descriptor_classification": classification,
         "import_describe_side_effects": "PASS",
         "entry_points_provider_calls": 0,
-        "request_retry_policy": "ONE_REQUEST_ZERO_RETRIES",
+        "request_retry_policy": request_retry_policy,
         "overall": "PASS",
     }
 
