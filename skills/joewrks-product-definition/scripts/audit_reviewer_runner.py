@@ -22,6 +22,7 @@ try:
     import socket
     import stat
     import subprocess
+    import threading
     from typing import Iterable
 finally:
     sys.dont_write_bytecode = _previous_dont_write_bytecode
@@ -131,12 +132,21 @@ class _ForbiddenEnvironmentAccess:
         return self._prohibited("environment")
 
 
+_ANTHROPIC_OFFLINE_CONDITION = threading.Condition(threading.Lock())
+_ANTHROPIC_OFFLINE_ACTIVE_OWNER: object | None = None
+_ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID: int | None = None
+
+
 class _AnthropicOfflineBarrier:
     """Temporarily make environment and network access fail closed."""
 
     def __init__(self):
         self.attempts: list[str] = []
         self._originals: tuple[object, ...] | None = None
+        self._installed: tuple[object, ...] | None = None
+        self._owner_token = object()
+        self._owner_thread_id: int | None = None
+        self._entered = False
 
     def _prohibited(self, kind: str, *args, **kwargs):
         self.attempts.append(kind)
@@ -150,27 +160,18 @@ class _AnthropicOfflineBarrier:
 
         return prohibit
 
-    def __enter__(self):
-        if self._originals is not None:
-            raise RuntimeError("Anthropic offline guard barrier cannot be reused")
-        self._originals = (
+    @staticmethod
+    def _current_globals() -> tuple[object, ...]:
+        return (
             os.environ,
             socket.getaddrinfo,
             socket.socket,
             socket.create_connection,
             http.client.HTTPSConnection,
         )
-        os.environ = _ForbiddenEnvironmentAccess(self._prohibited)
-        socket.getaddrinfo = self._blocker("dns")
-        socket.socket = self._blocker("raw-socket")
-        socket.create_connection = self._blocker("socket-connection")
-        http.client.HTTPSConnection = self._blocker("https")
-        return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> bool:
-        originals = self._originals
-        if originals is None:
-            raise RuntimeError("Anthropic offline guard barrier was not entered")
+    @staticmethod
+    def _restore_globals(originals: tuple[object, ...]) -> None:
         (
             os.environ,
             socket.getaddrinfo,
@@ -178,6 +179,90 @@ class _AnthropicOfflineBarrier:
             socket.create_connection,
             http.client.HTTPSConnection,
         ) = originals
+
+    def _claim_ownership(self) -> None:
+        global _ANTHROPIC_OFFLINE_ACTIVE_OWNER
+        global _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID
+
+        thread_id = threading.get_ident()
+        with _ANTHROPIC_OFFLINE_CONDITION:
+            if _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID == thread_id:
+                raise RuntimeError("Anthropic offline guard reentrant ownership is prohibited")
+            while _ANTHROPIC_OFFLINE_ACTIVE_OWNER is not None:
+                _ANTHROPIC_OFFLINE_CONDITION.wait()
+                if _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID == thread_id:
+                    raise RuntimeError(
+                        "Anthropic offline guard reentrant ownership is prohibited"
+                    )
+            _ANTHROPIC_OFFLINE_ACTIVE_OWNER = self._owner_token
+            _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID = thread_id
+            self._owner_thread_id = thread_id
+
+    def _release_ownership(self) -> bool:
+        global _ANTHROPIC_OFFLINE_ACTIVE_OWNER
+        global _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID
+
+        with _ANTHROPIC_OFFLINE_CONDITION:
+            if _ANTHROPIC_OFFLINE_ACTIVE_OWNER is not self._owner_token:
+                return False
+            _ANTHROPIC_OFFLINE_ACTIVE_OWNER = None
+            _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID = None
+            _ANTHROPIC_OFFLINE_CONDITION.notify_all()
+            return True
+
+    def __enter__(self):
+        if self._entered:
+            raise RuntimeError("Anthropic offline guard barrier cannot be reused")
+        self._entered = True
+        self._claim_ownership()
+        self._originals = self._current_globals()
+        self._installed = (
+            _ForbiddenEnvironmentAccess(self._prohibited),
+            self._blocker("dns"),
+            self._blocker("raw-socket"),
+            self._blocker("socket-connection"),
+            self._blocker("https"),
+        )
+        try:
+            self._restore_globals(self._installed)
+            if any(
+                observed is not installed
+                for observed, installed in zip(
+                    self._current_globals(), self._installed, strict=True
+                )
+            ):
+                raise RuntimeError("Anthropic offline guard ownership mismatch")
+            return self
+        except BaseException:
+            try:
+                self._restore_globals(self._originals)
+            finally:
+                self._release_ownership()
+            raise
+
+    def __exit__(self, exc_type, exc_value, traceback) -> bool:
+        originals = self._originals
+        installed = self._installed
+        if originals is None or installed is None:
+            raise RuntimeError("Anthropic offline guard barrier was not entered")
+        with _ANTHROPIC_OFFLINE_CONDITION:
+            ownership_mismatch = (
+                _ANTHROPIC_OFFLINE_ACTIVE_OWNER is not self._owner_token
+                or _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID != self._owner_thread_id
+                or threading.get_ident() != self._owner_thread_id
+            )
+        blocker_mismatch = any(
+            observed is not expected
+            for observed, expected in zip(
+                self._current_globals(), installed, strict=True
+            )
+        )
+        try:
+            self._restore_globals(originals)
+        finally:
+            released = self._release_ownership()
+        if ownership_mismatch or blocker_mismatch or not released:
+            raise RuntimeError("Anthropic offline guard ownership mismatch") from exc_value
         return False
 
     def require_no_attempts(self) -> None:
@@ -867,13 +952,43 @@ def _anthropic_transport_request_policy(snapshot: dict[str, bytes]) -> str:
     if len(post_methods) != 1 or isinstance(post_methods[0], ast.AsyncFunctionDef):
         raise RuntimeError("Anthropic transport post definition is not exact")
     post_method = post_methods[0]
+    parents = {
+        child: parent
+        for parent in ast.walk(post_method)
+        for child in ast.iter_child_nodes(parent)
+    }
     request_calls = tuple(
         node
         for node in ast.walk(post_method)
         if isinstance(node, ast.Call)
         and isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "connection"
         and node.func.attr == "request"
     )
+    request_has_repeating_ancestor = False
+    if len(request_calls) == 1:
+        ancestor = parents.get(request_calls[0])
+        while ancestor is not None and ancestor is not post_method:
+            if isinstance(
+                ancestor,
+                (
+                    ast.For,
+                    ast.AsyncFor,
+                    ast.While,
+                    ast.comprehension,
+                    ast.ListComp,
+                    ast.SetComp,
+                    ast.DictComp,
+                    ast.GeneratorExp,
+                    ast.FunctionDef,
+                    ast.AsyncFunctionDef,
+                    ast.Lambda,
+                ),
+            ):
+                request_has_repeating_ancestor = True
+                break
+            ancestor = parents.get(ancestor)
     prohibited_control_flow = tuple(
         node
         for node in ast.walk(post_method)
@@ -897,17 +1012,40 @@ def _anthropic_transport_request_policy(snapshot: dict[str, bytes]) -> str:
     recursive_post_calls = tuple(
         node
         for node in ast.walk(post_method)
+        if isinstance(node, ast.Attribute) and node.attr == "post"
+    )
+    reflective_post_calls = tuple(
+        node
+        for node in ast.walk(post_method)
         if isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Attribute)
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id == "self"
-        and node.func.attr == "post"
+        and (
+            (
+                isinstance(node.func, ast.Name)
+                and node.func.id == "getattr"
+                and len(node.args) >= 2
+                and isinstance(node.args[0], ast.Name)
+                and node.args[0].id == "self"
+                and isinstance(node.args[1], ast.Constant)
+                and node.args[1].value == "post"
+            )
+            or (
+                isinstance(node.func, ast.Attribute)
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "self"
+                and node.func.attr == "__getattribute__"
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and node.args[0].value == "post"
+            )
+        )
     )
     if (
         len(request_calls) != 1
+        or request_has_repeating_ancestor
         or prohibited_control_flow
         or retry_calls
         or recursive_post_calls
+        or reflective_post_calls
     ):
         raise RuntimeError(
             "Anthropic transport does not prove one request with zero retries"

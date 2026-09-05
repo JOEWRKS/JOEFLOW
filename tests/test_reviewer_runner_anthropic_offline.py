@@ -13,6 +13,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -88,6 +89,45 @@ def _commit_provider_registration(
     _git_at(repository, "add", "--", registration_path.relative_to(repository).as_posix())
     _git_at(repository, "commit", "-qm", message)
     return _git_at(repository, "rev-parse", "HEAD")
+
+
+def _commit_anthropic_source(
+    repository: Path,
+    source: str,
+    message: str,
+) -> str:
+    source_path = (
+        repository
+        / "skills"
+        / "joewrks-product-definition"
+        / "reviewer_runner"
+        / "providers"
+        / "anthropic.py"
+    )
+    source_path.write_text(source, encoding="utf-8", newline="\n")
+    _git_at(repository, "add", "--", source_path.relative_to(repository).as_posix())
+    _git_at(repository, "commit", "-qm", message)
+    return _git_at(repository, "rev-parse", "HEAD")
+
+
+def _offline_globals() -> tuple[object, ...]:
+    return (
+        os.environ,
+        socket.getaddrinfo,
+        socket.socket,
+        socket.create_connection,
+        http.client.HTTPSConnection,
+    )
+
+
+def _restore_offline_globals(originals: tuple[object, ...]) -> None:
+    (
+        os.environ,
+        socket.getaddrinfo,
+        socket.socket,
+        socket.create_connection,
+        http.client.HTTPSConnection,
+    ) = originals
 
 
 class _CapturedStdout:
@@ -429,6 +469,136 @@ class ReviewerRunnerAnthropicOfflineTests(unittest.TestCase):
         ):
             self.assertIs(observed, expected)
 
+        concurrent_originals = _offline_globals()
+        a_entered = threading.Event()
+        release_a = threading.Event()
+        a_exited = threading.Event()
+        b_attempting = threading.Event()
+        b_entered = threading.Event()
+        observations: dict[str, object] = {}
+        thread_errors: list[BaseException] = []
+
+        def caller_a():
+            try:
+                barrier = audit._AnthropicOfflineBarrier()
+                with barrier:
+                    observations["a_blockers"] = _offline_globals()
+                    a_entered.set()
+                    if not release_a.wait(5):
+                        raise AssertionError("caller A release was not signaled")
+                a_exited.set()
+            except BaseException as error:
+                thread_errors.append(error)
+                a_exited.set()
+
+        def caller_b():
+            try:
+                if not a_entered.wait(5):
+                    raise AssertionError("caller A never entered the barrier")
+                b_attempting.set()
+                barrier = audit._AnthropicOfflineBarrier()
+                with barrier:
+                    observations["b_originals"] = barrier._originals
+                    observations["b_blockers"] = _offline_globals()
+                    b_entered.set()
+                    if not a_exited.wait(5):
+                        raise AssertionError("caller A never exited the barrier")
+                    observations["b_owned_after_a_exit"] = all(
+                        observed is expected
+                        for observed, expected in zip(
+                            _offline_globals(),
+                            observations["b_blockers"],
+                            strict=True,
+                        )
+                    )
+            except BaseException as error:
+                thread_errors.append(error)
+                b_entered.set()
+
+        thread_a = threading.Thread(target=caller_a, name="task7-offline-a")
+        thread_b = threading.Thread(target=caller_b, name="task7-offline-b")
+        final_before_cleanup = None
+        try:
+            thread_a.start()
+            self.assertTrue(a_entered.wait(5))
+            thread_b.start()
+            self.assertTrue(b_attempting.wait(5))
+            observations["b_entered_while_a_owned"] = b_entered.wait(0.25)
+            release_a.set()
+            self.assertTrue(a_exited.wait(5))
+            self.assertTrue(b_entered.wait(5))
+            thread_a.join(5)
+            thread_b.join(5)
+            final_before_cleanup = _offline_globals()
+        finally:
+            release_a.set()
+            thread_a.join(5)
+            thread_b.join(5)
+            _restore_offline_globals(concurrent_originals)
+
+        self.assertFalse(thread_a.is_alive())
+        self.assertFalse(thread_b.is_alive())
+        self.assertEqual(thread_errors, [])
+        self.assertFalse(observations["b_entered_while_a_owned"])
+        for blockers in (observations["a_blockers"], observations["b_blockers"]):
+            for observed, original in zip(blockers, concurrent_originals, strict=True):
+                self.assertIsNot(observed, original)
+        for observed, original in zip(
+            observations["b_originals"], concurrent_originals, strict=True
+        ):
+            self.assertIs(observed, original)
+        self.assertTrue(observations["b_owned_after_a_exit"])
+        for observed, original in zip(
+            final_before_cleanup, concurrent_originals, strict=True
+        ):
+            self.assertIs(observed, original)
+        for observed, original in zip(
+            _offline_globals(), concurrent_originals, strict=True
+        ):
+            self.assertIs(observed, original)
+
+        nested_error = None
+        try:
+            with audit._AnthropicOfflineBarrier():
+                try:
+                    with audit._AnthropicOfflineBarrier():
+                        pass
+                except BaseException as error:
+                    nested_error = error
+        finally:
+            _restore_offline_globals(concurrent_originals)
+        self.assertIsInstance(nested_error, RuntimeError)
+        self.assertRegex(str(nested_error), "reentrant")
+
+        sentinel = ValueError("controlled barrier body failure")
+        propagated = None
+        try:
+            with audit._AnthropicOfflineBarrier():
+                raise sentinel
+        except BaseException as error:
+            propagated = error
+        self.assertIs(propagated, sentinel)
+        for observed, original in zip(
+            _offline_globals(), concurrent_originals, strict=True
+        ):
+            self.assertIs(observed, original)
+
+        tamper_error = None
+        try:
+            with audit._AnthropicOfflineBarrier():
+                socket.socket = object()
+        except BaseException as error:
+            tamper_error = error
+        finally:
+            tamper_restored = _offline_globals()
+            _restore_offline_globals(concurrent_originals)
+        self.assertIsInstance(tamper_error, RuntimeError)
+        self.assertRegex(str(tamper_error), "ownership")
+        for observed, original in zip(
+            tamper_restored, concurrent_originals, strict=True
+        ):
+            self.assertIs(observed, original)
+
     def test_unexpected_real_named_credential_never_triggers_integration_execution(self):
         guard = self.require_guard()
         environment = _CountingEnvironment("ANTHROPIC_API_KEY", "offline-fake-key")
@@ -569,6 +739,92 @@ class ReviewerRunnerAnthropicOfflineTests(unittest.TestCase):
                 self.assertEqual(len(connection.requests), 1)
                 self.assertEqual(connection.close_count, 1)
         self.assertEqual(self._report()["request_retry_policy"], "ONE_REQUEST_ZERO_RETRIES")
+
+        import audit_reviewer_runner as audit
+
+        direct_request = """\
+            connection.request(
+                "POST",
+                ANTHROPIC_PATH,
+                body=body,
+                headers={
+                    "anthropic-version": ANTHROPIC_API_VERSION,
+                    "connection": "close",
+                    "content-type": "application/json",
+                    "x-api-key": api_key,
+                },
+            )
+"""
+        request_in_comprehension = """\
+            [
+                connection.request(
+                    "POST",
+                    ANTHROPIC_PATH,
+                    body=body,
+                    headers={
+                        "anthropic-version": ANTHROPIC_API_VERSION,
+                        "connection": "close",
+                        "content-type": "application/json",
+                        "x-api-key": api_key,
+                    },
+                )
+                for _ in range(2)
+            ]
+"""
+        repeated_aliased_helper = """\
+            def issue_request():
+                connection.request(
+                    "POST",
+                    ANTHROPIC_PATH,
+                    body=body,
+                    headers={
+                        "anthropic-version": ANTHROPIC_API_VERSION,
+                        "connection": "close",
+                        "content-type": "application/json",
+                        "x-api-key": api_key,
+                    },
+                )
+
+            request_alias = issue_request
+            request_alias()
+            request_alias()
+"""
+        with _temporary_runner_repository() as repository:
+            source_path = (
+                repository
+                / "skills"
+                / "joewrks-product-definition"
+                / "reviewer_runner"
+                / "providers"
+                / "anthropic.py"
+            )
+            original_source = source_path.read_text(encoding="utf-8")
+            self.assertEqual(original_source.count(direct_request), 1)
+            adversarial_sources = {
+                "request-in-comprehension": original_source.replace(
+                    direct_request, request_in_comprehension
+                ),
+                "repeated-aliased-local-helper": original_source.replace(
+                    direct_request, repeated_aliased_helper
+                ),
+            }
+            for label, source in adversarial_sources.items():
+                revision = _commit_anthropic_source(
+                    repository,
+                    source,
+                    label,
+                )
+                with self.subTest(request_policy=label):
+                    with patch.object(
+                        audit,
+                        "_SKILL_ROOT",
+                        repository / "skills" / "joewrks-product-definition",
+                    ):
+                        with self.assertRaisesRegex(
+                            RuntimeError,
+                            "one request with zero retries",
+                        ):
+                            self.require_guard()(repository, revision)
 
     def test_test_transport_descriptor_is_ineligible_and_preflight_does_not_invoke(self):
         self.require_guard()
