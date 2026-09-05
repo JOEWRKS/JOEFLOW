@@ -112,27 +112,27 @@ _DEPENDENCIES = {
     "no_host_filesystem": frozenset({"adapter_source_manifest_sha256", "canonical_provider_body_sha256", "local_conformance_evidence_sha256"}),
     "no_code_execution": _BASE_PROOF,
     "no_file_by_reference": frozenset({"adapter_source_manifest_sha256", "canonical_provider_body_sha256", "local_conformance_evidence_sha256"}),
-    "immutable_model_or_deployment_identity": frozenset({"adapter_source_manifest_sha256", "provider_official_contract_sha256", "expected_anthropic_workspace_id_sha256", "workspace_evidence_sha256", "inference_geo_evidence_sha256", "model_entitlement_evidence_sha256"}),
+    "immutable_model_or_deployment_identity": frozenset({"adapter_source_manifest_sha256", "provider_official_contract_sha256", "expected_anthropic_workspace_id_sha256", "workspace_evidence_channel", "workspace_evidence_sha256", "inference_geo_evidence_sha256", "model_entitlement_evidence_sha256"}),
     "immutable_inference_settings": frozenset({"adapter_source_manifest_sha256", "canonical_provider_body_sha256", "local_conformance_evidence_sha256"}),
     "sufficient_payload_capacity": frozenset({"canonical_provider_body_sha256", "provider_official_contract_sha256", "local_capacity_measurement_sha256", "capacity_and_quota_evidence_sha256", "spend_approval_evidence_sha256"}),
     "exact_structured_output": _BASE_PROOF,
-    "controller_only_authentication": frozenset({"adapter_source_manifest_sha256", "provider_official_contract_sha256", "local_conformance_evidence_sha256", "expected_anthropic_workspace_id_sha256", "workspace_evidence_sha256", "workspace_key_scope", "credential_readiness_evidence_sha256"}),
-    "accepted_retention_and_privacy": frozenset({"provider_official_contract_sha256", "expected_anthropic_workspace_id_sha256", "workspace_evidence_sha256", "retention_privacy_evidence_channel", "retention_privacy_evidence_sha256", "retention_privacy_approval", "provider_policy_approval_evidence_sha256"}),
-    "request_response_commitments": frozenset({"adapter_source_manifest_sha256", "canonical_provider_body_sha256", "local_conformance_evidence_sha256", "expected_anthropic_workspace_id_sha256", "workspace_evidence_sha256"}),
+    "controller_only_authentication": frozenset({"adapter_source_manifest_sha256", "provider_official_contract_sha256", "local_conformance_evidence_sha256", "expected_anthropic_workspace_id_sha256", "workspace_evidence_channel", "workspace_evidence_sha256", "workspace_key_scope", "credential_readiness_evidence_sha256"}),
+    "accepted_retention_and_privacy": frozenset({"provider_official_contract_sha256", "expected_anthropic_workspace_id_sha256", "workspace_evidence_channel", "workspace_evidence_sha256", "retention_privacy_evidence_channel", "retention_privacy_evidence_sha256", "retention_privacy_approval", "provider_policy_approval_evidence_sha256"}),
+    "request_response_commitments": frozenset({"adapter_source_manifest_sha256", "canonical_provider_body_sha256", "local_conformance_evidence_sha256", "expected_anthropic_workspace_id_sha256", "workspace_evidence_channel", "workspace_evidence_sha256"}),
 }
 
 
 def provisioning_record(evidence: AnthropicProvisioningEvidence) -> dict[str, object]:
     """Return the exact fourteen-field JSON-compatible provisioning record."""
 
-    _require_exact_instance(evidence, AnthropicProvisioningEvidence, "provisioning")
+    _validate_provisioning_shape(evidence)
     return {field.name: getattr(evidence, field.name) for field in fields(AnthropicProvisioningEvidence)}
 
 
 def admission_record(evidence: AnthropicAdmissionEvidence) -> dict[str, object]:
     """Return the exact seven-field JSON-compatible admission record."""
 
-    _require_exact_instance(evidence, AnthropicAdmissionEvidence, "admission")
+    _validate_admission_shape(evidence)
     return {
         "schema_version": evidence.schema_version,
         "adapter_source_manifest_sha256": evidence.adapter_source_manifest_sha256,
@@ -149,7 +149,7 @@ def anthropic_credential_readiness_evidence_sha256(
 ) -> str:
     """Commit fixed non-secret controller-readiness evidence for one workspace."""
 
-    _require_exact_instance(provisioning, AnthropicProvisioningEvidence, "provisioning")
+    _validate_provisioning_shape(provisioning)
     bindings = {
         field.name: getattr(provisioning, field.name)
         for field in fields(AnthropicProvisioningEvidence)
@@ -286,23 +286,26 @@ def _evidence_value(evidence: AnthropicAdmissionEvidence, name: str) -> object:
 
 def _validate_admission_shape(evidence: AnthropicAdmissionEvidence) -> None:
     _require_exact_instance(evidence, AnthropicAdmissionEvidence, "admission")
-    _require_exact_instance(evidence.provisioning, AnthropicProvisioningEvidence, "provisioning")
     if evidence.schema_version != ANTHROPIC_ADMISSION_SCHEMA_VERSION:
         raise ValueError("admission schema_version does not match")
-    if evidence.provisioning.schema_version != ANTHROPIC_PROVISIONING_SCHEMA_VERSION:
-        raise ValueError("provisioning schema_version does not match")
     for name in (
         "adapter_source_manifest_sha256", "local_conformance_evidence_sha256",
         "canonical_provider_body_sha256", "provider_official_contract_sha256",
         "local_capacity_measurement_sha256",
     ):
         _require_optional_string(getattr(evidence, name), name)
+    _validate_provisioning_shape(evidence.provisioning)
+
+
+def _validate_provisioning_shape(evidence: AnthropicProvisioningEvidence) -> None:
+    _require_exact_instance(evidence, AnthropicProvisioningEvidence, "provisioning")
+    if evidence.schema_version != ANTHROPIC_PROVISIONING_SCHEMA_VERSION:
+        raise ValueError("provisioning schema_version does not match")
     for field in fields(AnthropicProvisioningEvidence):
         if field.name != "schema_version":
             _require_optional_string(
-                getattr(evidence.provisioning, field.name),
+                getattr(evidence, field.name),
                 field.name,
-                reject_sensitive=field.name.endswith("_sha256"),
             )
 
 
@@ -369,7 +372,7 @@ def _looks_like_secret_or_path(value: str) -> bool:
     lowered = value.lower()
     return (
         "api_key" in lowered or "api-key" in lowered or "apikey" in lowered
-        or lowered.startswith("sk-") or "secret" in lowered or "key" in lowered
+        or "sk-" in lowered or "secret" in lowered or "key" in lowered
         or "/" in value or "\\" in value
     )
 

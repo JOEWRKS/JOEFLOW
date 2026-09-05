@@ -197,6 +197,76 @@ class ReviewerRunnerAnthropicAdmissionTests(unittest.TestCase):
         observation = next(item for item in configuration.descriptor.observations if item.capability == "sufficient_payload_capacity")
         self.assertIs(observation.classification, CapabilityClass.UNAVAILABLE)
 
+    def test_workspace_evidence_channel_is_required_for_workspace_bound_capabilities_only(self):
+        module = self.require_admission()
+        missing = module.build_anthropic_backend_configuration(
+            _complete_evidence(provisioning=_provisioning(
+                workspace_evidence_channel=None,
+            ))
+        )
+        missing_observations = {item.capability: item for item in missing.descriptor.observations}
+        self.assertIs(
+            missing_observations["controller_only_authentication"].classification,
+            CapabilityClass.UNAVAILABLE,
+        )
+        self.assertIs(
+            missing_observations["stateless_fresh_request"].classification,
+            CapabilityClass.OBSERVED_PASS,
+        )
+        self.assertIs(
+            missing.provisioning_status,
+            module.AnthropicProvisioningStatus.BACKEND_PROVISIONING_REQUIRED,
+        )
+
+        invalid = module.build_anthropic_backend_configuration(
+            _complete_evidence(provisioning=_provisioning(
+                workspace_evidence_channel="UNAPPROVED_CHANNEL",
+            ))
+        )
+        invalid_observations = {item.capability: item for item in invalid.descriptor.observations}
+        self.assertIs(
+            invalid_observations["controller_only_authentication"].classification,
+            CapabilityClass.OBSERVED_FAIL,
+        )
+        self.assertIs(
+            invalid_observations["stateless_fresh_request"].classification,
+            CapabilityClass.OBSERVED_PASS,
+        )
+        self.assertIs(
+            invalid.provisioning_status,
+            module.AnthropicProvisioningStatus.BACKEND_PROVISIONING_REQUIRED,
+        )
+
+    def test_secret_like_provisioning_string_is_rejected_before_every_public_record_or_digest_producer(self):
+        module = self.require_admission()
+        provisioning = _provisioning(
+            workspace_key_scope="WORKSPACE_SCOPED sk-ant-test-marker",
+            credential_readiness_evidence_sha256=_digest("credential-placeholder"),
+        )
+        evidence = _complete_evidence(provisioning=provisioning)
+        original_canonical_json_bytes = module.canonical_json_bytes
+        canonical_calls = []
+
+        def tracking_canonical_json_bytes(value):
+            canonical_calls.append("called")
+            return original_canonical_json_bytes(value)
+
+        module.canonical_json_bytes = tracking_canonical_json_bytes
+        try:
+            producers = (
+                ("provisioning_record", lambda: module.provisioning_record(provisioning)),
+                ("admission_record", lambda: module.admission_record(evidence)),
+                ("credential_readiness", lambda: module.anthropic_credential_readiness_evidence_sha256(provisioning)),
+                ("configuration", lambda: module.build_anthropic_backend_configuration(evidence)),
+            )
+            for label, producer in producers:
+                with self.subTest(label=label):
+                    with self.assertRaises(ValueError):
+                        producer()
+                    self.assertEqual(canonical_calls, [])
+        finally:
+            module.canonical_json_bytes = original_canonical_json_bytes
+
     def test_policy_channels_are_distinct_and_runtime_workspace_header_cannot_approve_privacy(self):
         module = self.require_admission()
         configuration = module.build_anthropic_backend_configuration(
