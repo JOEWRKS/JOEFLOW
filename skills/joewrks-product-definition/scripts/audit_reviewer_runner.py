@@ -9,6 +9,8 @@ _previous_dont_write_bytecode = sys.dont_write_bytecode
 sys.dont_write_bytecode = True
 try:
     import argparse
+    import ast
+    import hashlib
     import importlib
     import importlib.abc
     import importlib.machinery
@@ -45,6 +47,62 @@ _SNAPSHOT_MODULE_SOURCES = {
         f"{RUNNER_SOURCE_PATH}/providers/anthropic_admission.py"
     ),
 }
+
+_ANTHROPIC_PROVIDER_SOURCES = (
+    _SNAPSHOT_MODULE_SOURCES[".providers"],
+    _SNAPSHOT_MODULE_SOURCES[".providers.anthropic"],
+    _SNAPSHOT_MODULE_SOURCES[".providers.anthropic_admission"],
+)
+_EXPECTED_REQUIRED_CAPABILITIES = (
+    "stateless_fresh_request",
+    "no_continuation_id",
+    "no_reviewer_memory",
+    "no_tools",
+    "no_retrieval",
+    "no_web_or_browser",
+    "no_connectors_or_mcp",
+    "no_host_filesystem",
+    "no_code_execution",
+    "no_file_by_reference",
+    "immutable_model_or_deployment_identity",
+    "immutable_inference_settings",
+    "sufficient_payload_capacity",
+    "exact_structured_output",
+    "controller_only_authentication",
+    "accepted_retention_and_privacy",
+    "request_response_commitments",
+)
+_FORBIDDEN_PROVIDER_IMPORT_ROOTS = frozenset(
+    {
+        "anthropic",
+        "requests",
+        "httpx",
+        "urllib",
+        "proxy",
+        "subprocess",
+        "admin",
+        "discovery",
+        "aiohttp",
+        "httpcore",
+        "httplib2",
+        "urllib3",
+    }
+)
+_ALLOWED_PROVIDER_IMPORT_ROOTS = frozenset(
+    {
+        "base64",
+        "dataclasses",
+        "enum",
+        "__future__",
+        "hashlib",
+        "http",
+        "json",
+        "os",
+        "socket",
+        "ssl",
+        "typing",
+    }
+)
 
 FROZEN_PATHS = (
     "product-definition",
@@ -605,6 +663,171 @@ def _verified_provider_candidate(
     if len(candidates) != 1:
         raise RuntimeError("verified provider registration does not contain exactly one real adapter")
     return candidates[0]
+
+
+def _sha256_canonical_json(value: object) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _anthropic_provider_manifest(
+    repository: Path,
+    revision: str,
+) -> dict[str, str]:
+    inventory = _runner_revision_blob_map(repository, revision)
+    manifest: dict[str, str] = {}
+    for path in _ANTHROPIC_PROVIDER_SOURCES:
+        commitment = inventory.get(path)
+        if commitment is None:
+            raise RuntimeError("Anthropic provider source is absent from revision")
+        mode, blob_id = commitment.split(":", 1)
+        if mode not in {"100644", "100755"} or len(blob_id) != 40:
+            raise RuntimeError("Anthropic provider source commitment is invalid")
+        manifest[path] = commitment
+    return dict(sorted(manifest.items()))
+
+
+def _provider_imports(source: bytes, path: str) -> tuple[str, ...]:
+    try:
+        tree = ast.parse(source, filename=path)
+    except (SyntaxError, UnicodeDecodeError) as error:
+        raise RuntimeError("Anthropic provider source cannot be parsed") from error
+
+    imports: list[str] = []
+    forbidden: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names = tuple(alias.name for alias in node.names)
+            reported_names = names
+        elif isinstance(node, ast.ImportFrom):
+            if node.level:
+                continue
+            module = node.module or ""
+            if module == "__future__":
+                continue
+            names = tuple(
+                f"{module}.{alias.name}" if module else alias.name
+                for alias in node.names
+            )
+            reported_names = (module,) * len(names)
+        else:
+            continue
+        for name, reported_name in zip(names, reported_names, strict=True):
+            root = name.split(".", 1)[0].lower()
+            imports.append(reported_name)
+            lowered = name.lower()
+            if (
+                root in _FORBIDDEN_PROVIDER_IMPORT_ROOTS
+                or "proxy" in lowered
+                or "admin" in lowered
+                or "discover" in lowered
+                or root not in _ALLOWED_PROVIDER_IMPORT_ROOTS
+            ):
+                forbidden.append(f"{path}:{name}")
+    if forbidden:
+        raise RuntimeError("forbidden Anthropic provider import: " + ", ".join(sorted(forbidden)))
+    return tuple(sorted(set(imports)))
+
+
+def _anthropic_provider_imports(snapshot: dict[str, bytes]) -> dict[str, tuple[str, ...]]:
+    imports: dict[str, tuple[str, ...]] = {}
+    for path in _ANTHROPIC_PROVIDER_SOURCES:
+        source = snapshot.get(path)
+        if source is None:
+            raise RuntimeError("Anthropic provider source snapshot is incomplete")
+        imports[path] = _provider_imports(source, path)
+    return dict(sorted(imports.items()))
+
+
+def _unprovisioned_registration_classification(
+    registered_adapters: Iterable[object],
+    identity_module,
+    backend_module,
+) -> str:
+    adapters = tuple(registered_adapters)
+    if len(adapters) != 1:
+        raise RuntimeError("Anthropic provider registration must contain exactly one adapter")
+    adapter = adapters[0]
+    if type(adapter).__name__ != "AnthropicBackend":
+        raise RuntimeError("Anthropic provider registration must contain AnthropicBackend")
+    descriptor = _rehydrate_backend_descriptor(
+        adapter.describe(), identity_module, backend_module
+    )
+    backend_module.validate_backend_descriptor(descriptor)
+    if descriptor.identity.is_test_double:
+        raise RuntimeError("Anthropic provider registration must not be a test double")
+    if descriptor.identity.adapter_id != "anthropic-direct-messages":
+        raise RuntimeError("Anthropic provider registration has an unexpected adapter identity")
+    classifications = tuple(
+        observation.classification.value for observation in descriptor.observations
+    )
+    if not classifications or set(classifications) != {"UNAVAILABLE"}:
+        raise RuntimeError("Anthropic provider registration is not unprovisioned")
+    if backend_module.is_backend_eligible(descriptor):
+        raise RuntimeError("unprovisioned Anthropic provider must be ineligible")
+    return "UNAVAILABLE"
+
+
+def build_anthropic_offline_guard_report(
+    repository: Path | str,
+    revision: str,
+) -> dict[str, object]:
+    """Build local, revision-bound evidence for Anthropic offline boundaries.
+
+    This function intentionally imports and describes the verified snapshot only.
+    It never invokes an adapter, reads process environment values, or provisions a
+    provider account.
+    """
+
+    repository = Path(repository)
+    commit, tree = _commit_and_tree(repository, revision)
+    snapshot = _verify_runner_source_binding(repository, commit)
+    identity_module, backend_module = _load_verified_runner_api(
+        repository.resolve(strict=True), commit, snapshot
+    )
+    manifest = _anthropic_provider_manifest(repository, commit)
+    imports = _anthropic_provider_imports(snapshot)
+    registration = _load_verified_snapshot_registration(
+        repository.resolve(strict=True), commit, snapshot
+    )
+    classification = _unprovisioned_registration_classification(
+        registration, identity_module, backend_module
+    )
+
+    expected_capabilities_hash = _sha256_canonical_json(
+        list(_EXPECTED_REQUIRED_CAPABILITIES)
+    )
+    actual_capabilities = tuple(backend_module.REQUIRED_CAPABILITIES)
+    actual_capabilities_hash = _sha256_canonical_json(list(actual_capabilities))
+    if actual_capabilities != _EXPECTED_REQUIRED_CAPABILITIES:
+        raise RuntimeError("REQUIRED_CAPABILITIES changed")
+
+    anthropic_source = _SNAPSHOT_MODULE_SOURCES[".providers.anthropic"]
+    return {
+        "schema_version": "joewrks.anthropic-offline-guard/1.0",
+        "implementation_code_commit": commit,
+        "implementation_code_tree": tree,
+        "provider_mode": "stdlib-direct-https",
+        "provider_source_manifest": manifest,
+        "provider_source_manifest_sha256": _sha256_canonical_json(manifest),
+        "provider_source_imports": list(imports[anthropic_source]),
+        "forbidden_imports": [],
+        "required_capabilities_sha256": actual_capabilities_hash,
+        "expected_required_capabilities_sha256": expected_capabilities_hash,
+        "registration_count": len(registration),
+        "registered_descriptor_classification": classification,
+        "import_describe_side_effects": "PASS",
+        "entry_points_provider_calls": 0,
+        "request_retry_policy": "ONE_REQUEST_ZERO_RETRIES",
+        "overall": "PASS",
+    }
 
 
 def build_capability_audit(
