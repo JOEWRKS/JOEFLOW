@@ -162,14 +162,22 @@ class ReviewerRunnerAnthropicResponseTests(unittest.TestCase):
         self.assertEqual(transport.calls, [])
 
     def test_missing_or_empty_api_key_fails_before_transport_without_echo(self):
+        required_type = getattr(module, "AnthropicProvisioningRequired", None)
+        self.assertIsNotNone(required_type)
         for key in (None, ""):
             with self.subTest(key=key):
                 transport = _FakeTransport(self.response())
-                backend = self.backend(transport, credential_reader=lambda name, key=key: key)
-                with self.assertRaises(BackendInvocationError) as raised:
+                reads = []
+                backend = self.backend(
+                    transport,
+                    credential_reader=lambda name, key=key: reads.append(name) or key,
+                )
+                with self.assertRaises(Exception) as raised:
                     backend.invoke(_request_bytes(), timeout_seconds=5)
-                self.assertEqual(raised.exception.code, "NO_RESPONSE")
+                self.assertIsInstance(raised.exception, required_type)
+                self.assertEqual(raised.exception.code, "BACKEND_PROVISIONING_REQUIRED")
                 self.assertNotIn("ANTHROPIC_API_KEY", str(raised.exception))
+                self.assertEqual(reads, ["ANTHROPIC_API_KEY"])
                 self.assertEqual(transport.calls, [])
 
     def test_valid_message_returns_exact_text_utf8_bytes_without_strip_or_reserialization(self):
@@ -182,10 +190,19 @@ class ReviewerRunnerAnthropicResponseTests(unittest.TestCase):
         self.assertEqual(len(transport.calls), 1)
 
     def test_request_id_is_nonempty_server_header_and_workspace_hash_matches_commitment(self):
-        backend = self.backend(
-            _FakeTransport(self.response()), credential_reader=lambda name: "sk-ant-test-secret"
-        )
-        result = backend.invoke(_request_bytes(), timeout_seconds=5)
+        transport = _FakeTransport(self.response())
+        backend = self.backend(transport, credential_reader=lambda name: "sk-ant-test-secret")
+        order = []
+        parse = module._parse_anthropic_envelope
+        headers = module._required_response_headers
+        module._parse_anthropic_envelope = lambda body: order.append("parse") or parse(body)
+        module._required_response_headers = lambda values: order.append("headers") or headers(values)
+        try:
+            result = backend.invoke(_request_bytes(), timeout_seconds=5)
+        finally:
+            module._parse_anthropic_envelope = parse
+            module._required_response_headers = headers
+        self.assertEqual(order, ["parse", "headers"])
         self.assertEqual(result.provider_request_id, "request-001")
         self.assertEqual(result.response_count, 1)
         self.assertIsNone(result.continuation_id)
@@ -198,6 +215,8 @@ class ReviewerRunnerAnthropicResponseTests(unittest.TestCase):
             (("request-id", "request-001"), ("request-id", "request-002"), ("anthropic-workspace-id", "workspace-001")),
             (("request-id", "request-001"), ("anthropic-workspace-id", "workspace-001"), ("anthropic-workspace-id", "workspace-001")),
             (("request-id", "request-001"), ("anthropic-workspace-id", "other-workspace")),
+            (("request-id", " request-001"), ("anthropic-workspace-id", "workspace-001")),
+            (("request-id", "request-001"), ("anthropic-workspace-id", "workspace-001 ")),
         )
         for headers in cases:
             with self.subTest(headers=headers):
@@ -212,12 +231,28 @@ class ReviewerRunnerAnthropicResponseTests(unittest.TestCase):
     def test_wrong_model_role_type_message_id_or_stop_reason_fails_closed(self):
         cases = (
             {"model": "other-model"}, {"role": "user"}, {"type": "other"},
-            {"id": ""}, {"stop_reason": "max_tokens"}, {"stop_sequence": "stop"},
+            {"id": ""}, {"stop_reason": "max_tokens"}, {"stop_reason": "pause_turn"}, {"stop_sequence": "stop"},
+            {"extra": "forbidden"}, {"usage": {"input_tokens": 1, "output_tokens": 1, "service_tier": "standard"}},
+            {"usage": {"input_tokens": 1, "output_tokens": 1, "service_tier": "standard", "inference_geo": "us", "extra": 1}},
         )
         for changes in cases:
             with self.subTest(changes=changes):
                 backend = self.backend(
                     _FakeTransport(self.response(body=_message(**changes))),
+                    credential_reader=lambda name: "sk-ant-test-secret",
+                )
+                with self.assertRaises(BackendInvocationError):
+                    backend.invoke(_request_bytes(), timeout_seconds=5)
+        usage_cases = (
+            {"input_tokens": -1, "output_tokens": 1, "service_tier": "standard", "inference_geo": "us"},
+            {"input_tokens": 1.5, "output_tokens": 1, "service_tier": "standard", "inference_geo": "us"},
+            {"input_tokens": True, "output_tokens": 1, "service_tier": "standard", "inference_geo": "us"},
+            {"input_tokens": 1, "output_tokens": -1, "service_tier": "standard", "inference_geo": "us"},
+        )
+        for usage in usage_cases:
+            with self.subTest(usage=usage):
+                backend = self.backend(
+                    _FakeTransport(self.response(body=_message(usage=usage))),
                     credential_reader=lambda name: "sk-ant-test-secret",
                 )
                 with self.assertRaises(BackendInvocationError):
@@ -236,6 +271,24 @@ class ReviewerRunnerAnthropicResponseTests(unittest.TestCase):
                 )
                 with self.assertRaises(BackendInvocationError):
                     backend.invoke(_request_bytes(), timeout_seconds=5)
+        strict_json_bodies = (
+            b'{"id":"msg-001","id":"msg-002"}',
+            b"NaN",
+            b"Infinity",
+            b"-Infinity",
+            b"1.5",
+            b"\xff",
+            b'{"nested":' * 2_000 + b"0" + b"}" * 2_000,
+        )
+        for body in strict_json_bodies:
+            with self.subTest(body=body[:32]):
+                backend = self.backend(
+                    _FakeTransport(self.response(body=body)),
+                    credential_reader=lambda name: "sk-ant-test-secret",
+                )
+                with self.assertRaises(Exception) as raised:
+                    backend.invoke(_request_bytes(), timeout_seconds=5)
+                self.assertIsInstance(raised.exception, BackendInvocationError)
 
     def test_tool_server_tool_refusal_truncation_and_unexpected_active_blocks_fail_closed(self):
         cases = (
@@ -270,6 +323,20 @@ class ReviewerRunnerAnthropicResponseTests(unittest.TestCase):
             credential_reader=lambda name: "sk-ant-test-secret",
         )
         self.assertEqual(backend.invoke(_request_bytes(), timeout_seconds=5).raw_bytes, b'{"ok":true}\n')
+        surrogate_body = (
+            b'{"id":"msg-001","type":"message","role":"assistant",'
+            b'"content":[{"type":"text","text":"\\ud800"}],'
+            b'"model":"claude-sonnet-5","stop_reason":"end_turn",'
+            b'"stop_sequence":null,"usage":{"input_tokens":1,"output_tokens":1,'
+            b'"service_tier":"standard","inference_geo":"us"}}'
+        )
+        backend = self.backend(
+            _FakeTransport(self.response(body=surrogate_body)),
+            credential_reader=lambda name: "sk-ant-test-secret",
+        )
+        with self.assertRaises(Exception) as raised:
+            backend.invoke(_request_bytes(), timeout_seconds=5)
+        self.assertIsInstance(raised.exception, BackendInvocationError)
 
     def test_response_event_hash_binds_only_sanitized_closed_metadata(self):
         body = _message()
@@ -308,6 +375,28 @@ class ReviewerRunnerAnthropicResponseTests(unittest.TestCase):
         self.assertNotIn(secret, rendered)
         self.assertNotIn(raw_workspace, rendered)
         self.assertNotIn("request-raw-sensitive", rendered)
+        secret_error = "sk-ant-reader-exception"
+        backend = self.backend(
+            _FakeTransport(self.response()),
+            credential_reader=lambda name: (_ for _ in ()).throw(RuntimeError(secret_error)),
+        )
+        with self.assertRaises(Exception) as raised:
+            backend.invoke(_request_bytes(), timeout_seconds=5)
+        self.assertIsInstance(raised.exception, module.AnthropicProvisioningRequired)
+        self.assertNotIn(secret_error, repr(raised.exception) + str(raised.exception))
+        transport_error = "sk-ant-transport-exception"
+
+        class ThrowingTransport:
+            is_test_double = True
+
+            def post(self, body, *, api_key, timeout_seconds):
+                raise RuntimeError(transport_error)
+
+        backend = self.backend(ThrowingTransport(), credential_reader=lambda name: "sk-ant-test-secret")
+        with self.assertRaises(Exception) as raised:
+            backend.invoke(_request_bytes(), timeout_seconds=5)
+        self.assertIsInstance(raised.exception, BackendInvocationError)
+        self.assertNotIn(transport_error, repr(raised.exception) + str(raised.exception))
 
     def test_custom_transport_or_credential_reader_forces_test_double_non_authority(self):
         custom_transport = self.backend(
