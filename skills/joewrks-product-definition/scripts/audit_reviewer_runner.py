@@ -421,7 +421,7 @@ def _load_verified_snapshot_registration(
     revision: str,
     snapshot: dict[str, bytes],
 ) -> tuple[object, ...]:
-    """Load only the revision-bound provider registration for audit tests."""
+    """Load the revision-bound production registration for audit evaluation."""
 
     registration_source = _SNAPSHOT_MODULE_SOURCES[".providers"]
     revision_inventory = _runner_revision_blob_map(repository, revision)
@@ -633,13 +633,14 @@ def build_capability_audit(
     if not baseline or observed != baseline:
         raise RuntimeError("frozen Product Definition, semantic-review, or M6 paths changed")
 
-    effective_adapters = (
-        verified_registration
-        if registered_adapters is None
-        else tuple(registered_adapters)
-    )
+    if registered_adapters is not None:
+        _real_adapter_count(
+            tuple(registered_adapters),
+            identity_module,
+            backend_module,
+        )
     real_adapter_count = _real_adapter_count(
-        effective_adapters,
+        verified_registration,
         identity_module,
         backend_module,
     )

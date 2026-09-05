@@ -1,7 +1,9 @@
+import http.client
 import json
 import importlib.util
 import os
 import py_compile
+import socket
 import subprocess
 import sys
 import tempfile
@@ -39,6 +41,23 @@ def _git(*arguments):
         capture_output=True,
         text=True,
     ).stdout.strip()
+
+
+class _EnvironmentAccessForbidden(dict):
+    """Raise if the audit touches any process-environment mapping surface."""
+
+    @staticmethod
+    def _forbid(*_arguments, **_keywords):
+        raise AssertionError("audit accessed the process environment")
+
+    __contains__ = _forbid
+    __getitem__ = _forbid
+    __iter__ = _forbid
+    copy = _forbid
+    get = _forbid
+    items = _forbid
+    keys = _forbid
+    values = _forbid
 
 
 class ReviewerRunnerAuditTests(unittest.TestCase):
@@ -187,17 +206,30 @@ class ReviewerRunnerAuditTests(unittest.TestCase):
         self.require_audit_implementation()
         secret = "do-not-serialize-this-anthropic-secret"
         workspace = "do-not-serialize-this-raw-workspace"
-        with patch.dict(
-            os.environ,
-            {
-                "ANTHROPIC_API_KEY": secret,
-                "ANTHROPIC_WORKSPACE_ID": workspace,
-                "REVIEWER_ENDPOINT_TOKEN": secret,
-            },
-            clear=False,
+        environment = _EnvironmentAccessForbidden()
+        with (
+            patch.object(os, "environ", environment),
+            patch.object(
+                socket,
+                "getaddrinfo",
+                side_effect=AssertionError("audit performed DNS resolution"),
+            ) as getaddrinfo,
+            patch.object(
+                socket,
+                "create_connection",
+                side_effect=AssertionError("audit opened a socket"),
+            ) as create_connection,
+            patch.object(
+                http.client,
+                "HTTPSConnection",
+                side_effect=AssertionError("audit opened HTTPS"),
+            ) as https_connection,
         ):
             document = canonical_audit_json(build_capability_audit(ROOT, self.revision))
 
+        getaddrinfo.assert_not_called()
+        create_connection.assert_not_called()
+        https_connection.assert_not_called()
         decoded = json.loads(document)
         self.assertEqual(
             decoded["schema_version"],
@@ -237,14 +269,22 @@ class ReviewerRunnerAuditTests(unittest.TestCase):
             registered_adapters=(fake,),
         )
 
-        self.assertEqual(
-            result["schema_version"],
-            "joewrks.reviewer-runner-capability-audit/1.1",
-        )
-        self.assertEqual(result["registered_real_adapter_count"], 0)
+        self.assertEqual(result, build_capability_audit(ROOT, self.revision))
+        self.assertEqual(result["adapter_implementation"], "IMPLEMENTED")
+        self.assertEqual(result["registered_real_adapter_count"], 1)
+        self.assertEqual(result["provider_candidate"], "anthropic")
+        self.assertEqual(result["provider_selected"], "anthropic")
         self.assertEqual(result["real_backend_capability"], "UNAVAILABLE")
-        self.assertEqual(result["runner_state"], "ISOLATION_CAPABILITY_UNAVAILABLE")
-        self.assertFalse(result["fake_backend_authoritative"])
+
+    def test_invalid_injected_adapter_is_rejected_after_verified_registration_load(self):
+        self.require_audit_implementation()
+
+        with self.assertRaisesRegex(ValueError, "registered adapter must expose describe"):
+            build_capability_audit(
+                ROOT,
+                self.revision,
+                registered_adapters=(object(),),
+            )
 
     def test_preseeded_private_package_fails_closed_and_is_removed(self):
         namespace = f"_audit_verified_reviewer_runner_{self.revision}"
@@ -298,21 +338,20 @@ class ReviewerRunnerAuditTests(unittest.TestCase):
             "private verified-runner modules survived a successful load",
         )
 
-    def test_fake_backend_is_excluded_from_observed_pass(self):
+    def test_injected_real_adapter_cannot_change_historical_v10_evidence(self):
         self.require_audit_implementation()
-        from tests.reviewer_runner_support import DeterministicFakeBackend
+        from reviewer_runner.providers import REGISTERED_PRODUCTION_ADAPTERS
 
-        fake = DeterministicFakeBackend(b'{"result":"synthetic"}')
+        expected = build_capability_audit(ROOT, self.historical_revision)
         result = build_capability_audit(
             ROOT,
-            self.revision,
-            registered_adapters=(fake,),
+            self.historical_revision,
+            registered_adapters=REGISTERED_PRODUCTION_ADAPTERS,
         )
 
+        self.assertEqual(result, expected)
+        self.assertEqual(result["schema_version"], "joewrks.reviewer-runner-capability-audit/1.0")
         self.assertEqual(result["registered_real_adapter_count"], 0)
-        self.assertEqual(result["real_backend_capability"], "UNAVAILABLE")
-        self.assertEqual(result["runner_state"], "ISOLATION_CAPABILITY_UNAVAILABLE")
-        self.assertFalse(result["fake_backend_authoritative"])
 
     def test_audit_contains_no_environment_values_or_credentials(self):
         self.require_audit_implementation()
