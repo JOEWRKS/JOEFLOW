@@ -46,6 +46,8 @@ class ReviewerRunnerAuditTests(unittest.TestCase):
     def setUpClass(cls):
         cls.revision = _git("rev-parse", "HEAD")
         cls.tree = _git("rev-parse", "HEAD^{tree}")
+        cls.historical_revision = "0b754bdc2502be35a7f657275f17fe117e8c49bd"
+        cls.historical_tree = _git("rev-parse", f"{cls.historical_revision}^{{tree}}")
 
     def require_audit_implementation(self):
         self.assertIsNotNone(
@@ -83,7 +85,7 @@ class ReviewerRunnerAuditTests(unittest.TestCase):
     def test_no_registered_real_adapter_reports_unavailable_and_calibration_not_run(self):
         self.require_audit_implementation()
 
-        result = build_capability_audit(ROOT, self.revision)
+        result = build_capability_audit(ROOT, self.historical_revision)
 
         self.assertEqual(
             result,
@@ -102,10 +104,147 @@ class ReviewerRunnerAuditTests(unittest.TestCase):
                 "valid_real_calibration_runs": 0,
                 "fake_backend_authoritative": False,
                 "provider_selected": None,
-                "implementation_code_commit": self.revision,
-                "implementation_code_tree": self.tree,
+                "implementation_code_commit": self.historical_revision,
+                "implementation_code_tree": self.historical_tree,
             },
         )
+
+    def test_registered_unprovisioned_anthropic_revision_reports_v11_bounded_truth(self):
+        self.require_audit_implementation()
+
+        self.assertEqual(
+            build_capability_audit(ROOT, self.revision),
+            {
+                "adapter_implementation": "IMPLEMENTED",
+                "backend_kind": "STATELESS_TOOLLESS_EXTERNAL_INFERENCE",
+                "backend_provisioning": "REQUIRED",
+                "calibration_status": "CALIBRATION_NOT_RUN",
+                "fake_backend_authoritative": False,
+                "implementation_code_commit": self.revision,
+                "implementation_code_tree": self.tree,
+                "implementation_status": "RUNNER_IMPLEMENTED",
+                "provider_candidate": "anthropic",
+                "provider_selected": "anthropic",
+                "real_backend_capability": "UNAVAILABLE",
+                "real_calibration_attempts": 1,
+                "real_provider_request_count": 0,
+                "real_synthetic_preflight": "NOT_RUN",
+                "registered_real_adapter_count": 1,
+                "runner_contract_version": "joewrks.reviewer-runner/1.0",
+                "runner_state": "ISOLATION_CAPABILITY_UNAVAILABLE",
+                "schema_version": "joewrks.reviewer-runner-capability-audit/1.1",
+                "semantic_review_21_reliability": "NOT_MEASURED",
+                "v044_status": "BLOCKED",
+                "valid_real_calibration_runs": 0,
+            },
+        )
+
+    def test_v11_reports_adapter_implemented_count_one_and_provider_anthropic(self):
+        self.require_audit_implementation()
+
+        result = build_capability_audit(ROOT, self.revision)
+
+        self.assertEqual(
+            result["schema_version"],
+            "joewrks.reviewer-runner-capability-audit/1.1",
+        )
+        self.assertEqual(result["adapter_implementation"], "IMPLEMENTED")
+        self.assertEqual(result["registered_real_adapter_count"], 1)
+        self.assertEqual(result["provider_candidate"], "anthropic")
+        self.assertEqual(result["provider_selected"], "anthropic")
+
+    def test_v11_keeps_capability_unavailable_preflight_not_run_and_request_count_zero(self):
+        self.require_audit_implementation()
+
+        result = build_capability_audit(ROOT, self.revision)
+
+        self.assertEqual(
+            result["schema_version"],
+            "joewrks.reviewer-runner-capability-audit/1.1",
+        )
+        self.assertEqual(result["real_backend_capability"], "UNAVAILABLE")
+        self.assertEqual(result["runner_state"], "ISOLATION_CAPABILITY_UNAVAILABLE")
+        self.assertEqual(result["backend_provisioning"], "REQUIRED")
+        self.assertEqual(result["real_synthetic_preflight"], "NOT_RUN")
+        self.assertEqual(result["real_provider_request_count"], 0)
+
+    def test_v11_keeps_calibration_not_run_reliability_not_measured_and_v044_blocked(self):
+        self.require_audit_implementation()
+
+        result = build_capability_audit(ROOT, self.revision)
+
+        self.assertEqual(
+            result["schema_version"],
+            "joewrks.reviewer-runner-capability-audit/1.1",
+        )
+        self.assertEqual(result["calibration_status"], "CALIBRATION_NOT_RUN")
+        self.assertEqual(result["semantic_review_21_reliability"], "NOT_MEASURED")
+        self.assertEqual(result["v044_status"], "BLOCKED")
+        self.assertEqual(result["real_calibration_attempts"], 1)
+        self.assertEqual(result["valid_real_calibration_runs"], 0)
+
+    def test_v11_contains_no_environment_value_raw_workspace_or_credential_material(self):
+        self.require_audit_implementation()
+        secret = "do-not-serialize-this-anthropic-secret"
+        workspace = "do-not-serialize-this-raw-workspace"
+        with patch.dict(
+            os.environ,
+            {
+                "ANTHROPIC_API_KEY": secret,
+                "ANTHROPIC_WORKSPACE_ID": workspace,
+                "REVIEWER_ENDPOINT_TOKEN": secret,
+            },
+            clear=False,
+        ):
+            document = canonical_audit_json(build_capability_audit(ROOT, self.revision))
+
+        decoded = json.loads(document)
+        self.assertEqual(
+            decoded["schema_version"],
+            "joewrks.reviewer-runner-capability-audit/1.1",
+        )
+        self.assertEqual(decoded["provider_selected"], "anthropic")
+        self.assertNotIn(secret, document)
+        self.assertNotIn(workspace, document)
+        self.assertFalse(
+            {"environment", "credentials", "credential_values", "api_key"}
+            .intersection(decoded)
+        )
+
+    def test_historical_v10_revision_and_frozen_evidence_remain_byte_exact(self):
+        self.require_audit_implementation()
+        evidence_path = (
+            ROOT
+            / "evals"
+            / "post-m6-semantic-review-reliability-enablement"
+            / "RUNNER_CAPABILITY_EVIDENCE.json"
+        )
+
+        document = canonical_audit_json(
+            build_capability_audit(ROOT, self.historical_revision)
+        ).encode("utf-8")
+
+        self.assertEqual(document, evidence_path.read_bytes())
+
+    def test_fake_or_injected_adapter_cannot_promote_capability(self):
+        self.require_audit_implementation()
+        from tests.reviewer_runner_support import DeterministicFakeBackend
+
+        fake = DeterministicFakeBackend(b'{"result":"synthetic"}')
+        result = build_capability_audit(
+            ROOT,
+            self.revision,
+            registered_adapters=(fake,),
+        )
+
+        self.assertEqual(
+            result["schema_version"],
+            "joewrks.reviewer-runner-capability-audit/1.1",
+        )
+        self.assertEqual(result["registered_real_adapter_count"], 0)
+        self.assertEqual(result["real_backend_capability"], "UNAVAILABLE")
+        self.assertEqual(result["runner_state"], "ISOLATION_CAPABILITY_UNAVAILABLE")
+        self.assertFalse(result["fake_backend_authoritative"])
 
     def test_preseeded_private_package_fails_closed_and_is_removed(self):
         namespace = f"_audit_verified_reviewer_runner_{self.revision}"
@@ -188,7 +327,7 @@ class ReviewerRunnerAuditTests(unittest.TestCase):
             clear=False,
         ):
             document = canonical_audit_json(
-                build_capability_audit(ROOT, self.revision)
+                build_capability_audit(ROOT, self.historical_revision)
             )
 
         decoded = json.loads(document)

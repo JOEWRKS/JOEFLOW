@@ -28,9 +28,9 @@ _SKILL_ROOT = Path(__file__).resolve().parents[1]
 
 
 AUDIT_SCHEMA_VERSION = "joewrks.reviewer-runner-capability-audit/1.0"
+IMPLEMENTED_AUDIT_SCHEMA_VERSION = "joewrks.reviewer-runner-capability-audit/1.1"
 IMPLEMENTATION_BASE_REVISION = "71ffc0a66618c11e2fe08a442df5fd2d67718f7b"
 BACKEND_KIND = "STATELESS_TOOLLESS_EXTERNAL_INFERENCE"
-REGISTERED_PRODUCTION_ADAPTERS: tuple[object, ...] = ()
 RUNNER_SOURCE_PATH = "skills/joewrks-product-definition/reviewer_runner"
 _PUBLIC_RUNNER_PACKAGE_NAME = "reviewer_runner"
 
@@ -493,13 +493,15 @@ def _load_verified_snapshot_registration(
 def _rehydrate_backend_descriptor(descriptor, identity_module, backend_module):
     try:
         if (
-            type(descriptor).__module__ != "reviewer_runner.backend"
+            type(descriptor).__module__
+            not in {"reviewer_runner.backend", backend_module.__name__}
             or type(descriptor).__qualname__ != "BackendDescriptor"
         ):
             raise ValueError("backend descriptor must be an exact BackendDescriptor")
         identity = descriptor.identity
         if (
-            type(identity).__module__ != "reviewer_runner.identity"
+            type(identity).__module__
+            not in {"reviewer_runner.identity", identity_module.__name__}
             or type(identity).__qualname__ != "BackendIdentity"
         ):
             raise ValueError("backend identity must be an exact BackendIdentity")
@@ -519,7 +521,8 @@ def _rehydrate_backend_descriptor(descriptor, identity_module, backend_module):
         trusted_observations = []
         for observation in descriptor.observations:
             if (
-                type(observation).__module__ != "reviewer_runner.backend"
+                type(observation).__module__
+                not in {"reviewer_runner.backend", backend_module.__name__}
                 or type(observation).__qualname__ != "CapabilityObservation"
             ):
                 raise ValueError(
@@ -565,11 +568,50 @@ def _real_adapter_count(
     return count
 
 
+def _verified_provider_candidate(
+    registered_adapters: Iterable[object],
+    identity_module,
+    backend_module,
+) -> str | None:
+    """Return the one verified provider name, or None for historical revisions."""
+
+    candidates: list[str] = []
+    for adapter in registered_adapters:
+        describe = getattr(adapter, "describe", None)
+        if not callable(describe):
+            raise ValueError("registered adapter must expose describe()")
+        descriptor = _rehydrate_backend_descriptor(
+            describe(),
+            identity_module,
+            backend_module,
+        )
+        backend_module.validate_backend_descriptor(descriptor)
+        if descriptor.identity.is_test_double:
+            continue
+        adapter_id = descriptor.identity.adapter_id
+        provider, separator, remainder = adapter_id.partition("-")
+        if (
+            not separator
+            or not provider
+            or not remainder
+            or not provider.isascii()
+            or not provider.islower()
+            or not provider.isalpha()
+        ):
+            raise RuntimeError("verified provider descriptor has an invalid adapter identity")
+        candidates.append(provider)
+    if not candidates:
+        return None
+    if len(candidates) != 1:
+        raise RuntimeError("verified provider registration does not contain exactly one real adapter")
+    return candidates[0]
+
+
 def build_capability_audit(
     repository: Path | str,
     revision: str,
     *,
-    registered_adapters: Iterable[object] = REGISTERED_PRODUCTION_ADAPTERS,
+    registered_adapters: Iterable[object] | None = None,
 ) -> dict[str, object]:
     """Build the deterministic current-runtime disposition without executing inference."""
 
@@ -581,16 +623,55 @@ def build_capability_audit(
         commit,
         runner_snapshot,
     )
+    verified_registration = _load_verified_snapshot_registration(
+        repository.resolve(strict=True),
+        commit,
+        runner_snapshot,
+    )
     baseline = frozen_blob_map(repository, IMPLEMENTATION_BASE_REVISION)
     observed = frozen_blob_map(repository, commit)
     if not baseline or observed != baseline:
         raise RuntimeError("frozen Product Definition, semantic-review, or M6 paths changed")
 
+    effective_adapters = (
+        verified_registration
+        if registered_adapters is None
+        else tuple(registered_adapters)
+    )
     real_adapter_count = _real_adapter_count(
-        tuple(registered_adapters),
+        effective_adapters,
         identity_module,
         backend_module,
     )
+    provider_candidate = _verified_provider_candidate(
+        verified_registration,
+        identity_module,
+        backend_module,
+    )
+    if provider_candidate is not None:
+        return {
+            "adapter_implementation": "IMPLEMENTED",
+            "backend_kind": BACKEND_KIND,
+            "backend_provisioning": "REQUIRED",
+            "calibration_status": "CALIBRATION_NOT_RUN",
+            "fake_backend_authoritative": False,
+            "implementation_code_commit": commit,
+            "implementation_code_tree": tree,
+            "implementation_status": "RUNNER_IMPLEMENTED",
+            "provider_candidate": provider_candidate,
+            "provider_selected": provider_candidate,
+            "real_backend_capability": "UNAVAILABLE",
+            "real_calibration_attempts": 1,
+            "real_provider_request_count": 0,
+            "real_synthetic_preflight": "NOT_RUN",
+            "registered_real_adapter_count": real_adapter_count,
+            "runner_contract_version": identity_module.RUNNER_CONTRACT_VERSION,
+            "runner_state": "ISOLATION_CAPABILITY_UNAVAILABLE",
+            "schema_version": IMPLEMENTED_AUDIT_SCHEMA_VERSION,
+            "semantic_review_21_reliability": "NOT_MEASURED",
+            "v044_status": "BLOCKED",
+            "valid_real_calibration_runs": 0,
+        }
     if real_adapter_count == 0:
         capability = "UNAVAILABLE"
         runner_state = "ISOLATION_CAPABILITY_UNAVAILABLE"
@@ -644,7 +725,6 @@ def main(argv: list[str] | None = None) -> int:
         document = build_capability_audit(
             arguments.repository,
             arguments.revision,
-            registered_adapters=REGISTERED_PRODUCTION_ADAPTERS,
         )
         sys.stdout.buffer.write(canonical_audit_json(document).encode("utf-8"))
         sys.stdout.buffer.flush()
