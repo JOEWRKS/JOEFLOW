@@ -902,6 +902,18 @@ def _load_verified_snapshot_registration(
         if _git_blob_id(repository, source) != expected_blob_id:
             raise RuntimeError("verified provider source bytes differ from revision")
 
+    # Preserve the existing public-import boundary before a dependency's closed
+    # source proof can reject it, without executing unapproved provider source.
+    for relative_source in _ANTHROPIC_PROVIDER_SOURCES:
+        for node in ast.walk(ast.parse(snapshot[relative_source])):
+            imported_names = (
+                tuple(alias.name for alias in node.names) if isinstance(node, ast.Import)
+                else (node.module,) if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module
+                else ()
+            )
+            if any(name == _PUBLIC_RUNNER_PACKAGE_NAME or name.startswith(f"{_PUBLIC_RUNNER_PACKAGE_NAME}.") for name in imported_names):
+                raise RuntimeError("verified runner attempted an absolute public import")
+
     package_name = f"_audit_verified_reviewer_runner_{revision}"
     finder = None
     stashed_public_modules = _stash_public_runner_modules()
