@@ -18,10 +18,12 @@ remains BLOCKED. Test doubles cannot establish real capability authority.
   design: `docs/superpowers/specs/2026-09-05-post-m6-real-backend-capability-enablement-design.md`.
 - Frozen authority/main: `ab95074704af0e93248d56344d6a220dfec88a93`;
   tree `867bec6fcfe5f4dc9927beaaf143087178e09e7c`.
-- Final code-only commit: `7a55d71cbef4a4ecd9950a68b06a5bf38514878c`.
-- Final code-only tree: `b604a8bca785a750863fa7fdb78b076daab8f5e8`.
-- Code-only parent: `be72b26e493a8115992358dadb50f17eeae61ea6`.
+- Final code-only commit: `d80c8499ddab9d7b33eb436443d1a7d0c28d3a21`.
+- Final code-only tree: `6940f453f7c84d1dc6c1d13c398be14c667d6deb`.
+- Code-only parent: `3d96d4a2b53e7aa45123f2e2975360c911170e0e`.
 
+The code-only fix revision contains the previous evidence commit in its ancestry;
+this refresh binds the fix revision, never its own later evidence commit.
 The code-only worktree was clean before final verification and before writing
 these two evidence files. The JSON binds the code-only commit/tree above, not its
 own later evidence commit, avoiding self-reference. Its exact canonical output
@@ -55,14 +57,20 @@ c77a985fe1fb6b96d949087b95a2f3507968f2e4 fix: address Task 7 review findings
 6208ac23b015cef74a6778875afdced50a08f946 fix: address Task 7 breaker findings
 be72b26e493a8115992358dadb50f17eeae61ea6 fix: address Task 8 precondition review findings
 7a55d71cbef4a4ecd9950a68b06a5bf38514878c fix: address Task 8 full-suite regressions
+b78d5876ed73f954407f12ec177be91ee3da3294 test: audit anthropic backend implementation
+3d96d4a2b53e7aa45123f2e2975360c911170e0e fix: address final branch review findings
+d80c8499ddab9d7b33eb436443d1a7d0c28d3a21 fix: preserve verified import diagnostic precedence
 ```
 
-Task 8's evidence commit subject is `test: audit anthropic backend implementation`.
+Task 8's original evidence commit is b78d587, with the subject shown above.
+The refresh subject is `test: refresh backend implementation evidence after final fix`.
 Its identity is intentionally outside the code-only evidence binding.
 
 Independent review history is recorded below as Critical/Important/Minor counts.
-The clean result is a scoped review, not a claim that the pending Task 8 evidence
-review or final whole-branch review has occurred.
+The original Task 8 scoped review passed 0/0/0 at b78d587. The later whole-branch
+review reported 0/1/0 for transitive helper proof. The single final fix wave and
+its one evidence-based diagnostic correction are recorded here; their scoped
+re-review is pending, not claimed complete.
 
 | Task | Controlled initial RED; final declared GREEN | Review and correction outcome |
 | --- | --- | --- |
@@ -75,7 +83,7 @@ review or final whole-branch review has occurred.
 | 7: offline boundaries | Controlled recovery RED 10 methods, 10 assertion failures, 0 errors; exact 14-module suite 247/247 GREEN | Five separate review-fix commits retained; final Task 7 review still 0/2/0, explicitly carried into Task 8 rather than called clean |
 | 8: carried audit findings | 10 methods, 6 assertion failures, 0 errors; 247/247 GREEN at 6208ac2 | Invoke and mutable transport/authentication dependencies bound; precondition review found one describe-time timing gap (0/1/0) |
 | 8: precondition timing fix | 10 methods, 4 assertion failures, 0 errors; 247/247 GREEN at be72b26 | Revalidate original captured bindings immediately after describe; independent review 0/0/0, including 15 describe-time mutation/path combinations; both carried Task 7 findings closed |
-| 8: full-suite test correction | Original discovery had 1 failure, 46 errors, 1 known skip; targeted order/policy 33/33 and focused 247/247 GREEN | Test-module restoration and exactly five stdlib allowlist entries corrected at 7a55d71; production behavior unchanged; Task 8 scoped review pending after evidence commit |
+| 8: full-suite test correction | Original discovery had 1 failure, 46 errors, 1 known skip; targeted order/policy 33/33 and focused 247/247 GREEN | Test-module restoration and exactly five stdlib allowlist entries corrected at 7a55d71; production behavior unchanged; Task 8 scoped review passed 0/0/0 at b78d587 |
 
 Review-fix controlled RED assertion counts were: Task 1: 1; Task 2: 2 then 5;
 Task 3: 5; Task 4: 5; Task 5: 2; Task 6: 2; Task 7 rounds 1–5: 6, 3, 3, 2,
@@ -96,6 +104,58 @@ three errors; it was discarded as invalid RED, corrected before audit changes,
 and followed by the controlled 6-assertion-failure RED above. The failed initial
 full discovery is likewise not claimed as controlled assertion RED.
 
+## Single final review-fix wave
+
+The whole-branch review of c48f341..b78d587 found Critical 0, Important 1,
+Minor 0: the current provider was one-request/no-retry, but the audit proof
+covered invoke/post and selected dependencies without closing transitive helper
+source and runtime bindings. A helper-only revision could add another request
+before provisioning rejection and still receive ONE_REQUEST_ZERO_RETRIES.
+All other reviewed categories passed. This is an audit-integrity finding, not
+evidence of a real provider request.
+
+Before any fix, the existing exact ten offline methods ran in 57.937s with
+five controlled assertion failures, zero errors and zero skips. Coverage adds a
+committed helper-only `_validate_timeout` extra-request revision and post-load
+helper replacement, code replacement, positional defaults and keyword defaults.
+The audit never executes the mutated helper.
+
+Commit 3d96d4a pins the complete source of all three provider files and captures
+all provider module/class namespace bindings, including imported function
+aliases and generated class methods. Function code, globals, defaults, keyword
+defaults and closure contents are rechecked with the existing binding checks,
+including immediately after descriptor-consuming callbacks. Helper implementation
+modules are source-checked before execution; registration source is checked
+with final registration bindings. This is a closed source/runtime commitment,
+not an expanded action blacklist. Future legitimate provider source changes
+require an explicit audit commitment update. Provider files were not changed.
+
+The exact ten-method GREEN passed in 56.852s. A postcommit command-assembly
+attempt failed before Python because an unavailable saved command became
+`undefined`; it is not a test result. The corrected explicit focused command
+ran 247 tests in 178.761s with one assertion failure, zero errors and zero skips:
+`test_absolute_public_runner_import_from_verified_provider_fails_and_restores_modules`
+expected the existing `absolute public import` diagnostic, but the new source
+proof rejected the modified dependency earlier. Verification stopped and no
+evidence was refreshed at that point.
+
+The parent authorized one evidence-based correction in the same final wave.
+Commit d80c849 checks the already-forbidden absolute public imports in the
+provider source ASTs before a dependency source commitment can change that
+diagnostic. The existing runtime import guard and helper/source proof remain
+intact; no unapproved provider code is executed and no test assertion is weakened.
+
+```powershell
+python -m unittest tests.test_reviewer_runner_anthropic_registration.ReviewerRunnerAnthropicRegistrationTests.test_absolute_public_runner_import_from_verified_provider_fails_and_restores_modules tests.test_reviewer_runner_anthropic_offline -v
+```
+
+Result: 11 tests in 69.077s; exit 0; OK; zero failures, errors and skips.
+The single allowed focused rerun and all remaining Task 8 gates on d80c849
+are the fresh results below. No further correction or verification retry occurred.
+The final-wave code diff is limited to the audit script and offline test file;
+the diagnostic correction adds twelve audit lines only. Compilation, LF/CR,
+exact ten-method count and working/staged diff checks passed.
+
 ## Exact changed-file manifest
 
 Twelve code/test files differ from the implementation-only base at the code-only
@@ -105,9 +165,9 @@ revision. Every entry has mode 100644; exact code-only Git blob IDs follow.
 100644 blob 9a4bc448afba2ebc86573ec5fafbe97612f0d8bf	skills/joewrks-product-definition/reviewer_runner/providers/__init__.py
 100644 blob 39a3009b46feee45acb3d40c86589dcaafde0e3c	skills/joewrks-product-definition/reviewer_runner/providers/anthropic.py
 100644 blob c673fc482db24f8c1a74a33cbd78cc4cec8e3a42	skills/joewrks-product-definition/reviewer_runner/providers/anthropic_admission.py
-100644 blob cdd0d8da2e4f45a790f165f141918f61fadbb039	skills/joewrks-product-definition/scripts/audit_reviewer_runner.py
+100644 blob 363e54e826b01e20fe1c0b439a7bea9e004b8835	skills/joewrks-product-definition/scripts/audit_reviewer_runner.py
 100644 blob 6935cbcf4660c6f6dc80a716ebc0315362f58548	tests/test_reviewer_runner_anthropic_admission.py
-100644 blob ac17c50eb091c6cff1b3c61d24c1c10e48d2ad7a	tests/test_reviewer_runner_anthropic_offline.py
+100644 blob 511b5b90641fe384498203d9d174a5184192b407	tests/test_reviewer_runner_anthropic_offline.py
 100644 blob b9c9ec1b18049e78918e7414c26e5de35177c816	tests/test_reviewer_runner_anthropic_projection.py
 100644 blob 8cb663166b5cf88819216b114acf9038f469fa76	tests/test_reviewer_runner_anthropic_registration.py
 100644 blob 1887285160800a99794535139c3315ee8ea3561c	tests/test_reviewer_runner_anthropic_response.py
@@ -147,7 +207,7 @@ code changes between them.
 python -m unittest tests.test_reviewer_runner_anthropic_projection tests.test_reviewer_runner_anthropic_admission tests.test_reviewer_runner_anthropic_transport tests.test_reviewer_runner_anthropic_response tests.test_reviewer_runner_anthropic_registration tests.test_reviewer_runner_anthropic_offline tests.test_reviewer_runner_identity tests.test_reviewer_runner_request tests.test_reviewer_runner_backend tests.test_reviewer_runner_preflight tests.test_reviewer_runner_response tests.test_reviewer_runner_evidence tests.test_reviewer_runner_controller tests.test_reviewer_runner_audit -v
 ```
 
-Result: exit 0; 247 tests in 167.093s; OK; 0 failures, 0 errors, 0 skips.
+Result: exit 0; 247 tests in 189.535s; OK; 0 failures, 0 errors, 0 skips.
 The six Anthropic modules and every declared existing runner module passed.
 The offline module still contains exactly ten test methods.
 
@@ -157,7 +217,7 @@ The offline module still contains exactly ten test methods.
 python -m unittest tests.test_semantic_review_hashing tests.test_semantic_review_responsibility tests.test_semantic_review_package tests.test_semantic_review_output tests.test_semantic_review_goldens tests.test_semantic_review_gate tests.test_semantic_review_statistics tests.test_semantic_review_negative_regressions tests.test_semantic_review_calibration_corpus tests.test_semantic_review_calibration_control_plane tests.test_official_calibration_controller tests.test_semantic_review_human_packet -v
 ```
 
-Result: exit 0; 146 tests in 40.959s; OK; 0 failures, 0 errors, 0 skips.
+Result: exit 0; 146 tests in 43.103s; OK; 0 failures, 0 errors, 0 skips.
 Controller regression fixtures do not execute real calibration.
 
 ### Semantic-review/2.1, M6, runtime and frozen boundaries
@@ -166,7 +226,7 @@ Controller regression fixtures do not execute real calibration.
 python -m unittest tests.test_downstream_v21_derivation tests.test_downstream_v21_compiler tests.test_downstream_v21_gap_routing tests.test_downstream_v21_audit tests.test_downstream_v21_semantic_review tests.test_downstream_v21_runtime_plan tests.test_downstream_v21_runtime_evidence tests.test_downstream_v21_dogfood_replay tests.test_downstream_v21_frozen_boundaries tests.test_core_semantic_closure_v2_m6_dogfood_phase_a tests.test_core_semantic_closure_v2_m6_dogfood_phase_b tests.test_m6_runtime_v21_verification tests.test_m6_client_feedback_portal_fixture -v
 ```
 
-Result: exit 0; 142 tests in 124.420s; OK; 0 failures, 0 errors, 0 skips.
+Result: exit 0; 142 tests in 133.785s; OK; 0 failures, 0 errors, 0 skips.
 
 ### Legacy and full discovery
 
@@ -176,8 +236,8 @@ python -m unittest discover -s tests -v
 git -c core.autocrlf=false -c core.eol=lf diff --check
 ```
 
-Legacy: exit 0; 37 tests in 4.769s; OK; 0 failures, 0 errors, 0 skips.
-Full discovery: exit 0; 1,173 tests in 494.554s; OK (skipped=1);
+Legacy: exit 0; 37 tests in 4.863s; OK; 0 failures, 0 errors, 0 skips.
+Full discovery: exit 0; 1,173 tests in 552.464s; OK (skipped=1);
 1,172 passed, 0 failures, 0 errors. Diff check: exit 0, empty output.
 
 The sole pre-existing environment-dependent skip was
@@ -199,8 +259,10 @@ provider failure. No evidence was written for that failed run.
 After the authorized test-only correction, the original order
 `offline -> registration -> response` plus the exact package-policy test passed
 33/33 in 63.149s, and the precommit focused suite passed 247/247 in 166.642s.
-There was then exactly one full-discovery retry on final commit 7a55d71, recorded
-above. All thirteen response methods and the originally failing package-policy
+There was then exactly one full-discovery retry on the then-final commit
+7a55d71: 1,173 tests in 494.554s, zero failures/errors and one known skip.
+The final review later required the separate source/helper proof correction;
+its fresh verification on d80c849 is recorded above. All thirteen response methods and the originally failing package-policy
 method passed in full discovery. No failure was hidden by a changed production
 type check, weakened assertion, reordered discovery, or new skip.
 
@@ -311,7 +373,7 @@ added no attempt and did not reset the historical counter.
 ## Audit readback and frozen compatibility
 
 ```powershell
-python skills/joewrks-product-definition/scripts/audit_reviewer_runner.py --repository . --revision 7a55d71cbef4a4ecd9950a68b06a5bf38514878c --json
+python skills/joewrks-product-definition/scripts/audit_reviewer_runner.py --repository . --revision d80c8499ddab9d7b33eb436443d1a7d0c28d3a21 --json
 python skills/joewrks-product-definition/scripts/audit_reviewer_runner.py --repository . --revision 0b754bdc2502be35a7f657275f17fe117e8c49bd --json
 python -m unittest tests.test_reviewer_runner_audit tests.test_reviewer_runner_anthropic_offline -v
 ```
@@ -323,7 +385,7 @@ registered real adapters for its historical code-only revision/tree.
 
 Fresh subprocess stdout was compared as raw bytes against both files. The new
 JSON is 907 bytes, SHA-256
-`7dd95c374ab126d6605a4ee0145836185297bb521fea41ce2782a80347c08a3f`.
+`1970e16751559b195018636914ebd9d5d1ffa8f29e1fc16f5af4d1f80883c7fd`.
 Both outputs exactly equal sorted compact UTF-8 JSON plus one LF, with no BOM
 or CR. The v1.1 object has exactly 21 keys; the historical v1.0 object has 16.
 
@@ -346,7 +408,7 @@ git diff --exit-code ab95074704af0e93248d56344d6a220dfec88a93..HEAD -- evals/pos
 git diff --check
 ```
 
-Final evidence readback suite: exit 0; 34 tests in 81.837s; OK;
+Final evidence readback suite: exit 0; 34 tests in 94.087s; OK;
 0 failures, 0 errors, 0 skips. All six frozen diffs exited 0 with empty
 output. Working diff check passed. Final evidence bytes were read back as UTF-8
 with zero CR and a final LF; JSON raw-byte equality was verified against the
@@ -361,7 +423,8 @@ This record makes no fresh remote-state claim.
 
 ## Stop boundary
 
-Task 8 stops after its GREEN evidence commit and clean-status verification for
-independent scoped review. That review, later final whole-branch review and any
-publication are not asserted complete here. Real capability remains unavailable
+The original Task 8 evidence review passed 0/0/0; the later whole-branch finding
+triggered the single correction wave documented above. This refresh stops after
+its GREEN evidence commit and clean-status verification for the one independent
+scoped re-review. That re-review and publication are not asserted complete here. Real capability remains unavailable
 until separately authorized provisioning and real P1/P2 proof are accepted.
