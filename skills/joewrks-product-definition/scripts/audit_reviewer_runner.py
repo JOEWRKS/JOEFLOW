@@ -23,6 +23,7 @@ try:
     import stat
     import subprocess
     import threading
+    import types
     from typing import Iterable
 finally:
     sys.dont_write_bytecode = _previous_dont_write_bytecode
@@ -510,7 +511,7 @@ class _SnapshotSourceLoader(importlib.machinery.SourceFileLoader):
         on_exec = self._on_exec
         self._on_exec = None
         if on_exec is not None:
-            on_exec(self.name, module)
+            on_exec(self.name, module, code)
 
 
 class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
@@ -525,8 +526,13 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         self._snapshot = snapshot
         self._anthropic_module_executed = False
         self._verified_anthropic_backend_type = None
+        self._verified_anthropic_transport_type = None
+        self._verified_anthropic_post_function = None
+        self._verified_anthropic_post_code = None
 
-    def _capture_verified_export(self, fullname: str, module) -> None:
+    def _capture_verified_export(
+        self, fullname: str, module, module_code: types.CodeType
+    ) -> None:
         if fullname != f"{self._package_name}.providers.anthropic":
             return
         if self._anthropic_module_executed:
@@ -534,12 +540,74 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         self._anthropic_module_executed = True
         exported_type = module.__dict__.get("AnthropicBackend")
         self._verified_anthropic_backend_type = exported_type
+        transport_type = module.__dict__.get("StdlibAnthropicTransport")
+        self._verified_anthropic_transport_type = transport_type
+        if type(transport_type) is type:
+            self._verified_anthropic_post_function = type.__getattribute__(
+                transport_type, "post"
+            )
+        transport_code = tuple(
+            constant
+            for constant in module_code.co_consts
+            if isinstance(constant, types.CodeType)
+            and constant.co_name == "StdlibAnthropicTransport"
+        )
+        if len(transport_code) == 1:
+            post_code = tuple(
+                constant
+                for constant in transport_code[0].co_consts
+                if isinstance(constant, types.CodeType) and constant.co_name == "post"
+            )
+            if len(post_code) == 1:
+                self._verified_anthropic_post_code = post_code[0]
 
     def verified_anthropic_backend_type(self):
         exported_type = self._verified_anthropic_backend_type
         if not isinstance(exported_type, type):
             raise RuntimeError("verified AnthropicBackend export was not captured")
         return exported_type
+
+    def verify_anthropic_transport_binding(self, module, registered) -> None:
+        transport_type = self._verified_anthropic_transport_type
+        post_function = self._verified_anthropic_post_function
+        post_code = self._verified_anthropic_post_code
+        try:
+            current_post = type.__getattribute__(transport_type, "post")
+            current_getattribute = type.__getattribute__(
+                transport_type, "__getattribute__"
+            )
+        except (AttributeError, TypeError):
+            current_post = None
+            current_getattribute = None
+        invalid = (
+            not self._anthropic_module_executed
+            or module.__dict__.get("StdlibAnthropicTransport") is not transport_type
+            or type(transport_type) is not type
+            or type(post_function) is not types.FunctionType
+            or type(post_code) is not types.CodeType
+            or post_function.__code__ is not post_code
+            or current_post is not post_function
+            or current_getattribute is not object.__getattribute__
+        )
+        if not invalid:
+            try:
+                for adapter in registered:
+                    transport = object.__getattribute__(adapter, "_transport")
+                    effective_post = getattr(transport, "post")
+                    if (
+                        type(transport) is not transport_type
+                        or type(effective_post) is not types.MethodType
+                        or effective_post.__self__ is not transport
+                        or effective_post.__func__ is not post_function
+                    ):
+                        invalid = True
+                        break
+            except (AttributeError, TypeError):
+                invalid = True
+        if invalid:
+            raise RuntimeError(
+                "Anthropic transport does not prove one request with zero retries"
+            )
 
     def find_spec(self, fullname, path=None, target=None):
         if (
@@ -751,6 +819,12 @@ def _load_verified_snapshot_registration(
             raise RuntimeError(
                 "verified provider registration must use the exact verified AnthropicBackend"
             )
+        anthropic_module = sys.modules.get(
+            f"{package_name}.providers.anthropic"
+        )
+        if anthropic_module is None:
+            raise RuntimeError("verified runner source snapshot is incomplete")
+        finder.verify_anthropic_transport_binding(anthropic_module, registered)
         return registered
     finally:
         if finder is not None and finder in sys.meta_path:

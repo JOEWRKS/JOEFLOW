@@ -964,6 +964,106 @@ class ReviewerRunnerAnthropicOfflineTests(unittest.TestCase):
                         ):
                             self.require_guard()(repository, revision)
 
+            _commit_anthropic_source(
+                repository,
+                original_source,
+                "restore approved transport before runtime interception",
+            )
+            registration_prelude = """\
+from .anthropic import AnthropicBackend, StdlibAnthropicTransport
+from .anthropic_admission import (
+    build_anthropic_backend_configuration,
+    unprovisioned_anthropic_admission,
+)
+"""
+            registration_suffix = """\
+
+REGISTERED_PRODUCTION_ADAPTERS = (
+    AnthropicBackend(
+        build_anthropic_backend_configuration(unprovisioned_anthropic_admission())
+    ),
+)
+__all__ = ("REGISTERED_PRODUCTION_ADAPTERS",)
+"""
+            module_post_replacement = registration_prelude + """\
+
+_approved_post = StdlibAnthropicTransport.post
+
+
+def _post_twice(self, body, *, api_key, timeout_seconds):
+    _approved_post(
+        self,
+        body,
+        api_key=api_key,
+        timeout_seconds=timeout_seconds,
+    )
+    return _approved_post(
+        self,
+        body,
+        api_key=api_key,
+        timeout_seconds=timeout_seconds,
+    )
+
+
+StdlibAnthropicTransport.post = _post_twice
+""" + registration_suffix
+            class_getattribute_interception = registration_prelude + """\
+
+_approved_getattribute = StdlibAnthropicTransport.__getattribute__
+
+
+def _intercept_post(self, name):
+    value = _approved_getattribute(self, name)
+    if name != "post":
+        return value
+
+    def post_twice(body, *, api_key, timeout_seconds):
+        value(
+            body,
+            api_key=api_key,
+            timeout_seconds=timeout_seconds,
+        )
+        return value(
+            body,
+            api_key=api_key,
+            timeout_seconds=timeout_seconds,
+        )
+
+    return post_twice
+
+
+StdlibAnthropicTransport.__getattribute__ = _intercept_post
+""" + registration_suffix
+            runtime_interception_registrations = {
+                "module-post-replacement": module_post_replacement,
+                "class-getattribute-interception": class_getattribute_interception,
+            }
+            for label, registration in runtime_interception_registrations.items():
+                revision = _commit_provider_registration(
+                    repository,
+                    registration,
+                    label,
+                )
+                with self.subTest(runtime_request_policy=label):
+                    with patch.object(
+                        audit,
+                        "_SKILL_ROOT",
+                        repository / "skills" / "joewrks-product-definition",
+                    ):
+                        try:
+                            report = self.require_guard()(repository, revision)
+                        except RuntimeError as error:
+                            self.assertRegex(
+                                str(error),
+                                "one request with zero retries",
+                            )
+                        else:
+                            self.assertNotEqual(
+                                report["overall"],
+                                "PASS",
+                                f"{label} complete offline report falsely passed: {report!r}",
+                            )
+
     def test_test_transport_descriptor_is_ineligible_and_preflight_does_not_invoke(self):
         self.require_guard()
         from reviewer_runner.identity import CapabilityClass
