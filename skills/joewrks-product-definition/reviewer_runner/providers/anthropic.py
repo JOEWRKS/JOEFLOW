@@ -203,10 +203,14 @@ def _validate_request_document(document: dict[str, object]) -> dict[str, str]:
         raise ValueError("canonical request schema version does not match")
     if document["runner_contract_version"] != RUNNER_CONTRACT_VERSION:
         raise ValueError("runner contract version does not match")
-    if document["response_contract"] != {
-        "logical_response_count": 1,
-        "media_type": "application/json",
-    }:
+    response_contract = document["response_contract"]
+    if (
+        type(response_contract) is not dict
+        or set(response_contract) != {"logical_response_count", "media_type"}
+        or type(response_contract["logical_response_count"]) is not int
+        or response_contract["logical_response_count"] != 1
+        or response_contract["media_type"] != "application/json"
+    ):
         raise ValueError("response contract does not match the single JSON response")
     identity = document["run_identity"]
     if type(identity) is not dict or set(identity) != _RUN_IDENTITY_KEYS:

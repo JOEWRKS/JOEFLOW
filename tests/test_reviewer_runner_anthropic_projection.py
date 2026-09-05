@@ -191,7 +191,16 @@ class ReviewerRunnerAnthropicProjectionTests(unittest.TestCase):
         bad_utf8["inputs"][0]["sha256"] = sha256_bytes(b"\xff")
         non_json_number = json.loads(json.dumps(document))
         non_json_number["inputs"][0]["byte_count"] = 1.0
-        candidates = [bad_count, bad_hash, bad_base64, bad_utf8, non_json_number]
+        boolean_response_count = json.loads(json.dumps(document))
+        boolean_response_count["response_contract"]["logical_response_count"] = True
+        candidates = [
+            bad_count,
+            bad_hash,
+            bad_base64,
+            bad_utf8,
+            non_json_number,
+            boolean_response_count,
+        ]
         for candidate in candidates:
             with self.subTest(candidate=candidate):
                 with self.assertRaises(ValueError):
