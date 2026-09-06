@@ -559,6 +559,34 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
             self._capture_http_connection_callable(connection_type, name)
             for name in ("request", "getresponse", "close")
         )
+        self._verified_http_instance_dependencies = (
+            (
+                "effective",
+                self._capture_http_connection_callable(connection_type, "__new__"),
+            ),
+            (
+                "effective",
+                self._capture_http_connection_callable(connection_type, "__init__"),
+            ),
+            (
+                "base",
+                self._capture_http_connection_callable(
+                    self._verified_http_connection, "__init__"
+                ),
+            ),
+            (
+                "effective",
+                self._capture_http_connection_callable(
+                    connection_type, "__getattribute__"
+                ),
+            ),
+            (
+                "effective",
+                self._capture_http_connection_callable(
+                    connection_type, "__setattr__"
+                ),
+            ),
+        )
         self._verified_os = os
         self._verified_environment = os.environ
 
@@ -572,22 +600,80 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
                 if name not in namespace:
                     continue
                 function = namespace[name]
-                if type(function) is not types.FunctionType:
+                if type(function) in (staticmethod, classmethod):
+                    function = function.__func__
+                if not callable(function):
                     return None
+                is_python_function = type(function) is types.FunctionType
                 return (
                     name,
                     defining_type,
                     function,
-                    function.__code__,
-                    function.__globals__,
-                    function.__defaults__,
-                    function.__kwdefaults__,
-                    dict(function.__kwdefaults__ or {}),
-                    tuple(cell.cell_contents for cell in function.__closure__ or ()),
+                    function.__code__ if is_python_function else None,
+                    function.__globals__ if is_python_function else None,
+                    function.__defaults__ if is_python_function else None,
+                    function.__kwdefaults__ if is_python_function else None,
+                    dict(function.__kwdefaults__ or {}) if is_python_function else {},
+                    tuple(cell.cell_contents for cell in function.__closure__ or ())
+                    if is_python_function
+                    else (),
                 )
         except (AttributeError, TypeError):
             return None
         return None
+
+    def _http_connection_callable_is_current(
+        self,
+        connection_type,
+        captured,
+        *,
+        required_defining_type=None,
+    ) -> bool:
+        if captured is None:
+            return False
+        (
+            name,
+            defining_type,
+            function,
+            code,
+            globals_,
+            defaults,
+            kwdefaults,
+            keywords,
+            closure,
+        ) = captured
+        current = self._capture_http_connection_callable(connection_type, name)
+        if current is None:
+            return False
+        current_name, current_defining_type, current_function, *_ = current
+        if (
+            current_name != name
+            or (
+                required_defining_type is not None
+                and defining_type is not required_defining_type
+            )
+            or current_defining_type is not defining_type
+            or current_function is not function
+        ):
+            return False
+        if type(function) is not types.FunctionType:
+            return True
+        return (
+            function.__code__ is code
+            and function.__globals__ is globals_
+            and function.__defaults__ is defaults
+            and function.__kwdefaults__ is kwdefaults
+            and set(function.__kwdefaults__ or {}) == set(keywords)
+            and all(
+                function.__kwdefaults__[keyword] is value
+                for keyword, value in keywords.items()
+            )
+            and len(function.__closure__ or ()) == len(closure)
+            and all(
+                cell.cell_contents is value
+                for cell, value in zip(function.__closure__ or (), closure)
+            )
+        )
 
     def _verify_http_connection_callables(self) -> None:
         connection_type = (
@@ -595,59 +681,39 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
             if type(self._verified_https_connection) is type
             else self._verified_http_connection
         )
-        if (
+        invalid = (
             self._verified_http_client.__dict__.get("HTTPConnection")
             is not self._verified_http_connection
             or len(self._verified_http_connection_callables) != 3
-        ):
+            or any(
+                not self._http_connection_callable_is_current(
+                    connection_type,
+                    captured,
+                    required_defining_type=self._verified_http_connection,
+                )
+                for captured in self._verified_http_connection_callables
+            )
+        )
+        if not invalid:
+            for target, captured in self._verified_http_instance_dependencies:
+                dependency_type = (
+                    connection_type
+                    if target == "effective"
+                    else self._verified_http_connection
+                )
+                if not self._http_connection_callable_is_current(
+                    dependency_type,
+                    captured,
+                    required_defining_type=(
+                        self._verified_http_connection if target == "base" else None
+                    ),
+                ):
+                    invalid = True
+                    break
+        if invalid:
             raise RuntimeError(
                 "Anthropic HTTP transport dependency does not prove one request with zero retries"
             )
-        for captured in self._verified_http_connection_callables:
-            if captured is None:
-                raise RuntimeError(
-                    "Anthropic HTTP transport dependency does not prove one request with zero retries"
-                )
-            (
-                name,
-                defining_type,
-                function,
-                code,
-                globals_,
-                defaults,
-                kwdefaults,
-                keywords,
-                closure,
-            ) = captured
-            current = self._capture_http_connection_callable(connection_type, name)
-            if current is None:
-                raise RuntimeError(
-                    "Anthropic HTTP transport dependency does not prove one request with zero retries"
-                )
-            current_name, current_defining_type, current_function, *_ = current
-            if (
-                current_name != name
-                or defining_type is not self._verified_http_connection
-                or current_defining_type is not defining_type
-                or current_function is not function
-                or function.__code__ is not code
-                or function.__globals__ is not globals_
-                or function.__defaults__ is not defaults
-                or function.__kwdefaults__ is not kwdefaults
-                or set(function.__kwdefaults__ or {}) != set(keywords)
-                or any(
-                    function.__kwdefaults__[keyword] is not value
-                    for keyword, value in keywords.items()
-                )
-                or len(function.__closure__ or ()) != len(closure)
-                or any(
-                    cell.cell_contents is not value
-                    for cell, value in zip(function.__closure__ or (), closure)
-                )
-            ):
-                raise RuntimeError(
-                    "Anthropic HTTP transport dependency does not prove one request with zero retries"
-                )
 
     def _capture_verified_export(
         self, fullname: str, module, module_code: types.CodeType

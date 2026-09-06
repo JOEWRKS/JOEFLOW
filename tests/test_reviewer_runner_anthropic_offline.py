@@ -1310,6 +1310,228 @@ AnthropicBackend.__getattribute__ = _intercept_invoke
                 original_method,
             )
 
+    def test_capability_audit_rejects_http_instance_dispatch_mutations(self):
+        import audit_reviewer_runner as audit
+
+        http_connection = http.client.HTTPConnection
+        https_connection = http.client.HTTPSConnection
+        original_capture = audit._SnapshotSourceFinder._capture_verified_export
+        original_verify = audit._SnapshotSourceFinder.verify_anthropic_transport_binding
+        original_class_request = https_connection.request
+        missing = object()
+
+        for timing in ("after-capture", "after-initial-binding"):
+            for mechanism in ("getattribute", "init", "setattr"):
+                mutation_calls = []
+                mutation_installed = []
+                attribute_name = "__" + mechanism + "__"
+                original_attribute = http_connection.__dict__.get(attribute_name, missing)
+
+                def install_mutation(*, mechanism=mechanism, attribute_name=attribute_name):
+                    if mutation_installed:
+                        return
+
+                    def replacement_request(connection, *args, **kwargs):
+                        mutation_calls.append((connection, args, kwargs))
+                        raise AssertionError("audit must not execute an inherited HTTP callable")
+
+                    if mechanism == "getattribute":
+                        inherited_getattribute = http_connection.__getattribute__
+
+                        def mutated_getattribute(connection, name):
+                            if name == "request":
+                                return replacement_request.__get__(connection, type(connection))
+                            return inherited_getattribute(connection, name)
+
+                        setattr(http_connection, attribute_name, mutated_getattribute)
+                    elif mechanism == "init":
+                        inherited_init = http_connection.__init__
+
+                        def mutated_init(connection, *args, **kwargs):
+                            inherited_init(connection, *args, **kwargs)
+                            object.__setattr__(
+                                connection,
+                                "request",
+                                replacement_request.__get__(connection, type(connection)),
+                            )
+
+                        setattr(http_connection, attribute_name, mutated_init)
+                    elif mechanism == "setattr":
+                        inherited_setattr = http_connection.__setattr__
+
+                        def mutated_setattr(connection, name, value):
+                            inherited_setattr(connection, name, value)
+                            if name == "host":
+                                inherited_setattr(
+                                    connection,
+                                    "request",
+                                    replacement_request.__get__(connection, type(connection)),
+                                )
+
+                        setattr(http_connection, attribute_name, mutated_setattr)
+                    mutation_installed.append(replacement_request)
+                    probe = https_connection(
+                        "offline.invalid",
+                        port=443,
+                        context=object(),
+                    )
+                    self.assertIs(https_connection.request, original_class_request)
+                    self.assertIs(probe.request.__func__, replacement_request)
+
+                def capture_then_mutate(finder, fullname, module, code):
+                    original_capture(finder, fullname, module, code)
+                    if fullname.endswith(".providers.anthropic"):
+                        install_mutation()
+
+                def verify_then_mutate(finder, module, registered):
+                    result = original_verify(finder, module, registered)
+                    install_mutation()
+                    return result
+
+                patch_target = (
+                    "_capture_verified_export"
+                    if timing == "after-capture"
+                    else "verify_anthropic_transport_binding"
+                )
+                replacement = (
+                    capture_then_mutate
+                    if timing == "after-capture"
+                    else verify_then_mutate
+                )
+                try:
+                    with self.subTest(timing=timing, mechanism=mechanism):
+                        with patch.object(
+                            audit._SnapshotSourceFinder,
+                            patch_target,
+                            replacement,
+                        ):
+                            with self.assertRaisesRegex(
+                                RuntimeError,
+                                "HTTP transport dependency does not prove one request with zero retries",
+                            ):
+                                audit.build_capability_audit(ROOT, self.revision)
+                        self.assertEqual(len(mutation_installed), 1)
+                        self.assertEqual(mutation_calls, [])
+                finally:
+                    if original_attribute is missing:
+                        delattr(http_connection, attribute_name)
+                    else:
+                        setattr(http_connection, attribute_name, original_attribute)
+                self.assertIs(https_connection.request, original_class_request)
+
+    def test_capability_audit_rejects_http_instance_new_mutation_in_isolated_process(self):
+        script = r"""
+import http.client
+from pathlib import Path
+import socket
+import sys
+
+repository = Path(sys.argv[1])
+revision = sys.argv[2]
+skill_root = Path(sys.argv[3])
+sys.path.insert(0, str(skill_root / "scripts"))
+sys.path.insert(0, str(skill_root))
+import audit_reviewer_runner as audit
+
+network_calls = []
+
+
+def forbidden_network(*args, **kwargs):
+    network_calls.append((args, kwargs))
+    raise AssertionError("network access is prohibited")
+
+
+socket.getaddrinfo = forbidden_network
+socket.socket = forbidden_network
+socket.create_connection = forbidden_network
+http_connection = http.client.HTTPConnection
+https_connection = http.client.HTTPSConnection
+original_class_request = https_connection.request
+original_capture = audit._SnapshotSourceFinder._capture_verified_export
+original_verify = audit._SnapshotSourceFinder.verify_anthropic_transport_binding
+installed = []
+replacement_calls = []
+
+
+def install_mutation():
+    if installed:
+        return
+
+    def replacement_request(connection, *args, **kwargs):
+        replacement_calls.append((connection, args, kwargs))
+        raise AssertionError("audit must not execute an inherited HTTP callable")
+
+    def mutated_new(connection_type, *args, **kwargs):
+        connection = object.__new__(connection_type)
+        object.__setattr__(
+            connection,
+            "request",
+            replacement_request.__get__(connection, connection_type),
+        )
+        return connection
+
+    http_connection.__new__ = staticmethod(mutated_new)
+    installed.append(replacement_request)
+    probe = https_connection("offline.invalid", port=443, context=object())
+    assert https_connection.request is original_class_request
+    assert probe.request.__func__ is replacement_request
+
+
+def capture_then_mutate(finder, fullname, module, code):
+    original_capture(finder, fullname, module, code)
+    if fullname.endswith(".providers.anthropic"):
+        install_mutation()
+
+
+def verify_then_mutate(finder, module, registered):
+    result = original_verify(finder, module, registered)
+    install_mutation()
+    return result
+
+
+timing = sys.argv[4]
+if timing == "after-capture":
+    audit._SnapshotSourceFinder._capture_verified_export = capture_then_mutate
+else:
+    audit._SnapshotSourceFinder.verify_anthropic_transport_binding = verify_then_mutate
+
+try:
+    audit.build_capability_audit(repository, revision)
+except RuntimeError as error:
+    if "HTTP transport dependency does not prove one request with zero retries" not in str(error):
+        raise
+    assert len(installed) == 1
+    assert replacement_calls == []
+    assert network_calls == []
+    print("NETWORK_CALLS=0")
+else:
+    print("NOT_CAUGHT")
+    raise SystemExit(3)
+"""
+        for timing in ("after-capture", "after-initial-binding"):
+            with self.subTest(timing=timing):
+                completed = subprocess.run(
+                    [
+                        sys.executable,
+                        "-c",
+                        script,
+                        str(ROOT),
+                        self.revision,
+                        str(SKILL_ROOT),
+                        timing,
+                    ],
+                    cwd=ROOT,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(
+                    completed.returncode,
+                    0,
+                    completed.stdout + completed.stderr,
+                )
+                self.assertEqual(completed.stdout, "NETWORK_CALLS=0\n")
+
     def test_test_transport_descriptor_is_ineligible_and_preflight_does_not_invoke(self):
         self.require_guard()
         from reviewer_runner.identity import CapabilityClass
