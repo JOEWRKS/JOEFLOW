@@ -548,9 +548,106 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         # During an offline report, HTTPSConnection/environ are the owned blockers.
         self._verified_http = http
         self._verified_http_client = http.client
+        self._verified_http_connection = http.client.HTTPConnection
         self._verified_https_connection = http.client.HTTPSConnection
+        connection_type = (
+            self._verified_https_connection
+            if type(self._verified_https_connection) is type
+            else self._verified_http_connection
+        )
+        self._verified_http_connection_callables = tuple(
+            self._capture_http_connection_callable(connection_type, name)
+            for name in ("request", "getresponse", "close")
+        )
         self._verified_os = os
         self._verified_environment = os.environ
+
+    @staticmethod
+    def _capture_http_connection_callable(connection_type, name: str):
+        if type(connection_type) is not type:
+            return None
+        try:
+            for defining_type in type.__getattribute__(connection_type, "__mro__"):
+                namespace = type.__getattribute__(defining_type, "__dict__")
+                if name not in namespace:
+                    continue
+                function = namespace[name]
+                if type(function) is not types.FunctionType:
+                    return None
+                return (
+                    name,
+                    defining_type,
+                    function,
+                    function.__code__,
+                    function.__globals__,
+                    function.__defaults__,
+                    function.__kwdefaults__,
+                    dict(function.__kwdefaults__ or {}),
+                    tuple(cell.cell_contents for cell in function.__closure__ or ()),
+                )
+        except (AttributeError, TypeError):
+            return None
+        return None
+
+    def _verify_http_connection_callables(self) -> None:
+        connection_type = (
+            self._verified_https_connection
+            if type(self._verified_https_connection) is type
+            else self._verified_http_connection
+        )
+        if (
+            self._verified_http_client.__dict__.get("HTTPConnection")
+            is not self._verified_http_connection
+            or len(self._verified_http_connection_callables) != 3
+        ):
+            raise RuntimeError(
+                "Anthropic HTTP transport dependency does not prove one request with zero retries"
+            )
+        for captured in self._verified_http_connection_callables:
+            if captured is None:
+                raise RuntimeError(
+                    "Anthropic HTTP transport dependency does not prove one request with zero retries"
+                )
+            (
+                name,
+                defining_type,
+                function,
+                code,
+                globals_,
+                defaults,
+                kwdefaults,
+                keywords,
+                closure,
+            ) = captured
+            current = self._capture_http_connection_callable(connection_type, name)
+            if current is None:
+                raise RuntimeError(
+                    "Anthropic HTTP transport dependency does not prove one request with zero retries"
+                )
+            current_name, current_defining_type, current_function, *_ = current
+            if (
+                current_name != name
+                or defining_type is not self._verified_http_connection
+                or current_defining_type is not defining_type
+                or current_function is not function
+                or function.__code__ is not code
+                or function.__globals__ is not globals_
+                or function.__defaults__ is not defaults
+                or function.__kwdefaults__ is not kwdefaults
+                or set(function.__kwdefaults__ or {}) != set(keywords)
+                or any(
+                    function.__kwdefaults__[keyword] is not value
+                    for keyword, value in keywords.items()
+                )
+                or len(function.__closure__ or ()) != len(closure)
+                or any(
+                    cell.cell_contents is not value
+                    for cell, value in zip(function.__closure__ or (), closure)
+                )
+            ):
+                raise RuntimeError(
+                    "Anthropic HTTP transport dependency does not prove one request with zero retries"
+                )
 
     def _capture_verified_export(
         self, fullname: str, module, module_code: types.CodeType
@@ -703,6 +800,7 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
             raise RuntimeError(
                 "Anthropic transport does not prove one request with zero retries"
             )
+        self._verify_http_connection_callables()
         for source_path, expected_digest in _APPROVED_ANTHROPIC_SOURCE_SHA256.items():
             if hashlib.sha256(self._snapshot[source_path]).hexdigest() != expected_digest:
                 raise RuntimeError("Anthropic provider source does not prove one request with zero retries")

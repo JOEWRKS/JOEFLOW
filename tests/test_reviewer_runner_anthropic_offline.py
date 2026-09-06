@@ -1197,6 +1197,119 @@ AnthropicBackend.__getattribute__ = _intercept_invoke
                     with self.assertRaisesRegex(RuntimeError, "one request with zero retries"):
                         self.require_guard()(ROOT, self.revision)
 
+    def test_capability_audit_rejects_inherited_http_callables_mutated_after_capture(self):
+        import audit_reviewer_runner as audit
+
+        original_capture = audit._SnapshotSourceFinder._capture_verified_export
+        for method_name in ("request", "getresponse", "close"):
+            original_method = getattr(http.client.HTTPConnection, method_name)
+            defining_class = next(
+                candidate
+                for candidate in http.client.HTTPSConnection.__mro__
+                if method_name in candidate.__dict__
+            )
+            self.assertIs(defining_class, http.client.HTTPConnection)
+            self.assertIs(
+                getattr(http.client.HTTPSConnection, method_name),
+                original_method,
+            )
+            mutation_calls = []
+
+            def capture_then_mutate(
+                finder,
+                fullname,
+                module,
+                code,
+                *,
+                method_name=method_name,
+            ):
+                original_capture(finder, fullname, module, code)
+                if not fullname.endswith(".providers.anthropic"):
+                    return
+
+                def mutated_http_callable(connection, *args, **kwargs):
+                    mutation_calls.append((connection, args, kwargs))
+                    raise AssertionError("audit must not execute an inherited HTTP callable")
+
+                setattr(http.client.HTTPConnection, method_name, mutated_http_callable)
+                self.assertIs(
+                    getattr(http.client.HTTPSConnection, method_name),
+                    mutated_http_callable,
+                )
+
+            try:
+                with self.subTest(inherited_http_callable=method_name):
+                    with patch.object(
+                        audit._SnapshotSourceFinder,
+                        "_capture_verified_export",
+                        capture_then_mutate,
+                    ):
+                        with self.assertRaisesRegex(
+                            RuntimeError,
+                            "HTTP transport dependency does not prove one request with zero retries",
+                        ):
+                            audit.build_capability_audit(ROOT, self.revision)
+                    self.assertEqual(mutation_calls, [])
+            finally:
+                setattr(http.client.HTTPConnection, method_name, original_method)
+            self.assertIs(
+                getattr(http.client.HTTPSConnection, method_name),
+                original_method,
+            )
+
+    def test_capability_audit_rechecks_inherited_http_callables_after_descriptor_callbacks(self):
+        import audit_reviewer_runner as audit
+
+        original_verify = audit._SnapshotSourceFinder.verify_anthropic_transport_binding
+        for method_name in ("request", "getresponse", "close"):
+            original_method = getattr(http.client.HTTPConnection, method_name)
+            mutation_calls = []
+            mutation_installed = []
+
+            def verify_then_mutate(
+                finder,
+                module,
+                registered,
+                *,
+                method_name=method_name,
+            ):
+                result = original_verify(finder, module, registered)
+                if mutation_installed:
+                    return result
+
+                def mutated_http_callable(connection, *args, **kwargs):
+                    mutation_calls.append((connection, args, kwargs))
+                    raise AssertionError("audit must not execute an inherited HTTP callable")
+
+                setattr(http.client.HTTPConnection, method_name, mutated_http_callable)
+                mutation_installed.append(mutated_http_callable)
+                self.assertIs(
+                    getattr(http.client.HTTPSConnection, method_name),
+                    mutated_http_callable,
+                )
+                return result
+
+            try:
+                with self.subTest(inherited_http_callable=method_name):
+                    with patch.object(
+                        audit._SnapshotSourceFinder,
+                        "verify_anthropic_transport_binding",
+                        verify_then_mutate,
+                    ):
+                        with self.assertRaisesRegex(
+                            RuntimeError,
+                            "HTTP transport dependency does not prove one request with zero retries",
+                        ):
+                            audit.build_capability_audit(ROOT, self.revision)
+                    self.assertEqual(len(mutation_installed), 1)
+                    self.assertEqual(mutation_calls, [])
+            finally:
+                setattr(http.client.HTTPConnection, method_name, original_method)
+            self.assertIs(
+                getattr(http.client.HTTPSConnection, method_name),
+                original_method,
+            )
+
     def test_test_transport_descriptor_is_ineligible_and_preflight_does_not_invoke(self):
         self.require_guard()
         from reviewer_runner.identity import CapabilityClass
