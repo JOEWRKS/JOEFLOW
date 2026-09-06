@@ -158,8 +158,9 @@ python -m unittest tests.test_reviewer_runner_anthropic_registration.ReviewerRun
 ```
 
 Result: 11 tests in 69.077s; exit 0; OK; zero failures, errors and skips.
-The single allowed focused rerun and all remaining Task 8 gates on d80c849
-are the fresh results below. No further correction or verification retry occurred.
+The historical Task 8 gates on d80c849 remain recorded in the prior evidence
+commit. The results below are the later fresh remediation verification on
+2b137125. No provider-runtime correction occurred in either wave.
 The final-wave code diff is limited to the audit script and offline test file;
 the diagnostic correction adds twelve audit lines only. Compilation, LF/CR,
 exact ten-method count and working/staged diff checks passed.
