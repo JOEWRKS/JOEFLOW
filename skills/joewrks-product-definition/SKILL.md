@@ -16,6 +16,13 @@ Installed routing status:
 
 Read [workflow-v0.2.0.md](references/workflow-v0.2.0.md) before running the V2 lifecycle. When implementation or downstream verification reports a mismatch, ambiguity, conflict, or scope request, use [reentry-workflow-v0.2.0.md](references/reentry-workflow-v0.2.0.md) before changing Product Definition.
 
+Use a tool-independent implementation handoff. Start with the common human-readable
+specification in [figma-make-handoff.md](templates/figma-make-handoff.md) and
+its [handoff guidance](references/figma-make-handoff.md); the historical file
+name does not make Figma mandatory. Preserve the same approved product
+meaning for every implementation consumer, and include optional Figma Design
+or Figma Make guidance only when that work was selected.
+
 ## State-contract dispatch
 
 - **New project:** create `state.json` from `templates/state-v0.2.0.example.json`, validate it through `scripts/validate_state.py` against the V2 dispatcher and `schemas/state-v0.2.0.schema.json`, and continue under [state-contract-v0.2.0.md](references/state-contract-v0.2.0.md).
@@ -63,7 +70,9 @@ Resolve the absolute directory containing this loaded `SKILL.md`; never resolve 
 | Recommendation accepted | Record `USER_ACCEPTED_RECOMMENDATION` |
 | Material semantic state changes | Prepare complete records off-state, then atomically increment revision, set non-`CLOSED`/`UNAPPROVED`, stale affected dependencies, and register the complete records |
 | Coverage item does not apply | Record `N/A` with rationale and exact basis binding |
-| Figma unavailable | Produce Markdown/Mermaid handoff and `NOT VERIFIED` |
+| No optional Figma work selected | Deliver the common implementation handoff; omit Figma-only artifacts or mark the optional block `NOT USED` |
+| Requested Figma or Figma Make result not observed | Record `NOT VERIFIED` and the exact missing result; do not relabel it `NOT USED` |
+| Requested optional-tool result verified | Record only the observed scope and exact evidence |
 | Clear-authority runtime bug | Correct the implementation; do not create a product decision or change revision/approval automatically |
 | Material ambiguity during build | Re-enter DISCOVER/CLOSE and block only affected work |
 | `OUT_OF_SCOPE_REQUEST` | Resolve Product Definition scope before implementation |
@@ -79,6 +88,8 @@ Resolve the absolute directory containing this loaded `SKILL.md`; never resolve 
 - Treating every runtime mismatch as a new Product Definition question.
 - Copying `candidate_unknown` suggestion text into canonical authority.
 - Treating a workaround, deferred blocker, attractive wireframe, or validator availability as Semantic Closure.
+- Treating a connected or unused optional tool as required, or conflating `NOT USED` with `NOT VERIFIED`.
+- Reducing an approved role, screen, branch, data effect, failure path, or acceptance criterion because a selected tool cannot implement it.
 - Allowing Figma Make or an implementation agent to add fields, roles, routes, rules, or branches.
 
 Use the templates in `templates/` for projections. Preserve additional project-specific fields when updating state.
