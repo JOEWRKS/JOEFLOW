@@ -19,6 +19,8 @@ regardless of implementation tool. It records or links:
   results, and postconditions;
 - screen states, accepted inputs, validation effects, persisted data changes,
   and visible results;
+- approved target platforms, devices, execution environments, responsive
+  behavior, and accessibility requirements, linked to their exact sources;
 - failures, cancellation, interruption, retry, and recovery;
 - acceptance criteria, forbidden changes, and unresolved product decisions
   that still require evidence or a user answer.
@@ -28,8 +30,10 @@ link their exact paths and IDs instead of independently redefining the same
 planning meaning. Tool choice may change the delivery format, reading order,
 execution instructions, and output location; delivery documents need not be
 byte-identical. They must reference the same approved sources and must not
-change requirements, IA, permissions, state transitions, data meaning,
-recovery, or acceptance.
+change requirements, target platform/environment constraints, responsive or
+accessibility behavior, IA, permissions, state transitions, data meaning,
+recovery, or acceptance. Visual layout and expression follow the applicable
+visual authority.
 
 ## Optional Figma guidance
 
@@ -88,8 +92,9 @@ original requirement and identify the exact unmet role, screen, branch, data
 effect, failure path, or acceptance criterion. A mock or simulation is not
 implementation completion. Route the limitation to a tool change, separate
 implementation, or explicit scope decision; the limitation itself does not
-approve a product or scope change. Do not replace JOEDESIGN visual authority
-or create its internal plan here.
+approve a product or scope change. Preserve already-approved platform and
+environment constraints; do not replace JOEDESIGN visual authority or create
+its internal plan here.
 
 ## Executable downstream conformance
 
@@ -120,6 +125,9 @@ direct-authority / machine-derived / review-required counts. In 2.1,
 lifecycles are entries in the handoff and action contract `lifecycles` arrays;
 there is no required separate lifecycle-contract artifact.
 
+For State `0.2.0`, the Approval Manifest digest is required. Do not label a
+missing current V2 Manifest `NOT_APPLICABLE` to bypass that requirement.
+
 A verification plan may be prepared before implementation when the actual
 plan artifact has been materialized; record its exact path/hash at that time.
 Record execution evidence and verification results only after the applicable
@@ -133,6 +141,10 @@ metadata. Record them only when the selected contract or verifier requires
 them and the corresponding artifacts exist.
 
 ### Historical compatibility routes
+
+For a legacy handoff, use the approval information required by its exact
+frozen state and contract. Do not require or generate a V2 Approval Manifest
+when that Manifest does not apply to the selected legacy authority.
 
 - `joewrks.action-conformance/2.0` belongs to the frozen M5 compatibility
   boundary documented in

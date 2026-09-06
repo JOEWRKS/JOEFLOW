@@ -13,15 +13,21 @@ redefining the same product meaning.
 ## Objective, scope, and non-goals
 
 State the user outcome, included requirement/action boundary, explicit
-exclusions, and external dependencies. Keep tool capability out of product
-scope.
+exclusions, and external dependencies. Do not use tool limitations as
+automatic approval to change product scope; preserve already-approved
+platform and environment constraints.
 
 ## Approved sources and identity
 
 - Canonical Product Definition: `{{CANONICAL_STATE_PATH}}`
 - Approved revision: `{{APPROVED_DEFINITION_REVISION}}`
 - Approved definition digest: `{{APPROVED_DEFINITION_DIGEST}}`
-- Approval Manifest digest: `{{APPROVED_MANIFEST_DIGEST}}`
+- Approval identity:
+  - State `0.2.0`: Approval Manifest digest
+    `{{APPROVED_MANIFEST_DIGEST}}` is required; do not use `NOT_APPLICABLE`
+    to bypass a missing current V2 Manifest.
+  - Legacy: use the exact approval information from the selected frozen
+    state/contract; do not require or generate a V2 Approval Manifest.
 - Existing Product Definition / user-flow / screen specifications and
   applicable stable IDs: `{{APPROVED_SPEC_PATHS_AND_IDS}}`
 
@@ -32,6 +38,15 @@ planning definitions.
 
 For each actor, state view access, available actions, mutation authority,
 authentication/session conditions, and explicitly forbidden behavior.
+
+## Target environment, responsive behavior, and accessibility
+
+Link the exact approved sources for target platforms, devices, and execution
+environments. Preserve approved responsive behavior and accessibility
+requirements in this common specification; follow the applicable visual
+authority for visual layout and expression. A different implementation tool
+must not omit or change these product requirements. Do not invent new platform
+support, breakpoints, accessibility metrics, or policy.
 
 ## IA and navigation relationships
 
