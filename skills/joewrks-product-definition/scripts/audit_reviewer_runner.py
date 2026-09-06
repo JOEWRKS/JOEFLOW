@@ -9,9 +9,6 @@ _previous_dont_write_bytecode = sys.dont_write_bytecode
 sys.dont_write_bytecode = True
 try:
     import argparse
-    import ast
-    import hashlib
-    import http.client
     import importlib
     import importlib.abc
     import importlib.machinery
@@ -19,11 +16,8 @@ try:
     import json
     import os
     from pathlib import Path, PurePosixPath
-    import socket
     import stat
     import subprocess
-    import threading
-    import types
     from typing import Iterable
 finally:
     sys.dont_write_bytecode = _previous_dont_write_bytecode
@@ -34,273 +28,10 @@ _SKILL_ROOT = Path(__file__).resolve().parents[1]
 
 
 AUDIT_SCHEMA_VERSION = "joewrks.reviewer-runner-capability-audit/1.0"
-IMPLEMENTED_AUDIT_SCHEMA_VERSION = "joewrks.reviewer-runner-capability-audit/1.1"
 IMPLEMENTATION_BASE_REVISION = "71ffc0a66618c11e2fe08a442df5fd2d67718f7b"
 BACKEND_KIND = "STATELESS_TOOLLESS_EXTERNAL_INFERENCE"
+REGISTERED_PRODUCTION_ADAPTERS: tuple[object, ...] = ()
 RUNNER_SOURCE_PATH = "skills/joewrks-product-definition/reviewer_runner"
-_PUBLIC_RUNNER_PACKAGE_NAME = "reviewer_runner"
-_APPROVED_ANTHROPIC_TRANSPORT_POST_AST_SHA256 = (
-    "c87697941dc1440f821288e1b4dec51a8ed4933dc20597f713f7c1d5e81a9ff7"
-)
-_APPROVED_ANTHROPIC_BACKEND_INVOKE_AST_SHA256 = (
-    "31e29bb8df3629410e81cc3d7e782338915d7fd32fef8caf6119728598767cce"
-)
-
-_SNAPSHOT_MODULE_SOURCES = {
-    "": f"{RUNNER_SOURCE_PATH}/__init__.py",
-    ".identity": f"{RUNNER_SOURCE_PATH}/identity.py",
-    ".backend": f"{RUNNER_SOURCE_PATH}/backend.py",
-    ".request": f"{RUNNER_SOURCE_PATH}/request.py",
-    ".providers": f"{RUNNER_SOURCE_PATH}/providers/__init__.py",
-    ".providers.anthropic": f"{RUNNER_SOURCE_PATH}/providers/anthropic.py",
-    ".providers.anthropic_admission": (
-        f"{RUNNER_SOURCE_PATH}/providers/anthropic_admission.py"
-    ),
-}
-
-_ANTHROPIC_PROVIDER_SOURCES = (
-    _SNAPSHOT_MODULE_SOURCES[".providers"],
-    _SNAPSHOT_MODULE_SOURCES[".providers.anthropic"],
-    _SNAPSHOT_MODULE_SOURCES[".providers.anthropic_admission"],
-)
-_APPROVED_ANTHROPIC_SOURCE_SHA256 = {
-    _SNAPSHOT_MODULE_SOURCES[".providers"]:
-        "f679e56a6d0924f55a16ae878f6d419dac1abbfe7b54a30be7af628ee2a012f4",
-    _SNAPSHOT_MODULE_SOURCES[".providers.anthropic"]:
-        "5d687e1ae6848a6aae7a2282d9c6ae1b1950ed1111c198382c4e092a9a7a3157",
-    _SNAPSHOT_MODULE_SOURCES[".providers.anthropic_admission"]:
-        "cbcc08ec853dc217d89745c7ee503dd6ce9946019afb8fe1c90b1b77afb45af3",
-}
-_EXPECTED_REQUIRED_CAPABILITIES = (
-    "stateless_fresh_request",
-    "no_continuation_id",
-    "no_reviewer_memory",
-    "no_tools",
-    "no_retrieval",
-    "no_web_or_browser",
-    "no_connectors_or_mcp",
-    "no_host_filesystem",
-    "no_code_execution",
-    "no_file_by_reference",
-    "immutable_model_or_deployment_identity",
-    "immutable_inference_settings",
-    "sufficient_payload_capacity",
-    "exact_structured_output",
-    "controller_only_authentication",
-    "accepted_retention_and_privacy",
-    "request_response_commitments",
-)
-_FORBIDDEN_PROVIDER_IMPORT_ROOTS = frozenset(
-    {
-        "anthropic",
-        "requests",
-        "httpx",
-        "urllib",
-        "proxy",
-        "subprocess",
-        "admin",
-        "discovery",
-        "aiohttp",
-        "httpcore",
-        "httplib2",
-        "urllib3",
-    }
-)
-_ALLOWED_PROVIDER_IMPORT_ROOTS = frozenset(
-    {
-        "base64",
-        "dataclasses",
-        "enum",
-        "__future__",
-        "hashlib",
-        "http",
-        "json",
-        "os",
-        "socket",
-        "ssl",
-        "typing",
-    }
-)
-
-
-class _ForbiddenEnvironmentAccess:
-    """Reject every operation on the environment during offline verification."""
-
-    def __init__(self, prohibited):
-        object.__setattr__(self, "_prohibited", prohibited)
-
-    def __getattribute__(self, name):
-        if name == "_prohibited":
-            return object.__getattribute__(self, name)
-        return object.__getattribute__(self, "_prohibited")("environment")
-
-    def __getitem__(self, key):
-        return self._prohibited("environment")
-
-    def __iter__(self):
-        return self._prohibited("environment")
-
-    def __len__(self):
-        return self._prohibited("environment")
-
-    def __contains__(self, key):
-        return self._prohibited("environment")
-
-
-_ANTHROPIC_OFFLINE_CONDITION = threading.Condition(threading.Lock())
-_ANTHROPIC_OFFLINE_ACTIVE_CONTEXT: object | None = None
-_ANTHROPIC_OFFLINE_ACTIVE_OWNER: object | None = None
-_ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID: int | None = None
-
-
-class _AnthropicOfflineBarrier:
-    """Temporarily make environment and network access fail closed."""
-
-    def __init__(self):
-        self.attempts: list[str] = []
-        self._originals: tuple[object, ...] | None = None
-        self._installed: tuple[object, ...] | None = None
-        self._owner_token = object()
-        self._owner_thread_id: int | None = None
-        self._entered = False
-
-    def _prohibited(self, kind: str, *args, **kwargs):
-        self.attempts.append(kind)
-        raise RuntimeError(
-            "Anthropic offline guard prohibited environment or network access"
-        )
-
-    def _blocker(self, kind: str):
-        def prohibit(*args, **kwargs):
-            return self._prohibited(kind, *args, **kwargs)
-
-        return prohibit
-
-    @staticmethod
-    def _current_globals() -> tuple[object, ...]:
-        return (
-            os.environ,
-            socket.getaddrinfo,
-            socket.socket,
-            socket.create_connection,
-            http.client.HTTPSConnection,
-        )
-
-    @staticmethod
-    def _restore_globals(originals: tuple[object, ...]) -> None:
-        (
-            os.environ,
-            socket.getaddrinfo,
-            socket.socket,
-            socket.create_connection,
-            http.client.HTTPSConnection,
-        ) = originals
-
-    def _claim_ownership(self) -> None:
-        global _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT
-        global _ANTHROPIC_OFFLINE_ACTIVE_OWNER
-        global _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID
-
-        thread_id = threading.get_ident()
-        with _ANTHROPIC_OFFLINE_CONDITION:
-            if _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID == thread_id:
-                raise RuntimeError("Anthropic offline guard reentrant ownership is prohibited")
-            while _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT is not None:
-                _ANTHROPIC_OFFLINE_CONDITION.wait()
-                if _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID == thread_id:
-                    raise RuntimeError(
-                        "Anthropic offline guard reentrant ownership is prohibited"
-                    )
-            _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT = self
-            _ANTHROPIC_OFFLINE_ACTIVE_OWNER = self._owner_token
-            _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID = thread_id
-            self._owner_thread_id = thread_id
-
-    def _release_ownership(self) -> bool:
-        global _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT
-        global _ANTHROPIC_OFFLINE_ACTIVE_OWNER
-        global _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID
-
-        with _ANTHROPIC_OFFLINE_CONDITION:
-            if _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT is not self:
-                return False
-            exact_owner = (
-                _ANTHROPIC_OFFLINE_ACTIVE_OWNER is self._owner_token
-                and _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID == self._owner_thread_id
-            )
-            _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT = None
-            _ANTHROPIC_OFFLINE_ACTIVE_OWNER = None
-            _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID = None
-            _ANTHROPIC_OFFLINE_CONDITION.notify_all()
-            return exact_owner
-
-    def __enter__(self):
-        if self._entered:
-            raise RuntimeError("Anthropic offline guard barrier cannot be reused")
-        self._entered = True
-        self._claim_ownership()
-        self._originals = self._current_globals()
-        self._installed = (
-            _ForbiddenEnvironmentAccess(self._prohibited),
-            self._blocker("dns"),
-            self._blocker("raw-socket"),
-            self._blocker("socket-connection"),
-            self._blocker("https"),
-        )
-        try:
-            self._restore_globals(self._installed)
-            if any(
-                observed is not installed
-                for observed, installed in zip(
-                    self._current_globals(), self._installed, strict=True
-                )
-            ):
-                raise RuntimeError("Anthropic offline guard ownership mismatch")
-            return self
-        except BaseException:
-            try:
-                self._restore_globals(self._originals)
-            finally:
-                self._release_ownership()
-            raise
-
-    def __exit__(self, exc_type, exc_value, traceback) -> bool:
-        originals = self._originals
-        installed = self._installed
-        if originals is None or installed is None:
-            raise RuntimeError("Anthropic offline guard barrier was not entered")
-        with _ANTHROPIC_OFFLINE_CONDITION:
-            ownership_mismatch = (
-                _ANTHROPIC_OFFLINE_ACTIVE_CONTEXT is not self
-                or _ANTHROPIC_OFFLINE_ACTIVE_OWNER is not self._owner_token
-                or _ANTHROPIC_OFFLINE_ACTIVE_THREAD_ID != self._owner_thread_id
-                or threading.get_ident() != self._owner_thread_id
-            )
-        blocker_mismatch = any(
-            observed is not expected
-            for observed, expected in zip(
-                self._current_globals(), installed, strict=True
-            )
-        )
-        try:
-            self._restore_globals(originals)
-        finally:
-            released = self._release_ownership()
-        if ownership_mismatch or blocker_mismatch or not released:
-            raise RuntimeError("Anthropic offline guard ownership mismatch") from exc_value
-        return False
-
-    def require_no_attempts(self) -> None:
-        if self.attempts:
-            raise RuntimeError(
-                "Anthropic offline guard prohibited environment or network access"
-            )
-
-    def original_https_connection(self):
-        originals = self._originals
-        if originals is None:
-            raise RuntimeError("Anthropic offline guard barrier was not entered")
-        return originals[4]
 
 FROZEN_PATHS = (
     "product-definition",
@@ -474,19 +205,7 @@ def _verify_runner_source_binding(
 
     revision_inventory = _runner_revision_blob_map(repository_root, revision)
     current_inventory = _runner_index_blob_map(repository_root)
-    required_core_sources = {
-        _SNAPSHOT_MODULE_SOURCES[""],
-        _SNAPSHOT_MODULE_SOURCES[".identity"],
-        _SNAPSHOT_MODULE_SOURCES[".backend"],
-    }
-    if (
-        not revision_inventory
-        or not required_core_sources.issubset(revision_inventory)
-        or any(
-            current_inventory.get(path) != commitment
-            for path, commitment in revision_inventory.items()
-        )
-    ):
+    if not revision_inventory or revision_inventory != current_inventory:
         raise RuntimeError(
             "runner source inventory is absent, incomplete, or differs from loaded source"
         )
@@ -515,20 +234,15 @@ def _verify_runner_source_binding(
 
 
 class _SnapshotSourceLoader(importlib.machinery.SourceFileLoader):
-    def __init__(self, fullname: str, source: bytes, filename: Path, on_exec):
+    def __init__(self, fullname: str, source: bytes, filename: Path):
         super().__init__(fullname, str(filename))
         self._source = source
         self._filename = filename
-        self._on_exec = on_exec
 
     def exec_module(self, module) -> None:
         module.__file__ = str(self._filename)
         code = compile(self._source, str(self._filename), "exec", dont_inherit=True)
         exec(code, module.__dict__)
-        on_exec = self._on_exec
-        self._on_exec = None
-        if on_exec is not None:
-            on_exec(self.name, module, code)
 
 
 class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
@@ -537,410 +251,35 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         package_name: str,
         repository: Path,
         snapshot: dict[str, bytes],
-        *,
-        verified_https_connection=None,
     ):
         self._package_name = package_name
         self._repository = repository
         self._snapshot = snapshot
-        self._anthropic_module_executed = False
-        self._verified_anthropic_backend_type = None
-        self._verified_anthropic_transport_type = None
-        self._verified_anthropic_post_function = None
-        self._verified_anthropic_post_code = None
-        self._verified_anthropic_invoke_function = None
-        self._verified_anthropic_invoke_code = None
-        self._provider_namespaces = []
-        self._provider_functions = []
-        # Capture trusted dependencies before any verified provider code executes.
-        # During an offline report, HTTPSConnection/environ are the owned blockers.
-        self._verified_http = http
-        self._verified_http_client = http.client
-        self._verified_http_connection = http.client.HTTPConnection
-        self._active_https_connection = http.client.HTTPSConnection
-        self._verified_https_connection = (
-            self._active_https_connection
-            if verified_https_connection is None
-            else verified_https_connection
-        )
-        connection_type = (
-            self._verified_https_connection
-            if type(self._verified_https_connection) is type
-            else self._verified_http_connection
-        )
-        self._verified_http_connection_callables = tuple(
-            self._capture_http_connection_callable(connection_type, name)
-            for name in ("request", "getresponse", "close")
-        )
-        self._verified_http_instance_dependencies = (
-            (
-                "effective",
-                self._capture_http_connection_callable(connection_type, "__new__"),
-            ),
-            (
-                "effective",
-                self._capture_http_connection_callable(connection_type, "__init__"),
-            ),
-            (
-                "base",
-                self._capture_http_connection_callable(
-                    self._verified_http_connection, "__init__"
-                ),
-            ),
-            (
-                "effective",
-                self._capture_http_connection_callable(
-                    connection_type, "__getattribute__"
-                ),
-            ),
-            (
-                "effective",
-                self._capture_http_connection_callable(
-                    connection_type, "__setattr__"
-                ),
-            ),
-        )
-        self._verified_os = os
-        self._verified_environment = os.environ
-
-    @staticmethod
-    def _capture_http_connection_callable(connection_type, name: str):
-        if type(connection_type) is not type:
-            return None
-        try:
-            for defining_type in type.__getattribute__(connection_type, "__mro__"):
-                namespace = type.__getattribute__(defining_type, "__dict__")
-                if name not in namespace:
-                    continue
-                descriptor = namespace[name]
-                function = descriptor
-                if type(descriptor) in (staticmethod, classmethod):
-                    function = descriptor.__func__
-                if not callable(function):
-                    return None
-                is_python_function = type(function) is types.FunctionType
-                return (
-                    name,
-                    defining_type,
-                    descriptor,
-                    function,
-                    function.__code__ if is_python_function else None,
-                    function.__globals__ if is_python_function else None,
-                    function.__defaults__ if is_python_function else None,
-                    function.__kwdefaults__ if is_python_function else None,
-                    dict(function.__kwdefaults__ or {}) if is_python_function else {},
-                    tuple(cell.cell_contents for cell in function.__closure__ or ())
-                    if is_python_function
-                    else (),
-                )
-        except (AttributeError, TypeError):
-            return None
-        return None
-
-    def _http_connection_callable_is_current(
-        self,
-        connection_type,
-        captured,
-        *,
-        required_defining_type=None,
-    ) -> bool:
-        if captured is None:
-            return False
-        (
-            name,
-            defining_type,
-            descriptor,
-            function,
-            code,
-            globals_,
-            defaults,
-            kwdefaults,
-            keywords,
-            closure,
-        ) = captured
-        current = self._capture_http_connection_callable(connection_type, name)
-        if current is None:
-            return False
-        (
-            current_name,
-            current_defining_type,
-            current_descriptor,
-            current_function,
-            *_,
-        ) = current
-        if (
-            current_name != name
-            or (
-                required_defining_type is not None
-                and defining_type is not required_defining_type
-            )
-            or current_defining_type is not defining_type
-            or current_descriptor is not descriptor
-            or current_function is not function
-        ):
-            return False
-        if type(function) is not types.FunctionType:
-            return True
-        return (
-            function.__code__ is code
-            and function.__globals__ is globals_
-            and function.__defaults__ is defaults
-            and function.__kwdefaults__ is kwdefaults
-            and set(function.__kwdefaults__ or {}) == set(keywords)
-            and all(
-                function.__kwdefaults__[keyword] is value
-                for keyword, value in keywords.items()
-            )
-            and len(function.__closure__ or ()) == len(closure)
-            and all(
-                cell.cell_contents is value
-                for cell, value in zip(function.__closure__ or (), closure)
-            )
-        )
-
-    def _verify_http_connection_callables(self) -> None:
-        connection_type = (
-            self._verified_https_connection
-            if type(self._verified_https_connection) is type
-            else self._verified_http_connection
-        )
-        invalid = (
-            self._verified_http_client.__dict__.get("HTTPConnection")
-            is not self._verified_http_connection
-            or len(self._verified_http_connection_callables) != 3
-            or any(
-                not self._http_connection_callable_is_current(
-                    connection_type,
-                    captured,
-                    required_defining_type=self._verified_http_connection,
-                )
-                for captured in self._verified_http_connection_callables
-            )
-        )
-        if not invalid:
-            for target, captured in self._verified_http_instance_dependencies:
-                dependency_type = (
-                    connection_type
-                    if target == "effective"
-                    else self._verified_http_connection
-                )
-                if not self._http_connection_callable_is_current(
-                    dependency_type,
-                    captured,
-                    required_defining_type=(
-                        self._verified_http_connection if target == "base" else None
-                    ),
-                ):
-                    invalid = True
-                    break
-        if invalid:
-            raise RuntimeError(
-                "Anthropic HTTP transport dependency does not prove one request with zero retries"
-            )
-
-    def _capture_verified_export(
-        self, fullname: str, module, module_code: types.CodeType
-    ) -> None:
-        if fullname in (
-            f"{self._package_name}.providers.anthropic",
-            f"{self._package_name}.providers.anthropic_admission",
-        ):
-            # Closed source is checked before execution. Retain all helper/global
-            # bindings, including imported aliases and generated class methods.
-            namespaces = [module.__dict__]
-            for value in tuple(module.__dict__.values()):
-                if isinstance(value, type) and type.__getattribute__(value, "__module__") == fullname:
-                    namespaces.append(type.__getattribute__(value, "__dict__"))
-            for namespace in namespaces:
-                self._provider_namespaces.append((namespace, dict(namespace)))
-                for value in tuple(namespace.values()):
-                    if type(value) in (staticmethod, classmethod):
-                        value = value.__func__
-                    functions = (value.fget, value.fset, value.fdel) if type(value) is property else (value,)
-                    for function in functions:
-                        if type(function) is types.FunctionType:
-                            self._provider_functions.append((
-                                function, function.__code__, function.__globals__,
-                                function.__defaults__, function.__kwdefaults__,
-                                dict(function.__kwdefaults__ or {}),
-                                tuple(cell.cell_contents for cell in function.__closure__ or ()),
-                            ))
-        if fullname != f"{self._package_name}.providers.anthropic":
-            return
-        if self._anthropic_module_executed:
-            raise RuntimeError("verified AnthropicBackend export was captured twice")
-        self._anthropic_module_executed = True
-        exported_type = module.__dict__.get("AnthropicBackend")
-        self._verified_anthropic_backend_type = exported_type
-        if type(exported_type) is type:
-            self._verified_anthropic_invoke_function = type.__getattribute__(
-                exported_type, "__dict__"
-            ).get("invoke")
-        backend_code = tuple(
-            constant
-            for constant in module_code.co_consts
-            if isinstance(constant, types.CodeType)
-            and constant.co_name == "AnthropicBackend"
-        )
-        if len(backend_code) == 1:
-            invoke_code = tuple(
-                constant
-                for constant in backend_code[0].co_consts
-                if isinstance(constant, types.CodeType) and constant.co_name == "invoke"
-            )
-            if len(invoke_code) == 1:
-                self._verified_anthropic_invoke_code = invoke_code[0]
-        transport_type = module.__dict__.get("StdlibAnthropicTransport")
-        self._verified_anthropic_transport_type = transport_type
-        if type(transport_type) is type:
-            self._verified_anthropic_post_function = type.__getattribute__(
-                transport_type, "post"
-            )
-        transport_code = tuple(
-            constant
-            for constant in module_code.co_consts
-            if isinstance(constant, types.CodeType)
-            and constant.co_name == "StdlibAnthropicTransport"
-        )
-        if len(transport_code) == 1:
-            post_code = tuple(
-                constant
-                for constant in transport_code[0].co_consts
-                if isinstance(constant, types.CodeType) and constant.co_name == "post"
-            )
-            if len(post_code) == 1:
-                self._verified_anthropic_post_code = post_code[0]
-
-    def verified_anthropic_backend_type(self):
-        exported_type = self._verified_anthropic_backend_type
-        if not isinstance(exported_type, type):
-            raise RuntimeError("verified AnthropicBackend export was not captured")
-        return exported_type
-
-    def verify_anthropic_transport_binding(self, module, registered) -> None:
-        backend_type = self._verified_anthropic_backend_type
-        invoke_function = self._verified_anthropic_invoke_function
-        invoke_code = self._verified_anthropic_invoke_code
-        transport_type = self._verified_anthropic_transport_type
-        post_function = self._verified_anthropic_post_function
-        post_code = self._verified_anthropic_post_code
-        try:
-            current_invoke = type.__getattribute__(backend_type, "__dict__").get("invoke")
-            backend_getattribute = type.__getattribute__(backend_type, "__getattribute__")
-            current_post = type.__getattribute__(transport_type, "__dict__").get("post")
-            current_getattribute = type.__getattribute__(
-                transport_type, "__getattribute__"
-            )
-        except (AttributeError, TypeError):
-            current_invoke = None
-            backend_getattribute = None
-            current_post = None
-            current_getattribute = None
-        invalid = (
-            not self._anthropic_module_executed
-            or module.__dict__.get("AnthropicBackend") is not backend_type
-            or type(backend_type) is not type
-            or type(invoke_function) is not types.FunctionType
-            or type(invoke_code) is not types.CodeType
-            or invoke_function.__code__ is not invoke_code
-            or invoke_function.__globals__ is not module.__dict__
-            or current_invoke is not invoke_function
-            or backend_getattribute is not object.__getattribute__
-            or module.__dict__.get("StdlibAnthropicTransport") is not transport_type
-            or type(transport_type) is not type
-            or type(post_function) is not types.FunctionType
-            or type(post_code) is not types.CodeType
-            or post_function.__code__ is not post_code
-            or post_function.__globals__ is not module.__dict__
-            or current_post is not post_function
-            or current_getattribute is not object.__getattribute__
-            or module.__dict__.get("http") is not self._verified_http
-            or self._verified_http.__dict__.get("client") is not self._verified_http_client
-            or self._verified_http_client.__dict__.get("HTTPSConnection")
-            is not self._active_https_connection
-            or module.__dict__.get("os") is not self._verified_os
-            or self._verified_os.__dict__.get("environ") is not self._verified_environment
-        )
-        if not invalid:
-            try:
-                for adapter in registered:
-                    transport = object.__getattribute__(adapter, "_transport")
-                    effective_invoke = getattr(adapter, "invoke")
-                    effective_post = getattr(transport, "post")
-                    if (
-                        type(adapter) is not backend_type
-                        or type(effective_invoke) is not types.MethodType
-                        or effective_invoke.__self__ is not adapter
-                        or effective_invoke.__func__ is not invoke_function
-                        or object.__getattribute__(adapter, "_credential_reader") is not None
-                        or object.__getattribute__(adapter, "_transport_is_custom") is not False
-                        or object.__getattribute__(adapter, "_is_test_double") is not False
-                        or type(transport) is not transport_type
-                        or object.__getattribute__(transport, "_test_only_connection_factory") is not None
-                        or type(effective_post) is not types.MethodType
-                        or effective_post.__self__ is not transport
-                        or effective_post.__func__ is not post_function
-                    ):
-                        invalid = True
-                        break
-            except (AttributeError, TypeError):
-                invalid = True
-        if invalid:
-            raise RuntimeError(
-                "Anthropic transport does not prove one request with zero retries"
-            )
-        self._verify_http_connection_callables()
-        for source_path, expected_digest in _APPROVED_ANTHROPIC_SOURCE_SHA256.items():
-            if hashlib.sha256(self._snapshot[source_path]).hexdigest() != expected_digest:
-                raise RuntimeError("Anthropic provider source does not prove one request with zero retries")
-        for namespace, original in self._provider_namespaces:
-            if set(namespace) != set(original) or any(
-                namespace[name] is not value for name, value in original.items()
-            ):
-                raise RuntimeError("Anthropic helper binding does not prove one request with zero retries")
-        for function, code, globals_, defaults, kwdefaults, keywords, closure in self._provider_functions:
-            if (
-                function.__code__ is not code
-                or function.__globals__ is not globals_
-                or function.__defaults__ is not defaults
-                or function.__kwdefaults__ is not kwdefaults
-                or set(function.__kwdefaults__ or {}) != set(keywords)
-                or any(function.__kwdefaults__[name] is not value for name, value in keywords.items())
-                or len(function.__closure__ or ()) != len(closure)
-                or any(cell.cell_contents is not value for cell, value in zip(function.__closure__ or (), closure))
-            ):
-                raise RuntimeError("Anthropic helper callable does not prove one request with zero retries")
 
     def find_spec(self, fullname, path=None, target=None):
-        if (
-            fullname == _PUBLIC_RUNNER_PACKAGE_NAME
-            or fullname.startswith(f"{_PUBLIC_RUNNER_PACKAGE_NAME}.")
-        ):
-            raise RuntimeError("verified runner attempted an absolute public import")
         if fullname == self._package_name:
-            suffix = ""
+            relative_source = f"{RUNNER_SOURCE_PATH}/__init__.py"
+            is_package = True
+        elif fullname == f"{self._package_name}.identity":
+            relative_source = f"{RUNNER_SOURCE_PATH}/identity.py"
+            is_package = False
+        elif fullname == f"{self._package_name}.backend":
+            relative_source = f"{RUNNER_SOURCE_PATH}/backend.py"
+            is_package = False
         elif fullname.startswith(f"{self._package_name}."):
-            suffix = fullname[len(self._package_name):]
+            raise RuntimeError("verified runner attempted an unexpected module import")
         else:
             return None
-        relative_source = _SNAPSHOT_MODULE_SOURCES.get(suffix)
-        if relative_source is None:
-            raise RuntimeError("verified runner attempted an unexpected module import")
         source = self._snapshot.get(relative_source)
         if source is None:
             raise RuntimeError("verified runner source snapshot is incomplete")
-        if suffix in (".providers.anthropic", ".providers.anthropic_admission"):
-            if hashlib.sha256(source).hexdigest() != _APPROVED_ANTHROPIC_SOURCE_SHA256[relative_source]:
-                raise RuntimeError("Anthropic provider source does not prove one request with zero retries")
         filename = self._repository.joinpath(*PurePosixPath(relative_source).parts)
-        loader = _SnapshotSourceLoader(
-            fullname, source, filename, self._capture_verified_export
-        )
+        loader = _SnapshotSourceLoader(fullname, source, filename)
         return importlib.util.spec_from_loader(
             fullname,
             loader,
             origin=str(filename),
-            is_package=suffix in ("", ".providers"),
+            is_package=is_package,
         )
 
 
@@ -955,32 +294,6 @@ def _private_runner_module_names(package_name: str) -> tuple[str, ...]:
 def _remove_private_runner_modules(package_name: str) -> None:
     for name in _private_runner_module_names(package_name):
         sys.modules.pop(name, None)
-
-
-def _stash_public_runner_modules() -> dict[str, object]:
-    """Remove public runner modules so snapshot imports cannot reuse them."""
-
-    names = tuple(
-        name
-        for name in sys.modules
-        if (
-            name == _PUBLIC_RUNNER_PACKAGE_NAME
-            or name.startswith(f"{_PUBLIC_RUNNER_PACKAGE_NAME}.")
-        )
-    )
-    return {name: sys.modules.pop(name) for name in names}
-
-
-def _restore_public_runner_modules(stashed_modules: dict[str, object]) -> None:
-    """Discard public modules introduced during loading and restore caller state."""
-
-    for name in tuple(sys.modules):
-        if (
-            name == _PUBLIC_RUNNER_PACKAGE_NAME
-            or name.startswith(f"{_PUBLIC_RUNNER_PACKAGE_NAME}.")
-        ):
-            sys.modules.pop(name, None)
-    sys.modules.update(stashed_modules)
 
 
 def _verify_snapshot_module(
@@ -1013,7 +326,6 @@ def _load_verified_runner_api(
 ):
     package_name = f"_audit_verified_reviewer_runner_{revision}"
     finder = None
-    stashed_public_modules = _stash_public_runner_modules()
     try:
         if _private_runner_module_names(package_name):
             raise RuntimeError("verified runner module namespace collision")
@@ -1048,134 +360,18 @@ def _load_verified_runner_api(
         if finder is not None and finder in sys.meta_path:
             sys.meta_path.remove(finder)
         _remove_private_runner_modules(package_name)
-        _restore_public_runner_modules(stashed_public_modules)
-
-
-def _load_verified_snapshot_registration(
-    repository: Path,
-    revision: str,
-    snapshot: dict[str, bytes],
-    *,
-    binding_checks: list | None = None,
-    verified_https_connection=None,
-) -> tuple[object, ...]:
-    """Load the revision-bound production registration for audit evaluation."""
-
-    registration_source = _SNAPSHOT_MODULE_SOURCES[".providers"]
-    revision_inventory = _runner_revision_blob_map(repository, revision)
-    registration_commitment = revision_inventory.get(registration_source)
-    registration_bytes = snapshot.get(registration_source)
-    if registration_commitment is None:
-        if registration_bytes is not None:
-            raise RuntimeError("verified provider source snapshot disagrees with revision")
-        return ()
-    if registration_bytes is None:
-        raise RuntimeError("verified provider source snapshot is incomplete")
-
-    required_sources = (
-        _SNAPSHOT_MODULE_SOURCES[""],
-        _SNAPSHOT_MODULE_SOURCES[".identity"],
-        _SNAPSHOT_MODULE_SOURCES[".backend"],
-        _SNAPSHOT_MODULE_SOURCES[".request"],
-        registration_source,
-        _SNAPSHOT_MODULE_SOURCES[".providers.anthropic"],
-        _SNAPSHOT_MODULE_SOURCES[".providers.anthropic_admission"],
-    )
-    for relative_source in required_sources:
-        source = snapshot.get(relative_source)
-        commitment = revision_inventory.get(relative_source)
-        if source is None or commitment is None:
-            raise RuntimeError("verified provider source snapshot is incomplete")
-        _, expected_blob_id = commitment.split(":", 1)
-        if _git_blob_id(repository, source) != expected_blob_id:
-            raise RuntimeError("verified provider source bytes differ from revision")
-
-    # Preserve the existing public-import boundary before a dependency's closed
-    # source proof can reject it, without executing unapproved provider source.
-    for relative_source in _ANTHROPIC_PROVIDER_SOURCES:
-        for node in ast.walk(ast.parse(snapshot[relative_source])):
-            imported_names = (
-                tuple(alias.name for alias in node.names) if isinstance(node, ast.Import)
-                else (node.module,) if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module
-                else ()
-            )
-            if any(name == _PUBLIC_RUNNER_PACKAGE_NAME or name.startswith(f"{_PUBLIC_RUNNER_PACKAGE_NAME}.") for name in imported_names):
-                raise RuntimeError("verified runner attempted an absolute public import")
-
-    package_name = f"_audit_verified_reviewer_runner_{revision}"
-    finder = None
-    stashed_public_modules = _stash_public_runner_modules()
-    try:
-        if _private_runner_module_names(package_name):
-            raise RuntimeError("verified runner module namespace collision")
-        finder = _SnapshotSourceFinder(
-            package_name,
-            repository,
-            snapshot,
-            verified_https_connection=verified_https_connection,
-        )
-        sys.meta_path.insert(0, finder)
-        providers_module = importlib.import_module(f"{package_name}.providers")
-        expected_modules = {
-            f"{package_name}{suffix}": relative_source
-            for suffix, relative_source in _SNAPSHOT_MODULE_SOURCES.items()
-        }
-        loaded_names = set(_private_runner_module_names(package_name))
-        if loaded_names != set(expected_modules):
-            raise RuntimeError("verified runner loaded an unexpected module")
-        for fullname, relative_source in expected_modules.items():
-            module = sys.modules.get(fullname)
-            if module is None:
-                raise RuntimeError("verified runner source snapshot is incomplete")
-            filename = repository.joinpath(*PurePosixPath(relative_source).parts)
-            _verify_snapshot_module(
-                module,
-                fullname=fullname,
-                filename=filename,
-                source=snapshot[relative_source],
-            )
-        registered = getattr(providers_module, "REGISTERED_PRODUCTION_ADAPTERS", None)
-        if type(registered) is not tuple:
-            raise RuntimeError("verified provider registration is not an immutable tuple")
-        expected_backend_type = finder.verified_anthropic_backend_type()
-        if any(
-            type(adapter) is not expected_backend_type for adapter in registered
-        ):
-            raise RuntimeError(
-                "verified provider registration must use the exact verified AnthropicBackend"
-            )
-        anthropic_module = sys.modules.get(
-            f"{package_name}.providers.anthropic"
-        )
-        if anthropic_module is None:
-            raise RuntimeError("verified runner source snapshot is incomplete")
-        finder.verify_anthropic_transport_binding(anthropic_module, registered)
-        if binding_checks is not None:
-            # Retain this exact capture after the private import namespace closes.
-            def verify_binding():
-                finder.verify_anthropic_transport_binding(anthropic_module, registered)
-
-            binding_checks.append(verify_binding)
-        return registered
-    finally:
-        if finder is not None and finder in sys.meta_path:
-            sys.meta_path.remove(finder)
-        _remove_private_runner_modules(package_name)
-        _restore_public_runner_modules(stashed_public_modules)
 
 
 def _rehydrate_backend_descriptor(descriptor, identity_module, backend_module):
     try:
         if (
-            type(descriptor).__module__
-            not in {"reviewer_runner.backend", backend_module.__name__}
+            type(descriptor).__module__ != "reviewer_runner.backend"
             or type(descriptor).__qualname__ != "BackendDescriptor"
         ):
             raise ValueError("backend descriptor must be an exact BackendDescriptor")
         identity = descriptor.identity
         if (
-            type(identity).__module__
-            not in {"reviewer_runner.identity", identity_module.__name__}
+            type(identity).__module__ != "reviewer_runner.identity"
             or type(identity).__qualname__ != "BackendIdentity"
         ):
             raise ValueError("backend identity must be an exact BackendIdentity")
@@ -1195,8 +391,7 @@ def _rehydrate_backend_descriptor(descriptor, identity_module, backend_module):
         trusted_observations = []
         for observation in descriptor.observations:
             if (
-                type(observation).__module__
-                not in {"reviewer_runner.backend", backend_module.__name__}
+                type(observation).__module__ != "reviewer_runner.backend"
                 or type(observation).__qualname__ != "CapabilityObservation"
             ):
                 raise ValueError(
@@ -1221,29 +416,18 @@ def _rehydrate_backend_descriptor(descriptor, identity_module, backend_module):
         raise ValueError("registered adapter returned an invalid descriptor") from error
 
 
-def _describe_adapter(adapter, binding_checks: tuple = ()):
-    describe = getattr(adapter, "describe", None)
-    if not callable(describe):
-        raise ValueError("registered adapter must expose describe()")
-    descriptor = describe()
-    # Describing an adapter is executable code; it cannot invalidate the proof
-    # whose production authority this descriptor is about to consume.
-    for verify_binding in binding_checks:
-        verify_binding()
-    return descriptor
-
-
 def _real_adapter_count(
     registered_adapters: Iterable[object],
     identity_module,
     backend_module,
-    *,
-    binding_checks: tuple = (),
 ) -> int:
     count = 0
     for adapter in registered_adapters:
+        describe = getattr(adapter, "describe", None)
+        if not callable(describe):
+            raise ValueError("registered adapter must expose describe()")
         descriptor = _rehydrate_backend_descriptor(
-            _describe_adapter(adapter, binding_checks),
+            describe(),
             identity_module,
             backend_module,
         )
@@ -1253,411 +437,11 @@ def _real_adapter_count(
     return count
 
 
-def _verified_provider_candidate(
-    registered_adapters: Iterable[object],
-    identity_module,
-    backend_module,
-    *,
-    binding_checks: tuple = (),
-) -> str | None:
-    """Return the one verified provider name, or None for historical revisions."""
-
-    candidates: list[str] = []
-    for adapter in registered_adapters:
-        descriptor = _rehydrate_backend_descriptor(
-            _describe_adapter(adapter, binding_checks),
-            identity_module,
-            backend_module,
-        )
-        backend_module.validate_backend_descriptor(descriptor)
-        if descriptor.identity.is_test_double:
-            continue
-        adapter_id = descriptor.identity.adapter_id
-        provider, separator, remainder = adapter_id.partition("-")
-        if (
-            not separator
-            or not provider
-            or not remainder
-            or not provider.isascii()
-            or not provider.islower()
-            or not provider.isalpha()
-        ):
-            raise RuntimeError("verified provider descriptor has an invalid adapter identity")
-        candidates.append(provider)
-    if not candidates:
-        return None
-    if len(candidates) != 1:
-        raise RuntimeError("verified provider registration does not contain exactly one real adapter")
-    return candidates[0]
-
-
-def _sha256_canonical_json(value: object) -> str:
-    return hashlib.sha256(
-        json.dumps(
-            value,
-            ensure_ascii=False,
-            allow_nan=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-    ).hexdigest()
-
-
-def _anthropic_provider_manifest(
-    repository: Path,
-    revision: str,
-) -> dict[str, str]:
-    inventory = _runner_revision_blob_map(repository, revision)
-    manifest: dict[str, str] = {}
-    for path in _ANTHROPIC_PROVIDER_SOURCES:
-        commitment = inventory.get(path)
-        if commitment is None:
-            raise RuntimeError("Anthropic provider source is absent from revision")
-        mode, blob_id = commitment.split(":", 1)
-        if mode not in {"100644", "100755"} or len(blob_id) != 40:
-            raise RuntimeError("Anthropic provider source commitment is invalid")
-        manifest[path] = commitment
-    return dict(sorted(manifest.items()))
-
-
-def _provider_imports(source: bytes, path: str) -> tuple[str, ...]:
-    try:
-        tree = ast.parse(source, filename=path)
-    except (SyntaxError, UnicodeDecodeError) as error:
-        raise RuntimeError("Anthropic provider source cannot be parsed") from error
-
-    imports: list[str] = []
-    forbidden: list[str] = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            names = tuple(alias.name for alias in node.names)
-            reported_names = names
-        elif isinstance(node, ast.ImportFrom):
-            if node.level:
-                continue
-            module = node.module or ""
-            if module == "__future__":
-                continue
-            names = tuple(
-                f"{module}.{alias.name}" if module else alias.name
-                for alias in node.names
-            )
-            reported_names = (module,) * len(names)
-        else:
-            continue
-        for name, reported_name in zip(names, reported_names, strict=True):
-            root = name.split(".", 1)[0].lower()
-            imports.append(reported_name)
-            lowered = name.lower()
-            if (
-                root in _FORBIDDEN_PROVIDER_IMPORT_ROOTS
-                or "proxy" in lowered
-                or "admin" in lowered
-                or "discover" in lowered
-                or root not in _ALLOWED_PROVIDER_IMPORT_ROOTS
-            ):
-                forbidden.append(f"{path}:{name}")
-    if forbidden:
-        raise RuntimeError("forbidden Anthropic provider import: " + ", ".join(sorted(forbidden)))
-    return tuple(sorted(set(imports)))
-
-
-def _anthropic_provider_imports(snapshot: dict[str, bytes]) -> dict[str, tuple[str, ...]]:
-    imports: dict[str, tuple[str, ...]] = {}
-    for path in _ANTHROPIC_PROVIDER_SOURCES:
-        source = snapshot.get(path)
-        if source is None:
-            raise RuntimeError("Anthropic provider source snapshot is incomplete")
-        imports[path] = _provider_imports(source, path)
-    return dict(sorted(imports.items()))
-
-
-def _anthropic_transport_request_policy(snapshot: dict[str, bytes]) -> str:
-    source_path = _SNAPSHOT_MODULE_SOURCES[".providers.anthropic"]
-    source = snapshot.get(source_path)
-    if source is None:
-        raise RuntimeError("Anthropic provider source snapshot is incomplete")
-    try:
-        tree = ast.parse(source, filename=source_path)
-    except (SyntaxError, UnicodeDecodeError) as error:
-        raise RuntimeError("Anthropic provider source cannot be parsed") from error
-    invoke_methods = tuple(
-        method
-        for node in tree.body
-        if isinstance(node, ast.ClassDef) and node.name == "AnthropicBackend"
-        for method in node.body
-        if isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef))
-        and method.name == "invoke"
-    )
-    if (
-        len(invoke_methods) != 1
-        or hashlib.sha256(
-            ast.dump(invoke_methods[0], annotate_fields=True, include_attributes=False)
-            .encode("utf-8")
-        ).hexdigest() != _APPROVED_ANTHROPIC_BACKEND_INVOKE_AST_SHA256
-    ):
-        raise RuntimeError(
-            "Anthropic backend does not prove one request with zero retries"
-        )
-    transport_classes = tuple(
-        node
-        for node in tree.body
-        if isinstance(node, ast.ClassDef) and node.name == "StdlibAnthropicTransport"
-    )
-    if len(transport_classes) != 1:
-        raise RuntimeError("Anthropic transport definition is not exact")
-    post_methods = tuple(
-        node
-        for node in transport_classes[0].body
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-        and node.name == "post"
-    )
-    if len(post_methods) != 1 or isinstance(post_methods[0], ast.AsyncFunctionDef):
-        raise RuntimeError("Anthropic transport post definition is not exact")
-    post_method = post_methods[0]
-    post_shape = ast.dump(
-        post_method,
-        annotate_fields=True,
-        include_attributes=False,
-    ).encode("utf-8")
-    if (
-        hashlib.sha256(post_shape).hexdigest()
-        != _APPROVED_ANTHROPIC_TRANSPORT_POST_AST_SHA256
-    ):
-        raise RuntimeError(
-            "Anthropic transport does not prove one request with zero retries"
-        )
-    parents = {
-        child: parent
-        for parent in ast.walk(post_method)
-        for child in ast.iter_child_nodes(parent)
-    }
-    request_calls = tuple(
-        node
-        for node in ast.walk(post_method)
-        if isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Attribute)
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id == "connection"
-        and node.func.attr == "request"
-    )
-    request_references = tuple(
-        node
-        for node in ast.walk(post_method)
-        if isinstance(node, ast.Attribute) and node.attr == "request"
-    )
-    request_has_repeating_ancestor = False
-    if len(request_calls) == 1:
-        ancestor = parents.get(request_calls[0])
-        while ancestor is not None and ancestor is not post_method:
-            if isinstance(
-                ancestor,
-                (
-                    ast.For,
-                    ast.AsyncFor,
-                    ast.While,
-                    ast.comprehension,
-                    ast.ListComp,
-                    ast.SetComp,
-                    ast.DictComp,
-                    ast.GeneratorExp,
-                    ast.FunctionDef,
-                    ast.AsyncFunctionDef,
-                    ast.Lambda,
-                ),
-            ):
-                request_has_repeating_ancestor = True
-                break
-            ancestor = parents.get(ancestor)
-    prohibited_control_flow = tuple(
-        node
-        for node in ast.walk(post_method)
-        if isinstance(node, (ast.For, ast.AsyncFor, ast.While))
-    )
-    retry_calls = tuple(
-        node
-        for node in ast.walk(post_method)
-        if isinstance(node, ast.Call)
-        and (
-            (
-                isinstance(node.func, ast.Name)
-                and "retry" in node.func.id.lower()
-            )
-            or (
-                isinstance(node.func, ast.Attribute)
-                and "retry" in node.func.attr.lower()
-            )
-        )
-    )
-    recursive_post_calls = tuple(
-        node
-        for node in ast.walk(post_method)
-        if isinstance(node, ast.Attribute) and node.attr == "post"
-    )
-    reflective_post_calls = tuple(
-        node
-        for node in ast.walk(post_method)
-        if isinstance(node, ast.Call)
-        and (
-            (
-                isinstance(node.func, ast.Name)
-                and node.func.id == "getattr"
-                and len(node.args) >= 2
-                and isinstance(node.args[0], ast.Name)
-                and node.args[0].id == "self"
-                and isinstance(node.args[1], ast.Constant)
-                and node.args[1].value == "post"
-            )
-            or (
-                isinstance(node.func, ast.Attribute)
-                and isinstance(node.func.value, ast.Name)
-                and node.func.value.id == "self"
-                and node.func.attr == "__getattribute__"
-                and node.args
-                and isinstance(node.args[0], ast.Constant)
-                and node.args[0].value == "post"
-            )
-        )
-    )
-    reflective_request_calls = tuple(
-        node
-        for node in ast.walk(post_method)
-        if isinstance(node, ast.Call)
-        and (
-            (
-                isinstance(node.func, ast.Name)
-                and node.func.id == "getattr"
-                and len(node.args) >= 2
-                and isinstance(node.args[1], ast.Constant)
-                and node.args[1].value == "request"
-            )
-            or (
-                isinstance(node.func, ast.Attribute)
-                and node.func.attr == "__getattribute__"
-                and node.args
-                and isinstance(node.args[0], ast.Constant)
-                and node.args[0].value == "request"
-            )
-        )
-    )
-    if (
-        len(request_calls) != 1
-        or len(request_references) != 1
-        or request_references[0] is not request_calls[0].func
-        or request_has_repeating_ancestor
-        or prohibited_control_flow
-        or retry_calls
-        or recursive_post_calls
-        or reflective_post_calls
-        or reflective_request_calls
-    ):
-        raise RuntimeError(
-            "Anthropic transport does not prove one request with zero retries"
-        )
-    return "ONE_REQUEST_ZERO_RETRIES"
-
-
-def _unprovisioned_registration_classification(
-    registered_adapters: Iterable[object],
-    identity_module,
-    backend_module,
-    *,
-    binding_checks: tuple = (),
-) -> str:
-    adapters = tuple(registered_adapters)
-    if len(adapters) != 1:
-        raise RuntimeError("Anthropic provider registration must contain exactly one adapter")
-    adapter = adapters[0]
-    if type(adapter).__name__ != "AnthropicBackend":
-        raise RuntimeError("Anthropic provider registration must contain AnthropicBackend")
-    descriptor = _rehydrate_backend_descriptor(
-        _describe_adapter(adapter, binding_checks), identity_module, backend_module
-    )
-    backend_module.validate_backend_descriptor(descriptor)
-    if descriptor.identity.is_test_double:
-        raise RuntimeError("Anthropic provider registration must not be a test double")
-    if descriptor.identity.adapter_id != "anthropic-direct-messages":
-        raise RuntimeError("Anthropic provider registration has an unexpected adapter identity")
-    classifications = tuple(
-        observation.classification.value for observation in descriptor.observations
-    )
-    if not classifications or set(classifications) != {"UNAVAILABLE"}:
-        raise RuntimeError("Anthropic provider registration is not unprovisioned")
-    if backend_module.is_backend_eligible(descriptor):
-        raise RuntimeError("unprovisioned Anthropic provider must be ineligible")
-    return "UNAVAILABLE"
-
-
-def build_anthropic_offline_guard_report(
-    repository: Path | str,
-    revision: str,
-) -> dict[str, object]:
-    """Build local, revision-bound evidence for Anthropic offline boundaries.
-
-    This function intentionally imports and describes the verified snapshot only.
-    It never invokes an adapter, reads process environment values, or provisions a
-    provider account.
-    """
-
-    repository = Path(repository)
-    commit, tree = _commit_and_tree(repository, revision)
-    snapshot = _verify_runner_source_binding(repository, commit)
-    manifest = _anthropic_provider_manifest(repository, commit)
-    imports = _anthropic_provider_imports(snapshot)
-    request_retry_policy = _anthropic_transport_request_policy(snapshot)
-    repository_root = repository.resolve(strict=True)
-    with _AnthropicOfflineBarrier() as offline_barrier:
-        identity_module, backend_module = _load_verified_runner_api(
-            repository_root, commit, snapshot
-        )
-        binding_checks = []
-        registration = _load_verified_snapshot_registration(
-            repository_root,
-            commit,
-            snapshot,
-            binding_checks=binding_checks,
-            verified_https_connection=offline_barrier.original_https_connection(),
-        )
-        classification = _unprovisioned_registration_classification(
-            registration, identity_module, backend_module,
-            binding_checks=tuple(binding_checks),
-        )
-    offline_barrier.require_no_attempts()
-
-    expected_capabilities_hash = _sha256_canonical_json(
-        list(_EXPECTED_REQUIRED_CAPABILITIES)
-    )
-    actual_capabilities = tuple(backend_module.REQUIRED_CAPABILITIES)
-    actual_capabilities_hash = _sha256_canonical_json(list(actual_capabilities))
-    if actual_capabilities != _EXPECTED_REQUIRED_CAPABILITIES:
-        raise RuntimeError("REQUIRED_CAPABILITIES changed")
-
-    anthropic_source = _SNAPSHOT_MODULE_SOURCES[".providers.anthropic"]
-    return {
-        "schema_version": "joewrks.anthropic-offline-guard/1.0",
-        "implementation_code_commit": commit,
-        "implementation_code_tree": tree,
-        "provider_mode": "stdlib-direct-https",
-        "provider_source_manifest": manifest,
-        "provider_source_manifest_sha256": _sha256_canonical_json(manifest),
-        "provider_source_imports": list(imports[anthropic_source]),
-        "forbidden_imports": [],
-        "required_capabilities_sha256": actual_capabilities_hash,
-        "expected_required_capabilities_sha256": expected_capabilities_hash,
-        "registration_count": len(registration),
-        "registered_descriptor_classification": classification,
-        "import_describe_side_effects": "PASS",
-        "entry_points_provider_calls": 0,
-        "request_retry_policy": request_retry_policy,
-        "overall": "PASS",
-    }
-
-
 def build_capability_audit(
     repository: Path | str,
     revision: str,
     *,
-    registered_adapters: Iterable[object] | None = None,
+    registered_adapters: Iterable[object] = REGISTERED_PRODUCTION_ADAPTERS,
 ) -> dict[str, object]:
     """Build the deterministic current-runtime disposition without executing inference."""
 
@@ -1669,61 +453,16 @@ def build_capability_audit(
         commit,
         runner_snapshot,
     )
-    binding_checks = []
-    verified_registration = _load_verified_snapshot_registration(
-        repository.resolve(strict=True),
-        commit,
-        runner_snapshot,
-        binding_checks=binding_checks,
-    )
     baseline = frozen_blob_map(repository, IMPLEMENTATION_BASE_REVISION)
     observed = frozen_blob_map(repository, commit)
     if not baseline or observed != baseline:
         raise RuntimeError("frozen Product Definition, semantic-review, or M6 paths changed")
 
-    if registered_adapters is not None:
-        _real_adapter_count(
-            tuple(registered_adapters),
-            identity_module,
-            backend_module,
-            binding_checks=tuple(binding_checks),
-        )
     real_adapter_count = _real_adapter_count(
-        verified_registration,
+        tuple(registered_adapters),
         identity_module,
         backend_module,
-        binding_checks=tuple(binding_checks),
     )
-    provider_candidate = _verified_provider_candidate(
-        verified_registration,
-        identity_module,
-        backend_module,
-        binding_checks=tuple(binding_checks),
-    )
-    if provider_candidate is not None:
-        return {
-            "adapter_implementation": "IMPLEMENTED",
-            "backend_kind": BACKEND_KIND,
-            "backend_provisioning": "REQUIRED",
-            "calibration_status": "CALIBRATION_NOT_RUN",
-            "fake_backend_authoritative": False,
-            "implementation_code_commit": commit,
-            "implementation_code_tree": tree,
-            "implementation_status": "RUNNER_IMPLEMENTED",
-            "provider_candidate": provider_candidate,
-            "provider_selected": provider_candidate,
-            "real_backend_capability": "UNAVAILABLE",
-            "real_calibration_attempts": 1,
-            "real_provider_request_count": 0,
-            "real_synthetic_preflight": "NOT_RUN",
-            "registered_real_adapter_count": real_adapter_count,
-            "runner_contract_version": identity_module.RUNNER_CONTRACT_VERSION,
-            "runner_state": "ISOLATION_CAPABILITY_UNAVAILABLE",
-            "schema_version": IMPLEMENTED_AUDIT_SCHEMA_VERSION,
-            "semantic_review_21_reliability": "NOT_MEASURED",
-            "v044_status": "BLOCKED",
-            "valid_real_calibration_runs": 0,
-        }
     if real_adapter_count == 0:
         capability = "UNAVAILABLE"
         runner_state = "ISOLATION_CAPABILITY_UNAVAILABLE"
@@ -1777,6 +516,7 @@ def main(argv: list[str] | None = None) -> int:
         document = build_capability_audit(
             arguments.repository,
             arguments.revision,
+            registered_adapters=REGISTERED_PRODUCTION_ADAPTERS,
         )
         sys.stdout.buffer.write(canonical_audit_json(document).encode("utf-8"))
         sys.stdout.buffer.flush()
