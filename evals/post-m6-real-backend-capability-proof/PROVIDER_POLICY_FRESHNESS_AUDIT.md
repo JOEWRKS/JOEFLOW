@@ -34,7 +34,10 @@ record the conflict, and fail closed when it cannot be resolved.
 ## Current compatibility conclusion
 
 The promoted direct-HTTPS adapter remains compatible with the current official
-contract. Its `x-api-key` header is still supported, a single-workspace key may
+contract. Current official surfaces differ in whether they present
+`Authorization: Bearer` or `x-api-key` as the direct static-key example, but
+both document `x-api-key` as supported. That stable compatibility property,
+not a preferred-header claim, controls this audit. A single-workspace key may
 omit request-time workspace selection, `claude-sonnet-5` remains a pinned model
 ID with the required capacity, and an inference request does not require an
 Admin credential.
@@ -48,10 +51,13 @@ unchanged as design evidence.
 
 ## Authentication
 
-Current official facts:
+Current official facts and rendering boundary:
 
-- Direct Claude API requests accept `Authorization: Bearer <API key>` as the
-  primary API-key form. `x-api-key` remains supported as a legacy fallback.
+- One current official rendering presents direct API-key authentication as
+  `Authorization: Bearer <API key>` and states that `x-api-key` remains
+  supported. Another official rendering continues to present static API keys
+  directly in `x-api-key`. This presentation conflict is non-normative for the
+  frozen adapter because both surfaces support its `x-api-key` request.
 - `anthropic-version` and `content-type: application/json` remain required for
   the direct Messages request.
 - A personal or service-account API key can be scoped to exactly one workspace.
@@ -60,13 +66,14 @@ Current official facts:
 - A multi-workspace identity-backed key requires
   `anthropic-workspace-id` on every request. The promoted adapter does not send
   that request header, so such a key is not eligible for this closed adapter.
-- Legacy workspace keys still work, but Anthropic recommends identity-backed
-  personal/service-account keys or Workload Identity Federation for new
-  integrations.
-- Personal keys are appropriate for one developer's own development work.
-  Service-account keys are the current recommended API-key type for shared or
-  unattended automation. For JOEFLOW, the future credential should therefore
-  be a service-account key scoped to the approved single workspace.
+- Legacy workspace keys still work. Personal keys are appropriate for one
+  person's own tooling or development; service-account keys are appropriate
+  for a shared or unattended workload using this static-key adapter.
+- Workload Identity Federation is preferable when a production workload
+  already has a federatable platform identity and long-lived static secrets
+  should be avoided. It is not selected for this proof because adopting it
+  would change the frozen adapter authentication boundary. This is not a claim
+  that static service-account keys are universally preferred over WIF.
 - The Messages inference adapter requires no Admin API credential. Admin access
   is optional and separate when an administrator chooses machine-readable
   provisioning evidence instead of Console/contract evidence.
@@ -75,9 +82,13 @@ Compatibility result:
 
 `INFERENCE_ADAPTER_REQUIRES_ADMIN_CREDENTIAL = NO`
 
-The current `x-api-key` implementation remains supported. Moving to the newer
-`Authorization` preference or Workload Identity Federation would change the
-frozen adapter/authentication boundary and is not required for P1/P2 readiness.
+`AUTH_HEADER_COMPATIBILITY = DOCUMENTED_COMPATIBLE`
+
+`AUTH_PRIMARY_PRESENTATION = OFFICIAL_SOURCE_RENDERING_CONFLICT_NON_NORMATIVE`
+
+The current `x-api-key` implementation remains supported. Selecting another
+header presentation or Workload Identity Federation would change the frozen
+adapter/authentication boundary and is not required for P1/P2 readiness.
 
 Sources:
 
@@ -132,9 +143,22 @@ Current official facts:
   limit.
 - Sonnet 5 uses a newer tokenizer that may produce about 30% more tokens for the
   same text than Sonnet 4.6. Existing rough byte-to-token estimates therefore
-  remain planning evidence, not an exact token measurement.
+  remain pre-authorization planning evidence, not the required exact token
+  field.
 - Sonnet 5 is available on the direct Claude API, but the selected account's
   actual entitlement and rate/quota headroom remain account evidence.
+
+Under the promoted admission contract, `sufficient_payload_capacity` cannot be
+`OBSERVED_PASS` until a separately authorized pre-P1 Token Counting request has
+produced a non-null `exact_provider_input_tokens` for the exact frozen provider
+projection. P1 cannot backfill its own admission prerequisite. The capacity
+record must prove all of the following before P1:
+
+- `exact_provider_input_tokens + 65,536 <= 1,000,000`;
+- configured output `65,536 <= 128,000` documented model maximum;
+- exact provider body `< 32,000,000` bytes;
+- account/workspace quota is sufficient; and
+- the approved spend ceiling is sufficient.
 
 No model or capacity contradiction was found. Actual account entitlement and
 quota stay `ACCOUNT_EVIDENCE_REQUIRED`.
@@ -156,11 +180,12 @@ Current controlling official sources state:
   categories, making the effective planning rates `$2.20 / MTok` input and
   `$11.00 / MTok` output.
 
-An English generic pricing rendering still exposed the superseded scheduled
-September 1 increase to `$3/$15`. The current Sonnet 5 model page and the dated
-release notes state that `$2/$10` became the standard rate on August 10, 2026;
-those more specific/current sources control. The promoted rate conclusion is
-therefore unchanged.
+Generic pricing renderings may still expose stale or inconsistent scheduled
+pricing. The current model-specific Sonnet 5 page and the explicitly dated
+release note state that `$2/$10` became the standard rate on August 10, 2026;
+those more specific/current sources control under the frozen source-conflict
+policy. A generic rendering does not override them. The promoted rate
+conclusion is therefore unchanged.
 
 No exact bill is claimed. The exact input token count has not been measured,
 and the output can terminate below the configured maximum.
@@ -226,8 +251,8 @@ Sources:
 
 | Fact | `PROMOTED_2026_09_05_CLAIM` | `CURRENT_OFFICIAL_PROVIDER_CLAIM` | Classification | Impact |
 | --- | --- | --- | --- | --- |
-| Direct API-key header | Adapter sends `x-api-key` | `Authorization: Bearer` is now primary; `x-api-key` remains a supported legacy fallback | `CLARIFIED` | No code change; the existing header remains compatible |
-| Credential type | Use one key scoped to the approved workspace | Prefer a single-workspace identity-backed service-account key for unattended automation; legacy workspace keys still work | `CLARIFIED` | Provision a service-account key, not a new legacy workspace key |
+| Direct API-key header | Adapter sends `x-api-key` | Official renderings differ on presentation, while both document `x-api-key` compatibility | `CLARIFIED` | `AUTH_HEADER_COMPATIBILITY = DOCUMENTED_COMPATIBLE`; no code change |
+| Credential type | Use one key scoped to the approved workspace | Use a single-workspace service-account key for this shared/unattended static-key proof; WIF remains preferable when an existing federatable workload identity makes it applicable | `CLARIFIED` | Service-account key fits the frozen adapter; no universal preference over WIF is asserted |
 | Workspace selection | A workspace-scoped key can omit request workspace selection | A single-workspace personal/service-account key can omit the header; a multi-workspace key cannot | `CLARIFIED` | Multi-workspace keys remain ineligible for the closed adapter |
 | Inference Admin credential | Not required | Not required; Admin access is separate and optional for provisioning evidence | `UNCHANGED` | Preserve the adapter boundary |
 | Workspace identity | `wrkspc_` ID and response header | Same, with `anthropic-workspace-id` on workspace-resolved responses | `UNCHANGED` | Existing pre-call hash and response check remain valid |
@@ -290,6 +315,7 @@ until that approval is recorded.
 
 - Production code change required: `NO`
 - Provider policy compatibility: `DOCUMENTED_COMPATIBLE`
+- Authentication primary presentation: `OFFICIAL_SOURCE_RENDERING_CONFLICT_NON_NORMATIVE`
 - Account evidence complete: `NO`
 - Credential provisioned: `NO`
 - P1/P2 authorized: `NO`
