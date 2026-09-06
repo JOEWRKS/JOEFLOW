@@ -296,6 +296,12 @@ class _AnthropicOfflineBarrier:
                 "Anthropic offline guard prohibited environment or network access"
             )
 
+    def original_https_connection(self):
+        originals = self._originals
+        if originals is None:
+            raise RuntimeError("Anthropic offline guard barrier was not entered")
+        return originals[4]
+
 FROZEN_PATHS = (
     "product-definition",
     "skills/joewrks-product-definition/downstream/semantic_review",
@@ -531,6 +537,8 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         package_name: str,
         repository: Path,
         snapshot: dict[str, bytes],
+        *,
+        verified_https_connection=None,
     ):
         self._package_name = package_name
         self._repository = repository
@@ -549,7 +557,12 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         self._verified_http = http
         self._verified_http_client = http.client
         self._verified_http_connection = http.client.HTTPConnection
-        self._verified_https_connection = http.client.HTTPSConnection
+        self._active_https_connection = http.client.HTTPSConnection
+        self._verified_https_connection = (
+            self._active_https_connection
+            if verified_https_connection is None
+            else verified_https_connection
+        )
         connection_type = (
             self._verified_https_connection
             if type(self._verified_https_connection) is type
@@ -599,15 +612,17 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
                 namespace = type.__getattribute__(defining_type, "__dict__")
                 if name not in namespace:
                     continue
-                function = namespace[name]
-                if type(function) in (staticmethod, classmethod):
-                    function = function.__func__
+                descriptor = namespace[name]
+                function = descriptor
+                if type(descriptor) in (staticmethod, classmethod):
+                    function = descriptor.__func__
                 if not callable(function):
                     return None
                 is_python_function = type(function) is types.FunctionType
                 return (
                     name,
                     defining_type,
+                    descriptor,
                     function,
                     function.__code__ if is_python_function else None,
                     function.__globals__ if is_python_function else None,
@@ -634,6 +649,7 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         (
             name,
             defining_type,
+            descriptor,
             function,
             code,
             globals_,
@@ -645,7 +661,13 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
         current = self._capture_http_connection_callable(connection_type, name)
         if current is None:
             return False
-        current_name, current_defining_type, current_function, *_ = current
+        (
+            current_name,
+            current_defining_type,
+            current_descriptor,
+            current_function,
+            *_,
+        ) = current
         if (
             current_name != name
             or (
@@ -653,6 +675,7 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
                 and defining_type is not required_defining_type
             )
             or current_defining_type is not defining_type
+            or current_descriptor is not descriptor
             or current_function is not function
         ):
             return False
@@ -834,7 +857,7 @@ class _SnapshotSourceFinder(importlib.abc.MetaPathFinder):
             or module.__dict__.get("http") is not self._verified_http
             or self._verified_http.__dict__.get("client") is not self._verified_http_client
             or self._verified_http_client.__dict__.get("HTTPSConnection")
-            is not self._verified_https_connection
+            is not self._active_https_connection
             or module.__dict__.get("os") is not self._verified_os
             or self._verified_os.__dict__.get("environ") is not self._verified_environment
         )
@@ -1034,6 +1057,7 @@ def _load_verified_snapshot_registration(
     snapshot: dict[str, bytes],
     *,
     binding_checks: list | None = None,
+    verified_https_connection=None,
 ) -> tuple[object, ...]:
     """Load the revision-bound production registration for audit evaluation."""
 
@@ -1084,7 +1108,12 @@ def _load_verified_snapshot_registration(
     try:
         if _private_runner_module_names(package_name):
             raise RuntimeError("verified runner module namespace collision")
-        finder = _SnapshotSourceFinder(package_name, repository, snapshot)
+        finder = _SnapshotSourceFinder(
+            package_name,
+            repository,
+            snapshot,
+            verified_https_connection=verified_https_connection,
+        )
         sys.meta_path.insert(0, finder)
         providers_module = importlib.import_module(f"{package_name}.providers")
         expected_modules = {
@@ -1583,7 +1612,11 @@ def build_anthropic_offline_guard_report(
         )
         binding_checks = []
         registration = _load_verified_snapshot_registration(
-            repository_root, commit, snapshot, binding_checks=binding_checks
+            repository_root,
+            commit,
+            snapshot,
+            binding_checks=binding_checks,
+            verified_https_connection=offline_barrier.original_https_connection(),
         )
         classification = _unprovisioned_registration_classification(
             registration, identity_module, backend_module,

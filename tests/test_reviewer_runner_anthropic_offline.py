@@ -1310,6 +1310,135 @@ AnthropicBackend.__getattribute__ = _intercept_invoke
                 original_method,
             )
 
+    def test_offline_guard_rechecks_original_https_class_hidden_by_barrier(self):
+        import audit_reviewer_runner as audit
+
+        saved_https_connection = http.client.HTTPSConnection
+        original_capture = audit._SnapshotSourceFinder._capture_verified_export
+        original_verify = audit._SnapshotSourceFinder.verify_anthropic_transport_binding
+        missing = object()
+
+        for timing in ("after-capture", "after-initial-binding"):
+            original_descriptor = saved_https_connection.__dict__.get("request", missing)
+            mutation_calls = []
+            mutation_installed = []
+
+            def install_mutation():
+                if mutation_installed:
+                    return
+
+                def replacement_request(connection, *args, **kwargs):
+                    mutation_calls.append((connection, args, kwargs))
+                    raise AssertionError("audit must not execute an HTTPS callable")
+
+                self.assertIsNot(http.client.HTTPSConnection, saved_https_connection)
+                saved_https_connection.request = replacement_request
+                mutation_installed.append(replacement_request)
+                probe = object.__new__(saved_https_connection)
+                self.assertIs(probe.request.__func__, replacement_request)
+
+            def capture_then_mutate(finder, fullname, module, code):
+                original_capture(finder, fullname, module, code)
+                if fullname.endswith(".providers.anthropic"):
+                    install_mutation()
+
+            def verify_then_mutate(finder, module, registered):
+                result = original_verify(finder, module, registered)
+                install_mutation()
+                return result
+
+            patch_target = (
+                "_capture_verified_export"
+                if timing == "after-capture"
+                else "verify_anthropic_transport_binding"
+            )
+            replacement = (
+                capture_then_mutate
+                if timing == "after-capture"
+                else verify_then_mutate
+            )
+            try:
+                with self.subTest(timing=timing):
+                    with patch.object(
+                        audit._SnapshotSourceFinder,
+                        patch_target,
+                        replacement,
+                    ):
+                        with self.assertRaisesRegex(
+                            RuntimeError,
+                            "HTTP transport dependency does not prove one request with zero retries",
+                        ):
+                            self.require_guard()(ROOT, self.revision)
+                    self.assertEqual(len(mutation_installed), 1)
+                    self.assertEqual(mutation_calls, [])
+            finally:
+                if original_descriptor is missing:
+                    delattr(saved_https_connection, "request")
+                else:
+                    setattr(saved_https_connection, "request", original_descriptor)
+
+    def test_capability_audit_rejects_http_descriptor_binding_mutation(self):
+        import audit_reviewer_runner as audit
+
+        http_connection = http.client.HTTPConnection
+        https_connection = http.client.HTTPSConnection
+        original_capture = audit._SnapshotSourceFinder._capture_verified_export
+        original_verify = audit._SnapshotSourceFinder.verify_anthropic_transport_binding
+
+        for timing in ("after-capture", "after-initial-binding"):
+            original_descriptor = http_connection.__dict__["request"]
+            mutation_installed = []
+
+            def install_mutation():
+                if mutation_installed:
+                    return
+                http_connection.request = staticmethod(original_descriptor)
+                mutation_installed.append(original_descriptor)
+                probe = https_connection(
+                    "offline.invalid",
+                    port=443,
+                    context=object(),
+                )
+                self.assertIs(https_connection.request, original_descriptor)
+                self.assertIs(probe.request, original_descriptor)
+
+            def capture_then_mutate(finder, fullname, module, code):
+                original_capture(finder, fullname, module, code)
+                if fullname.endswith(".providers.anthropic"):
+                    install_mutation()
+
+            def verify_then_mutate(finder, module, registered):
+                result = original_verify(finder, module, registered)
+                install_mutation()
+                return result
+
+            patch_target = (
+                "_capture_verified_export"
+                if timing == "after-capture"
+                else "verify_anthropic_transport_binding"
+            )
+            replacement = (
+                capture_then_mutate
+                if timing == "after-capture"
+                else verify_then_mutate
+            )
+            try:
+                with self.subTest(timing=timing):
+                    with patch.object(
+                        audit._SnapshotSourceFinder,
+                        patch_target,
+                        replacement,
+                    ):
+                        with self.assertRaisesRegex(
+                            RuntimeError,
+                            "HTTP transport dependency does not prove one request with zero retries",
+                        ):
+                            audit.build_capability_audit(ROOT, self.revision)
+                    self.assertEqual(len(mutation_installed), 1)
+            finally:
+                http_connection.request = original_descriptor
+            self.assertIs(https_connection.request, original_descriptor)
+
     def test_capability_audit_rejects_http_instance_dispatch_mutations(self):
         import audit_reviewer_runner as audit
 
