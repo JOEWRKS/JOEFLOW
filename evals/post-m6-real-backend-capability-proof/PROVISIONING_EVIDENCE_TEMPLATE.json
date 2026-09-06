@@ -1,0 +1,24 @@
+{
+  "adapter_source_manifest_sha256": null,
+  "canonical_provider_body_sha256": null,
+  "local_capacity_measurement_sha256": null,
+  "local_conformance_evidence_sha256": null,
+  "provider_official_contract_sha256": null,
+  "provisioning": {
+    "capacity_and_quota_evidence_sha256": null,
+    "credential_readiness_evidence_sha256": null,
+    "expected_anthropic_workspace_id_sha256": null,
+    "inference_geo_evidence_sha256": null,
+    "model_entitlement_evidence_sha256": null,
+    "provider_policy_approval_evidence_sha256": null,
+    "retention_privacy_approval": null,
+    "retention_privacy_evidence_channel": null,
+    "retention_privacy_evidence_sha256": null,
+    "schema_version": "joewrks.anthropic-provisioning-evidence/1.0",
+    "spend_approval_evidence_sha256": null,
+    "workspace_evidence_channel": null,
+    "workspace_evidence_sha256": null,
+    "workspace_key_scope": null
+  },
+  "schema_version": "joewrks.anthropic-admission-evidence/1.0"
+}
