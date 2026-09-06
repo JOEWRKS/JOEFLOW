@@ -18,9 +18,9 @@ remains BLOCKED. Test doubles cannot establish real capability authority.
   design: `docs/superpowers/specs/2026-09-05-post-m6-real-backend-capability-enablement-design.md`.
 - Frozen authority/main: `ab95074704af0e93248d56344d6a220dfec88a93`;
   tree `867bec6fcfe5f4dc9927beaaf143087178e09e7c`.
-- Final code-only commit: `d80c8499ddab9d7b33eb436443d1a7d0c28d3a21`.
-- Final code-only tree: `6940f453f7c84d1dc6c1d13c398be14c667d6deb`.
-- Code-only parent: `3d96d4a2b53e7aa45123f2e2975360c911170e0e`.
+- Final code-only commit: `2b137125ad87fafabc93e7492729da441c9b9cce`.
+- Final code-only tree: `bd5ffa19203561b3c73432933be4ea77cfa54efd`.
+- Code-only parent: `2a8e609c94f24ea7801d332a8d2a794943e964f3`.
 
 The code-only fix revision contains the previous evidence commit in its ancestry;
 this refresh binds the fix revision, never its own later evidence commit.
@@ -60,17 +60,24 @@ be72b26e493a8115992358dadb50f17eeae61ea6 fix: address Task 8 precondition review
 b78d5876ed73f954407f12ec177be91ee3da3294 test: audit anthropic backend implementation
 3d96d4a2b53e7aa45123f2e2975360c911170e0e fix: address final branch review findings
 d80c8499ddab9d7b33eb436443d1a7d0c28d3a21 fix: preserve verified import diagnostic precedence
+01259776062d7fb15e636913d20bd8757dba472f test: refresh backend implementation evidence after final fix
+2a44426e34b5e74a2d5771ce550784c291485d65 fix: bind inherited anthropic http request dependency
+2a8e609c94f24ea7801d332a8d2a794943e964f3 fix: close anthropic http instance binding bypasses
+2b137125ad87fafabc93e7492729da441c9b9cce fix: preserve exact anthropic http binding identity
 ```
 
 Task 8's original evidence commit is b78d587, with the subject shown above.
-The refresh subject is `test: refresh backend implementation evidence after final fix`.
-Its identity is intentionally outside the code-only evidence binding.
+The prior refresh is exact commit 0125977, with the subject shown above. This
+remediation refresh uses the subject
+`test: refresh real backend evidence after http binding fix`; its identity is
+intentionally outside the code-only evidence binding.
 
 Independent review history is recorded below as Critical/Important/Minor counts.
 The original Task 8 scoped review passed 0/0/0 at b78d587. The later whole-branch
-review reported 0/1/0 for transitive helper proof. The single final fix wave and
-its one evidence-based diagnostic correction are recorded here; their scoped
-re-review is pending, not claimed complete.
+review reported 0/1/0 for transitive helper proof. Its source and diagnostic
+corrections are recorded below. The later Astra promotion remediation received
+a fresh scoped review of exact code SHA/tree 2b137125/bd5ffa19 with final counts
+Critical 0, Important 0, Minor 0 and verdict READY FOR EVIDENCE REFRESH.
 
 | Task | Controlled initial RED; final declared GREEN | Review and correction outcome |
 | --- | --- | --- |
@@ -84,6 +91,7 @@ re-review is pending, not claimed complete.
 | 8: carried audit findings | 10 methods, 6 assertion failures, 0 errors; 247/247 GREEN at 6208ac2 | Invoke and mutable transport/authentication dependencies bound; precondition review found one describe-time timing gap (0/1/0) |
 | 8: precondition timing fix | 10 methods, 4 assertion failures, 0 errors; 247/247 GREEN at be72b26 | Revalidate original captured bindings immediately after describe; independent review 0/0/0, including 15 describe-time mutation/path combinations; both carried Task 7 findings closed |
 | 8: full-suite test correction | Original discovery had 1 failure, 46 errors, 1 known skip; targeted order/policy 33/33 and focused 247/247 GREEN | Test-module restoration and exactly five stdlib allowlist entries corrected at 7a55d71; production behavior unchanged; Task 8 scoped review passed 0/0/0 at b78d587 |
+| Astra HTTP binding remediation | Three controlled RED rounds: 6, 8, then 4 expected assertion failures; all had 0 errors and 0 network/provider calls; 253/253 final GREEN | Reviews progressed 0/1/0, 0/2/0, then 0/0/0 at 2b137125; exact inherited callables, instance construction/lookup hooks, saved real HTTPS class and raw descriptors are bound without provider-runtime change |
 
 Review-fix controlled RED assertion counts were: Task 1: 1; Task 2: 2 then 5;
 Task 3: 5; Task 4: 5; Task 5: 2; Task 6: 2; Task 7 rounds 1–5: 6, 3, 3, 2,
@@ -104,7 +112,7 @@ three errors; it was discarded as invalid RED, corrected before audit changes,
 and followed by the controlled 6-assertion-failure RED above. The failed initial
 full discovery is likewise not claimed as controlled assertion RED.
 
-## Single final review-fix wave
+## Earlier final review-fix wave
 
 The whole-branch review of c48f341..b78d587 found Critical 0, Important 1,
 Minor 0: the current provider was one-request/no-retry, but the audit proof
@@ -156,6 +164,71 @@ The final-wave code diff is limited to the audit script and offline test file;
 the diagnostic correction adds twelve audit lines only. Compilation, LF/CR,
 exact ten-method count and working/staged diff checks passed.
 
+## Astra HTTP binding remediation and final source review
+
+The blocked head was exact commit
+`01259776062d7fb15e636913d20bd8757dba472f`, tree
+`5f372c349335b313f4215a4c5e499c798bb9088d`. Its audit captured the
+`HTTPSConnection` class but did not bind the inherited effective
+`HTTPConnection.request` implementation. Replacing that base function after
+capture changed `HTTPSConnection.request` while the class identity remained
+unchanged; the old audit still returned `ONE_REQUEST_ZERO_RETRIES`. This was an
+audit-completeness defect, not evidence of duplicate production requests.
+
+The first controlled RED used the real inherited `request`, `getresponse`, and
+`close` callables at both capture and post-initial-binding boundaries. It ran two
+test methods with six expected assertion failures, zero errors, and zero
+replacement, provider, DNS, TLS, or socket calls. Commit
+`2a44426e34b5e74a2d5771ce550784c291485d65`, tree
+`43a6c7caf66453be650f679f32dc77a96a394dc3`, bound the defining class,
+function, code, globals, defaults, keyword defaults, and closure contents. Its
+review found one Important instance-dispatch gap.
+
+The second valid RED covered base `__getattribute__`, delegated `__init__`,
+inherited `__setattr__`, and inherited `__new__` at both temporal boundaries:
+two test methods, eight expected assertion failures, zero errors and zero
+network/provider calls. The `__new__` cases ran in fresh subprocesses to avoid
+CPython slot contamination. Commit
+`2a8e609c94f24ea7801d332a8d2a794943e964f3`, tree
+`19e6b301d1c1814668cf48812f66537e46afab4f`, closed those effective-instance
+binding routes. Its review found two Important gaps: the offline blocker hid the
+saved real HTTPS class, and static/class descriptor unwrapping discarded raw
+binding identity.
+
+The third controlled RED covered both findings after capture and after the
+initial binding check: two test methods, four expected assertion failures, zero
+errors and zero network/provider calls. Commit
+`2b137125ad87fafabc93e7492729da441c9b9cce`, tree
+`bd5ffa19203561b3c73432933be4ea77cfa54efd`, preserves the blocker-owned active
+HTTPS binding separately from the original real HTTPS class, rechecks the real
+class at every existing binding boundary, and compares the raw defining-class
+descriptor identity as well as the effective callable. The active blocker still
+has its exact ownership check. No generic monkey-patch detector or standard
+library integrity framework was added.
+
+| Direct production call | Effective defining callable in the verified runtime | Effect on `ONE_REQUEST_ZERO_RETRIES` | Binding required |
+| --- | --- | --- | --- |
+| `connection.request(...)` | `http.client.HTTPConnection.request` inherited by `HTTPSConnection` | Emits the sole allowed request; replacement can emit an extra request | Yes |
+| `connection.getresponse()` | `http.client.HTTPConnection.getresponse` inherited by `HTTPSConnection` | A replacement can emit an extra request before returning/delegating | Yes |
+| `connection.close()` | `http.client.HTTPConnection.close` inherited by `HTTPSConnection` | A replacement can emit an extra request during finalization | Yes |
+
+The same transport-binding diagnosis is used for these mutations. Existing
+absolute-import and source-binding diagnostic precedence is unchanged. Provider
+runtime files, registration, the 17-capability tuple, provisioning state and
+capability classification did not change.
+
+The final independent scoped review covered both
+`2a8e609..2b137125` and the full remediation range
+`01259776..2b137125`. It checked the original `HTTPConnection.request` bypass,
+all other directly invoked inherited HTTP methods, instance construction and
+lookup, the saved real HTTPS class under the offline blocker, raw descriptor
+identity, helper/source/import checks, diagnostic precedence and trusted-surface
+scope. Result: Critical 0, Important 0, Minor 0; READY FOR EVIDENCE REFRESH.
+The reviewer freshly passed seven tests and ten additional in-memory mutation
+checks with zero failures, errors, skips, provider calls, network calls or
+credential reads. The reviewer made no repository, index, ref or worktree
+change.
+
 ## Exact changed-file manifest
 
 Twelve code/test files differ from the implementation-only base at the code-only
@@ -165,9 +238,9 @@ revision. Every entry has mode 100644; exact code-only Git blob IDs follow.
 100644 blob 9a4bc448afba2ebc86573ec5fafbe97612f0d8bf	skills/joewrks-product-definition/reviewer_runner/providers/__init__.py
 100644 blob 39a3009b46feee45acb3d40c86589dcaafde0e3c	skills/joewrks-product-definition/reviewer_runner/providers/anthropic.py
 100644 blob c673fc482db24f8c1a74a33cbd78cc4cec8e3a42	skills/joewrks-product-definition/reviewer_runner/providers/anthropic_admission.py
-100644 blob 363e54e826b01e20fe1c0b439a7bea9e004b8835	skills/joewrks-product-definition/scripts/audit_reviewer_runner.py
+100644 blob e4a50dfc5bca5ac79daaf9a46e4c3c2c7512fa39	skills/joewrks-product-definition/scripts/audit_reviewer_runner.py
 100644 blob 6935cbcf4660c6f6dc80a716ebc0315362f58548	tests/test_reviewer_runner_anthropic_admission.py
-100644 blob 511b5b90641fe384498203d9d174a5184192b407	tests/test_reviewer_runner_anthropic_offline.py
+100644 blob 91e8b18ac8fe9833415e5c9a8a2ad839a8fff009	tests/test_reviewer_runner_anthropic_offline.py
 100644 blob b9c9ec1b18049e78918e7414c26e5de35177c816	tests/test_reviewer_runner_anthropic_projection.py
 100644 blob 8cb663166b5cf88819216b114acf9038f469fa76	tests/test_reviewer_runner_anthropic_registration.py
 100644 blob 1887285160800a99794535139c3315ee8ea3561c	tests/test_reviewer_runner_anthropic_response.py
@@ -207,9 +280,10 @@ code changes between them.
 python -m unittest tests.test_reviewer_runner_anthropic_projection tests.test_reviewer_runner_anthropic_admission tests.test_reviewer_runner_anthropic_transport tests.test_reviewer_runner_anthropic_response tests.test_reviewer_runner_anthropic_registration tests.test_reviewer_runner_anthropic_offline tests.test_reviewer_runner_identity tests.test_reviewer_runner_request tests.test_reviewer_runner_backend tests.test_reviewer_runner_preflight tests.test_reviewer_runner_response tests.test_reviewer_runner_evidence tests.test_reviewer_runner_controller tests.test_reviewer_runner_audit -v
 ```
 
-Result: exit 0; 247 tests in 189.535s; OK; 0 failures, 0 errors, 0 skips.
+Result: exit 0; 253 tests in 144.823s; OK; 0 failures, 0 errors, 0 skips.
 The six Anthropic modules and every declared existing runner module passed.
-The offline module still contains exactly ten test methods.
+The offline module contains exactly sixteen test methods, including the six
+bounded HTTP-binding remediation regressions.
 
 ### Semantic-review/1.0 and calibration-controller regressions
 
@@ -217,7 +291,7 @@ The offline module still contains exactly ten test methods.
 python -m unittest tests.test_semantic_review_hashing tests.test_semantic_review_responsibility tests.test_semantic_review_package tests.test_semantic_review_output tests.test_semantic_review_goldens tests.test_semantic_review_gate tests.test_semantic_review_statistics tests.test_semantic_review_negative_regressions tests.test_semantic_review_calibration_corpus tests.test_semantic_review_calibration_control_plane tests.test_official_calibration_controller tests.test_semantic_review_human_packet -v
 ```
 
-Result: exit 0; 146 tests in 43.103s; OK; 0 failures, 0 errors, 0 skips.
+Result: exit 0; 146 tests in 32.456s; OK; 0 failures, 0 errors, 0 skips.
 Controller regression fixtures do not execute real calibration.
 
 ### Semantic-review/2.1, M6, runtime and frozen boundaries
@@ -226,7 +300,7 @@ Controller regression fixtures do not execute real calibration.
 python -m unittest tests.test_downstream_v21_derivation tests.test_downstream_v21_compiler tests.test_downstream_v21_gap_routing tests.test_downstream_v21_audit tests.test_downstream_v21_semantic_review tests.test_downstream_v21_runtime_plan tests.test_downstream_v21_runtime_evidence tests.test_downstream_v21_dogfood_replay tests.test_downstream_v21_frozen_boundaries tests.test_core_semantic_closure_v2_m6_dogfood_phase_a tests.test_core_semantic_closure_v2_m6_dogfood_phase_b tests.test_m6_runtime_v21_verification tests.test_m6_client_feedback_portal_fixture -v
 ```
 
-Result: exit 0; 142 tests in 133.785s; OK; 0 failures, 0 errors, 0 skips.
+Result: exit 0; 142 tests in 103.870s; OK; 0 failures, 0 errors, 0 skips.
 
 ### Legacy and full discovery
 
@@ -236,9 +310,9 @@ python -m unittest discover -s tests -v
 git -c core.autocrlf=false -c core.eol=lf diff --check
 ```
 
-Legacy: exit 0; 37 tests in 4.863s; OK; 0 failures, 0 errors, 0 skips.
-Full discovery: exit 0; 1,173 tests in 552.464s; OK (skipped=1);
-1,172 passed, 0 failures, 0 errors. Diff check: exit 0, empty output.
+Legacy: exit 0; 37 tests in 4.136s; OK; 0 failures, 0 errors, 0 skips.
+Full discovery: exit 0; 1,179 tests in 451.624s; OK (skipped=1);
+1,178 passed, 0 failures, 0 errors. Diff check: exit 0, empty output.
 
 The sole pre-existing environment-dependent skip was
 `test_downstream_adapters.FrozenRuntimeRegressionTest.test_pinned_a_and_b_defects_are_executed_and_detected`,
@@ -262,7 +336,8 @@ After the authorized test-only correction, the original order
 There was then exactly one full-discovery retry on the then-final commit
 7a55d71: 1,173 tests in 494.554s, zero failures/errors and one known skip.
 The final review later required the separate source/helper proof correction;
-its fresh verification on d80c849 is recorded above. All thirteen response methods and the originally failing package-policy
+its historical verification on d80c849 preceded the fresh remediation
+verification recorded above. All thirteen response methods and the originally failing package-policy
 method passed in full discovery. No failure was hidden by a changed production
 type check, weakened assertion, reordered discovery, or new skip.
 
@@ -357,7 +432,11 @@ sanitized response event through the existing freeze/parse/replay/controller.
 The offline audit binds verified committed source, closed AST commitments, exact
 backend and transport classes, invoke/post function and code identity, effective
 bound methods and class interception. It also binds the mutable factory and
-credential-reader slots and exact stdlib HTTP/authentication dependencies.
+credential-reader slots and exact stdlib HTTP/authentication dependencies. The
+effective inherited `request`, `getresponse`, and `close` descriptors/functions,
+their base defining class and code state, the necessary connection construction
+and lookup hooks, and the real HTTPS class hidden by the offline blocker are all
+captured and rechecked.
 The same captured binding is checked immediately after each descriptor-consuming
 describe callback, before accepting it. Committed adversarial revisions cover
 wrappers, aliases, computed/reflection method access, export replacement,
@@ -373,7 +452,7 @@ added no attempt and did not reset the historical counter.
 ## Audit readback and frozen compatibility
 
 ```powershell
-python skills/joewrks-product-definition/scripts/audit_reviewer_runner.py --repository . --revision d80c8499ddab9d7b33eb436443d1a7d0c28d3a21 --json
+python skills/joewrks-product-definition/scripts/audit_reviewer_runner.py --repository . --revision 2b137125ad87fafabc93e7492729da441c9b9cce --json
 python skills/joewrks-product-definition/scripts/audit_reviewer_runner.py --repository . --revision 0b754bdc2502be35a7f657275f17fe117e8c49bd --json
 python -m unittest tests.test_reviewer_runner_audit tests.test_reviewer_runner_anthropic_offline -v
 ```
@@ -385,7 +464,7 @@ registered real adapters for its historical code-only revision/tree.
 
 Fresh subprocess stdout was compared as raw bytes against both files. The new
 JSON is 907 bytes, SHA-256
-`1970e16751559b195018636914ebd9d5d1ffa8f29e1fc16f5af4d1f80883c7fd`.
+`b2ca3d4bbd80af051227a7b43be9fd1a52e258019aaff01b2a232c06eeb239be`.
 Both outputs exactly equal sorted compact UTF-8 JSON plus one LF, with no BOM
 or CR. The v1.1 object has exactly 21 keys; the historical v1.0 object has 16.
 
@@ -408,7 +487,7 @@ git diff --exit-code ab95074704af0e93248d56344d6a220dfec88a93..HEAD -- evals/pos
 git diff --check
 ```
 
-Final evidence readback suite: exit 0; 34 tests in 94.087s; OK;
+Final evidence readback suite: exit 0; 40 tests in 87.067s; OK;
 0 failures, 0 errors, 0 skips. All six frozen diffs exited 0 with empty
 output. Working diff check passed. Final evidence bytes were read back as UTF-8
 with zero CR and a final LF; JSON raw-byte equality was verified against the
@@ -417,14 +496,19 @@ fresh v1.1 CLI and the unchanged historical v1.0 CLI.
 The exact changed-file manifest also establishes that generic runner interfaces,
 four-role request/output schemas, semantic-review/1.0 and /2.1 contracts, oracle,
 goldens, thresholds, counters, Product Definition, M6, action/runtime conformance
-and v0.4.3 were not modified. Local `origin/main` still resolves to the frozen
-authority commit; no fetch, push, remote write, merge, PR or publication occurred.
-This record makes no fresh remote-state claim.
+and v0.4.3 were not modified. A fresh fetch confirmed `origin/main` still resolves
+to the frozen authority commit. No remote write, merge, PR, tag or release had
+occurred when this code-only evidence was frozen.
 
 ## Stop boundary
 
 The original Task 8 evidence review passed 0/0/0; the later whole-branch finding
-triggered the single correction wave documented above. This refresh stops after
-its GREEN evidence commit and clean-status verification for the one independent
-scoped re-review. That re-review and publication are not asserted complete here. Real capability remains unavailable
-until separately authorized provisioning and real P1/P2 proof are accepted.
+and Astra promotion audit triggered the bounded correction waves documented
+above. The final independent source re-review is complete at 0/0/0. Real
+capability remains unavailable until separately authorized provisioning and real
+P1/P2 proof are accepted.
+
+The canonical cross-system R&R source is intentionally not copied, inferred or
+patched in this repository. Its later audit input must be supplied separately:
+
+`FINAL_R&R_REAUDIT_REQUIRES_PM-SUPPLIED_CANONICAL_CONTRACT_SOURCE`
