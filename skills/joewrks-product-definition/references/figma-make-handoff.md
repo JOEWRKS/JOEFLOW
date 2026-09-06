@@ -10,11 +10,56 @@ After Figma Make output, create `MAKE_REVIEW.md` covering missing/extra screens 
 
 ## Executable downstream conformance
 
-After Product Definition Closure, implementation handoff may bundle a derived executable contract by following [`downstream/README.md`](../downstream/README.md). Canonical Product Definition remains authority; the action/lifecycle bundle is a read-only, provenance-pinned projection and does not change Closure or `state.json`.
+Canonical Product Definition remains authority. Every downstream contract,
+runtime plan, and evidence artifact is a read-only, provenance-pinned
+projection and does not change Closure or `state.json`. Keep the
+human-readable handoff; a machine contract does not replace the IA, flows,
+screen/state behavior, recovery, or forbidden-invention boundary.
 
-Production implementation and Figma-Make handoff accepts only `joewrks.action-conformance/1.0`. `joewrks.downstream.regression-slice/1.0` is limited to frozen evaluator regression, harness development, and known-defect reproduction. It must not be supplied or described as a full executable implementation contract.
+### Current native V2 route
 
-Keep the human-readable handoff. Add the exact contract schema version, compiled action contract path, lifecycle contract path, exact contract SHA-256, adapter identity/version, frozen source commit/tree, and sequence-runner command. Record `MACHINE_DERIVED` and `REVIEW_REQUIRED` counts separately; review-required fields remain outstanding human interpretations even when the full contract is structurally valid. Runtime evidence uses `joewrks.downstream.execution/1.0`; generator adapters only invoke/read back the implementation, while the Python core determines semantic conformance.
+For a current State `0.2.0` handoff, follow the installed V2 workflow in
+[`workflow-v0.2.0.md`](workflow-v0.2.0.md) and the normative
+[`downstream-v2.1-contract.md`](downstream-v2.1-contract.md):
+
+```text
+joewrks.handoff-definition/2.1
+→ joewrks.action-conformance/2.1
+```
+
+Record the exact approved revision, definition digest, Approval Manifest
+digest, handoff-definition path, action-contract path, action-contract
+`artifact_hash`, `semantic_contract_hash`, semantic-assurance status, and
+direct-authority / machine-derived / review-required counts. In 2.1,
+lifecycles are entries in the handoff and action contract `lifecycles` arrays;
+there is no required separate lifecycle-contract artifact.
+
+Runtime conformance is a later, non-authoritative verification stage. When it
+has actually been materialized, record the exact
+`joewrks.runtime-conformance-plan/1.0` path/hash, admitted
+`joewrks.runtime-evidence-bundle/1.0` path/hash, verifier/report identity, and
+the implementation adapter plus frozen source commit/tree. Do not populate
+these as if they already exist before implementation.
+
+### Historical compatibility routes
+
+- `joewrks.action-conformance/2.0` belongs to the frozen M5 compatibility
+  boundary documented in
+  [`downstream-v2-contract.md`](downstream-v2-contract.md) and
+  [`downstream_v2/README.md`](../downstream_v2/README.md). It is not the
+  installed current compilation default.
+- `joewrks.action-conformance/1.0` belongs to the frozen legacy path in
+  [`downstream/README.md`](../downstream/README.md). Only an exact historical
+  1.0 handoff should require its legacy action/lifecycle bundle metadata,
+  adapter identity/version, frozen source commit/tree, and sequence-runner
+  command.
+- `joewrks.downstream.regression-slice/1.0` remains evaluator-only. It must
+  never be supplied or described as a full implementation or Figma-Make
+  handoff contract.
+
+Never mix metadata requirements across 1.0, 2.0, and 2.1. Runtime evidence
+continues to use frozen `joewrks.downstream.execution/1.0` records where the
+selected verifier requires them; generator adapters invoke and read back the
+implementation and do not decide expected product behavior.
 
 After implementation, use the downstream blind-audit procedure. Trace every material action from precondition through public action, handler, domain state, provenance/side effects, and visible result or recovery. A rendered label, handler existence, helper test, build result, visual similarity, implementation self-report, or green test count is not transition evidence.
-
