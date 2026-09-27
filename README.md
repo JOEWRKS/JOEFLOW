@@ -1,4 +1,4 @@
-# JOEWRKS Product Definition System
+# JOEFLOW
 
 > **AI가 중요한 걸 빠뜨리거나 제멋대로 결정하지 않게 해주는 제품 기획·검증 도구입니다.**
 >
@@ -12,7 +12,7 @@
 
 > **AI가 알아서 만들게 하되, 중요한 건 멋대로 정하지 못하게 한다.**
 
-런타임 skill/package ID는 **`joewrks-product-definition`**입니다.
+현재 프로그램 릴리스는 **`v1.0.0`**입니다. 런타임 skill/package ID는 호환성을 위해 **`joewrks-product-definition`**을 유지합니다.
 
 ---
 
@@ -85,7 +85,7 @@ Codex 같은 구현 AI는 이 기준을 따라 구현합니다. 구현 중 새�
 역할을 단순하게 나누면:
 
 ```text
-JOEWRKS Product Definition System
+JOEFLOW
         ↓
 무엇을 만들어야 하는지 확실하게 정함
         ↓
@@ -124,8 +124,8 @@ JOEWRKS 검증
 ### 1. 저장소 받기
 
 ```bash
-git clone https://github.com/JOEWRKS/joewrks-product-definition.git
-cd joewrks-product-definition
+git clone https://github.com/JOEWRKS/JOEFLOW.git
+cd JOEFLOW
 ```
 
 특정 branch나 commit을 사용할 경우 먼저 checkout 합니다.
@@ -147,8 +147,9 @@ skills/joewrks-product-definition/
 ├─ schemas/
 ├─ templates/
 ├─ scripts/
-├─ downstream/       # historical v1 compatibility
-└─ downstream_v2/    # current V2 downstream authority
+├─ downstream/       # historical 1.0 compatibility
+├─ downstream_v2/    # historical 2.0 compatibility
+└─ downstream_v21/   # current 2.1 downstream authority
 ```
 
 정확한 설치 경로는 사용하는 Codex/Agent 환경의 Skills 설치 방식에 맞춥니다.
@@ -270,6 +271,19 @@ my-site/
       ├─ state.json
       └─ generated projections...
 ```
+
+---
+
+## v1 기본 전달 산출물
+
+승인이 끝난 Product Definition은 내부 상태 파일만 남기고 종료하지 않습니다. 후속 디자인·구현 에이전트와 사람이 각각 바로 소비할 수 있도록 두 개의 기본 전달물을 만듭니다.
+
+- `MASTER_PLANNING_SPEC.md` — 승인된 제품 의미를 한 파일에서 끝까지 읽을 수 있는 완전한 사람용 기획 명세. 후속 디자인·구현 에이전트의 기본 읽기 문서입니다.
+- `planning-review-core.html` — 제품 목표, 범위, IA, 주요 화면, 핵심 흐름·분기, 중요 제한, 승인 상태를 빠르게 검토하는 축약 시각본입니다.
+
+두 파일은 승인된 `state.json`의 projection이며 독립 authority가 아닙니다. Core HTML의 색·배치·스타일도 후속 제품 디자인의 visual reference가 아닙니다.
+
+요약 과정에서 조건을 잃으면 안 됩니다. 특히 조건부 성공·실패·복구를 하나의 보편 결과로 압축하지 않고, 정상/예외/복귀 분기를 승인된 stable ID와 연결해 보존합니다. HTML 렌더를 실제로 확인하지 못했으면 `NOT_VERIFIED`라고 기록합니다.
 
 ---
 
@@ -399,10 +413,10 @@ v0.4.3은 현재 V2 설치 라우팅의 전체 프로그램 릴리스 번호가 
 
 반면 real semantic-review reliability는 유효한 isolated calibration이 완료되기 전까지 production-calibrated evidence라고 주장하지 않습니다.
 
-현재 protected `main` baseline:
+Program release tag:
 
 ```text
-efd96410f6401cbf9624328e94b795c315164b7f
+v1.0.0
 ```
 
 Repaired calibration input:

@@ -8,7 +8,17 @@ user selected.
 ## Common implementation handoff
 
 The common handoff preserves the same approved Product Definition meaning
-regardless of implementation tool. It records or links:
+regardless of implementation tool.
+
+JOEFLOW v1 also emits two default human-facing projections from the exact
+approved state: `MASTER_PLANNING_SPEC.md` for downstream consumers and
+`planning-review-core.html` for fast user review. The first is comprehensive
+without duplicating the same rule in multiple editable places; the second is
+compact and visual. Neither replaces canonical `state.json`, and the review
+HTML's style is not visual-design authority. When rendering cannot be observed,
+record `NOT_VERIFIED`.
+
+The handoff records or links:
 
 - purpose, scope, and exclusions;
 - the exact approved source path, revision, and applicable stable IDs;

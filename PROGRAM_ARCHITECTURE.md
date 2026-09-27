@@ -1,6 +1,6 @@
-# JOEWRKS Product Definition System
+# JOEFLOW
 
-**JOEWRKS Product Definition System** is the program-level name for this repository and its integrated product-definition, downstream-conformance, semantic-review, and evaluation tooling.
+**JOEFLOW** is the program-level name for this repository and its integrated product-definition, downstream-conformance, semantic-review, and evaluation tooling.
 
 The existing runtime skill/package identifier remains **`joewrks-product-definition`**. The identifier is not renamed by this document.
 
@@ -8,14 +8,14 @@ The existing runtime skill/package identifier remains **`joewrks-product-definit
 
 | Item | Value |
 | --- | --- |
-| Program name | `JOEWRKS Product Definition System` |
-| Repository | `JOEWRKS/joewrks-product-definition` |
+| Program name | `JOEFLOW` |
+| Program release | `v1.0.0` |
+| Repository | `JOEWRKS/JOEFLOW` |
 | Runtime skill/package ID | `joewrks-product-definition` |
 | Canonical Product Definition authority | `product-definition/<project-slug>/state.json` |
 | Current Product Definition state contract | `0.2.0` |
 | Current downstream authority contract | `joewrks.action-conformance/2.1` |
 | Current semantic-review boundary | `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED` |
-| Current protected `main` baseline | `efd96410f6401cbf9624328e94b795c315164b7f` |
 | Repaired v0.4.3 calibration input | `748254d6def81080a2fd2736115a3ab5e0bde5a3` |
 | v0.4.3 environment-blocked disposition | `6a0674c5d00a40790afef78cfa19494314b894e3` |
 
@@ -36,7 +36,7 @@ Current V2 semantic review boundary: `joewrks.semantic-review/2.1` / reliability
 
 Historical compatibility: state `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, and v0.4.3 evidence
 
-These are contract identities, not an overall program release number.
+These contract identities remain independently versioned. The overall program release for this baseline is `v1.0.0`.
 
 ## Purpose
 
@@ -47,7 +47,7 @@ It is not a single document generator. It is a staged authority-and-verification
 ## System structure
 
 ```text
-JOEWRKS Product Definition System
+JOEFLOW
 │
 ├─ 1. Product Definition Core
 │  ├─ state contract 0.2.0 (installed default)
@@ -242,6 +242,7 @@ The repository evolved in layers rather than replacing its earlier core:
 - **v0.4 / v0.4.1.x** — cross-domain downstream conformance and executable action-contract authority.
 - **v0.4.2** — fresh downstream-contract efficacy experiment; stopped before paired result after review-construction instability.
 - **v0.4.3** — deterministic semantic-review contract, responsibility model, reliability gate, calibration controller, and control-plane hardening.
+- **v1.0.0** — JOEFLOW stable baseline: native State 0.2.0 lifecycle, downstream 2.1 handoff, dogfood-proven human delivery outputs, and conditional-branch preservation rules.
 
 ## Historical v0.4.3 calibration boundary
 

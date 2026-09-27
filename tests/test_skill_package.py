@@ -36,10 +36,19 @@ class SkillPackageTest(unittest.TestCase):
             "templates/product-definition.md", "templates/unknown-ledger.md",
             "templates/decision-ledger.md", "templates/user-flows.md",
             "templates/screen-spec.md", "templates/implementation-plan.md",
-            "templates/figma-make-handoff.md",
+            "templates/figma-make-handoff.md", "templates/master-planning-spec.md",
+            "templates/planning-review-core.html",
         ]
         missing = [relative for relative in required if not (SKILL / relative).is_file()]
         self.assertEqual(missing, [])
+
+    def test_v1_human_delivery_contract_is_declared(self):
+        skill_text = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+        workflow_text = (SKILL / "references" / "workflow-v0.2.0.md").read_text(encoding="utf-8")
+        for required in ("MASTER_PLANNING_SPEC.md", "planning-review-core.html"):
+            self.assertIn(required, skill_text)
+            self.assertIn(required, workflow_text)
+        self.assertIn("Preserve conditional outcomes as conditional", workflow_text)
 
     def test_validator_scripts_only_import_standard_library_or_sibling_module(self):
         allowed = {"__future__", "argparse", "copy", "datetime", "hashlib", "importlib", "json", "os", "pathlib", "re", "stat", "subprocess", "sys", "typing", "uuid", "migration_v2", "state_contract_dispatch", "state_validation", "state_validation_v2", "discovery_v2", "materiality_v2", "grill_v2", "authority_binding_v2", "approval_v2", "downstream_v2", "integration_v2"}

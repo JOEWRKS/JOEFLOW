@@ -3,12 +3,13 @@ name: joewrks-product-definition
 description: Use when a product, feature, website, app, workflow, or redesign needs product and UX decisions resolved before implementation, especially when requirements contain ambiguity, assumptions, missing states, policy gaps, edge cases, or conflicting expectations.
 ---
 
-# JOEWRKS Product Definition
+# JOEFLOW
 
 Close the product definition before implementation. Persist authority in `product-definition/<project-slug>/state.json`; conversation history and generated Markdown are never authoritative.
 
 Installed routing status:
 
+- `JOEFLOW_V1_RELEASE`
 - `PRODUCT_DEFINITION_STATE_V2_DEFAULT`
 - `LEGACY_0_1_2_1_COMPATIBILITY_PRESERVED`
 - `DOWNSTREAM_V2_INSTALLED_ROUTING`
@@ -22,6 +23,13 @@ its [handoff guidance](references/figma-make-handoff.md); the historical file
 name does not make Figma mandatory. Preserve the same approved product
 meaning for every implementation consumer, and include optional Figma Design
 or Figma Make guidance only when that work was selected.
+
+For every approved native V2 project, also materialize the two default human-facing projections before declaring planning delivery complete:
+
+- `MASTER_PLANNING_SPEC.md`: a complete, non-duplicative human-readable projection that lets a downstream design or implementation agent read the approved product meaning without reconstructing it from many source files.
+- `planning-review-core.html`: a compact visual review view for the user, covering product/scope, IA/navigation, major flows and branches, screen purposes, important constraints, unresolved items, and approval identity. It is a review projection, not visual-design authority.
+
+Both projections remain subordinate to canonical `state.json`. Link the exact approved revision/digest/Manifest identity and stable IDs. If browser rendering cannot be observed, report `NOT_VERIFIED` rather than treating static structure checks as render verification.
 
 ## State-contract dispatch
 
@@ -37,6 +45,7 @@ or Figma Make guidance only when that work was selected.
 - Before any material semantic state mutation, prepare and validate the complete affected records off-state. Commit the revision increment, truthful non-`CLOSED` lifecycle state, `UNAPPROVED` approval, affected-only staleness, and complete records as one canonical mutation before recompiling.
 - Treat migration gaps as uncertainty, never as Product Definition authority. Migration cannot promote legacy Closure or approval to V2 Semantic Closure.
 - Do not claim Semantic Closure until V2 state validation, closure evaluation, the deterministic Approval Manifest, and exact user approval all bind the current definition.
+- When converting detailed human specifications into canonical flow/action summaries or downstream projections, preserve every material condition and branch. Never turn one exceptional path into the universal success/failure/recovery result. If text is deduplicated, the shared clause must keep exact stable-ID/source bindings and the consuming action must still state when the clause applies.
 - `joewrks.semantic-review/2.1` may record review results only for legitimate `REVIEW_REQUIRED` obligations and remains reliability `NOT_MEASURED`; review never creates product authority.
 - If implementation exposes a material ambiguity or `SEMANTIC_AUTHORITY_GAP`, re-enter DISCOVER/CLOSE for the affected scope; do not decide inside implementation.
 
@@ -56,7 +65,7 @@ The event itself has no consumed-seed or scope-commitment inventories. For a non
 2. **CLOSE:** resolve evidence-answerable gaps first, then ask one highest-leverage material question at a time. Record truthful Materiality and decision authority.
 3. **FREEZE:** bind Core, specialist Grill, and UX coverage to exact current authority; build the deterministic Approval Manifest.
 4. **APPROVE:** show the exact current manifest and wait for explicit user approval. Do not manufacture approval or timestamps.
-5. **HANDOFF:** after validated Semantic Closure, compile a `joewrks.handoff-definition/2.1` into `joewrks.action-conformance/2.1` using `scripts/compile_downstream_v2.py`.
+5. **HANDOFF:** after validated Semantic Closure, materialize `MASTER_PLANNING_SPEC.md` and `planning-review-core.html`, run the projection-fidelity checks in `workflow-v0.2.0.md`, then compile a `joewrks.handoff-definition/2.1` into `joewrks.action-conformance/2.1` using `scripts/compile_downstream_v2.py`.
 6. **VERIFY:** audit only current contract dependencies with `scripts/audit_downstream_v2.py`; build `joewrks.semantic-review/2.1` packages with `scripts/build_semantic_review_v2.py` only when legitimate `REVIEW_REQUIRED` obligations exist. Then materialize `joewrks.runtime-conformance-plan/1.0`, admit only frozen `joewrks.downstream.execution/1.0` evidence into a `joewrks.runtime-evidence-bundle/1.0`, and run `scripts/verify_runtime_v21.py CONTRACT_JSON RUNTIME_PLAN_JSON RUNTIME_EVIDENCE_BUNDLE_JSON [REVIEW_PACKAGE_JSON REVIEW_OUTPUT_JSON]`. The 2.1 verifier binds and rechecks the plan and admitted bundle; `verify_runtime_v2.py` is retained only for historical 2.0 contracts.
 
 Resolve the absolute directory containing this loaded `SKILL.md`; never resolve scripts from the consumer project's working directory and never require the caller to persist `PYTHONPATH`.
@@ -70,6 +79,8 @@ Resolve the absolute directory containing this loaded `SKILL.md`; never resolve 
 | Recommendation accepted | Record `USER_ACCEPTED_RECOMMENDATION` |
 | Material semantic state changes | Prepare complete records off-state, then atomically increment revision, set non-`CLOSED`/`UNAPPROVED`, stale affected dependencies, and register the complete records |
 | Coverage item does not apply | Record `N/A` with rationale and exact basis binding |
+| Approved planning delivery | Produce `MASTER_PLANNING_SPEC.md` + `planning-review-core.html`; preserve approved identity and branch meaning |
+| Human review rendering not observed | Mark render/click behavior `NOT_VERIFIED`; do not substitute static link/file checks |
 | No optional Figma work selected | Deliver the common implementation handoff; omit Figma-only artifacts or mark the optional block `NOT USED` |
 | Requested Figma or Figma Make result not observed | Record `NOT VERIFIED` and the exact missing result; do not relabel it `NOT USED` |
 | Requested optional-tool result verified | Record only the observed scope and exact evidence |
@@ -90,6 +101,8 @@ Resolve the absolute directory containing this loaded `SKILL.md`; never resolve 
 - Treating a workaround, deferred blocker, attractive wireframe, or validator availability as Semantic Closure.
 - Treating a connected or unused optional tool as required, or conflating `NOT USED` with `NOT VERIFIED`.
 - Reducing an approved role, screen, branch, data effect, failure path, or acceptance criterion because a selected tool cannot implement it.
+- Compressing a conditional success/failure/recovery case into a universal action result while creating canonical summaries, Master projections, or review views.
+- Declaring planning delivery complete when the user received only internal JSON/Markdown machinery and no usable review view.
 - Allowing Figma Make or an implementation agent to add fields, roles, routes, rules, or branches.
 
-Use the templates in `templates/` for projections. Preserve additional project-specific fields when updating state.
+Use the templates in `templates/` for projections, including `master-planning-spec.md` and `planning-review-core.html`. Preserve additional project-specific fields when updating state.

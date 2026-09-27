@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{project_name}} · Planning Review</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f6f4;color:#22332f;font:16px/1.7 system-ui,sans-serif}
+main{max-width:1120px;margin:auto;padding:36px 22px 80px}nav{position:sticky;top:0;background:#f5f6f4;padding:12px 0;border-bottom:1px solid #d9dfdb}
+nav a{margin-right:14px;color:inherit}section{background:white;border:1px solid #d9dfdb;border-radius:14px;padding:26px;margin:22px 0}
+h1,h2,h3{line-height:1.3}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.card{border:1px solid #e0e5e1;border-radius:10px;padding:16px}.note{font-size:14px;color:#62716c}
+code{overflow-wrap:anywhere}svg{max-width:100%;height:auto}
+</style>
+</head>
+<body>
+<main>
+<header>
+<p class="note">JOEFLOW HUMAN REVIEW VIEW · {{APPROVAL_STATUS}}</p>
+<h1>{{project_name}}</h1>
+<p>{{ONE_LINE_PRODUCT_DESCRIPTION}}</p>
+<p class="note">이 문서는 승인된 기획의 축약 시각본입니다. 제품 UI 시안이나 visual-design authority가 아닙니다.</p>
+</header>
+
+<nav>
+<a href="#scope">범위</a><a href="#ia">IA</a><a href="#flows">흐름</a>
+<a href="#screens">화면</a><a href="#policies">정책</a><a href="#status">상태</a>
+</nav>
+
+<section id="scope"><h2>제품과 범위</h2>{{PRODUCT_SCOPE_SUMMARY}}</section>
+
+<section id="ia">
+<h2>IA와 이동 관계</h2>
+<p class="note">정보 계층과 실제 화면 이동을 구분해 표시합니다.</p>
+{{IA_AND_NAVIGATION_DIAGRAMS}}
+</section>
+
+<section id="flows">
+<h2>핵심 User Flows</h2>
+<p class="note">주요 정상·실패·복구 분기를 표시합니다. 상세 조건은 Master의 stable ID로 연결합니다.</p>
+{{MAJOR_FLOW_DIAGRAMS_AND_LINKS}}
+</section>
+
+<section id="screens"><h2>화면 요약</h2><div class="grid">{{SCREEN_PURPOSE_CARDS}}</div></section>
+
+<section id="policies"><h2>중요 정책과 제한</h2>{{IMPORTANT_POLICIES_AND_CONSTRAINTS}}</section>
+
+<section id="status">
+<h2>검토·승인 상태</h2>
+<ul>
+<li>Revision: <code>{{APPROVED_DEFINITION_REVISION}}</code></li>
+<li>Definition digest: <code>{{APPROVED_DEFINITION_DIGEST}}</code></li>
+<li>Approval Manifest: <code>{{APPROVED_MANIFEST_DIGEST}}</code></li>
+<li>Master: <a href="MASTER_PLANNING_SPEC.md">MASTER_PLANNING_SPEC.md</a></li>
+<li>Render verification: <code>{{VERIFIED_OR_NOT_VERIFIED}}</code></li>
+</ul>
+</section>
+</main>
+</body>
+</html>

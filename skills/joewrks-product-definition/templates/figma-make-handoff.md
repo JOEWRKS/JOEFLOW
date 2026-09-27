@@ -10,6 +10,15 @@ The following sections apply to every implementation consumer. Link existing
 approved specifications by exact path and stable ID instead of independently
 redefining the same product meaning.
 
+For JOEFLOW v1, the default human delivery pair is:
+- `MASTER_PLANNING_SPEC.md` — complete human-readable planning projection.
+- `planning-review-core.html` — concise user review projection.
+
+The canonical authority remains `state.json`; these files must carry the exact
+approved identity and may not independently change product meaning. Preserve
+conditional branches during summarization and never generalize an exceptional
+case into the default outcome.
+
 ## Objective, scope, and non-goals
 
 State the user outcome, included requirement/action boundary, explicit

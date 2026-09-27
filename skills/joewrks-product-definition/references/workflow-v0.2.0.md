@@ -48,7 +48,27 @@ Present the deterministic Approval Manifest for the current definition revision 
 
 After approval, rerun state and closure validation. `definition_status = CLOSED` means the current bounded Product Definition satisfies Semantic Closure; it does not mean implementation or deployment is complete.
 
-## HANDOFF — compile V2 downstream authority
+The approved state must then be projected into the default human delivery pair before planning delivery is reported complete:
+
+- `MASTER_PLANNING_SPEC.md` — complete human-readable planning projection for downstream design/implementation consumers.
+- `planning-review-core.html` — compact user review view. It summarizes the Master/state and does not create product or visual-design authority.
+
+## HANDOFF — deliver readable planning and compile V2 downstream authority
+
+Before compiling machine authority, materialize the two human-facing projections from the exact approved revision.
+
+### Projection fidelity check
+
+For each flow and major action represented in the Master or review view:
+
+1. Trace preconditions, actor action, system decision, success, failure, recovery, postcondition, and acceptance IDs back to the approved state/source bindings.
+2. Preserve conditional outcomes as conditional. A special offline, stale, normalization, recovery, or invalid-state case must not become the default outcome for every success/failure.
+3. If repeated text is deduplicated into a shared clause, keep the clause's exact source/stable-ID identity and state on each consumer when it applies.
+4. Check both directions: every material approved branch has a readable destination, and every displayed branch has approved authority.
+5. The Master may be comprehensive; the review HTML must remain concise. Do not copy the full action/acceptance corpus into the visual review just to prove completeness.
+6. If the environment permits, open the HTML and verify readable text, diagrams, internal navigation, and clipping. If render/click observation is unavailable, record `NOT_VERIFIED`; static file/link checks are not render evidence.
+
+A projection defect is fixed in the projection or its source mapping. Do not change product policy merely to make the projection simpler.
 
 Compile only from a valid approved V2 state and a `joewrks.handoff-definition/2.1` handoff definition:
 
