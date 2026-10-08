@@ -1,0 +1,97 @@
+# JOEFLOW current-installed Product-to-visual handoff reinforcement
+#
+# Target skill root:
+#   C:/Users/tjdwo/.codex/skills/joewrks-product-definition
+#
+# Exact required base SHA-256:
+#   references/figma-make-handoff.md
+#     4e379ae6ce575eb61ad519827412a7ebfb1aa593864ce6b364bd121e399aff7a
+#   templates/figma-make-handoff.md
+#     f27c31b594e988bd23520feab3933db548e9dbbcc15ad991dce8bd3761108ab7
+#
+# Exact expected result SHA-256:
+#   references/figma-make-handoff.md
+#     1269ef1e462ab86413c1e2d7df13bd4e8325eedf529c167946c60574f65e83e3
+#   templates/figma-make-handoff.md
+#     2cc1d92ae88322198bab96a1bbe1b75d8287b44748e7c17dd068106d2f932361
+#
+# Apply only after verifying both base hashes. To reproduce the result hashes
+# on Windows, run from the target skill root with:
+#   git -c core.autocrlf=false apply --unidiff-zero <path-to-this-patch>
+# This patch targets the current installed skill baseline; the repository's
+# older source files are not an equivalent base and must not be overwritten
+# wholesale from this patch.
+# It does not change FnBShop Product Definition or DESIGN authority.
+
+diff --git a/references/figma-make-handoff.md b/references/figma-make-handoff.md
+index 388a541..d073286 100644
+--- a/references/figma-make-handoff.md
++++ b/references/figma-make-handoff.md
+@@ -47,0 +48,33 @@ visual authority.
++### Product-to-visual responsibility and source consumption
++
++Product authority defines semantic information priority, required visibility
++and timing, content limits, and accessibility or behavioral constraints. The
++applicable visual authority translates those relationships into typography
++roles, weight, color attention, spacing, grouping, and responsive composition,
++and the implementation owner observes the actual result. The controller or PM
++verifies the mapping against the exact Product source and keeps Product
++conformance, visual conformance, and user visual acceptance as separate
++verdicts.
++
++When an approved Product record contains visual-looking values, identify in the
++existing handoff whether each relevant value is a binding Product constraint,
++an approved visual-authority value, or a proposed/DRAFT implementation starting
++point. This is human-readable provenance, not a new schema or enum. Do not
++downgrade an exact value already approved by the current Product Definition
++merely because final visual acceptance is pending; changing that authority
++requires the applicable Product re-entry. Conversely, do not promote a visual
++proposal into Product or visual approval through implementation.
++
++Record the exact source identity and affected scope actually consumed by the
++implementation or visual work. If the result still consumes an older source,
++state the missing newer requirements and the affected surfaces rather than
++reporting the latest planning revision as implemented. A file-hash or revision
++difference alone neither invalidates nor authorizes reuse; use the applicable
++dependency audit, gaps, and affected consumers when an executable downstream
++contract exists.
++
++For material hierarchy, connect stable Product IDs and their required semantic
++roles or exposure points to the chosen visual roles and observed
++surface/state/viewport. This mapping may live in the existing acceptance or
++review section; do not require a new document, table, agent, or token system.
++
+diff --git a/templates/figma-make-handoff.md b/templates/figma-make-handoff.md
+index 1eaab1c..a364a50 100644
+--- a/templates/figma-make-handoff.md
++++ b/templates/figma-make-handoff.md
+@@ -41,0 +42,5 @@ platform and environment constraints.
++- Source identity and affected scope actually consumed by the implementation or
++  visual work: `{{CONSUMED_SOURCE_IDENTITY_AND_SCOPE}}`
++- Visual-bearing values classified as binding Product constraints, approved
++  visual-authority values, or proposed/DRAFT starting points:
++  `{{VISUAL_VALUE_AUTHORITY_CLASSIFICATION}}`
+@@ -43 +48,6 @@ Use these links as authority. Do not duplicate them as independently editable
+-planning definitions.
++planning definitions. Do not claim the latest revision was implemented when the
++result still consumes an older source. A changed revision or file hash alone is
++not a reuse verdict; use the applicable dependency audit and affected scope.
++Do not downgrade an exact value already approved by Product authority merely
++because final visual acceptance is pending, and do not promote a proposal into
++approval through implementation.
+@@ -58,0 +69,15 @@ support, breakpoints, accessibility metrics, or policy.
++## Information priority and visual responsibility
++
++Bind required information priority, visibility timing, content limits, and
++accessibility or behavior to their Product stable IDs. Record how the applicable
++visual authority maps those relationships into typography roles, weight, color
++attention, spacing, grouping, and responsive composition, together with the
++actual surface/state/viewport observation status:
++`{{PRODUCT_PRIORITY_TO_VISUAL_MAPPING_AND_OBSERVATION}}`.
++
++Product owns meaning and required exposure; visual authority owns the visual
++translation; the controller or PM verifies the connection against the consumed
++source. Keep Product conformance, visual conformance, and user visual acceptance
++as separate verdicts. Use the existing acceptance/review material for this
++mapping; do not require a new document, table, agent, or design-token system.
++
