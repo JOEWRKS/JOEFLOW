@@ -8,7 +8,7 @@ in `finally`.
 
 ## Windows checkout bytes
 
-`.gitattributes` fixes LF for `reviewer_runner/**` and its canonical capability
+`.gitattributes` fixes LF for Python/JSON files in `reviewer_runner` and its canonical capability
 evidence. The audit deliberately compares raw source bytes and executable mode
 against Git, and compares CLI output bytes against the preserved evidence.
 Keep those checks unchanged. Do not update evidence hashes or skip assertions
@@ -22,7 +22,59 @@ never overwrite other differences. Refresh Git's index metadata for those exact
 paths with `git add --renormalize -- <verified paths>` and confirm there is no
 staged source/evidence blob change. Otherwise the old index metadata can still
 report modified files to the audit's read-only Git status call. Do not change
-global Git configuration.
+global Git configuration. With exclusive access to the checkout, this PowerShell
+recipe checks all 11 paths before writing any of them. It rejects staged edits,
+non-line-ending changes, symlinks, and a changed HEAD. It prints only path/hash
+evidence; keep this output with the regression log.
+
+```powershell
+@'
+from pathlib import Path
+import hashlib, json, subprocess
+root = Path.cwd().resolve()
+def git(*args):
+    return subprocess.check_output(['git', '-C', str(root), *args])
+prefix = 'skills/joewrks-product-definition/reviewer_runner/'
+paths = [prefix + p for p in [
+    '__init__.py', 'backend.py', 'controller.py', 'evidence.py', 'identity.py',
+    'preflight.py', 'request.py', 'response.py', 'semantic_review.py',
+    'schemas/reviewer-runner-receipt-v1.schema.json',
+]] + ['evals/post-m6-semantic-review-reliability-enablement/RUNNER_CAPABILITY_EVIDENCE.json']
+head = git('rev-parse', 'HEAD').decode().strip()
+git('diff', '--cached', '--exit-code', head, '--', *paths)
+original, expected = {}, {}
+for name in paths:
+    path = root / name
+    if not path.is_file() or path.resolve() != path:
+        raise SystemExit('Not a regular tracked location: ' + name)
+    original[name] = path.read_bytes()
+    expected[name] = git('cat-file', 'blob', head + ':' + name)
+    if b'\r\n' in expected[name] or original[name].replace(b'\r\n', b'\n') != expected[name]:
+        raise SystemExit('Not an LF-only refresh; preserve changes: ' + name)
+if git('rev-parse', 'HEAD').decode().strip() != head:
+    raise SystemExit('HEAD changed; stop and inspect')
+for name in paths:
+    if (root / name).read_bytes() != original[name]:
+        raise SystemExit('File changed; stop and inspect: ' + name)
+for name in paths:
+    (root / name).write_bytes(expected[name])
+git('add', '--renormalize', '--', *paths)
+git('diff', '--cached', '--exit-code', head, '--', *paths)
+for name in paths:
+    if (root / name).read_bytes() != expected[name]:
+        raise SystemExit('Post-refresh byte mismatch: ' + name)
+print(json.dumps([{
+    'path': name,
+    'beforeSha256': hashlib.sha256(original[name]).hexdigest(),
+    'afterSha256': hashlib.sha256(expected[name]).hexdigest(),
+} for name in paths], indent=2))
+'@ | python -B -
+if ($LASTEXITCODE -ne 0) { throw 'Checkout refresh failed; inspect before continuing' }
+```
+
+This refresh changes checkout representation only. The guarded index refresh
+must stage no source or evidence change. If an I/O failure interrupts the recipe,
+stop testing and inspect the affected paths before retrying.
 
 ## Required M6 historical replay
 

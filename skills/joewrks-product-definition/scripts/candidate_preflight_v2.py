@@ -10,7 +10,12 @@ from typing import Any
 from approval_v2 import build_approval_manifest_for_review, semantic_readiness_metrics
 from authority_binding_v2 import (
     BindingError,
-    authority_consumption_findings,
+    _current_authority_index,
+    _is_material_record,
+    _can_reach_semantic_sink,
+    _ORPHAN_EXCEPTIONS,
+    _SEMANTIC_SINKS,
+    build_authority_consumption_graph,
     canonical_record_index,
     load_binding_contracts,
 )
@@ -180,10 +185,86 @@ def _validation_findings(state: dict[str, Any], errors: list[dict[str, str]]) ->
     return findings
 
 
+# The core is byte-frozen. This diagnostic adapter uses its pinned graph and
+# predicates, leaving approval/closure metrics and authority semantics unchanged.
+def _authority_consumption_findings(state: dict[str, object]) -> dict[str, list[str]]:
+    """Identify current material authority and delivery gaps once per record."""
+    index = _current_authority_index(state)
+    graph = build_authority_consumption_graph(state)
+    seeds = {
+        record_id
+        for record_id, (record_type, record) in index.items()
+        if record_type in {"REQ", "DEC"} and _is_material_record(record)
+    }
+    reachable: set[str] = set()
+    pending = list(seeds)
+    while pending:
+        node = pending.pop()
+        if node in reachable or node in _SEMANTIC_SINKS:
+            continue
+        reachable.add(node)
+        pending.extend(graph.get(node, set()) - reachable)
+
+    orphaned = {
+        record_id
+        for record_id in reachable
+        if index[record_id][0] not in _ORPHAN_EXCEPTIONS
+        and not _can_reach_semantic_sink(graph, record_id)
+    }
+    material_requirements = {
+        record_id for record_id in seeds if index[record_id][0] == "REQ"
+    }
+    current_acceptances = {
+        record_id: record
+        for record_id, (record_type, record) in index.items()
+        if record_type == "AC"
+    }
+    current_tasks = [
+        record for record_type, record in index.values() if record_type == "TASK"
+    ]
+    acceptance_by_requirement = {
+        requirement_id: {
+            acceptance_id
+            for acceptance_id, record in current_acceptances.items()
+            if isinstance(record.get("requirement_refs"), list)
+            and requirement_id in record["requirement_refs"]
+        }
+        for requirement_id in material_requirements
+    }
+    requirement_acceptance_gaps = {
+        requirement_id
+        for requirement_id, acceptance_ids in acceptance_by_requirement.items()
+        if not acceptance_ids
+    }
+    task_mapping_gaps = {
+        requirement_id
+        for requirement_id, acceptance_ids in acceptance_by_requirement.items()
+        if not any(
+            isinstance(task_record.get("implements"), list)
+            and requirement_id in task_record["implements"]
+            and isinstance(task_record.get("acceptance_refs"), list)
+            and bool(acceptance_ids.intersection(task_record["acceptance_refs"]))
+            for task_record in current_tasks
+        )
+    }
+    return {
+        "orphan_material_authority": sorted(orphaned),
+        "unconsumed_material_decision": sorted(
+            record_id
+            for record_id in seeds
+            if index[record_id][0] == "DEC"
+            and not _can_reach_semantic_sink(graph, record_id)
+        ),
+        "requirement_acceptance_gaps": sorted(requirement_acceptance_gaps),
+        "task_mapping_gaps": sorted(task_mapping_gaps),
+    }
+
+
+
 def _readiness_findings(state: dict[str, Any], metrics: dict[str, int]) -> list[dict[str, object]]:
     findings: list[dict[str, object]] = []
     try:
-        detailed = authority_consumption_findings(state)
+        detailed = _authority_consumption_findings(state)
     except (BindingError, KeyError, TypeError, ValueError):
         detailed = {}
     for metric in sorted(metrics):

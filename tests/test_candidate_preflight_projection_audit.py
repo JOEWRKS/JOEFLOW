@@ -27,7 +27,7 @@ from approval_v2 import (  # noqa: E402
     compute_approval_manifest,
     definition_digest,
 )
-from authority_binding_v2 import make_authority_binding  # noqa: E402
+from authority_binding_v2 import authority_consumption_metrics, make_authority_binding  # noqa: E402
 from tests.test_semantic_closure_v020 import literal_ready_state  # noqa: E402
 from tests.v020_support import establish_current_baseline, materiality  # noqa: E402
 
@@ -91,6 +91,35 @@ def review(
 
 
 class CandidatePreflightTests(unittest.TestCase):
+    def test_detailed_gap_ids_match_frozen_core_counts_without_mutating_authority(self):
+        cases = [("ready", literal_ready_state(), {})]
+        orphan = literal_ready_state()
+        orphan["objects"]["rules"].append({
+            "id": "RULE-055", "status": "CURRENT", "statement": "Unconsumed rule",
+            "applies_to": ["REQ-001"],
+        })
+        cases.append(("orphan", orphan, {"orphan_material_authority": "RULE-055"}))
+        acceptance = literal_ready_state()
+        acceptance["objects"]["acceptance_criteria"] = []
+        cases.append(("acceptance", acceptance, {"requirement_acceptance_gaps": "REQ-001"}))
+        tasks = literal_ready_state()
+        tasks["objects"]["tasks"] = []
+        cases.append(("task", tasks, {"task_mapping_gaps": "REQ-001"}))
+        decision = literal_ready_state()
+        record = copy.deepcopy(decision["objects"]["decisions"][0])
+        record.update(id="DEC-055", affects=[], source_unknown_refs=[])
+        decision["objects"]["decisions"].append(record)
+        cases.append(("decision", decision, {"unconsumed_material_decision": "DEC-055"}))
+        for name, state, expected_ids in cases:
+            with self.subTest(case=name):
+                before = copy.deepcopy(state)
+                detailed = candidate_preflight_v2._authority_consumption_findings(state)
+                self.assertEqual({key: len(value) for key, value in detailed.items()},
+                                 authority_consumption_metrics(state))
+                for metric, record_id in expected_ids.items():
+                    self.assertIn(record_id, detailed[metric])
+                self.assertEqual(state, before)
+
     def run_preflight(self, state, canonical=None):
         function = require(candidate_preflight_v2, "preflight_state")
         with tempfile.TemporaryDirectory() as directory:
