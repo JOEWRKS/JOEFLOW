@@ -1,0 +1,209 @@
+test_audit_contains_no_environment_values_or_credentials (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_audit_contains_no_environment_values_or_credentials) ... ERROR
+test_audit_preserves_not_measured_v044_block_and_attempt_counters (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_audit_preserves_not_measured_v044_block_and_attempt_counters) ... ERROR
+test_cli_stdout_bytes_exactly_match_frozen_canonical_evidence (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_cli_stdout_bytes_exactly_match_frozen_canonical_evidence) ... ERROR
+test_fake_backend_is_excluded_from_observed_pass (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_fake_backend_is_excluded_from_observed_pass) ... ERROR
+test_frozen_product_semantic_review_and_m6_paths_are_unchanged (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_frozen_product_semantic_review_and_m6_paths_are_unchanged) ... ok
+test_git_inspection_disables_optional_index_writes (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_git_inspection_disables_optional_index_writes) ... ok
+test_live_runner_source_must_be_clean_tracked_and_revision_exact (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_live_runner_source_must_be_clean_tracked_and_revision_exact) ... ok
+test_no_registered_real_adapter_reports_unavailable_and_calibration_not_run (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_no_registered_real_adapter_reports_unavailable_and_calibration_not_run) ... ERROR
+test_preseeded_private_backend_fails_closed_and_is_removed (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_preseeded_private_backend_fails_closed_and_is_removed) ... FAIL
+test_preseeded_private_identity_fails_closed_and_is_removed (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_preseeded_private_identity_fails_closed_and_is_removed) ... FAIL
+test_preseeded_private_package_fails_closed_and_is_removed (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_preseeded_private_package_fails_closed_and_is_removed) ... FAIL
+test_preseeded_private_transitive_module_fails_closed_and_is_removed (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_preseeded_private_transitive_module_fails_closed_and_is_removed) ... FAIL
+test_private_verified_namespace_is_removed_after_successful_audit (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_private_verified_namespace_is_removed_after_successful_audit) ... ERROR
+test_revision_without_complete_runner_inventory_cannot_claim_implemented (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_revision_without_complete_runner_inventory_cannot_claim_implemented) ... ok
+test_stale_runner_bytecode_cannot_override_verified_source (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_stale_runner_bytecode_cannot_override_verified_source) ... ERROR
+test_stat_stale_same_size_live_runner_edit_is_rejected_from_raw_bytes (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_stat_stale_same_size_live_runner_edit_is_rejected_from_raw_bytes) ... ok
+test_preserved_phase_b_replays_read_only_through_21 (tests.test_downstream_v21_dogfood_replay.M6DogfoodReplayTests.test_preserved_phase_b_replays_read_only_through_21) ... FAIL
+test_translation_preserves_exact_authority_without_selecting_all_candidates (tests.test_downstream_v21_dogfood_replay.ReplayTranslationHelperTests.test_translation_preserves_exact_authority_without_selecting_all_candidates) ... ok
+
+======================================================================
+ERROR: test_audit_contains_no_environment_values_or_credentials (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_audit_contains_no_environment_values_or_credentials)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 191, in test_audit_contains_no_environment_values_or_credentials
+    build_capability_audit(ROOT, self.revision)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\skills\joewrks-product-definition\scripts\audit_reviewer_runner.py", line 450, in build_capability_audit
+    runner_snapshot = _verify_runner_source_binding(repository, commit)
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\skills\joewrks-product-definition\scripts\audit_reviewer_runner.py", line 231, in _verify_runner_source_binding
+    raise RuntimeError("live runner source bytes or mode differ from revision")
+RuntimeError: live runner source bytes or mode differ from revision
+
+======================================================================
+ERROR: test_audit_preserves_not_measured_v044_block_and_attempt_counters (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_audit_preserves_not_measured_v044_block_and_attempt_counters)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 205, in test_audit_preserves_not_measured_v044_block_and_attempt_counters
+    result = build_capability_audit(ROOT, self.revision)
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\skills\joewrks-product-definition\scripts\audit_reviewer_runner.py", line 450, in build_capability_audit
+    runner_snapshot = _verify_runner_source_binding(repository, commit)
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\skills\joewrks-product-definition\scripts\audit_reviewer_runner.py", line 231, in _verify_runner_source_binding
+    raise RuntimeError("live runner source bytes or mode differ from revision")
+RuntimeError: live runner source bytes or mode differ from revision
+
+======================================================================
+ERROR: test_cli_stdout_bytes_exactly_match_frozen_canonical_evidence (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_cli_stdout_bytes_exactly_match_frozen_canonical_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 404, in test_cli_stdout_bytes_exactly_match_frozen_canonical_evidence
+    completed = subprocess.run(
+        [
+    ...<13 lines>...
+        env=environment,
+    )
+  File "C:\Python314\Lib\subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['C:\\Python314\\python.exe', '-c', "import runpy,sys,pkgutil,__future__;sys.pycache_prefix=sys.argv[1];script=sys.argv[2];sys.argv=[script,*sys.argv[3:]];runpy.run_path(script,run_name='__main__')", 'C:\\Users\\tjdwo\\AppData\\Local\\Temp\\tmp1w9_x1lb\\audit-bytecode-cache', 'D:\\JOEWRKS\\JOEWRKS-Product-worktrees\\joeflow-product-visual-handoff-reinforcement\\skills\\joewrks-product-definition\\scripts\\audit_reviewer_runner.py', '--repository', 'D:\\JOEWRKS\\JOEWRKS-Product-worktrees\\joeflow-product-visual-handoff-reinforcement', '--revision', '0b754bdc2502be35a7f657275f17fe117e8c49bd', '--json']' returned non-zero exit status 1.
+
+======================================================================
+ERROR: test_fake_backend_is_excluded_from_observed_pass (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_fake_backend_is_excluded_from_observed_pass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 167, in test_fake_backend_is_excluded_from_observed_pass
+    result = build_capability_audit(
+        ROOT,
+        self.revision,
+        registered_adapters=(fake,),
+    )
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\skills\joewrks-product-definition\scripts\audit_reviewer_runner.py", line 450, in build_capability_audit
+    runner_snapshot = _verify_runner_source_binding(repository, commit)
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\skills\joewrks-product-definition\scripts\audit_reviewer_runner.py", line 231, in _verify_runner_source_binding
+    raise RuntimeError("live runner source bytes or mode differ from revision")
+RuntimeError: live runner source bytes or mode differ from revision
+
+======================================================================
+ERROR: test_no_registered_real_adapter_reports_unavailable_and_calibration_not_run (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_no_registered_real_adapter_reports_unavailable_and_calibration_not_run)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 86, in test_no_registered_real_adapter_reports_unavailable_and_calibration_not_run
+    result = build_capability_audit(ROOT, self.revision)
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\skills\joewrks-product-definition\scripts\audit_reviewer_runner.py", line 450, in build_capability_audit
+    runner_snapshot = _verify_runner_source_binding(repository, commit)
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\skills\joewrks-product-definition\scripts\audit_reviewer_runner.py", line 231, in _verify_runner_source_binding
+    raise RuntimeError("live runner source bytes or mode differ from revision")
+RuntimeError: live runner source bytes or mode differ from revision
+
+======================================================================
+ERROR: test_private_verified_namespace_is_removed_after_successful_audit (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_private_verified_namespace_is_removed_after_successful_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 151, in test_private_verified_namespace_is_removed_after_successful_audit
+    result = build_capability_audit(ROOT, self.revision)
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\skills\joewrks-product-definition\scripts\audit_reviewer_runner.py", line 450, in build_capability_audit
+    runner_snapshot = _verify_runner_source_binding(repository, commit)
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\skills\joewrks-product-definition\scripts\audit_reviewer_runner.py", line 231, in _verify_runner_source_binding
+    raise RuntimeError("live runner source bytes or mode differ from revision")
+RuntimeError: live runner source bytes or mode differ from revision
+
+======================================================================
+ERROR: test_stale_runner_bytecode_cannot_override_verified_source (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_stale_runner_bytecode_cannot_override_verified_source)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 363, in test_stale_runner_bytecode_cannot_override_verified_source
+    completed = subprocess.run(
+        [
+    ...<13 lines>...
+        env=environment,
+    )
+  File "C:\Python314\Lib\subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['C:\\Python314\\python.exe', '-c', "import runpy,sys;sys.pycache_prefix=sys.argv[1];script=sys.argv[2];sys.argv=[script,*sys.argv[3:]];runpy.run_path(script,run_name='__main__')", 'C:\\Users\\tjdwo\\AppData\\Local\\Temp\\tmpucn8y0ns\\external-bytecode-cache', 'D:\\JOEWRKS\\JOEWRKS-Product-worktrees\\joeflow-product-visual-handoff-reinforcement\\skills\\joewrks-product-definition\\scripts\\audit_reviewer_runner.py', '--repository', 'D:\\JOEWRKS\\JOEWRKS-Product-worktrees\\joeflow-product-visual-handoff-reinforcement', '--revision', '0b754bdc2502be35a7f657275f17fe117e8c49bd', '--json']' returned non-zero exit status 1.
+
+======================================================================
+FAIL: test_preseeded_private_backend_fails_closed_and_is_removed (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_preseeded_private_backend_fails_closed_and_is_removed)
+----------------------------------------------------------------------
+RuntimeError: live runner source bytes or mode differ from revision
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 134, in test_preseeded_private_backend_fails_closed_and_is_removed
+    self.assert_private_namespace_collision_fails_closed(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        ".backend",
+        ^^^^^^^^^^^
+        poisoned_backend,
+        ^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 69, in assert_private_namespace_collision_fails_closed
+    with self.assertRaisesRegex(RuntimeError, "module namespace collision"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "module namespace collision" does not match "live runner source bytes or mode differ from revision"
+
+======================================================================
+FAIL: test_preseeded_private_identity_fails_closed_and_is_removed (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_preseeded_private_identity_fails_closed_and_is_removed)
+----------------------------------------------------------------------
+RuntimeError: live runner source bytes or mode differ from revision
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 126, in test_preseeded_private_identity_fails_closed_and_is_removed
+    self.assert_private_namespace_collision_fails_closed(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        ".identity",
+        ^^^^^^^^^^^^
+        poisoned_identity,
+        ^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 69, in assert_private_namespace_collision_fails_closed
+    with self.assertRaisesRegex(RuntimeError, "module namespace collision"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "module namespace collision" does not match "live runner source bytes or mode differ from revision"
+
+======================================================================
+FAIL: test_preseeded_private_package_fails_closed_and_is_removed (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_preseeded_private_package_fails_closed_and_is_removed)
+----------------------------------------------------------------------
+RuntimeError: live runner source bytes or mode differ from revision
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 121, in test_preseeded_private_package_fails_closed_and_is_removed
+    self.assert_private_namespace_collision_fails_closed("", poisoned_package)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 69, in assert_private_namespace_collision_fails_closed
+    with self.assertRaisesRegex(RuntimeError, "module namespace collision"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "module namespace collision" does not match "live runner source bytes or mode differ from revision"
+
+======================================================================
+FAIL: test_preseeded_private_transitive_module_fails_closed_and_is_removed (tests.test_reviewer_runner_audit.ReviewerRunnerAuditTests.test_preseeded_private_transitive_module_fails_closed_and_is_removed)
+----------------------------------------------------------------------
+RuntimeError: live runner source bytes or mode differ from revision
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 143, in test_preseeded_private_transitive_module_fails_closed_and_is_removed
+    self.assert_private_namespace_collision_fails_closed(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        ".controller",
+        ^^^^^^^^^^^^^^
+        poisoned_controller,
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_reviewer_runner_audit.py", line 69, in assert_private_namespace_collision_fails_closed
+    with self.assertRaisesRegex(RuntimeError, "module namespace collision"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "module namespace collision" does not match "live runner source bytes or mode differ from revision"
+
+======================================================================
+FAIL: test_preserved_phase_b_replays_read_only_through_21 (tests.test_downstream_v21_dogfood_replay.M6DogfoodReplayTests.test_preserved_phase_b_replays_read_only_through_21)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\JOEWRKS-Product-worktrees\joeflow-product-visual-handoff-reinforcement\tests\test_downstream_v21_dogfood_replay.py", line 724, in test_preserved_phase_b_replays_read_only_through_21
+    self.fail("M6_REPLAY_EVIDENCE_UNAVAILABLE")
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: M6_REPLAY_EVIDENCE_UNAVAILABLE
+
+----------------------------------------------------------------------
+Ran 18 tests in 7.207s
+
+FAILED (failures=5, errors=7)

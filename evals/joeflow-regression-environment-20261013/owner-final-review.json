@@ -1,0 +1,7 @@
+{
+  "threadId": "01a02fbe-0a39-76c1-bda3-075f0ba74d9f",
+  "updatedAt": 1791893765,
+  "final": [
+    "- 작업: 수정된 다섯 파일 최종 읽기 전용 검토\n- 업데이트 파일: 없음\n- 이슈: 없음\n- 해결: 이전 Important·Minor 모두 해소 확인\n- 남은 문제: Manager의 전체 회귀·독립 결과 확정\n- 다음 작업: 전체 검증 완료 후 Manager 판단\n\n**최종 리뷰 PASS — Critical / Important / Minor = 0**\n\n확인 결과:\n\n- `authority_binding_v2.py` raw blob이 정확히 `03704ea991aa72d20c2dd8c251ea22cbda8640ce`로 복원됨\n- detailed offender 계산은 `candidate_preflight_v2.py` 내부 진단 adapter로만 이동\n- frozen core의 graph·current-index·materiality·sink predicates를 그대로 재사용해 계산 의미를 보존\n- 네 detailed 목록과 기존 metrics의 count parity 및 입력 불변 회귀가 추가됨\n- 기존 호출은 모두 새 내부 helper로 정리되어 제거된 공개 symbol 참조가 남지 않음\n- `.gitattributes`가 Python/JSON으로 제한되면서 직접 파일과 하위 schema 모두 `text/eol=lf` 적용 확인\n- 복구 문서는 정확한 11개 경로를 고정하고, HEAD/index 확인 → CRLF-only 전체 검증 → 동일 blob 복원 → staged diff 0 → 전후 SHA-256 기록 순서를 실행 가능한 형태로 제공\n- 원시 byte/mode 검사, canonical evidence, frozen hash 기준을 약화하거나 repin하지 않음\n- `git diff --check` PASS\n\n파일 변경이나 테스트 실행은 하지 않았습니다."
+  ]
+}

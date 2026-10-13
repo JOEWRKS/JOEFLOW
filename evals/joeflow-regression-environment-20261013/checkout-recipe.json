@@ -1,0 +1,11 @@
+{
+  "recipeSha256": "f5761cb625f3c13330a4f1ef83a53beb3beca466260334f17910383b7470c3ea",
+  "crlfRefreshExit": 0,
+  "all11Exact": true,
+  "contentEditRejected": true,
+  "allFilesUnchangedOnRejection": true,
+  "rejection": "Not an LF-only refresh; preserve changes: skills/joewrks-product-definition/reviewer_runner/__init__.py",
+  "testLocation": "D:\\JOEWRKS\\JOEWRKS-Product-isolated-installs\\joeflow-t038-fresh-checkout",
+  "stagedEditRejected": true,
+  "stagedEditBytesAndIndexPreserved": true
+}

@@ -1,0 +1,52 @@
+{
+  "commit": "bfd07459c985d58079c43ee5d235562ec0aad85f",
+  "method": "Fresh checkout with core.autocrlf=true",
+  "rows": [
+    {
+      "path": "skills/joewrks-product-definition/reviewer_runner/__init__.py",
+      "rawEqualsCommit": true
+    },
+    {
+      "path": "skills/joewrks-product-definition/reviewer_runner/backend.py",
+      "rawEqualsCommit": true
+    },
+    {
+      "path": "skills/joewrks-product-definition/reviewer_runner/controller.py",
+      "rawEqualsCommit": true
+    },
+    {
+      "path": "skills/joewrks-product-definition/reviewer_runner/evidence.py",
+      "rawEqualsCommit": true
+    },
+    {
+      "path": "skills/joewrks-product-definition/reviewer_runner/identity.py",
+      "rawEqualsCommit": true
+    },
+    {
+      "path": "skills/joewrks-product-definition/reviewer_runner/preflight.py",
+      "rawEqualsCommit": true
+    },
+    {
+      "path": "skills/joewrks-product-definition/reviewer_runner/request.py",
+      "rawEqualsCommit": true
+    },
+    {
+      "path": "skills/joewrks-product-definition/reviewer_runner/response.py",
+      "rawEqualsCommit": true
+    },
+    {
+      "path": "skills/joewrks-product-definition/reviewer_runner/schemas/reviewer-runner-receipt-v1.schema.json",
+      "rawEqualsCommit": true
+    },
+    {
+      "path": "skills/joewrks-product-definition/reviewer_runner/semantic_review.py",
+      "rawEqualsCommit": true
+    },
+    {
+      "path": "evals/post-m6-semantic-review-reliability-enablement/RUNNER_CAPABILITY_EVIDENCE.json",
+      "rawEqualsCommit": true
+    }
+  ],
+  "futureBinaryAttributes": "skills/joewrks-product-definition/reviewer_runner/future-binary.bin: text: unspecified\nskills/joewrks-product-definition/reviewer_runner/future-binary.bin: eol: unspecified\n",
+  "status": ""
+}

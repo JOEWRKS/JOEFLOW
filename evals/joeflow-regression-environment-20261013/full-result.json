@@ -1,0 +1,30 @@
+{
+  "command": [
+    "C:\\Python314\\python.exe",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-p",
+    "test*.py",
+    "-v"
+  ],
+  "python": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+  "exit": 0,
+  "seconds": 379.31852078437805,
+  "sourceHead": "bfd07459c985d58079c43ee5d235562ec0aad85f",
+  "m6Head": "d38b0ca04768888c47e658c79f41e1cec0a7a1ce",
+  "sourceUnchanged": true,
+  "m6Unchanged": true,
+  "personalUnchanged": true,
+  "frozenABEnvironmentPresent": false,
+  "rawLogSha256": "449eee51e0dcba7720e4ad3487fbc2a391617d7eed01d9b8b53cb07de1893fea",
+  "logSha256": "41b02fe677ca41f23e9921260d0f77c853ed9b3c748243a9394b9be85534c865",
+  "repositoryLogEncoding": "UTF-8, normalized LF; raw capture retained by QA",
+  "testsRun": 1129,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 1
+}

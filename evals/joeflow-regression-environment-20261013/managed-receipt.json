@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "bfd07459c985d58079c43ee5d235562ec0aad85f",
+  "backup": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-bfd0745-t038-20261013",
+  "backupExact": true,
+  "changed": [
+    "scripts/authority_binding_v2.py",
+    "scripts/candidate_preflight_v2.py"
+  ],
+  "created": [],
+  "deleted": [],
+  "installed": true,
+  "afterExact": true,
+  "behaviorCases": 11,
+  "behaviorPassed": 11
+}

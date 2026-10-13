@@ -10,3 +10,4 @@
 /skills/joewrks-product-definition/reviewer_runner/**/*.py text eol=lf
 /skills/joewrks-product-definition/reviewer_runner/**/*.json text eol=lf
 /evals/post-m6-semantic-review-reliability-enablement/RUNNER_CAPABILITY_EVIDENCE.json text eol=lf
+/evals/joeflow-regression-environment-20261013/*.log text eol=lf
