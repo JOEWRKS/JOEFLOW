@@ -1,0 +1,5 @@
+# Fixture planning specification
+
+Revision 1
+
+Definition digest a28f27d4c3b2c6cba92e43ce074f2becabbb864ac156fbc8bfa6714a9943574e

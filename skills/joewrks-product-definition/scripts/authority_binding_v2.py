@@ -1046,8 +1046,8 @@ def _can_reach_semantic_sink(graph: dict[str, set[str]], start: str) -> bool:
     return False
 
 
-def authority_consumption_metrics(state: dict[str, object]) -> dict[str, int]:
-    """Count current material authority and delivery gaps once per record."""
+def authority_consumption_findings(state: dict[str, object]) -> dict[str, list[str]]:
+    """Identify current material authority and delivery gaps once per record."""
     index = _current_authority_index(state)
     graph = build_authority_consumption_graph(state)
     seeds = {
@@ -1107,12 +1107,21 @@ def authority_consumption_metrics(state: dict[str, object]) -> dict[str, int]:
         )
     }
     return {
-        "orphan_material_authority": len(orphaned),
-        "unconsumed_material_decision": sum(
-            index[record_id][0] == "DEC"
-            and not _can_reach_semantic_sink(graph, record_id)
+        "orphan_material_authority": sorted(orphaned),
+        "unconsumed_material_decision": sorted(
+            record_id
             for record_id in seeds
+            if index[record_id][0] == "DEC"
+            and not _can_reach_semantic_sink(graph, record_id)
         ),
-        "requirement_acceptance_gaps": len(requirement_acceptance_gaps),
-        "task_mapping_gaps": len(task_mapping_gaps),
+        "requirement_acceptance_gaps": sorted(requirement_acceptance_gaps),
+        "task_mapping_gaps": sorted(task_mapping_gaps),
+    }
+
+
+def authority_consumption_metrics(state: dict[str, object]) -> dict[str, int]:
+    """Count current material authority and delivery gaps once per record."""
+    return {
+        name: len(record_ids)
+        for name, record_ids in authority_consumption_findings(state).items()
     }

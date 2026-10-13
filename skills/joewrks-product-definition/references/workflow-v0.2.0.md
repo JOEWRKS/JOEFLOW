@@ -70,6 +70,26 @@ For each flow and major action represented in the Master or review view:
 5. The Master may be comprehensive; the review HTML must remain concise. Do not copy the full action/acceptance corpus into the visual review just to prove completeness.
 6. If the environment permits, open the HTML and verify readable text, diagrams, internal navigation, and clipping. If render/click observation is unavailable, record `NOT_VERIFIED`; static file/link checks are not render evidence.
 
+## Candidate preflight
+
+Before asking for approval of a native V2 candidate, run:
+
+```text
+python <skill>/scripts/preflight_state_candidate.py CANDIDATE_STATE_JSON [--canonical CANONICAL_STATE_JSON]
+```
+
+The command is read-only. It reports exact validation, semantic-readiness, binding, manifest-review-readiness, and approval-stage findings as `joewrks.state-candidate-preflight/1.0`. A `READY_FOR_REVIEW` / `UNAPPROVED` candidate may pass preflight without fabricating approval; actual approval remains a separate user-authority step.
+
+## Planning projection audit and recovery
+
+Audit materialized planning projections with:
+
+```text
+python <skill>/scripts/audit_planning_projections.py AUDIT_INPUT_JSON
+```
+
+The input must bind the exact canonical state, an independently hashed approved-scope record, every required projection, its source-identity tokens, and any semantic or render review evidence. Required projection membership comes from the scope record, never a caller downgrade. Unreviewed semantic or render work stays `UNKNOWN` with `findings: null`. A prior receipt may identify unchanged completed projections, but current source, projection, and evidence bytes are always revalidated. Recovery is projection-specific and read-only: the audit names the owner, path, and next action and never edits canonical state, creates approval, or claims that a hash authenticates reviewer authority.
+
 A projection defect is fixed in the projection or its source mapping. Do not change product policy merely to make the projection simpler.
 
 Compile only from a valid approved V2 state and a `joewrks.handoff-definition/2.1` handoff definition:
