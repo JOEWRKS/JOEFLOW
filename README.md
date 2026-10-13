@@ -1,5 +1,184 @@
 # JOEFLOW
 
+[English](#english) | [한국어](#korean)
+
+<a name="english"></a>
+**English**
+
+## 1. Summary
+
+- Program version: **`v1.1.0`**
+- Runtime skill/package ID: **`joewrks-product-definition`**
+- Authoritative source: **`product-definition/<project-slug>/state.json`**
+- Mission: **Product planning tool for defining what to build before implementation**
+- Scope: Websites, apps, games, workflows, and existing product redesigns
+- Focus: Requirements, rules, exceptions, and acceptance criteria
+- Operating principle: Inspect evidence first, ask the user only about material unresolved decisions, and persist approved outcomes as file-based authority
+- Objective: Prevent implementation teams from guessing material product decisions
+
+## 2. Design Purpose
+
+### Objectives
+
+- Define product meaning before implementation
+- Verify alignment between approved requirements and implementation behavior
+- Separate code defects from unresolved product decisions discovered during implementation
+
+### Replacement scope
+
+- Replace product authority held only in chat memory with canonical `state.json`
+- Replace arbitrary implementation policy decisions with evidence inspection and user approval
+- Replace fragmented requirement delivery with planning specifications and implementation handoffs linked to stable source IDs
+
+### Non-replacement scope
+
+- Product code implementation
+- Final aesthetic or art-direction decisions
+- Deployment infrastructure operations
+- Professional legal, security, or accounting approval
+
+## 3. Key Features
+
+| Feature | Purpose | Primary output |
+| --- | --- | --- |
+| Evidence discovery | Check repositories, documents, tests, and existing screens before asking questions | Evidence and source bindings |
+| Ambiguity resolution | Identify omissions, conflicts, and exceptions that change outcomes | Material unknowns and user questions |
+| Product meaning closure | Define requirements, rules, states, permissions, failures, and recovery | Approvable `state.json` |
+| Acceptance boundary | Separate product completion from implementation completion | Approval Manifest and acceptance criteria |
+| Human-readable delivery | Project approved meaning into readable documents | `MASTER_PLANNING_SPEC.md`, `planning-review-core.html` |
+| Implementation handoff | Bind approved meaning and implementation obligations to stable IDs | Machine-readable handoff files and verification evidence when required |
+| Re-entry routing | Classify implementation mismatches | Code correction or affected Product Definition review |
+
+Default outputs:
+
+```text
+product-definition/my-product/
+├─ state.json                 # Approved meaning and authority
+├─ MASTER_PLANNING_SPEC.md    # Planning specification for implementers
+└─ planning-review-core.html  # Compact review view for users
+```
+
+`MASTER_PLANNING_SPEC.md` and the HTML file are readable projections generated from the source. `state.json` remains authoritative. HTML colors and layout do not constitute product design approval.
+
+## 4. Usage
+
+### When to use
+
+1. **New product** — Define users, states, permissions, failure paths, and recovery before implementation
+2. **Existing product change** — Separate current code from original intent and identify unresolved decisions within the redesign scope
+3. **Implementation meaning mismatch** — Compare approved authority with observed behavior and determine whether code correction or Product Definition re-entry is required
+
+Minor and reversible internal implementation choices do not require user questions.
+
+### Installation requirements
+
+- Required tools: Codex, Git, Python 3
+- Example environment: Windows PowerShell
+- Installation unit: Entire `skills/joewrks-product-definition/` directory
+- Prohibited: Copying only `SKILL.md` or overwriting an existing personal installation without inspection
+
+No dedicated installer or package-manager command is currently provided.
+
+```powershell
+git clone https://github.com/JOEWRKS/JOEFLOW.git
+Set-Location JOEFLOW
+
+$joeflowSource = (Resolve-Path '.\skills\joewrks-product-definition').Path
+$joeflowCodexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME '.codex' }
+$joeflowTarget = Join-Path $joeflowCodexHome 'skills\joewrks-product-definition'
+
+if (Test-Path -LiteralPath $joeflowTarget) {
+  throw "기존 설치를 덮어쓰지 마세요. 먼저 백업하고 변경 내용을 확인하세요: $joeflowTarget"
+}
+New-Item -ItemType Directory -Force (Split-Path $joeflowTarget) | Out-Null
+Copy-Item -LiteralPath $joeflowSource -Destination $joeflowTarget -Recurse
+```
+
+### Example request
+
+Use the following request in a new chat.
+
+```text
+Use $joewrks-product-definition for this project.
+
+Before implementation, use JOEFLOW to define exactly what should be built.
+First inspect the repository, documents, tests, and existing screens for available evidence.
+Identify material gaps in requirements, rules, exceptions, and acceptance criteria.
+Ask one question at a time only for material decisions that cannot be resolved from evidence.
+
+Use product-definition/<project-slug>/state.json as the authority.
+Do not begin implementation before validation and my approval are complete.
+After approval, create MASTER_PLANNING_SPEC.md and planning-review-core.html,
+then hand off the approved meaning so the implementation team does not need to guess.
+```
+
+### Primary validation
+
+```text
+python <installed-skill-directory>/scripts/validate_state.py path/to/state.json
+python <installed-skill-directory>/scripts/validate_closure.py path/to/state.json
+```
+
+Validation boundaries:
+
+- Script path: Resolve from the installed skill directory, not the consumer project
+- Product Definition approval: Requires user approval of the exact revision, digest, and Approval Manifest
+- Implementation verification: Compare actual results with approved requirements, roles, states, failures, recovery, and acceptance criteria
+
+## 5. Tool Integration
+
+| Tool | Role | Handoff focus |
+| --- | --- | --- |
+| [JOENESS](https://github.com/JOEWRKS/JOENESS) | **Task sequence, progress, and completion evidence** | Task order, records, resumption, and completion evidence |
+| [JOEFLOW](https://github.com/JOEWRKS/JOEFLOW) | **Requirements, rules, exceptions, and acceptance criteria** | Product requirements, rules, exceptions, and acceptance boundaries |
+| [JOEDESIGN](https://github.com/JOEWRKS/JOEDESIGN) | **UI creation, visual standards, and design review** | Screens, visual standards, and design verification |
+
+Recommended sequence:
+
+```text
+Organize work with JOENESS
+→ Define the product with JOEFLOW
+→ Create and review the UI with JOEDESIGN
+→ Implement the product
+→ Verify the result
+→ Record completion and remaining work in JOENESS
+```
+
+Integration boundaries:
+
+- JOENESS: Connect progress state with completion evidence across the work
+- JOEFLOW: Hand approved `state.json` and planning specifications to design and implementation consumers
+- JOEDESIGN: Hand off visual standards and review results without changing approved product meaning
+- Independent use of each tool supported
+- Tool connection does not imply automatic execution, approval, or completion
+
+## 6. Limitations
+
+- No replacement for user approval; AI-generated approval or approval timestamps prohibited
+- Material ambiguity discovered during implementation requires re-entry for the affected Product Definition scope
+- Clear code defects must not be converted into new product decisions
+- Common implementation handoff supported without optional tools such as Figma
+- Requested results not observed remain `NOT VERIFIED`
+- Semantic review repeatability remains `NOT_MEASURED` until measured in a valid execution environment
+- Semantic review results cannot approve new product decisions
+- Program version `1.1.0` remains independent from internal state and contract versions
+- Frozen historical contract meaning remains unchanged
+
+Detailed references:
+
+- [Program structure and contract boundaries (Korean)](PROGRAM_ARCHITECTURE.md)
+- [Current V2 workflow](skills/joewrks-product-definition/references/workflow-v0.2.0.md)
+- [Implementation mismatch re-entry procedure](skills/joewrks-product-definition/references/reentry-workflow-v0.2.0.md)
+- [Full regression environment and safe recovery procedure (Korean)](docs/regression-environment.md)
+- [Version history](CHANGELOG.md)
+
+[English ↑](#english) | [한국어](#korean)
+
+---
+
+<a name="korean"></a>
+**한국어**
+
 - 프로그램 버전: **`v1.1.0`**
 - 런타임 skill/package ID: **`joewrks-product-definition`**
 - 제품 기준 원본: **`product-definition/<project-slug>/state.json`**

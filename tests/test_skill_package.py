@@ -36,10 +36,29 @@ class SkillPackageTest(unittest.TestCase):
         for document in (readme, architecture, regression_environment):
             for heading in report_headings:
                 self.assertIn(heading, document)
+        for heading in (
+            "## 1. Summary", "## 2. Design Purpose", "## 3. Key Features",
+            "## 4. Usage", "## 5. Tool Integration", "## 6. Limitations",
+        ):
+            self.assertIn(heading, readme)
+        for language_marker in (
+            "[English](#english) | [한국어](#korean)",
+            '<a name="english"></a>', '<a name="korean"></a>',
+            "Program version: **`v1.1.0`**",
+            "Runtime skill/package ID: **`joewrks-product-definition`**",
+            "Authoritative source: **`product-definition/<project-slug>/state.json`**",
+            "[Current V2 workflow](skills/joewrks-product-definition/references/workflow-v0.2.0.md)",
+            "[Implementation mismatch re-entry procedure](skills/joewrks-product-definition/references/reentry-workflow-v0.2.0.md)",
+        ):
+            self.assertIn(language_marker, readme)
+        self.assertEqual(readme.splitlines().count("# JOEFLOW"), 1)
         for role in (
             "요구사항·규칙·예외·완료 기준 확정",
             "화면 제작·시각 기준 수립·디자인 검수",
             "작업 순서·진행 상태·완료 근거 관리",
+            "Requirements, rules, exceptions, and acceptance criteria",
+            "UI creation, visual standards, and design review",
+            "Task sequence, progress, and completion evidence",
         ):
             self.assertIn(role, readme)
         self.assertIn("skills/joewrks-product-definition", readme)
