@@ -5,3 +5,7 @@
 /tests/test_semantic_review_*.py text eol=lf
 /tests/test_official_calibration_controller.py text eol=lf
 /evals/semantic-review-v0.4.3/calibration/** text eol=lf
+
+# These paths are verified against committed bytes, including on Windows.
+/skills/joewrks-product-definition/reviewer_runner/** text eol=lf
+/evals/post-m6-semantic-review-reliability-enablement/RUNNER_CAPABILITY_EVIDENCE.json text eol=lf
