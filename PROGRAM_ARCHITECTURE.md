@@ -9,7 +9,7 @@ The existing runtime skill/package identifier remains **`joewrks-product-definit
 | Item | Value |
 | --- | --- |
 | Program name | `JOEFLOW` |
-| Program release | `v1.0.0` |
+| Program release | `v1.1.0` |
 | Repository | `JOEWRKS/JOEFLOW` |
 | Runtime skill/package ID | `joewrks-product-definition` |
 | Canonical Product Definition authority | `product-definition/<project-slug>/state.json` |
@@ -36,7 +36,7 @@ Current V2 semantic review boundary: `joewrks.semantic-review/2.1` / reliability
 
 Historical compatibility: state `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, and v0.4.3 evidence
 
-These contract identities remain independently versioned. The overall program release for this baseline is `v1.0.0`.
+These contract identities remain independently versioned. The overall program release for this baseline is `v1.1.0`.
 
 ## Purpose
 
@@ -243,6 +243,7 @@ The repository evolved in layers rather than replacing its earlier core:
 - **v0.4.2** — fresh downstream-contract efficacy experiment; stopped before paired result after review-construction instability.
 - **v0.4.3** — deterministic semantic-review contract, responsibility model, reliability gate, calibration controller, and control-plane hardening.
 - **v1.0.0** — JOEFLOW stable baseline: native State 0.2.0 lifecycle, downstream 2.1 handoff, dogfood-proven human delivery outputs, and conditional-branch preservation rules.
+- **v1.1.0** — unified JOE tool handoff language, candidate/preflight and projection checks, UTF-8 manifest output, and reproducible Windows regression preparation without changing frozen contract identities.
 
 ## Historical v0.4.3 calibration boundary
 

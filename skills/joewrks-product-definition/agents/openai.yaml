@@ -1,5 +1,5 @@
 interface:
   display_name: "JOEFLOW"
-  short_description: "Close product and UX ambiguity before implementation"
-  default_prompt: "Use $joewrks-product-definition to discover evidence, resolve material product decisions, and produce validated implementation-ready artifacts."
+  short_description: "Decide what to build before implementation"
+  default_prompt: "Use $joewrks-product-definition to confirm requirements, rules, exceptions, and completion criteria before implementation, then produce validated implementation-ready artifacts."
 

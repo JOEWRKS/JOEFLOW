@@ -11,6 +11,36 @@ SKILL = ROOT / "skills" / "joewrks-product-definition"
 
 
 class SkillPackageTest(unittest.TestCase):
+    def test_program_release_docs_and_package_metadata_are_consistent(self):
+        version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        architecture = (ROOT / "PROGRAM_ARCHITECTURE.md").read_text(encoding="utf-8")
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        metadata = (SKILL / "agents" / "openai.yaml").read_text(encoding="utf-8")
+
+        self.assertEqual(version, "1.1.0")
+        self.assertIn(f"v{version}", readme)
+        self.assertIn(f"| Program release | `v{version}` |", architecture)
+        self.assertIn(
+            f"overall program release for this baseline is `v{version}`",
+            architecture,
+        )
+        self.assertIn(f"## {version}", changelog)
+        for heading in (
+            "## 1. 이게 뭐냐", "## 2. 언제 쓰냐", "## 3. 바로 시작하기",
+            "## 4. 무엇을 받게 되냐", "## 5. 다른 JOE 도구와 함께 쓰기",
+            "## 6. 지원 범위·주의사항",
+        ):
+            self.assertIn(heading, readme)
+        for role in (
+            "무엇을 만들지 확실하게 정한다",
+            "어떻게 보이고 사용될지 만들고 확인한다",
+            "작업이 어디까지 됐고 무엇이 남았는지 관리한다",
+        ):
+            self.assertIn(role, readme)
+        self.assertIn("skills/joewrks-product-definition", readme)
+        self.assertIn("joewrks-product-definition", metadata)
+
     def test_required_package_resources_exist(self):
         required = [
             "SKILL.md", "agents/openai.yaml",

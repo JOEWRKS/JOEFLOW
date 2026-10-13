@@ -418,12 +418,10 @@ class InstalledV2WorkflowContractTest(unittest.TestCase):
             with self.subTest(current_identity=current_identity):
                 self.assertIn(current_identity, workflow)
 
-    def test_readme_and_architecture_publish_exact_v2_status_markers(self):
-        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    def test_architecture_publishes_exact_v2_status_markers(self):
         architecture = (ROOT / "PROGRAM_ARCHITECTURE.md").read_text(
             encoding="utf-8"
         )
-        combined = readme + "\n" + architecture
 
         for marker in (
             "PRODUCT_DEFINITION_STATE_V2_DEFAULT",
@@ -432,20 +430,20 @@ class InstalledV2WorkflowContractTest(unittest.TestCase):
             "SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED",
         ):
             with self.subTest(marker=marker):
-                self.assertTrue(marker in combined, marker)
+                self.assertTrue(marker in architecture, marker)
         for current_contract in (
             "Current Product Definition state contract: `0.2.0`",
             "Current V2 downstream authority contract: `joewrks.action-conformance/2.1`",
             "Current V2 semantic review boundary: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`",
         ):
             with self.subTest(current_contract=current_contract):
-                self.assertTrue(current_contract in combined, current_contract)
+                self.assertTrue(current_contract in architecture, current_contract)
         historical = (
             "Historical compatibility: state `0.1.2.1`, "
             "`joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, "
             "and v0.4.3 evidence"
         )
-        self.assertTrue(historical in combined, historical)
+        self.assertTrue(historical in architecture, historical)
 
 
 if __name__ == "__main__":
