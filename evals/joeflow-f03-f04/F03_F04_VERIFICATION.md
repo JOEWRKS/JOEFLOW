@@ -19,7 +19,7 @@ See `fixtures/README.md`. Normal, error, PASS, and PARTIAL input/output pairs ar
 
 ## Verification
 
-- Focused and regression group: 84 tests PASS (`test_candidate_preflight_projection_audit`, skill package, authority binding, semantic Closure, and approval manifest).
+- Focused and regression group: 85 tests PASS (`test_candidate_preflight_projection_audit`, skill package, authority binding, semantic Closure, and approval manifest).
 - Independent Manager counterexamples: F03 6/6 and F04 8/8 meet expectations, including JSON `null` review evidence rejection.
 - CP949-strict wrapper smoke: F03 PASS with exit 0; F04 PARTIAL with controlled exit 1 and structured JSON.
 - `git diff --check`: PASS.

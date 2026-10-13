@@ -505,6 +505,28 @@ class ProjectionAuditTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "at least one required projection"):
                 audit(input_path)
 
+    def test_projection_outside_approved_semantic_review_scope_does_not_become_required(self):
+        audit = require(projection_audit_v2, "audit_projection_input")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_path, _, _, _ = self.make_input(root, second_status="PASS")
+            scope_path = root / "approved-scope.json"
+            scope = json.loads(scope_path.read_text(encoding="utf-8"))
+            scope["semantic_review_required_ids"] = ["review-html"]
+            scope["projection_contracts"]["master"]["semantic_coverage"] = []
+            write_json(scope_path, scope)
+            value = json.loads(input_path.read_text(encoding="utf-8"))
+            value["scope_authority"]["sha256"] = sha256(scope_path)
+            value["projections"][0]["review"] = review("NOT_REVIEWED", findings=None)
+            value["projections"][0]["semantic_claims"] = []
+            write_json(input_path, value)
+            result = audit(input_path)
+
+        master = next(item for item in result["projections"] if item["projection_id"] == "master")
+        self.assertEqual(result["overall_status"], "PASS")
+        self.assertEqual(master["semantic_review"]["status"], "NOT_REQUIRED")
+        self.assertEqual(master["coverage"], {"status": "PASS", "required": [], "reviewed": []})
+
     def test_resume_revalidates_current_review_evidence_instead_of_trusting_receipt(self):
         audit = require(projection_audit_v2, "audit_projection_input")
         with tempfile.TemporaryDirectory() as directory:

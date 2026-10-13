@@ -91,6 +91,8 @@ def _review_semantics(
     required: bool,
     approved_coverage: list[str],
 ) -> tuple[dict[str, object], list[dict[str, object]], str | None]:
+    if not required:
+        return {"status": "NOT_REQUIRED", "findings": [], "coverage": approved_coverage}, [], None
     review = projection.get("review")
     findings: list[dict[str, object]] = []
     if not isinstance(review, dict):
@@ -158,7 +160,7 @@ def _review_semantics(
         ))
 
     claims = projection.get("semantic_claims")
-    if not isinstance(claims, list) or (required and not claims):
+    if not isinstance(claims, list) or (required and approved_coverage and not claims):
         findings.append(_finding("semantic_claim_inventory_missing", "required semantic claim inventory is empty", "BIND_REVIEWED_PROJECTION_CLAIMS_TO_EXACT_CANONICAL_POINTERS"))
         claims = []
     try:
@@ -307,6 +309,8 @@ def audit_projection_input(input_path: Path | str) -> dict[str, object]:
             or not contract["recovery_owner"]
         ):
             raise ValueError(f"invalid projection contract values: {projection_id}")
+        if projection_id not in semantic_required_set and contract["semantic_coverage"]:
+            raise ValueError(f"semantic coverage requires semantic review: {projection_id}")
 
     declarations = value.get("projections")
     if not isinstance(declarations, list):
@@ -445,7 +449,9 @@ def audit_projection_input(input_path: Path | str) -> dict[str, object]:
         findings.extend(semantic_problems)
         review_value = declaration.get("review") if isinstance(declaration.get("review"), dict) else {}
         declared_coverage = review_value.get("scope") if isinstance(review_value.get("scope"), list) else None
-        if semantic["status"] == "UNKNOWN" and projection_id in semantic_required_set:
+        if projection_id not in semantic_required_set:
+            coverage = {"status": "PASS", "required": [], "reviewed": []}
+        elif semantic["status"] == "UNKNOWN":
             coverage = {"status": "UNKNOWN", "required": contract["semantic_coverage"], "reviewed": None}
         elif declared_coverage == contract["semantic_coverage"]:
             coverage = {"status": "PASS", "required": contract["semantic_coverage"], "reviewed": declared_coverage}

@@ -6,7 +6,7 @@
   },
   "scope_authority": {
     "path": "approved-scope.json",
-    "sha256": "75c885fe971b0475b46cdc595d4bda01526b3dad0beb6f698391d490238930ad",
+    "sha256": "24fb9021bd034cd6c99b726c47cfa1da3a6aea2a67b161df9fc45a55ba4db29b",
     "pointer": ""
   },
   "projections": [
