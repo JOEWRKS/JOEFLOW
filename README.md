@@ -1,6 +1,6 @@
 # JOEFLOW
 
-현재 소스 버전은 **`v1.1.0`**입니다. 런타임 skill/package ID는 호환성을 위해 **`joewrks-product-definition`**을 유지합니다.
+현재 프로그램 버전은 **`v1.1.0`**입니다. 런타임 skill/package ID는 호환성을 위해 **`joewrks-product-definition`**을 유지합니다.
 
 ## 1. 이게 뭐냐
 
