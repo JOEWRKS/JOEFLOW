@@ -564,6 +564,41 @@ class ProjectionAuditTests(unittest.TestCase):
         self.assertEqual(html_result["semantic_review"]["status"], "FAIL")
         self.assertTrue(any(item["code"] == "semantic_review_evidence_mismatch" for item in html_result["findings"]))
 
+    def test_null_semantic_and_render_evidence_cannot_preserve_self_reported_pass(self):
+        audit = require(projection_audit_v2, "audit_projection_input")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_path, canonical, _, html = self.make_input(root, second_status="PASS")
+            scope_path = root / "approved-scope.json"
+            scope = json.loads(scope_path.read_text(encoding="utf-8"))
+            scope["render_review_required_ids"] = ["review-html"]
+            write_json(scope_path, scope)
+            null_evidence = root / "null-evidence.json"
+            write_json(null_evidence, None)
+            null_ref = {"path": null_evidence.name, "sha256": sha256(null_evidence), "pointer": ""}
+            value = json.loads(input_path.read_text(encoding="utf-8"))
+            value["scope_authority"]["sha256"] = sha256(scope_path)
+            review_value = value["projections"][1]["review"]
+            review_value.update({
+                "review_evidence": null_ref,
+                "render_required": True,
+                "render_status": "PASS",
+                "render_findings": [],
+                "render_reviewer": "fixture-render-reviewer",
+                "render_evidence": null_ref,
+                "render_scope": ["desktop", "mobile"],
+                "rendered_projection_sha256": sha256(html),
+                "rendered_source_sha256": sha256(canonical),
+            })
+            write_json(input_path, value)
+            result = audit(input_path)
+
+        projection = next(item for item in result["projections"] if item["projection_id"] == "review-html")
+        self.assertEqual(projection["semantic_review"]["status"], "FAIL")
+        self.assertEqual(projection["render_review"]["status"], "FAIL")
+        self.assertTrue(any(item["code"] == "semantic_review_evidence_mismatch" for item in projection["findings"]))
+        self.assertTrue(any(item["code"] == "render_review_evidence_mismatch" for item in projection["findings"]))
+
     def test_source_identity_token_must_contain_the_actual_declared_value(self):
         audit = require(projection_audit_v2, "audit_projection_input")
         with tempfile.TemporaryDirectory() as directory:

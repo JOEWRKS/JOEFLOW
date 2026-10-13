@@ -118,8 +118,10 @@ def _review_semantics(
         return {"status": "UNKNOWN", "findings": None, "coverage": scope}, findings, None
 
     evidence_sha: str | None = None
+    evidence_loaded = False
     try:
         evidence, evidence_sha, _ = _load_ref(root, review.get("review_evidence"))
+        evidence_loaded = True
     except (OSError, UnicodeError, json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError) as exc:
         findings.append(_finding(
             "semantic_review_evidence_invalid", str(exc),
@@ -148,7 +150,7 @@ def _review_semantics(
                 "bound review evidence does not exactly match reviewer, source, projection, scope, coverage, and verdict",
                 "CORRECT_THE_REVIEW_RECORD_OR_RERUN_THE_REVIEW",
             ))
-    elif evidence is not None:
+    elif evidence_loaded:
         findings.append(_finding(
             "semantic_review_evidence_mismatch",
             "bound review evidence must be an object with the exact reviewer, source, projection, scope, coverage, and verdict",
@@ -211,8 +213,10 @@ def _review_render(
     if status == "NOT_REVIEWED":
         return {"status": "UNKNOWN", "findings": None}, problems, None
     evidence_sha: str | None = None
+    evidence_loaded = False
     try:
         evidence, evidence_sha, _ = _load_ref(root, review.get("render_evidence"))
+        evidence_loaded = True
     except (OSError, UnicodeError, json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError) as exc:
         problems.append(_finding(
             "render_review_evidence_invalid", str(exc),
@@ -241,7 +245,7 @@ def _review_render(
                 "bound render evidence does not exactly match reviewer, source, projection, scope, and verdict",
                 "CORRECT_THE_RENDER_RECORD_OR_RERUN_THE_RENDER_REVIEW",
             ))
-    elif evidence is not None:
+    elif evidence_loaded:
         problems.append(_finding(
             "render_review_evidence_mismatch",
             "bound render evidence must be an object with the exact reviewer, source, projection, scope, and verdict",
