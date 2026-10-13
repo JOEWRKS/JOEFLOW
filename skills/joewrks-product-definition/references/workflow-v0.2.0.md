@@ -42,6 +42,8 @@ python <skill-directory>/scripts/build_approval_manifest.py STATE_JSON
 
 Do not set a persistent `PYTHONPATH`.
 
+`build_approval_manifest.py` writes one compact, key-sorted, ASCII-safe JSON line on every machine-readable success or error path. Success and semantic/lifecycle rejection use stdout with exit codes `0` and `1`; usage, read, and output failures use stderr with exit code `2`. Consumers must parse JSON rather than depend on localized unescaped text, and must discard any partial stdout when the exit code is `2`. The command remains read-only and has no file-output option.
+
 ## APPROVE — show the exact change before recording approval
 
 Present the deterministic Approval Manifest for the current definition revision and digest. Record approval only from the user's explicit approval of that exact manifest. Do not infer approval, invent an approval time, or copy legacy approval into the V2 current approval object.

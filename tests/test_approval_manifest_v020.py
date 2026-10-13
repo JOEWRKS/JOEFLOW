@@ -1,9 +1,12 @@
 import copy
+import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -18,6 +21,11 @@ try:
     import approval_v2 as approval
 except ModuleNotFoundError:
     approval = None
+
+try:
+    import build_approval_manifest as manifest_cli
+except ModuleNotFoundError:
+    manifest_cli = None
 
 from discovery_v2 import build_discovery_baseline, validate_discovery_baseline  # noqa: E402
 from tests.v020_support import (  # noqa: E402
@@ -130,6 +138,54 @@ def approved_recommendation_state(*, reasoning_evidence_id="EVD-900"):
     }
     state["project"]["definition_status"] = "CLOSED"
     return state
+
+
+def unicode_ready_state():
+    state = literal_ready_state()
+    deferred = unknown_record(
+        "UNK-900", status="DEFERRED", classification="NON_MATERIAL",
+    )
+    deferred["question"] = "한국어 검토 — non-BMP 🧪"
+    deferred["deferral"] = {
+        "reason": "나중에 확인 — preserve 🧪",
+        "accepted_by": "user",
+        "impact_review": {
+            key: "현재 제품 의미에는 영향 없음."
+            for key in (
+                "scope", "rules", "flows", "states", "privacy", "money",
+                "security", "acceptance",
+            )
+        },
+    }
+    state["objects"]["unknowns"].append(deferred)
+    establish_current_baseline(state)
+    return state
+
+
+def run_manifest_cli(*args, encoding="utf-8"):
+    environment = os.environ.copy()
+    environment["PYTHONIOENCODING"] = f"{encoding}:strict"
+    return subprocess.run(
+        [sys.executable, str(CLI), *map(str, args)],
+        capture_output=True,
+        check=False,
+        env=environment,
+    )
+
+
+class FailingTextStream:
+    def __init__(self, exception, *, partial=False):
+        self.exception = exception
+        self.partial = partial
+        self.written = ""
+
+    def write(self, value):
+        if self.partial:
+            self.written += value[:7]
+        raise self.exception
+
+    def flush(self):
+        return None
 
 
 class ApprovalManifestV020Test(unittest.TestCase):
@@ -329,10 +385,136 @@ class ApprovalManifestV020Test(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         packet = json.loads(result.stdout)
         self.assertEqual(set(packet), {"manifest", "manifest_digest", "approval_commitment"})
-        self.assertEqual(result.stdout.strip(), json.dumps(packet, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+        self.assertEqual(result.stdout.strip(), json.dumps(packet, ensure_ascii=True, sort_keys=True, separators=(",", ":")))
         self.assertEqual(after, original)
         self.assertNotIn("approved_at", result.stdout)
         self.assertNotIn("approved_by", result.stdout)
+
+    def test_cli_success_is_ascii_safe_under_cp949_and_utf8_with_unicode_state_and_path(self):
+        # Break caught: Windows CP949 output raising UnicodeEncodeError for valid Korean/non-BMP authority.
+        state = unicode_ready_state()
+        expected_manifest = api("build_approval_manifest_for_review")(state)
+        expected_packet = {
+            "manifest": expected_manifest,
+            "manifest_digest": api("approval_manifest_digest")(expected_manifest),
+            "approval_commitment": api("build_approval_commitment")(state, expected_manifest),
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            unicode_directory = Path(directory) / "한글-🧪"
+            unicode_directory.mkdir()
+            path = unicode_directory / "상태—후보.json"
+            original = json.dumps(state, ensure_ascii=False, indent=2)
+            path.write_text(original, encoding="utf-8")
+            results = {
+                encoding: run_manifest_cli(path, encoding=encoding)
+                for encoding in ("cp949", "utf-8")
+            }
+            after = path.read_text(encoding="utf-8")
+
+        for encoding, result in results.items():
+            with self.subTest(encoding=encoding):
+                self.assertEqual(result.returncode, 0, result.stderr.decode("ascii", errors="replace"))
+                self.assertEqual(result.stderr, b"")
+                self.assertTrue(all(byte < 128 for byte in result.stdout))
+                self.assertEqual(json.loads(result.stdout.decode("ascii")), expected_packet)
+        self.assertEqual(results["cp949"].stdout, results["utf-8"].stdout)
+        self.assertEqual(after, original)
+
+    def test_cli_error_channels_are_ascii_safe_compact_json_under_cp949_and_utf8(self):
+        # Break caught: success-only encoding fixes leaving usage/read/lifecycle errors locale-dependent.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "오류-🧪"
+            root.mkdir()
+            invalid = root / "invalid—상태.json"
+            invalid.write_text(json.dumps(foundation_state(), ensure_ascii=False), encoding="utf-8")
+            missing = root / "없는—상태🧪.json"
+            for encoding in ("cp949", "utf-8"):
+                with self.subTest(encoding=encoding, case="invalid"):
+                    result = run_manifest_cli(invalid, encoding=encoding)
+                    self.assertEqual(result.returncode, 1)
+                    self.assertEqual(result.stderr, b"")
+                    self.assertTrue(all(byte < 128 for byte in result.stdout))
+                    payload = json.loads(result.stdout.decode("ascii"))
+                    self.assertFalse(payload["valid"])
+                    self.assertEqual(
+                        result.stdout.rstrip(b"\r\n").decode("ascii"),
+                        json.dumps(payload, ensure_ascii=True, sort_keys=True, separators=(",", ":")),
+                    )
+                with self.subTest(encoding=encoding, case="read"):
+                    result = run_manifest_cli(missing, encoding=encoding)
+                    self.assertEqual(result.returncode, 2)
+                    self.assertEqual(result.stdout, b"")
+                    self.assertTrue(all(byte < 128 for byte in result.stderr))
+                    self.assertIn("error", json.loads(result.stderr.decode("ascii")))
+                with self.subTest(encoding=encoding, case="usage"):
+                    result = run_manifest_cli(encoding=encoding)
+                    self.assertEqual(result.returncode, 2)
+                    self.assertEqual(result.stdout, b"")
+                    self.assertTrue(all(byte < 128 for byte in result.stderr))
+                    self.assertEqual(
+                        json.loads(result.stderr.decode("ascii")),
+                        {"error": "usage: build_approval_manifest.py STATE_JSON"},
+                    )
+
+    def test_output_write_failures_are_contained_and_partial_output_is_not_success(self):
+        # Break caught: BrokenPipe/OSError escaping as traceback or partial stdout being reported as success.
+        emitter = getattr(manifest_cli, "_emit_json", None) if manifest_cli else None
+        self.assertIsNotNone(emitter, "build_approval_manifest._emit_json implementation is missing")
+        payload = {"message": "한국어 — 🧪"}
+        redirected = io.StringIO()
+        self.assertTrue(emitter(payload, redirected))
+        self.assertTrue(redirected.getvalue().isascii())
+        self.assertEqual(json.loads(redirected.getvalue()), payload)
+        for exception in (BrokenPipeError("closed pipe"), OSError("write failed")):
+            with self.subTest(exception=type(exception).__name__):
+                stream = FailingTextStream(exception)
+                self.assertFalse(emitter(payload, stream))
+
+        state = unicode_ready_state()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+            partial_stdout = FailingTextStream(OSError("partial write"), partial=True)
+            fallback_stderr = io.StringIO()
+            with mock.patch.object(manifest_cli.sys, "stdout", partial_stdout), mock.patch.object(
+                manifest_cli.sys, "stderr", fallback_stderr,
+            ):
+                return_code = manifest_cli.main([str(CLI), str(path)])
+
+        self.assertEqual(return_code, 2)
+        self.assertTrue(partial_stdout.written)
+        self.assertEqual(
+            json.loads(fallback_stderr.getvalue()),
+            {"error": "output_write_failed"},
+        )
+
+    def test_closed_stdout_pipe_returns_structured_exit_two_without_shutdown_reflush(self):
+        # Break caught: Python shutdown re-flushing a broken stdout pipe and replacing exit 2 with exit 120.
+        state = unicode_ready_state()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+            read_descriptor, write_descriptor = os.pipe()
+            os.close(read_descriptor)
+            environment = os.environ.copy()
+            environment["PYTHONIOENCODING"] = "cp949:strict"
+            try:
+                process = subprocess.Popen(
+                    [sys.executable, str(CLI), str(path)],
+                    stdout=write_descriptor,
+                    stderr=subprocess.PIPE,
+                    env=environment,
+                )
+            finally:
+                os.close(write_descriptor)
+            _, stderr = process.communicate()
+
+        self.assertEqual(process.returncode, 2, stderr.decode("ascii", errors="replace"))
+        self.assertTrue(all(byte < 128 for byte in stderr))
+        self.assertEqual(
+            json.loads(stderr.decode("ascii")),
+            {"error": "output_write_failed"},
+        )
 
     def test_cli_refuses_invalid_not_ready_and_malformed_input(self):
         # Break caught: command-line lifecycle gate bypass or Python accepting non-standard JSON constants.
