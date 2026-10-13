@@ -15,22 +15,27 @@ class SkillPackageTest(unittest.TestCase):
         version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         architecture = (ROOT / "PROGRAM_ARCHITECTURE.md").read_text(encoding="utf-8")
+        regression_environment = (ROOT / "docs" / "regression-environment.md").read_text(
+            encoding="utf-8"
+        )
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         metadata = (SKILL / "agents" / "openai.yaml").read_text(encoding="utf-8")
 
         self.assertEqual(version, "1.1.0")
         self.assertIn(f"v{version}", readme)
-        self.assertIn(f"| Program release | `v{version}` |", architecture)
+        self.assertIn(f"| 프로그램 릴리스 | `v{version}` |", architecture)
         self.assertIn(
-            f"overall program release for this baseline is `v{version}`",
+            f"이 기준선의 전체 프로그램 릴리스: `v{version}`",
             architecture,
         )
         self.assertIn(f"## {version}", changelog)
-        for heading in (
+        report_headings = (
             "## 1. 핵심 요약", "## 2. 설계 목적", "## 3. 주요 기능",
             "## 4. 사용 방법", "## 5. 도구 간 연결", "## 6. 한계",
-        ):
-            self.assertIn(heading, readme)
+        )
+        for document in (readme, architecture, regression_environment):
+            for heading in report_headings:
+                self.assertIn(heading, document)
         for role in (
             "요구사항·규칙·예외·완료 기준 확정",
             "화면 제작·시각 기준 수립·디자인 검수",

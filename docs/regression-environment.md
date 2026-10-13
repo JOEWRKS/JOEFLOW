@@ -1,31 +1,63 @@
-# Full regression environment
+# 전체 회귀 환경
 
-Run from a clean, committed JOEFLOW checkout. The suite runs local synthetic
-checks and reads historical fixtures; it does not require a live reviewer
-service. Do not run concurrently with editing: one runner integrity test
-temporarily changes a source file and restores its original bytes and mtime
-in `finally`.
+## 1. 핵심 요약
 
-## Windows checkout bytes
+- 실행 위치: clean·committed JOEFLOW checkout
+- 검사 구성: local synthetic check와 historical fixture
+- Live reviewer service: 불필요
+- 편집과 동시 실행: 금지
+- 사유: runner integrity test 한 건이 source file을 임시 변경한 뒤 `finally`에서 원래 bytes와 mtime 복원
 
-`.gitattributes` fixes LF for Python/JSON files in `reviewer_runner` and its canonical capability
-evidence. The audit deliberately compares raw source bytes and executable mode
-against Git, and compares CLI output bytes against the preserved evidence.
-Keep those checks unchanged. Do not update evidence hashes or skip assertions
-to accommodate CRLF conversion.
+## 2. 설계 목적
 
-New checkouts apply this policy even when `core.autocrlf=true`. An existing
-checkout may retain its old CRLF bytes until refreshed. Before refreshing, save
-all user changes and verify that each affected file differs from its committed
-blob only by CRLF/LF conversion. Refresh only those files from the same commit;
-never overwrite other differences. Refresh Git's index metadata for those exact
-paths with `git add --renormalize -- <verified paths>` and confirm there is no
-staged source/evidence blob change. Otherwise the old index metadata can still
-report modified files to the audit's read-only Git status call. Do not change
-global Git configuration. With exclusive access to the checkout, this PowerShell
-recipe checks all 11 paths before writing any of them. It rejects staged edits,
-non-line-ending changes, symlinks, and a changed HEAD. It prints only path/hash
-evidence; keep this output with the regression log.
+- Canonical source byte와 executable mode의 Git 기준 검증
+- CLI output byte와 preserved evidence의 일치 검증
+- Historical M6 replay의 정확한 commit·tree·artifact identity 보존
+- Focused regression과 full regression의 순차 실행
+- 누락 fixture·skip·환경 제한의 명시적 보고
+
+## 3. 주요 기능
+
+### Windows checkout byte 보호
+
+- `.gitattributes`: `reviewer_runner` Python/JSON file과 canonical capability evidence의 LF 고정
+- Audit: raw source byte·executable mode를 Git과 비교
+- CLI output byte: preserved evidence와 비교
+- Audit check 변경 금지
+- Evidence hash 갱신 또는 CRLF 적응 목적 assertion skip: 금지
+- 신규 checkout: `core.autocrlf=true` 환경에서도 정책 적용
+- 기존 checkout: refresh 전까지 과거 CRLF byte 잔존 가능
+
+### Historical replay 보호
+
+- M6 historical input의 exact commit·tree·artifact byte·approval·definition digest 검증
+- 개발 checkout reset 금지
+- 필요 시 exact commit 기반 separate detached local clone 재구성
+- 재구성 snapshot에 대한 product runtime action·편집 금지
+
+### 결과 보존
+
+- Focused regression과 full regression의 동일 PowerShell process 순차 실행
+- Source·snapshot identity의 실행 전후 대조
+- Command·Python version·stdout/stderr·exit code·skip reason 보존
+
+## 4. 사용 방법
+
+### Windows checkout byte refresh
+
+Refresh 전 필수 조건:
+
+- 모든 사용자 변경 저장
+- 대상 file의 committed blob 차이가 CRLF/LF 변환뿐인지 확인
+- 같은 commit의 해당 file만 refresh
+- 다른 차이 overwrite 금지
+- 정확한 path만 `git add --renormalize -- <verified paths>` 적용
+- Staged source/evidence blob change 없음 확인
+- 미갱신 index metadata로 인한 audit read-only Git status의 modified 오판 방지
+- Global Git configuration 변경 금지
+- Checkout exclusive access 확보
+
+아래 PowerShell recipe의 검사 범위: 11개 path. 쓰기 전 staged edit, non-line-ending change, symlink, changed HEAD 거부. 출력 범위: path/hash evidence. 출력의 regression log 보존.
 
 ```powershell
 @'
@@ -72,23 +104,21 @@ print(json.dumps([{
 if ($LASTEXITCODE -ne 0) { throw 'Checkout refresh failed; inspect before continuing' }
 ```
 
-This refresh changes checkout representation only. The guarded index refresh
-must stage no source or evidence change. If an I/O failure interrupts the recipe,
-stop testing and inspect the affected paths before retrying.
+Refresh 결과:
 
-## Required M6 historical replay
+- Checkout representation만 변경
+- Guarded index refresh의 staged source/evidence change: 0 필수
+- Recipe 중 I/O failure 발생 시 testing 중지 및 affected path 확인 후 재시도
 
-`JOEWRKS_M6_PHASE_B_WORKTREE` must point to a clean checkout with:
+### Required M6 historical replay
+
+`JOEWRKS_M6_PHASE_B_WORKTREE` 필수 identity:
 
 - commit `d38b0ca04768888c47e658c79f41e1cec0a7a1ce`
 - tree `40749d900b98936cf694b0c96db7897011cddae8`
-- unchanged committed dogfood artifact bytes, approval and definition digests.
+- unchanged committed dogfood artifact byte, approval digest, definition digest
 
-The current M6 development checkout has advanced and is not this historical
-input. Do not reset it. If the original checkout is unavailable but the exact
-commit is present locally, reconstruct a separate detached local clone. This
-is a reconstruction from Git, not proof that the old physical checkout survives.
-Use a new, absent destination outside every active repository. In PowerShell:
+현재 M6 development checkout: historical input 아님. Reset 금지. Original checkout 부재 및 exact commit의 local 존재 시 separate detached local clone 재구성 허용. Git 기반 재구성이며 과거 physical checkout 생존의 증명으로 사용 금지. 모든 active repository 밖의 새 absent destination 사용.
 
 ```powershell
 $regressionSource = (Get-Location).Path
@@ -100,17 +130,14 @@ git -C $regressionSnapshot -c core.autocrlf=false checkout --detach d38b0ca04768
 if ($LASTEXITCODE -ne 0) { throw 'Historical checkout failed' }
 ```
 
-The per-command checkout setting preserves LF in historical artifact files
-whose old revision predates the current attributes. It does not change the
-source checkout or global configuration. The replay test checks exact HEAD,
-tree, clean status, artifact hashes and approval identity before translation;
-it checks all tracked-file hashes and checkout identity again after replay.
-Do not run product runtime actions or edit the reconstructed snapshot.
+- Per-command checkout setting: current attribute 이전 historical artifact의 LF 보존
+- Source checkout 또는 global configuration 변경 없음
+- Replay test의 실행 전 검사: exact HEAD, tree, clean status, artifact hash, approval identity
+- Replay test의 실행 후 검사: 모든 tracked-file hash와 checkout identity
 
-## Execute and retain the result
+### 회귀 실행 및 결과 보존
 
-In the same PowerShell process, set the exact snapshot path, then run focused
-and full regression sequentially from the JOEFLOW source checkout:
+동일 PowerShell process에서 exact snapshot path 설정 후 JOEFLOW source checkout 기준 순차 실행:
 
 ```powershell
 $env:JOEWRKS_M6_PHASE_B_WORKTREE = $regressionSnapshot
@@ -121,10 +148,27 @@ python -B -m unittest discover -s tests -p 'test*.py' -v
 if ($LASTEXITCODE -ne 0) { throw 'Full regression failed' }
 ```
 
-These environment settings apply to this shell and its children only. Restore
-prior values or close the shell afterward. Capture the full command, Python
-version, source commit/tree, stdout/stderr, exit code, skip reasons, and source
-and snapshot identities before/after. Missing M6 input must remain a failure.
-The separate frozen A/B runtime regression requires `JOEWRKS_FROZEN_A_ROOT` and
-`JOEWRKS_FROZEN_B_WORKTREE`; report its existing skip when these are unavailable.
-An OK result with that skip does not verify the frozen A/B runtime scenario.
+- 환경 변수 적용 범위: 현재 shell과 child process
+- 완료 후 기존 값 복원 또는 shell 종료
+- 보존 항목: full command, Python version, source commit/tree, stdout/stderr, exit code, skip reason, source/snapshot identity before/after
+
+## 5. 도구 간 연결
+
+| 도구·입력 | 역할 | 필수 경계 |
+| --- | --- | --- |
+| Git | committed byte·tree·mode authority | global 설정 변경 금지 |
+| Python `unittest` | focused/full regression 실행 | `-B`, 순차 실행 |
+| `JOEWRKS_M6_PHASE_B_WORKTREE` | historical M6 replay input | exact detached snapshot |
+| `JOEWRKS_FROZEN_A_ROOT` | frozen A runtime regression input | 미제공 시 기존 skip 보고 |
+| `JOEWRKS_FROZEN_B_WORKTREE` | frozen B runtime regression input | 미제공 시 기존 skip 보고 |
+| Regression log | 실행·환경·identity evidence | 명령과 skip reason 포함 |
+
+## 6. 한계
+
+- Missing M6 input: failure 유지
+- Frozen A/B runtime regression: `JOEWRKS_FROZEN_A_ROOT`, `JOEWRKS_FROZEN_B_WORKTREE` 별도 필요
+- Frozen A/B 입력 부재 시 existing skip 보고
+- 해당 skip을 포함한 `OK`: frozen A/B runtime scenario 검증으로 사용 금지
+- Checkout refresh: 실제 source/evidence 의미 변경 수단으로 사용 금지
+- Historical clone: 과거 physical checkout 생존 증거로 사용 금지
+- 동시 편집 또는 비독점 checkout에서 runner integrity test 실행 금지

@@ -432,16 +432,15 @@ class InstalledV2WorkflowContractTest(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertTrue(marker in architecture, marker)
         for current_contract in (
-            "Current Product Definition state contract: `0.2.0`",
-            "Current V2 downstream authority contract: `joewrks.action-conformance/2.1`",
-            "Current V2 semantic review boundary: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`",
+            "현재 Product Definition 상태 계약: `0.2.0`",
+            "현재 V2 downstream authority 계약: `joewrks.action-conformance/2.1`",
+            "현재 V2 semantic-review 경계: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`",
         ):
             with self.subTest(current_contract=current_contract):
                 self.assertTrue(current_contract in architecture, current_contract)
         historical = (
-            "Historical compatibility: state `0.1.2.1`, "
-            "`joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, "
-            "and v0.4.3 evidence"
+            "과거 호환성: 상태 `0.1.2.1`, `joewrks.action-conformance/1.0`, "
+            "`joewrks.semantic-review/1.0`, v0.4.3 evidence"
         )
         self.assertTrue(historical in architecture, historical)
 

@@ -1,25 +1,26 @@
-# JOEFLOW
+# JOEFLOW 프로그램 구조
 
-**JOEFLOW** is the program-level name for this repository and its integrated product-definition, downstream-conformance, semantic-review, and evaluation tooling.
+## 1. 핵심 요약
 
-The existing runtime skill/package identifier remains **`joewrks-product-definition`**. The identifier is not renamed by this document.
+- 프로그램 이름: **JOEFLOW**
+- 적용 범위: Product Definition, downstream conformance, semantic review, evaluation 도구의 통합 운영
+- 런타임 skill/package ID: **`joewrks-product-definition`** 유지
+- 런타임 ID rename: 미수행
 
-## Identity
-
-| Item | Value |
+| 항목 | 값 |
 | --- | --- |
-| Program name | `JOEFLOW` |
-| Program release | `v1.1.0` |
-| Repository | `JOEWRKS/JOEFLOW` |
-| Runtime skill/package ID | `joewrks-product-definition` |
-| Canonical Product Definition authority | `product-definition/<project-slug>/state.json` |
-| Current Product Definition state contract | `0.2.0` |
-| Current downstream authority contract | `joewrks.action-conformance/2.1` |
-| Current semantic-review boundary | `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED` |
-| Repaired v0.4.3 calibration input | `748254d6def81080a2fd2736115a3ab5e0bde5a3` |
+| 프로그램 이름 | `JOEFLOW` |
+| 프로그램 릴리스 | `v1.1.0` |
+| 저장소 | `JOEWRKS/JOEFLOW` |
+| 런타임 skill/package ID | `joewrks-product-definition` |
+| canonical Product Definition authority | `product-definition/<project-slug>/state.json` |
+| 현재 Product Definition 상태 계약 | `0.2.0` |
+| 현재 downstream authority 계약 | `joewrks.action-conformance/2.1` |
+| 현재 semantic-review 경계 | `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED` |
+| repaired v0.4.3 calibration input | `748254d6def81080a2fd2736115a3ab5e0bde5a3` |
 | v0.4.3 environment-blocked disposition | `6a0674c5d00a40790afef78cfa19494314b894e3` |
 
-Installed routing markers:
+설치된 routing marker:
 
 ```text
 PRODUCT_DEFINITION_STATE_V2_DEFAULT
@@ -28,23 +29,29 @@ DOWNSTREAM_V2_INSTALLED_ROUTING
 SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED
 ```
 
-Current Product Definition state contract: `0.2.0`
+- 현재 Product Definition 상태 계약: `0.2.0`
+- 현재 V2 downstream authority 계약: `joewrks.action-conformance/2.1`
+- 현재 V2 semantic-review 경계: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`
+- 과거 호환성: 상태 `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, v0.4.3 evidence
+- 계약 버전: 상호 독립 관리
+- 이 기준선의 전체 프로그램 릴리스: `v1.1.0`
 
-Current V2 downstream authority contract: `joewrks.action-conformance/2.1`
+## 2. 설계 목적
 
-Current V2 semantic review boundary: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`
+- 구현 전 중요한 제품·UX 모호성 해소
+- 확정 결정을 명시적 authority로 보존
+- 승인 내용을 downstream 구현 의무로 컴파일
+- 구현 의미 drift 탐지
+- semantic interpretation의 반복 신뢰 가능성 평가
+- 운영 구조: 결정 확정·구현 인계·검증의 단계별 체계
 
-Historical compatibility: state `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, and v0.4.3 evidence
+비대체 범위:
 
-These contract identities remain independently versioned. The overall program release for this baseline is `v1.1.0`.
+- 사용자 승인
+- 실제 제품 구현
+- Product Definition authority를 대신하는 review 결과
 
-## Purpose
-
-The system exists to close material product and UX ambiguity before implementation, preserve those decisions as explicit authority, compile them into downstream implementation obligations, detect implementation drift, and evaluate whether semantic interpretation is repeatable enough to trust.
-
-It is not a single document generator. It is a staged authority-and-verification system.
-
-## System structure
+## 3. 주요 기능
 
 ```text
 JOEFLOW
@@ -84,23 +91,19 @@ JOEFLOW
    └─ isolated reviewer execution boundary
 ```
 
-Historical State `0.1.2.1`, downstream v1, semantic-review/1.0, the frozen execution transport, and v0.4.3 evidence remain available under their exact original identities. They are compatibility boundaries, not the installed V2 default.
+과거 State `0.1.2.1`, downstream v1, semantic-review/1.0, frozen execution transport, v0.4.3 evidence의 원래 identity 유지. 설치된 V2 기본값과 구분되는 compatibility boundary로 유지.
 
-## 1. Product Definition Core
+### Product Definition Core
 
-The Product Definition Core converts an incomplete product request into explicit, reviewable authority.
+- 불완전한 제품 요청을 검토 가능한 명시적 authority로 전환
+- 중요한 제품 결정의 묵시적 생성 금지
+- 미결정 사항의 unknown 등록
+- 명시적 답변의 decision 기록
+- 중요 변경의 requirement·flow·screen·state·rule·acceptance criterion·implementation mapping 전파
+- canonical authority: `product-definition/<project-slug>/state.json`
+- Markdown PRD·plan·wireflow·handoff·summary: state의 projection으로만 사용
 
-Its central rule is that material product decisions are never silently invented. Missing decisions become unknowns, explicit answers become decisions, and every material change propagates through dependent requirements, flows, screens, states, rules, acceptance criteria, and implementation mappings.
-
-The authoritative artifact is always:
-
-```text
-product-definition/<project-slug>/state.json
-```
-
-Markdown PRDs, plans, wireflows, handoffs, and summaries are projections of that state and do not replace it.
-
-The current core lifecycle is:
+현재 core lifecycle:
 
 ```text
 DISCOVER
@@ -111,46 +114,43 @@ DISCOVER
 → VERIFY
 ```
 
-Semantic Closure requires deterministic validation, exact coverage-to-authority bindings, a matching Approval Manifest and definition digest, plus explicit approval of the current definition revision. It does not claim implementation completion.
+Semantic Closure 필수 조건:
 
-## 2. Downstream Conformance
+- deterministic validation
+- 정확한 coverage-to-authority binding
+- 일치하는 Approval Manifest와 definition digest
+- 현재 definition revision에 대한 명시적 승인
+- 구현 완료 주장 금지
 
-After Product Definition Closure, the system compiles approved canonical clauses into executable downstream obligations.
+### Downstream Conformance
 
-The current V2 handoff contract is:
+- Product Definition Closure 이후 승인된 canonical clause를 실행 가능한 downstream obligation으로 컴파일
+- 현재 V2 handoff contract: `joewrks.action-conformance/2.1`
+- exact M4 coverage binding의 source seed 재사용
+- consumed seed와 authority scope identity 고정
+- semantic authority gap이 0인 handoff만 materialize
+- Product authority와 implementation behavior 분리
+- Direct authority와 closed deterministic derivation 분리
+- Legitimate qualitative review와 upstream authority gap 분리
+- Global definition state와 dependency-local contract validity 분리
+- consumer working directory와 무관한 installed wrapper 실행
+- persistent `PYTHONPATH` 요구 없음
+- Product Definition authority에 대한 read-only 유지
+- 과거 `joewrks.action-conformance/1.0`의 frozen·reproducible contract 유지
 
-```text
-joewrks.action-conformance/2.1
-```
+### Semantic Review
 
-This layer reuses exact M4 coverage bindings as source seeds, commits consumed seed and authority-scope identities, and materializes only handoffs with zero semantic authority gaps.
+- Structured Product Definition authority 또는 closed derivation으로 안전하게 표현할 수 없는 downstream field만 대상
+- Responsibility profile이 허용한 field만 `REVIEW_REQUIRED` 유지
+- V2 sidecar: `joewrks.semantic-review/2.1`
+- Exact action contract·source obligation·proposed value hash·responsibility rule binding
+- Review output: assurance evidence 및 read-only affected-scope re-entry 가능
+- Product Definition 또는 action contract 수정 금지
+- semantic-review/2.1 reliability: `NOT_MEASURED`
+- v0.4.3 calibration disposition 또는 semantic-review/1.0 reliability claim 상속 금지
+- 과거 `joewrks.semantic-review/1.0`, **26 action + 12 lifecycle = 38** responsibility rule, v0.4.3 evidence의 frozen compatibility 유지
 
-It separates:
-
-- product authority from implementation behavior;
-- direct authority from closed deterministic derivation;
-- legitimate qualitative review from upstream authority gaps;
-- global definition state from dependency-local contract validity.
-
-Installed wrappers compile and audit from any consumer working directory without a persistent `PYTHONPATH`. This layer is read-only with respect to Product Definition authority.
-
-Historical `joewrks.action-conformance/1.0` remains frozen and reproducible under its own contract.
-
-## 3. Semantic Review
-
-Some downstream semantic fields cannot be represented safely as structured Product Definition authority or closed derivation. Only responsibility-profile-approved fields may remain `REVIEW_REQUIRED` and enter the V2 semantic-review sidecar:
-
-```text
-joewrks.semantic-review/2.1
-```
-
-The semantic-review/2.1 package binds every obligation to the exact action contract, source obligations, proposed value hash, and responsibility rule. Review output is assurance evidence and may emit read-only affected-scope re-entry; it never modifies Product Definition or the action contract.
-
-Semantic-review/2.1 reliability begins and remains `NOT_MEASURED` in this integration task. It does not inherit the v0.4.3 calibration disposition or any semantic-review/1.0 reliability claim.
-
-Historical `joewrks.semantic-review/1.0`, its **26 action + 12 lifecycle = 38** responsibility rules, and v0.4.3 evidence remain factual frozen compatibility.
-
-The four terminal review outcomes are:
+Terminal review outcome:
 
 ```text
 APPROVED
@@ -159,25 +159,33 @@ RUBRIC_ERROR
 INPUT_PACKAGE_ERROR
 ```
 
-The reliability gate is conjunctive. Majority vote is not an escape hatch.
+- Reliability gate: conjunctive
+- Majority vote escape hatch: 없음
 
-## 4. Evaluation & Calibration Harness
+### Evaluation & Calibration Harness
 
-The evaluation layer measures whether the system behaves consistently under fresh execution rather than merely passing deterministic unit tests.
+- Fresh execution에서의 일관성 측정
+- Deterministic unit test 통과와의 분리
+- Behavioral A/B evaluation
+- End-to-end dogfood
+- Downstream-conformance experiment
+- Semantic-review golden calibration
+- Official calibration controller
+- Raw-output freeze 및 evidence binding
+- Reliability statistic 및 disagreement classification
+- Valid real calibration: reviewer context가 assigned package·run envelope·invocation wrapper만 접근 가능한 환경 필요
+- Isolation enforcement: reviewer instruction이 아닌 execution environment 책임
 
-It includes:
+## 4. 사용 방법
 
-- behavioral A/B evaluations;
-- end-to-end dogfood;
-- downstream-conformance experiments;
-- semantic-review golden calibration;
-- official calibration controller;
-- raw-output freezing and evidence binding;
-- reliability statistics and disagreement classification.
+### 설치·시작
 
-A valid real semantic-review calibration requires reviewer contexts that can access only their assigned reviewer package, run envelope, and invocation wrapper. Isolation must be enforced by the execution environment, not by instructions telling a reviewer to ignore other files.
+- 설치 절차와 최초 요청: [README 사용 방법](README.md#4-사용-방법) 기준
+- canonical authority 생성·재개: `product-definition/<project-slug>/state.json` 기준
+- 적용 계약 선택: state version과 현재 lifecycle 기준
+- 과거 계약의 자동 migration 금지
 
-## End-to-end authority flow
+### End-to-end authority flow
 
 ```text
 Vague idea / evidence
@@ -201,9 +209,9 @@ semantic-review/2.1 for legitimate REVIEW_REQUIRED fields
 re-entry for affected authority gaps or ambiguity
 ```
 
-Any material ambiguity discovered during implementation re-enters Product Definition instead of being decided silently downstream.
+- 구현 중 발견된 중요 모호성: downstream 묵시 결정 금지, Product Definition 재진입
 
-## Repository mapping
+### Repository mapping
 
 ```text
 skills/joewrks-product-definition/
@@ -232,24 +240,31 @@ tests/
 └─ fixtures/semantic-review-v1/     # frozen golden packages/oracle fixtures
 ```
 
-## Version progression
+## 5. 도구 간 연결
 
-The repository evolved in layers rather than replacing its earlier core:
+- JOENESS: 작업 순서·진행 상태·완료 근거 관리
+- JOEFLOW: 요구사항·규칙·예외·완료 기준 확정
+- JOEDESIGN: 화면 제작·시각 기준 수립·디자인 검수
+- Implementation/Figma Make: 승인된 downstream obligation 소비
+- Semantic Review: legitimate `REVIEW_REQUIRED` field의 assurance
+- Evaluation Harness: fresh execution의 일관성·신뢰성 측정
 
-- **v0.1.x** — deterministic Product Definition authority, state contract, Closure Gate.
-- **v0.2** — behavioral interrogation refinement and A/B evaluation.
-- **v0.3.x** — end-to-end dogfood, Figma / Figma Make handoff and drift auditing.
-- **v0.4 / v0.4.1.x** — cross-domain downstream conformance and executable action-contract authority.
-- **v0.4.2** — fresh downstream-contract efficacy experiment; stopped before paired result after review-construction instability.
-- **v0.4.3** — deterministic semantic-review contract, responsibility model, reliability gate, calibration controller, and control-plane hardening.
-- **v1.0.0** — JOEFLOW stable baseline: native State 0.2.0 lifecycle, downstream 2.1 handoff, dogfood-proven human delivery outputs, and conditional-branch preservation rules.
-- **v1.1.0** — unified JOE tool handoff language, candidate/preflight and projection checks, UTF-8 manifest output, and reproducible Windows regression preparation without changing frozen contract identities.
+버전 진행 기록:
 
-## Historical v0.4.3 calibration boundary
+- **v0.1.x** — deterministic Product Definition authority, state contract, Closure Gate
+- **v0.2** — behavioral interrogation refinement와 A/B evaluation
+- **v0.3.x** — end-to-end dogfood, Figma/Figma Make handoff, drift auditing
+- **v0.4 / v0.4.1.x** — cross-domain downstream conformance와 executable action-contract authority
+- **v0.4.2** — fresh downstream-contract efficacy experiment, review-construction instability로 paired result 전 중단
+- **v0.4.3** — deterministic semantic-review contract, responsibility model, reliability gate, calibration controller, control-plane hardening
+- **v1.0.0** — native State 0.2.0 lifecycle, downstream 2.1 handoff, dogfood-proven human delivery output, conditional-branch preservation rule
+- **v1.1.0** — unified JOE tool handoff language, candidate/preflight 및 projection check, UTF-8 manifest output, reproducible Windows regression preparation; frozen contract identity 변경 없음
 
-This frozen historical status is deliberately narrower than a calibration PASS and does not define the current V2 contract identities:
+## 6. 한계
 
-| Boundary | Status |
+### Historical v0.4.3 calibration boundary
+
+| 경계 | 상태 |
 | --- | --- |
 | v0.4.3 specification | `VERIFIED` |
 | semantic-review implementation | `VERIFIED` |
@@ -262,10 +277,17 @@ This frozen historical status is deliberately narrower than a calibration PASS a
 | current blocker | `MANIFEST_ONLY_ISOLATION_UNAVAILABLE` |
 | v0.4.4 | `BLOCKED_ON_VALID_V043_RELIABILITY_CALIBRATION` |
 
-The capability probe established that the current collaboration/Codex execution environment can read repository-side Run-01 evidence, so it cannot truthfully provide package-only reviewer isolation. No semantic defect or rubric defect is inferred from that environment limitation.
+- Frozen historical status: calibration PASS보다 좁은 범위
+- Current V2 contract identity의 정의로 사용 금지
+- Capability probe 결과: 현재 collaboration/Codex 환경에서 repository-side Run-01 evidence 접근 가능
+- Package-only reviewer isolation의 사실상 증명 불가
+- 환경 제한으로부터 semantic defect 또는 rubric defect 추론 금지
 
-## Historical calibration execution boundary
+### Historical calibration execution boundary
 
-The next valid real calibration run starts only after an isolated reviewer runner proves that each fresh reviewer context can read its assigned package and envelope while the repository, Run-01 evidence, golden answers, seed oracle, prior outputs, and sibling packages are unavailable.
-
-The isolation runner is infrastructure around this system; it does not become Product Definition authority and must not modify the semantic-review core merely to satisfy the environment.
+- 다음 valid real calibration의 선행 조건: isolated reviewer runner proof
+- Fresh reviewer context 허용 범위: assigned package와 envelope
+- Fresh reviewer context 금지 범위: repository, Run-01 evidence, golden answer, seed oracle, prior output, sibling package
+- Isolation runner 역할: 시스템 외곽 infrastructure
+- Product Definition authority 전환 금지
+- 환경 충족 목적의 semantic-review core 수정 금지
