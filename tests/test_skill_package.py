@@ -27,15 +27,14 @@ class SkillPackageTest(unittest.TestCase):
         )
         self.assertIn(f"## {version}", changelog)
         for heading in (
-            "## 1. 이게 뭐냐", "## 2. 언제 쓰냐", "## 3. 바로 시작하기",
-            "## 4. 무엇을 받게 되냐", "## 5. 다른 JOE 도구와 함께 쓰기",
-            "## 6. 지원 범위·주의사항",
+            "## 1. 핵심 요약", "## 2. 설계 목적", "## 3. 주요 기능",
+            "## 4. 사용 방법", "## 5. 도구 간 연결", "## 6. 한계",
         ):
             self.assertIn(heading, readme)
         for role in (
-            "무엇을 만들지 확실하게 정한다",
-            "어떻게 보이고 사용될지 만들고 확인한다",
-            "작업이 어디까지 됐고 무엇이 남았는지 관리한다",
+            "요구사항·규칙·예외·완료 기준 확정",
+            "화면 제작·시각 기준 수립·디자인 검수",
+            "작업 순서·진행 상태·완료 근거 관리",
         ):
             self.assertIn(role, readme)
         self.assertIn("skills/joewrks-product-definition", readme)

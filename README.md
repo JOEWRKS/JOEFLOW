@@ -1,36 +1,79 @@
 # JOEFLOW
 
-현재 프로그램 버전은 **`v1.1.0`**입니다. 런타임 skill/package ID는 호환성을 위해 **`joewrks-product-definition`**을 유지합니다.
+- 프로그램 버전: **`v1.1.0`**
+- 런타임 skill/package ID: **`joewrks-product-definition`**
+- 제품 기준 원본: **`product-definition/<project-slug>/state.json`**
 
-## 1. 이게 뭐냐
+## 1. 핵심 요약
 
-**JOEFLOW는 구현 전에 요구사항·규칙·예외·완료 기준을 확인해, 무엇을 만들지 확실하게 정하는 제품 기획 도구입니다.**
+- 임무: **무엇을 만들지 확실하게 정하는 제품 기획 도구**
+- 대상: 웹사이트, 앱, 게임, 업무 흐름, 기존 제품 개편
+- 집중 범위: 요구사항·규칙·예외·완료 기준
+- 운영 원칙: 근거 우선 확인, 중요 미결정만 사용자 질문, 승인 결과의 파일 기준화
+- 최종 목적: 구현 담당자의 중요 제품 결정 추측 방지
 
-AI가 코드부터 만들면서 중요한 결정을 추측하지 않도록 자료를 먼저 조사합니다. 자료만으로 정할 수 없는 중요한 문제는 사용자에게 묻고, 승인된 결과는 다음 파일에 기준으로 남깁니다.
+## 2. 설계 목적
+
+### 목적
+
+- 구현 착수 전 제품 의미 확정을 목적으로 설계
+- 승인된 요구사항과 실제 구현의 의미 일치 확인을 목적으로 설계
+- 구현 중 발견된 코드 결함과 제품 미결정의 분리를 목적으로 설계
+
+### 대체 범위
+
+- 채팅 기억에만 의존하는 제품 기준을 canonical `state.json`으로 대체
+- 구현 담당자의 임의 정책 결정을 근거 확인과 사용자 승인 절차로 대체
+- 흩어진 요구사항 전달을 원본 ID에 연결된 기획 명세와 구현 인계로 대체
+
+### 비대체 범위
+
+- 실제 제품 코드 작성
+- 최종 미감·아트디렉션 판단
+- 배포 인프라 운영
+- 법률·보안·회계 전문 승인
+
+## 3. 주요 기능
+
+| 기능 | 목적 | 주요 결과 |
+| --- | --- | --- |
+| 근거 조사 | 저장소·문서·테스트·기존 화면에서 확인 가능한 답 우선 확인 | evidence 및 출처 연결 |
+| 회색지대 정리 | 결과를 바꾸는 누락·충돌·예외 식별 | 중요 unknown과 사용자 질문 |
+| 의미 확정 | 요구사항·규칙·상태·권한·실패·복구 결정 | 승인 가능한 `state.json` |
+| 완료 기준 고정 | 제품 완료와 구현 완료의 구분 | Approval Manifest와 수용 기준 |
+| 사람용 전달 | 승인 의미의 읽기용 문서화 | `MASTER_PLANNING_SPEC.md`, `planning-review-core.html` |
+| 구현 인계 | 승인 의미와 구현 의무의 고정 ID 연결 | 필요 시 기계용 인계 파일과 검증 근거 |
+| 재진입 판정 | 구현 불일치의 원인 분류 | 코드 수정 또는 해당 제품 범위 재검토 |
+
+기본 결과물:
 
 ```text
-product-definition/<project-slug>/state.json
+product-definition/my-product/
+├─ state.json                 # 승인과 의미의 기준
+├─ MASTER_PLANNING_SPEC.md    # 구현 담당용 기획 명세
+└─ planning-review-core.html  # 사용자용 핵심 검토 화면
 ```
 
-채팅 기록이나 요약 문서가 이 파일을 대신하지 않습니다.
+`MASTER_PLANNING_SPEC.md`와 HTML은 원본에서 만든 읽기용 문서. 승인 기준은 항상 `state.json`. HTML의 색·배치를 제품 디자인 승인으로 사용 금지.
 
-## 2. 언제 쓰냐
+## 4. 사용 방법
 
-대표적인 사용 상황은 세 가지입니다.
+### 적용 시점
 
-1. **새 제품을 시작할 때** — 웹사이트, 앱, 게임, 업무 흐름의 사용자·상태·권한·실패·복구 조건을 구현 전에 정리합니다.
-2. **기존 제품을 고칠 때** — 현재 코드와 원래 의도를 구분하고, 리뉴얼이나 기능 변경에서 남은 중요한 미결정을 찾습니다.
-3. **구현 중 뜻이 어긋났을 때** — 승인된 기준과 실제 동작의 차이를 확인하고, 코드 문제인지 제품 결정을 다시 열어야 하는지 구분합니다.
+1. **새 제품 시작** — 사용자·상태·권한·실패·복구 조건의 구현 전 정리
+2. **기존 제품 변경** — 현재 코드와 원래 의도의 분리, 개편 범위의 미결정 확인
+3. **구현 의미 불일치** — 승인 기준과 실제 동작의 차이 및 재진입 필요 범위 확인
 
-단순한 내부 구현 선택처럼 결과를 바꾸지 않고 쉽게 되돌릴 수 있는 일은 모두 사용자에게 묻지 않습니다.
+사소하고 되돌릴 수 있는 내부 구현 선택은 사용자 질문 대상에서 제외.
 
-## 3. 바로 시작하기
+### 설치 준비
 
-### 설치
+- 필수 도구: Codex, Git, Python 3
+- 아래 예제 환경: Windows PowerShell
+- 설치 단위: `skills/joewrks-product-definition/` 전체
+- 금지: `SKILL.md` 단독 복사, 기존 개인 설치의 무검증 덮어쓰기
 
-준비물은 Codex, Git, Python 3이며 아래 설치 예시는 Windows PowerShell 기준입니다.
-
-전용 installer나 package-manager 명령은 아직 없습니다. 저장소를 받은 뒤 skill 디렉터리 **전체**를 Codex의 skills 위치에 설치합니다. `SKILL.md`만 복사하면 동작하지 않습니다.
+전용 installer 및 package-manager 명령은 현재 미제공.
 
 ```powershell
 git clone https://github.com/JOEWRKS/JOEFLOW.git
@@ -47,7 +90,9 @@ New-Item -ItemType Directory -Force (Split-Path $joeflowTarget) | Out-Null
 Copy-Item -LiteralPath $joeflowSource -Destination $joeflowTarget -Recurse
 ```
 
-설치 후 새 채팅에서 아래 요청을 그대로 사용할 수 있습니다.
+### 실행 요청
+
+새 채팅에서 아래 요청 사용.
 
 ```text
 Use $joewrks-product-definition for this project.
@@ -63,32 +108,28 @@ product-definition/<project-slug>/state.json을 기준으로 기록하고,
 구현 담당자가 추측하지 않도록 인계해줘.
 ```
 
-## 4. 무엇을 받게 되냐
-
-기본 결과물은 다음과 같습니다.
+### 대표 검증
 
 ```text
-product-definition/my-product/
-├─ state.json                 # 승인과 의미의 기준
-├─ MASTER_PLANNING_SPEC.md    # 구현자가 처음부터 끝까지 읽는 기획 명세
-└─ planning-review-core.html  # 사용자가 빠르게 보는 검토 화면
+python <installed-skill-directory>/scripts/validate_state.py path/to/state.json
+python <installed-skill-directory>/scripts/validate_closure.py path/to/state.json
 ```
 
-필요한 프로젝트에는 승인된 내용을 구현 작업으로 연결하는 기계용 인계 파일과 검증 근거가 추가될 수 있습니다. 이 파일은 요구사항, 역할, 상태 변화, 실패·복구, 수용 기준을 원본의 고정 ID에 연결합니다.
+검증 기준:
 
-`MASTER_PLANNING_SPEC.md`와 HTML은 원본에서 만든 읽기용 문서입니다. 승인 기준은 항상 `state.json`이며, HTML의 색이나 배치는 제품 디자인 승인을 뜻하지 않습니다.
+- Script 경로: consumer project가 아닌 설치된 skill 디렉터리 기준
+- Product Definition 승인: 정확한 revision·digest·Approval Manifest에 대한 사용자 승인 필수
+- 구현 검증: 승인된 요구사항·역할·상태·실패·복구·수용 기준과 실제 결과의 대조
 
-## 5. 다른 JOE 도구와 함께 쓰기
+## 5. 도구 간 연결
 
-각 도구의 역할은 다음처럼 나뉩니다.
+| 도구 | 역할 | 인계 기준 |
+| --- | --- | --- |
+| [JOENESS](https://github.com/JOEWRKS/JOENESS) | **작업 순서·진행 상태·완료 근거 관리** | 작업 순서·기록·재개·완료 근거 |
+| [JOEFLOW](https://github.com/JOEWRKS/JOEFLOW) | **요구사항·규칙·예외·완료 기준 확정** | 요구사항·규칙·예외·완료 기준 |
+| [JOEDESIGN](https://github.com/JOEWRKS/JOEDESIGN) | **화면 제작·시각 기준 수립·디자인 검수** | 화면·시각 기준·디자인 검수 |
 
-| 도구 | 역할 |
-| --- | --- |
-| [JOENESS](https://github.com/JOEWRKS/JOENESS) | **작업이 어디까지 됐고 무엇이 남았는지 관리한다.** 작업 순서·기록·재개·완료 근거를 맡습니다. |
-| [JOEFLOW](https://github.com/JOEWRKS/JOEFLOW) | **무엇을 만들지 확실하게 정한다.** 요구사항·규칙·예외·완료 기준을 맡습니다. |
-| [JOEDESIGN](https://github.com/JOEWRKS/JOEDESIGN) | **어떻게 보이고 사용될지 만들고 확인한다.** 화면·시각 기준·디자인 검수를 맡습니다. |
-
-함께 사용할 때의 권장 흐름은 다음과 같습니다.
+권장 연결 순서:
 
 ```text
 JOENESS로 작업 정리
@@ -99,28 +140,30 @@ JOENESS로 작업 정리
 → JOENESS에 완료·잔여 기록
 ```
 
-JOENESS는 전 과정에서 진행과 근거를 이어 줍니다. JOEFLOW는 승인된 `state.json`과 기획 명세를 JOEDESIGN·구현 담당에게 넘기고, JOEDESIGN은 승인된 제품 의미를 바꾸지 않은 시각 기준과 검수 결과를 넘깁니다. 세 도구는 각각 단독으로도 사용할 수 있으며, 연결됐다는 이유만으로 자동 실행·자동 승인·자동 완료되지는 않습니다.
+연결 원칙:
 
-## 6. 지원 범위·주의사항
+- JOENESS: 전 과정의 진행 상태와 완료 근거 연결
+- JOEFLOW: 승인된 `state.json`과 기획 명세를 디자인·구현 담당에게 인계
+- JOEDESIGN: 승인된 제품 의미를 변경하지 않은 시각 기준과 검수 결과 인계
+- 개별 도구의 단독 사용 지원
+- 연결만으로 자동 실행·자동 승인·자동 완료 처리 금지
 
-- JOEFLOW는 제품 의미를 정하고 검증하지만 실제 제품 코드, 최종 미감 판단, 배포 운영, 법률·보안·회계의 전문 승인을 대신하지 않습니다.
-- 중요한 제품 결정과 정확한 승인 목록(Approval Manifest)은 사용자가 승인해야 합니다. AI가 승인이나 승인 시각을 만들 수 없습니다.
-- 구현에서 새로운 중요한 애매함이 나오면 해당 범위만 Product Definition으로 다시 돌아갑니다. 코드 버그를 새 제품 결정으로 꾸미지 않습니다.
-- Figma 같은 선택 도구를 쓰지 않아도 공통 구현 인계는 가능합니다. 요청한 결과물을 확인하지 못했다면 `NOT VERIFIED`로 남깁니다.
-- 의미 검토 기능이 반복해서 같은 판단을 내리는지는 아직 실제 환경에서 측정하지 않았습니다(`NOT_MEASURED`). 이 검토만으로 새 제품 결정을 승인할 수 없습니다.
-- 프로그램 버전 `1.1.0`과 내부 상태·계약의 버전 표시는 서로 다른 체계입니다. 이번 릴리스가 과거 계약의 뜻을 바꾸지는 않습니다.
+## 6. 한계
 
-Canonical state 검증:
+- 사용자 승인 대체 불가. AI의 승인·승인 시각 생성 금지
+- 구현 중 중요 미결정 발견 시 해당 Product Definition 범위 재진입
+- 명확한 코드 결함을 새 제품 결정으로 전환 금지
+- Figma 등 선택 도구 없이 공통 구현 인계 가능
+- 요청된 결과 미확인 시 `NOT VERIFIED` 유지
+- 의미 검토의 반복 판단 신뢰도: 실제 환경 측정 전 상태인 `NOT_MEASURED`
+- 의미 검토 결과만으로 새 제품 결정 승인 불가
+- 프로그램 버전 `1.1.0`과 내부 상태·계약 버전의 독립 관리
+- 과거 동결 계약의 의미 변경 없음
 
-```text
-python <installed-skill-directory>/scripts/validate_state.py path/to/state.json
-python <installed-skill-directory>/scripts/validate_closure.py path/to/state.json
-```
-
-더 자세한 내용:
+상세 기준:
 
 - [프로그램 구조와 계약 경계](PROGRAM_ARCHITECTURE.md)
 - [현재 V2 작업 흐름](skills/joewrks-product-definition/references/workflow-v0.2.0.md)
-- [구현 불일치가 생겼을 때의 재진입 절차](skills/joewrks-product-definition/references/reentry-workflow-v0.2.0.md)
+- [구현 불일치 재진입 절차](skills/joewrks-product-definition/references/reentry-workflow-v0.2.0.md)
 - [전체 회귀 환경과 안전한 복구 절차](docs/regression-environment.md)
 - [버전별 변경 기록](CHANGELOG.md)
