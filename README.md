@@ -28,6 +28,8 @@ product-definition/<project-slug>/state.json
 
 ### 설치
 
+준비물은 Codex, Git, Python 3이며 아래 설치 예시는 Windows PowerShell 기준입니다.
+
 전용 installer나 package-manager 명령은 아직 없습니다. 저장소를 받은 뒤 skill 디렉터리 **전체**를 Codex의 skills 위치에 설치합니다. `SKILL.md`만 복사하면 동작하지 않습니다.
 
 ```powershell
