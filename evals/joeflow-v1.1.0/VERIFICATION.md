@@ -34,3 +34,7 @@ D:/JOEWRKS/JOEQASAM/evidence/t039-joe-1x-release/joint-impact.json
 - Program version `1.1.0` does not rename the runtime skill or change frozen state/schema/contract identities.
 - Semantic-review 2.1 reliability remains `NOT_MEASURED`.
 - The existing frozen A/B runtime scenario remains unverified where its separate inputs are unavailable.
+
+## Subsequent personal installation
+
+The first boundary above records the T039 source-candidate verification. The user later approved the T040 personal installation update. Its current result is recorded separately in [PERSONAL_INSTALL_VERIFICATION.md](PERSONAL_INSTALL_VERIFICATION.md); the original T039 boundary remains preserved as historical evidence.
