@@ -1,0 +1,38 @@
+[
+ {
+  "id": "t5d7192",
+  "arm": "A",
+  "rep": 1,
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-23-joeflow-ux-ab\\fx\\t5d7192"
+ },
+ {
+  "id": "t85d428",
+  "arm": "A",
+  "rep": 2,
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-23-joeflow-ux-ab\\fx\\t85d428"
+ },
+ {
+  "id": "t3acd51",
+  "arm": "A",
+  "rep": 3,
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-23-joeflow-ux-ab\\fx\\t3acd51"
+ },
+ {
+  "id": "tbf0cf3",
+  "arm": "B",
+  "rep": 1,
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-23-joeflow-ux-ab\\fx\\tbf0cf3"
+ },
+ {
+  "id": "t3ee7f4",
+  "arm": "B",
+  "rep": 2,
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-23-joeflow-ux-ab\\fx\\t3ee7f4"
+ },
+ {
+  "id": "t725e69",
+  "arm": "B",
+  "rep": 3,
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-23-joeflow-ux-ab\\fx\\t725e69"
+ }
+]

@@ -30,12 +30,17 @@ clause may reduce duplication but must not erase when or where it applies.
 For each screen: purpose, information priority, major actions, applicable
 states, inputs, reads/writes, persistence, failures/recovery, responsive and
 accessibility requirements, and related acceptance IDs.
+Also state interaction mechanics per major action (input per device, preview/
+confirm, cancel/undo) and the information budget for the smallest supported
+viewport (visible at once, behind disclosure, dropped).
 
 ## 5. User flows
 
 For every material flow: entry, preconditions, actor action, system decision,
 happy path, alternatives, failures, recovery/retry, exit, postcondition, and
 acceptance IDs.
+Start with a user walkthrough for each primary user, written from their side:
+first use, main task, likely mistakes and recovery, return visit.
 
 ## 6. Action contracts
 

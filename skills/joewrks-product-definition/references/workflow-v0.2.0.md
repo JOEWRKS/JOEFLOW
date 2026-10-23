@@ -28,9 +28,11 @@ Resolve factual questions from sufficient authoritative evidence. Apply the V2 M
 
 Every material resolution keeps exact provenance through evidence, unknowns, decisions, and affected canonical authority. AI autonomy is limited to non-material, local, safely reversible details.
 
+Questions about how the user experiences the product (first use, input mechanics, what fits on the smallest screen) are product choices like any other; do not let data and computation questions crowd them out.
+
 ## FREEZE — bind claims to exact authority
 
-Bind Core, specialist Grill, and UX coverage to exact CURRENT canonical pointers and hashes. `COVERED` requires a valid authority binding, `OPEN` requires a truthful unknown, and `N/A` requires a rationale plus basis binding.
+Complete the experience pass in `ux-state-taxonomy.md` first: user journey, interaction mechanics and smallest-viewport information budget. Bind Core, specialist Grill, and UX coverage to exact CURRENT canonical pointers and hashes. `COVERED` requires a valid authority binding, `OPEN` requires a truthful unknown, and `N/A` requires a rationale plus basis binding.
 
 Run from any consumer working directory by using the absolute installed skill directory:
 

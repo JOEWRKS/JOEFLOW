@@ -62,8 +62,8 @@ The event itself has no consumed-seed or scope-commitment inventories. For a non
 ## V2 workflow
 
 1. **DISCOVER:** inspect repository evidence and intended-product sources; disposition surfaces and contradictions without treating observed implementation as intent.
-2. **CLOSE:** resolve evidence-answerable gaps first, then ask one highest-leverage material question at a time. Record truthful Materiality and decision authority.
-3. **FREEZE:** bind Core, specialist Grill, and UX coverage to exact current authority; build the deterministic Approval Manifest.
+2. **CLOSE:** resolve evidence-answerable gaps first, then ask one highest-leverage material question at a time. Record truthful Materiality and decision authority. Weigh user-experience questions (journey, interaction, small-screen information) alongside data and computation ones.
+3. **FREEZE:** complete the experience pass in [ux-state-taxonomy.md](references/ux-state-taxonomy.md) (journey, interaction mechanics, information budget), bind Core, specialist Grill, and UX coverage to exact current authority; build the deterministic Approval Manifest.
 4. **APPROVE:** show the exact current manifest and wait for explicit user approval. Do not manufacture approval or timestamps.
 5. **HANDOFF:** after validated Semantic Closure, materialize `MASTER_PLANNING_SPEC.md` and `planning-review-core.html`, run the projection-fidelity checks in `workflow-v0.2.0.md`, then compile a `joewrks.handoff-definition/2.1` into `joewrks.action-conformance/2.1` using `scripts/compile_downstream_v2.py`.
 6. **VERIFY:** audit only current contract dependencies with `scripts/audit_downstream_v2.py`; build `joewrks.semantic-review/2.1` packages with `scripts/build_semantic_review_v2.py` only when legitimate `REVIEW_REQUIRED` obligations exist. Then materialize `joewrks.runtime-conformance-plan/1.0`, admit only frozen `joewrks.downstream.execution/1.0` evidence into a `joewrks.runtime-evidence-bundle/1.0`, and run `scripts/verify_runtime_v21.py CONTRACT_JSON RUNTIME_PLAN_JSON RUNTIME_EVIDENCE_BUNDLE_JSON [REVIEW_PACKAGE_JSON REVIEW_OUTPUT_JSON]`. The 2.1 verifier binds and rechecks the plan and admitted bundle; `verify_runtime_v2.py` is retained only for historical 2.0 contracts.
@@ -92,6 +92,7 @@ Resolve the absolute directory containing this loaded `SKILL.md`; never resolve 
 ## Common mistakes
 
 - Asking for facts already available in code or docs.
+- Covering every system state but never walking the user's path, choosing input mechanics, or budgeting the smallest screen.
 - Treating a Markdown projection or chat memory as newer than `state.json`.
 - Treating observed implementation as intended product meaning.
 - Turning legacy `COVERED`, approval, or a migration gap into V2 authority.

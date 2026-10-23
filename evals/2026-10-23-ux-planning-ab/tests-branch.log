@@ -1,0 +1,213 @@
+.................................................................................E................................................................EE........s.................................................................F..................................................................................................................................................................................................................................................................................................................................................................FF.......................................................................EE.................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+======================================================================
+ERROR: test_f04_checked_in_pass_and_partial_inputs_are_executable (test_candidate_preflight_projection_audit.CheckedInFixtureTests.test_f04_checked_in_pass_and_partial_inputs_are_executable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\tests\test_candidate_preflight_projection_audit.py", line 766, in test_f04_checked_in_pass_and_partial_inputs_are_executable
+    passed = audit(fixture / "audit-input-pass.json")
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\skills\joewrks-product-definition\scripts\projection_audit_v2.py", line 278, in audit_projection_input
+    scope, scope_sha, _ = _load_ref(root, value.get("scope_authority"))
+                          ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\skills\joewrks-product-definition\scripts\projection_audit_v2.py", line 76, in _load_ref
+    raise ValueError(f"reference hash mismatch: {path}")
+ValueError: reference hash mismatch: D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\evals\joeflow-f03-f04\fixtures\f04\approved-scope.json
+
+======================================================================
+ERROR: test_digest_syntax_is_enforced_by_runtime_schema_and_regeneration_cli (test_discovery_baseline_v020.DiscoveryBaselineV020Test.test_digest_syntax_is_enforced_by_runtime_schema_and_regeneration_cli) (invalid_digest='Z')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\tests\test_discovery_baseline_v020.py", line 335, in test_digest_syntax_is_enforced_by_runtime_schema_and_regeneration_cli
+    self.assertFalse(self.schema_valid(state))
+                     ~~~~~~~~~~~~~~~~~^^^^^^^
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\tests\test_discovery_baseline_v020.py", line 81, in schema_valid
+    result = subprocess.run(
+        ["pwsh.exe", "-NoProfile", "-Command", command],
+    ...<2 lines>...
+        check=False,
+    )
+  File "C:\Python314\Lib\subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1553, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] 지정된 파일을 찾을 수 없습니다
+
+======================================================================
+ERROR: test_digest_syntax_is_enforced_by_runtime_schema_and_regeneration_cli (test_discovery_baseline_v020.DiscoveryBaselineV020Test.test_digest_syntax_is_enforced_by_runtime_schema_and_regeneration_cli) (invalid_digest='A')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\tests\test_discovery_baseline_v020.py", line 335, in test_digest_syntax_is_enforced_by_runtime_schema_and_regeneration_cli
+    self.assertFalse(self.schema_valid(state))
+                     ~~~~~~~~~~~~~~~~~^^^^^^^
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\tests\test_discovery_baseline_v020.py", line 81, in schema_valid
+    result = subprocess.run(
+        ["pwsh.exe", "-NoProfile", "-Command", command],
+    ...<2 lines>...
+        check=False,
+    )
+  File "C:\Python314\Lib\subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1553, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] 지정된 파일을 찾을 수 없습니다
+
+======================================================================
+ERROR: test_schema_and_runtime_reject_bootstrap_mode_classification_mismatches (test_reverse_bootstrap_v020.ReverseBootstrapV020Test.test_schema_and_runtime_reject_bootstrap_mode_classification_mismatches) (bootstrap_mode='EXISTING_PRODUCT_RECONCILIATION')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\tests\test_reverse_bootstrap_v020.py", line 155, in test_schema_and_runtime_reject_bootstrap_mode_classification_mismatches
+    self.assertFalse(self.schema_valid(state))
+                     ~~~~~~~~~~~~~~~~~^^^^^^^
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\tests\test_reverse_bootstrap_v020.py", line 113, in schema_valid
+    result = subprocess.run(
+        ["pwsh.exe", "-NoProfile", "-Command", command],
+        capture_output=True,
+        text=True,
+    )
+  File "C:\Python314\Lib\subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1553, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] 지정된 파일을 찾을 수 없습니다
+
+======================================================================
+ERROR: test_schema_and_runtime_reject_bootstrap_mode_classification_mismatches (test_reverse_bootstrap_v020.ReverseBootstrapV020Test.test_schema_and_runtime_reject_bootstrap_mode_classification_mismatches) (bootstrap_mode='NEW_PRODUCT')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\tests\test_reverse_bootstrap_v020.py", line 155, in test_schema_and_runtime_reject_bootstrap_mode_classification_mismatches
+    self.assertFalse(self.schema_valid(state))
+                     ~~~~~~~~~~~~~~~~~^^^^^^^
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\tests\test_reverse_bootstrap_v020.py", line 113, in schema_valid
+    result = subprocess.run(
+        ["pwsh.exe", "-NoProfile", "-Command", command],
+        capture_output=True,
+        text=True,
+    )
+  File "C:\Python314\Lib\subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 1553, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] 지정된 파일을 찾을 수 없습니다
+
+======================================================================
+FAIL: test_preserved_phase_b_replays_read_only_through_21 (test_downstream_v21_dogfood_replay.M6DogfoodReplayTests.test_preserved_phase_b_replays_read_only_through_21)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\tests\test_downstream_v21_dogfood_replay.py", line 724, in test_preserved_phase_b_replays_read_only_through_21
+    self.fail("M6_REPLAY_EVIDENCE_UNAVAILABLE")
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: M6_REPLAY_EVIDENCE_UNAVAILABLE
+
+======================================================================
+FAIL: test_migrated_candidate_satisfies_the_json_structural_schema (test_migration_v020_apply.MigrationApplyTest.test_migrated_candidate_satisfies_the_json_structural_schema) (position=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\tests\test_migration_v020_apply.py", line 1307, in test_migrated_candidate_satisfies_the_json_structural_schema
+    self.assertEqual(result.returncode, 0, result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : Test-Json : 'Test-Json' \ufffd\ufffd\uec21 cmdlet, \ufffd\u053c\ufffd, \ufffd\ufffd\u0169\ufffd\ufffd\u01ae \ufffd\ufffd\ufffd\ufffd \ufffd\u01f4\ufffd \ufffd\ufffd\ufffd\ufffd\ufffd\ufffd \ufffd\ufffd \ufffd\u05b4\ufffd \ufffd\ufffd\ufffdα\u05f7\ufffd \ufffd\u0338\ufffd\ufffd\ufffd\ufffd\ufffd \ufffdν\u0135\ufffd\ufffd\ufffd \ufffd\u02bd\ufffd\ufffd\u03f4\ufffd. \ufffd\ufffd
+\ufffd\ufffd\ufffd\ufffd \ufffd\ufffd\u022e\ufffd\ufffd\ufffd\ufffd \u022e\ufffd\ufffd\ufffd\u03f0\ufffd \ufffd\ufffd\u03b0\ufffd \ufffd\ufffd\ufffd\u0535\ufffd \ufffd\ufffd\ufffd \ufffd\ufffd\u03b0\ufffd \ufffd\xf9\u0678\ufffd\ufffd\ufffd \ufffd\ufffd\ufffd\ufffd\ufffd\ufffd \ufffd\ufffd\ufffd\ufffd \ufffd\u067d\ufffd \ufffd\xf5\ufffd\ufffd\u03fd\u02bd\xff\ufffd.
+\ufffd\ufffd\u0121 \ufffd\ufffd:1 \ufffd\ufffd\ufffd\ufffd:110
++ ... AppData\Local\Temp\tmplsqnlyz9\candidate.json'; if (Test-Json -Json $ ...
++                                                         ~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (Test-Json:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+
+======================================================================
+FAIL: test_migrated_candidate_satisfies_the_json_structural_schema (test_migration_v020_apply.MigrationApplyTest.test_migrated_candidate_satisfies_the_json_structural_schema) (position=1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\JOEWRKS\.claude-worktrees\JOEFLOW-ux\tests\test_migration_v020_apply.py", line 1307, in test_migrated_candidate_satisfies_the_json_structural_schema
+    self.assertEqual(result.returncode, 0, result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : Test-Json : 'Test-Json' \ufffd\ufffd\uec21 cmdlet, \ufffd\u053c\ufffd, \ufffd\ufffd\u0169\ufffd\ufffd\u01ae \ufffd\ufffd\ufffd\ufffd \ufffd\u01f4\ufffd \ufffd\ufffd\ufffd\ufffd\ufffd\ufffd \ufffd\ufffd \ufffd\u05b4\ufffd \ufffd\ufffd\ufffdα\u05f7\ufffd \ufffd\u0338\ufffd\ufffd\ufffd\ufffd\ufffd \ufffdν\u0135\ufffd\ufffd\ufffd \ufffd\u02bd\ufffd\ufffd\u03f4\ufffd. \ufffd\ufffd
+\ufffd\ufffd\ufffd\ufffd \ufffd\ufffd\u022e\ufffd\ufffd\ufffd\ufffd \u022e\ufffd\ufffd\ufffd\u03f0\ufffd \ufffd\ufffd\u03b0\ufffd \ufffd\ufffd\ufffd\u0535\ufffd \ufffd\ufffd\ufffd \ufffd\ufffd\u03b0\ufffd \ufffd\xf9\u0678\ufffd\ufffd\ufffd \ufffd\ufffd\ufffd\ufffd\ufffd\ufffd \ufffd\ufffd\ufffd\ufffd \ufffd\u067d\ufffd \ufffd\xf5\ufffd\ufffd\u03fd\u02bd\xff\ufffd.
+\ufffd\ufffd\u0121 \ufffd\ufffd:1 \ufffd\ufffd\ufffd\ufffd:110
++ ... AppData\Local\Temp\tmp8o2nnmi2\candidate.json'; if (Test-Json -Json $ ...
++                                                         ~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (Test-Json:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+
+----------------------------------------------------------------------
+Ran 1130 tests in 623.613s
+
+FAILED (failures=3, errors=5, skipped=1)
