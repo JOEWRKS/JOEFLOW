@@ -1,7 +1,7 @@
 # JOEFLOW 로드맵
 
-현재: U1-1(UTF-8 출력)을 별도 워크트리 `JOEFLOW-reinforce`(브랜치 `claude/joeflow-reinforce`, 기준 `9891dc3`)에서 구현, 미커밋. 실행 중인 오목 세션이 쓰는 `JOEFLOW-ux` 사본은 건드리지 않는다. 나머지 U1 항목은 사용자가 이번에는 진행하지 않기로 함(2026-10-26).
-다음 작업: U1-1 커밋 여부 사용자 결정. 그 뒤 U1-2·U1-3부터 다시 고른다. 전체 회귀: `python -B -m unittest discover -s tests -p "test*.py"`.
+현재: U1-1(UTF-8 출력)을 별도 워크트리 `JOEFLOW-reinforce`(브랜치 `claude/joeflow-reinforce`, 기준 `9891dc3`)에서 구현해 커밋 `08d376f`로 올림(푸시 안 함). 실행 중인 오목 세션이 쓰는 `JOEFLOW-ux` 사본은 건드리지 않는다. 나머지 U1 항목은 사용자가 이번에는 진행하지 않기로 함(2026-10-26).
+다음 작업: U1-2(승인 기록 CLI)·U1-3(승인 현황)부터 사용자가 다시 고른다. U1-1을 설치본에 반영할지(설치 갱신)는 사용자 결정. 전체 회귀: `python -B -m unittest discover -s tests -p "test*.py"`.
 
 상태어: not started · in progress · verification pending · complete · deferred
 
@@ -26,7 +26,7 @@
 
 | ID | 항목 | 마찰 | 영향 | 비용 | 상태 | Check |
 |---|---|---|---|---|---|---|
-| U1-1 | 사람이 읽는 CLI 4개의 표준 출력·오류를 UTF-8로 고정(`scripts/cli_output.py`, `PYTHONIOENCODING`을 지정하면 그 값을 따름) | F5 | 중(Windows 매 실행) | 작음 | verification pending | cp949 콘솔 파이프로 한글·`—` 출력 CLI 4개 실행 시 오류 0, 바이트가 UTF-8, 기존 출력 바이트 비교 시험 통과 |
+| U1-1 | 사람이 읽는 CLI 4개의 표준 출력·오류를 UTF-8로 고정(`scripts/cli_output.py`, `PYTHONIOENCODING`을 지정하면 그 값을 따름) | F5 | 중(Windows 매 실행) | 작음 | complete | cp949 콘솔 파이프로 한글·`—` 출력 CLI 4개 실행 시 오류 0, 바이트가 UTF-8, 기존 출력 바이트 비교 시험 통과 — 전체 회귀 1,135개 중 새 실패 0(기준과 같은 환경 원인 8건), 커밋 `08d376f` |
 | U1-2 | `record_approval.py`: 사용자가 말한 Manifest digest·revision을 현재 state로 다시 계산해 대조한 뒤 `approval`·`approval_history`·`CLOSED`를 한 번에 기록. 시각은 `--at`(사용자 메시지 시각) 또는 `--at observed`(기록 시각, 출력에 표시) | F1 | 높음(rev마다) | 중간 | not started | digest·revision 불일치·READY_FOR_REVIEW 아님·시각 없음 거부 시험, 성공 후 `validate_state`·`validate_closure` 통과, 오목 rev 30 사본에 재현해 손 기록과 같은 결과 |
 | U1-3 | 승인 현황 명령: 현재 rev·승인 rev·승인 없이 지난 rev·마지막 승인 이후 바뀐 레코드 수를 한 화면에. SKILL에 "승인 전 구현은 사용자 지시가 있을 때만, 보고에 승인 대기 표시" 규칙 | F8 | 높음(보이지 않던 위험) | 작음~중간 | not started | 오목 rev 30 사본에서 rev 13·14·26·28이 "따로 승인 안 됨"으로 나옴, UNAPPROVED 상태에서 "승인 대기 rev N" 표시 |
 | U1-4 | 자주 걸리는 검증 오류에 허용 값·기대 값 넣기(authority class, reasoning_refs 종류, alternatives_presented, 축 허용 타입, ACTIVE rationale null) | F3 | 중간 | 중간 | not started | 오목 마찰 기록 3·8·12·16·24번 오류를 재현하면 메시지에 허용 값이 나옴, 오류 코드 불변 |
