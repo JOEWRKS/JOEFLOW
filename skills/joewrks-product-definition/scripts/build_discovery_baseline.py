@@ -4,6 +4,7 @@ import json
 import sys
 from pathlib import Path
 
+from cli_output import use_utf8_stdio
 from discovery_v2 import build_discovery_baseline
 from state_validation_v2 import SCHEMA_VERSION, _validate_state_v2
 
@@ -33,4 +34,5 @@ def main(argv: list[str]) -> int:
 
 
 if __name__ == "__main__":
+    use_utf8_stdio()
     raise SystemExit(main(sys.argv))

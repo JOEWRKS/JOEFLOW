@@ -7,6 +7,7 @@ import json
 import sys
 
 from authority_binding_v2 import BindingError, make_authority_binding
+from cli_output import use_utf8_stdio
 from state_validation import load_state
 
 
@@ -36,4 +37,5 @@ def main(argv: list[str]) -> int:
 
 
 if __name__ == "__main__":
+    use_utf8_stdio()
     raise SystemExit(main(sys.argv))

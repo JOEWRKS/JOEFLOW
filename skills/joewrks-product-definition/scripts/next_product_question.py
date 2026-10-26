@@ -4,6 +4,7 @@
 import json
 import sys
 
+from cli_output import use_utf8_stdio
 from grill_v2 import select_next_user_question
 from state_validation import load_state
 
@@ -49,4 +50,5 @@ def main(argv: list[str]) -> int:
 
 
 if __name__ == "__main__":
+    use_utf8_stdio()
     raise SystemExit(main(sys.argv))

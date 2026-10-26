@@ -8,6 +8,7 @@ import sys
 import uuid
 from pathlib import Path
 
+from cli_output import use_utf8_stdio
 from migration_v2 import (
     MigrationError,
     build_migration_plan,
@@ -122,4 +123,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    use_utf8_stdio()
     raise SystemExit(main())
