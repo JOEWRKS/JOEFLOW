@@ -50,6 +50,16 @@ Do not set a persistent `PYTHONPATH`.
 
 Present the deterministic Approval Manifest for the current definition revision and digest. Record approval only from the user's explicit approval of that exact manifest. Do not infer approval, invent an approval time, or copy legacy approval into the V2 current approval object.
 
+Record the approval with:
+
+```text
+python <skill-directory>/scripts/record_approval.py STATE_JSON --revision N --manifest-digest DIGEST --at YYYY-MM-DDTHH:MM:SSZ --write
+```
+
+Take `N` and `DIGEST` from the user's own approval message. The command recomputes the current Approval Manifest, refuses a revision or digest mismatch, a state that is not `READY_FOR_REVIEW` / `UNAPPROVED`, or a result that does not reach Semantic Closure, and then writes `approval`, the exact `approval_history` commitment, and `CLOSED` together. Use the approval message's UTC time for `--at`; when that time is not available, pass `--at observed` and report the result's `approved_at_source: observed_at_recording`. Without `--write` it only checks and prints what it would record.
+
+`python <skill-directory>/scripts/approval_status.py STATE_JSON` is read-only. It reports the approved revisions, revisions still pending since the last approval with their change counts, and revisions that were never approved on their own. Run it before implementing or reporting work on a revision: work built on a pending revision is unapproved until the user approves the current manifest.
+
 After approval, rerun state and closure validation. `definition_status = CLOSED` means the current bounded Product Definition satisfies Semantic Closure; it does not mean implementation or deployment is complete.
 
 The approved state must then be projected into the default human delivery pair before planning delivery is reported complete:

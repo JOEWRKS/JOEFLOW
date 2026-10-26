@@ -80,6 +80,7 @@ class SkillPackageTest(unittest.TestCase):
             "references/grill-packs/async.json", "references/grill-packs/permission.json",
             "references/grill-packs/destructive-action.json",
             "scripts/discovery_v2.py", "scripts/build_discovery_baseline.py", "scripts/cli_output.py",
+            "scripts/record_approval.py", "scripts/approval_status.py",
             "scripts/materiality_v2.py", "scripts/grill_v2.py", "scripts/next_product_question.py",
             "scripts/authority_binding_v2.py", "scripts/authority_binding_value.py",
             "scripts/approval_v2.py", "scripts/build_approval_manifest.py",
