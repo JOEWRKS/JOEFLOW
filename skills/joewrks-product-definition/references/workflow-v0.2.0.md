@@ -46,6 +46,14 @@ Do not set a persistent `PYTHONPATH`.
 
 When `validate_state.py` reports errors, `python <skill-directory>/scripts/explain_state_errors.py STATE_JSON` reruns the same validation read-only and adds a `hint` to each error it can explain: the authority classes a source kind supports, and for a coverage cell the allowed record types and pointer roots, the status shape, and each failing binding with its bound and current value hash.
 
+To open the next revision, write a patch with every record the revision adds or changes (`evidence`, `objects` by group, `surfaces`) and any coverage-cell edits addressed by stable ID, such as `{"cell": "coverage[REQ-001].cells.acceptance", "add": [{"record_id": "AC-009", "pointer": "/assertion"}]}`, then run:
+
+```text
+python <skill-directory>/scripts/open_revision.py STATE_JSON --patch PATCH_JSON --write
+```
+
+It increments `definition_revision`, sets `UNAPPROVED` and the requested non-`CLOSED` status (`READY_FOR_REVIEW` by default), applies the patch, re-hashes only bindings that point at patched records, recomputes a `CURRENT` discovery baseline, and writes only when the result validates with no unresolved binding. A binding whose record changed without being in the patch, or that points at a record that is no longer `CURRENT`, is reported instead of refreshed. It warns when the base revision was never approved. It applies only records you authored under the ordinary evidence, unknown, decision and binding contracts; it is not a re-entry mutator and must never receive a re-entry artifact or `candidate_unknown` text. `scripts/refresh_bindings.py STATE_JSON [--accept IDS] [--write]` lists broken bindings and re-hashes only those for the record IDs you accept.
+
 `build_approval_manifest.py` writes one compact, key-sorted, ASCII-safe JSON line on every machine-readable success or error path. Success and semantic/lifecycle rejection use stdout with exit codes `0` and `1`; usage, read, and output failures use stderr with exit code `2`. Consumers must parse JSON rather than depend on localized unescaped text, and must discard any partial stdout when the exit code is `2`. The command remains read-only and has no file-output option.
 
 ## APPROVE — show the exact change before recording approval

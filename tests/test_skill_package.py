@@ -82,6 +82,7 @@ class SkillPackageTest(unittest.TestCase):
             "scripts/discovery_v2.py", "scripts/build_discovery_baseline.py", "scripts/cli_output.py",
             "scripts/record_approval.py", "scripts/approval_status.py",
             "scripts/binding_diagnostics.py", "scripts/explain_state_errors.py",
+            "scripts/revision_v2.py", "scripts/open_revision.py", "scripts/refresh_bindings.py",
             "scripts/materiality_v2.py", "scripts/grill_v2.py", "scripts/next_product_question.py",
             "scripts/authority_binding_v2.py", "scripts/authority_binding_value.py",
             "scripts/approval_v2.py", "scripts/build_approval_manifest.py",
@@ -108,7 +109,7 @@ class SkillPackageTest(unittest.TestCase):
         self.assertIn("Preserve conditional outcomes as conditional", workflow_text)
 
     def test_validator_scripts_only_import_standard_library_or_sibling_module(self):
-        allowed = {"__future__", "argparse", "copy", "datetime", "hashlib", "importlib", "json", "os", "pathlib", "re", "stat", "subprocess", "sys", "typing", "uuid", "migration_v2", "state_contract_dispatch", "state_validation", "state_validation_v2", "discovery_v2", "materiality_v2", "grill_v2", "authority_binding_v2", "approval_v2", "downstream_v2", "integration_v2", "candidate_preflight_v2", "projection_audit_v2", "build_approval_manifest", "cli_output", "binding_diagnostics"}
+        allowed = {"__future__", "argparse", "copy", "datetime", "hashlib", "importlib", "json", "os", "pathlib", "re", "stat", "subprocess", "sys", "typing", "uuid", "migration_v2", "state_contract_dispatch", "state_validation", "state_validation_v2", "discovery_v2", "materiality_v2", "grill_v2", "authority_binding_v2", "approval_v2", "downstream_v2", "integration_v2", "candidate_preflight_v2", "projection_audit_v2", "build_approval_manifest", "cli_output", "binding_diagnostics", "revision_v2", "approval_status", "explain_state_errors"}
         imports = set()
         for script in (SKILL / "scripts").glob("*.py"):
             tree = ast.parse(script.read_text(encoding="utf-8"))
