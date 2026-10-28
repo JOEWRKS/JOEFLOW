@@ -1,6 +1,6 @@
 {
   "schema_version": "joeflow.personal-install-overlay-receipt/1.0",
-  "recorded_at": "2026-10-26T22:36:40+09:00",
+  "recorded_at": "2026-10-28T23:07:56+09:00",
   "program": "JOEFLOW",
   "program_version_file": "1.1.0",
   "runtime_skill_id": "joewrks-product-definition",
@@ -34,6 +34,27 @@
           "references/workflow-v0.2.0.md (APPROVE recording paragraphs only)"
         ],
         "installed_on": "2026-10-26"
+      },
+      {
+        "item": "U1-4/U1-5/U1-6",
+        "commits": [
+          "aae47aa05a6a239e97ae736707b7c27b5e331fbd",
+          "2fa087e7da5e143643accb1f30afba6573ab8343",
+          "29e9bdb9d42be34cf2102b4d539e3a708a6e3fe3"
+        ],
+        "files": [
+          "scripts/grill_v2.py",
+          "scripts/binding_diagnostics.py",
+          "scripts/explain_state_errors.py",
+          "scripts/revision_v2.py",
+          "scripts/open_revision.py",
+          "scripts/refresh_bindings.py",
+          "scripts/record_builders.py",
+          "scripts/new_records.py",
+          "SKILL.md (two quick-reference rows only)",
+          "references/workflow-v0.2.0.md (explain, open_revision and new_records paragraphs only)"
+        ],
+        "installed_on": "2026-10-28"
       }
     ],
     "not_applied": [
@@ -45,13 +66,13 @@
     ],
     "matches_single_commit": false
   },
-  "tip_compared": "ee595285da4d47ffe8275e7412b7ef04efd15ce9",
+  "tip_compared": "0c9bd7a2cab7b04f73b3841aa2b70922cf3490f2",
   "origin_counts": {
-    "branch_tip": 7,
-    "composed_v1.1.0_plus_u1_2_3": 2,
+    "branch_tip": 15,
+    "composed_v1.1.0_plus_u1": 2,
     "preserved_local_overlay": 2,
     "untracked_extra": 37,
-    "v1.1.0_and_branch_tip": 162,
+    "v1.1.0_and_branch_tip": 161,
     "v1.1.0_only": 2
   },
   "tip_tracked_files_missing_from_install": [],
@@ -65,16 +86,21 @@
       "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u1-2-3-9b7bf3c-20261026",
       "file_count": 210,
       "manifest_sha256": "d2cb8c9f37a2340038127ed912a3ec68961ecc906f03627f6dd8f1ac42b6622f"
+    },
+    {
+      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u1-4-6-29e9bdb-20261028",
+      "file_count": 212,
+      "manifest_sha256": "23ff302a0e3a04db36dbc6a5fbcbb24019e3e5739a93100365ef74d314df6ad8"
     }
   ],
   "manifest_sha256_definition": "sha256 of UTF-8 lines '<sha256>  <posix path>\n' sorted by path",
-  "installed_file_count": 212,
-  "installed_manifest_sha256": "23ff302a0e3a04db36dbc6a5fbcbb24019e3e5739a93100365ef74d314df6ad8",
+  "installed_file_count": 219,
+  "installed_manifest_sha256": "0b5628bcfdfc6e7c871689918bbecacf801d6c88c430074fe1b2046ae1171def",
   "installed_manifest": [
     {
       "path": "SKILL.md",
-      "sha256": "2019c414738db210df7f6a800ebf11f22341e6d7f1c6b68835b0ca1cadf32c89",
-      "origin": "composed_v1.1.0_plus_u1_2_3"
+      "sha256": "6d5434c7e31809dda0cc7dcda574ed7e360f299266b306fae4475a6879448ced",
+      "origin": "composed_v1.1.0_plus_u1"
     },
     {
       "path": "agents/openai.yaml",
@@ -788,8 +814,8 @@
     },
     {
       "path": "references/workflow-v0.2.0.md",
-      "sha256": "f9aaa44256d56891afd3734d066a27f0b6a0a7e5abf7d9e47eff11ca2647a536",
-      "origin": "composed_v1.1.0_plus_u1_2_3"
+      "sha256": "242a7c96c5f8ade74839538413a2c9ae5940da45cd46bd3cdd987179972577b6",
+      "origin": "composed_v1.1.0_plus_u1"
     },
     {
       "path": "reviewer_runner/__init__.py",
@@ -967,6 +993,11 @@
       "origin": "branch_tip"
     },
     {
+      "path": "scripts/binding_diagnostics.py",
+      "sha256": "9a7155b014d42ccd97255e3f47e0cb81166ecedcfc96012a0efe98f089766bb0",
+      "origin": "branch_tip"
+    },
+    {
       "path": "scripts/build_approval_manifest.py",
       "sha256": "33297139d6d5a49ea744bdd16368cc5715934e94a8a74cd95eb7e023a77151b7",
       "origin": "v1.1.0_and_branch_tip"
@@ -1002,9 +1033,14 @@
       "origin": "v1.1.0_and_branch_tip"
     },
     {
+      "path": "scripts/explain_state_errors.py",
+      "sha256": "257990fb8bf67ee5d72e4395a2a68b28362c7d5723f71f32c39ca17671ce4980",
+      "origin": "branch_tip"
+    },
+    {
       "path": "scripts/grill_v2.py",
-      "sha256": "d2a6ac0295b285e4a5c0ff29bb0206622623e1255784f7744a6185e732fc0e62",
-      "origin": "v1.1.0_and_branch_tip"
+      "sha256": "f794789391772e056f43d780c054f061db5bc249ea0a2cbcb7be9fe196681c2a",
+      "origin": "branch_tip"
     },
     {
       "path": "scripts/materiality_v2.py",
@@ -1022,8 +1058,18 @@
       "origin": "v1.1.0_and_branch_tip"
     },
     {
+      "path": "scripts/new_records.py",
+      "sha256": "dd34b6f8e0e7f60fc02b93a7a879c34545c105ac6326f5606d5723d83b7496c5",
+      "origin": "branch_tip"
+    },
+    {
       "path": "scripts/next_product_question.py",
       "sha256": "403f9664ba191c608fbe56508023661f3ad93181ac0d96209c7ebaa04c6121bf",
+      "origin": "branch_tip"
+    },
+    {
+      "path": "scripts/open_revision.py",
+      "sha256": "9bd1ac4c7c910bb6c7a9a4f38329651cf6c872b5f6a24f7bca7f6c04738f3b57",
       "origin": "branch_tip"
     },
     {
@@ -1039,6 +1085,21 @@
     {
       "path": "scripts/record_approval.py",
       "sha256": "263c21973e2c9bcbf9773ffe3b294eeaf1efedded34bebac078223ee32ff2823",
+      "origin": "branch_tip"
+    },
+    {
+      "path": "scripts/record_builders.py",
+      "sha256": "e0ac690fd6cdd6838b8db87f8da2712823f38c76f5b02942061bb89bc3e6bc77",
+      "origin": "branch_tip"
+    },
+    {
+      "path": "scripts/refresh_bindings.py",
+      "sha256": "b16493f37c28f5395d9459f438ea2043d93803deeb301eeb0760d35311bfe0e9",
+      "origin": "branch_tip"
+    },
+    {
+      "path": "scripts/revision_v2.py",
+      "sha256": "97903f52bc6b1ca8bdedad0bc646455cf5c59ff2be14621fbae928a7e88bd148",
       "origin": "branch_tip"
     },
     {
