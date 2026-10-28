@@ -486,9 +486,23 @@ def validate_decision_authority_policy(
             continue
         derived = derive_decision_authority(unknown, evidence_index=evidence_index)
         if unknown.get("decision_authority") != derived:
+            hint = ""
+            if derived == "EVIDENCE_RESOLVABLE":
+                required = unknown.get("required_authority_class")
+                answering = [
+                    reference for reference in unknown.get("evidence_refs") or []
+                    if isinstance(reference, str)
+                    and _has_qualifying_evidence([reference], evidence_index, required)
+                ]
+                hint = (
+                    f"; evidence_refs {answering} already support {required!r}, so evidence answers this "
+                    "question and it will not be asked. To ask the user, keep only evidence that does not "
+                    f"support {required!r} in evidence_refs and cite the intent in recommendation.reasoning_refs, "
+                    "or resolve the unknown from that evidence"
+                )
             errors.append(_error(
                 "invalid_decision_authority_derivation",
-                f"decision_authority must equal deterministic derivation {derived}",
+                f"decision_authority must equal deterministic derivation {derived}" + hint,
                 f"objects.unknowns[{position}].decision_authority",
             ))
     return errors
@@ -598,26 +612,31 @@ def _validate_unknown_shape(
         ))
 
     status = unknown.get("status")
-    if (
-        not isinstance(status, str)
-        or status not in UNKNOWN_STATUSES
-        or not _meaningful_text(unknown.get("question"))
-        or not _meaningful_text(unknown.get("why_it_matters"))
-        or not isinstance(unknown.get("required_authority_class"), str)
-        or unknown.get("required_authority_class") not in REQUIRED_AUTHORITY_CLASSES
-        or not isinstance(unknown.get("question_category"), str)
-        or unknown.get("question_category") not in QUESTION_CATEGORIES
-        or not isinstance(unknown.get("decision_authority"), str)
-        or unknown.get("decision_authority") not in DECISION_AUTHORITIES
-        or not _is_valid_origin(unknown.get("origin"), id_index)
-        or not _is_valid_options(unknown.get("response_mode"), unknown.get("options"))
-        or not _unique_strings(unknown.get("affects"))
-        or not _unique_strings(unknown.get("blocks_unknown_refs"))
-        or not _unique_strings(unknown.get("evidence_refs"))
-        or not _unique_strings(unknown.get("resolved_by"))
-        or not (unknown.get("recommendation") is None or isinstance(unknown.get("recommendation"), dict))
-    ):
-        errors.append(_error("invalid_unknown_contract", "invalid unknown semantic shape", path))
+    shape_failures = [label for label, failed in (
+        (f"status must be one of {sorted(UNKNOWN_STATUSES)}", not isinstance(status, str) or status not in UNKNOWN_STATUSES),
+        ("question must be meaningful text", not _meaningful_text(unknown.get("question"))),
+        ("why_it_matters must be meaningful text", not _meaningful_text(unknown.get("why_it_matters"))),
+        (f"required_authority_class must be one of {sorted(REQUIRED_AUTHORITY_CLASSES)}",
+         not isinstance(unknown.get("required_authority_class"), str)
+         or unknown.get("required_authority_class") not in REQUIRED_AUTHORITY_CLASSES),
+        (f"question_category must be one of {sorted(QUESTION_CATEGORIES)}",
+         not isinstance(unknown.get("question_category"), str)
+         or unknown.get("question_category") not in QUESTION_CATEGORIES),
+        (f"decision_authority must be one of {sorted(DECISION_AUTHORITIES)}",
+         not isinstance(unknown.get("decision_authority"), str)
+         or unknown.get("decision_authority") not in DECISION_AUTHORITIES),
+        ("origin must be a valid origin object with canonical refs", not _is_valid_origin(unknown.get("origin"), id_index)),
+        ("options must match response_mode (each option needs id, meaningful statement and non-empty consequences)",
+         not _is_valid_options(unknown.get("response_mode"), unknown.get("options"))),
+        ("affects must be unique strings", not _unique_strings(unknown.get("affects"))),
+        ("blocks_unknown_refs must be unique strings", not _unique_strings(unknown.get("blocks_unknown_refs"))),
+        ("evidence_refs must be unique strings", not _unique_strings(unknown.get("evidence_refs"))),
+        ("resolved_by must be unique strings", not _unique_strings(unknown.get("resolved_by"))),
+        ("recommendation must be null or an object",
+         not (unknown.get("recommendation") is None or isinstance(unknown.get("recommendation"), dict))),
+    ) if failed]
+    if shape_failures:
+        errors.append(_error("invalid_unknown_contract", "invalid unknown semantic shape: " + "; ".join(shape_failures), path))
 
     recommendation = unknown.get("recommendation")
     if recommendation is not None:

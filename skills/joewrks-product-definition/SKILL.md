@@ -76,7 +76,7 @@ Resolve the absolute directory containing this loaded `SKILL.md`; never resolve 
 |---|---|
 | Evidence answers a question | Record evidence, resolution provenance, and affected IDs |
 | Human judgment is required | Create a truthful material `UNK`; ask with options and a recommendation when appropriate |
-| Recommendation accepted | Record `USER_ACCEPTED_RECOMMENDATION` |
+| Recommendation accepted | Record `USER_ACCEPTED_RECOMMENDATION` (`scripts/new_records.py ... user-decision --accepted` builds it) |
 | Material semantic state changes | Prepare complete records off-state, then atomically increment revision, set non-`CLOSED`/`UNAPPROVED`, stale affected dependencies, and register the complete records; `scripts/open_revision.py STATE_JSON --patch PATCH_JSON --write` does this in one validated write |
 | Coverage item does not apply | Record `N/A` with rationale and exact basis binding |
 | Approved planning delivery | Produce `MASTER_PLANNING_SPEC.md` + `planning-review-core.html`; preserve approved identity and branch meaning |
