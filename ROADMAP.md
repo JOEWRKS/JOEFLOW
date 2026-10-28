@@ -1,7 +1,7 @@
 # JOEFLOW 로드맵
 
 현재: 별도 워크트리 `JOEFLOW-reinforce`(브랜치 `claude/joeflow-reinforce`)에서 작업한다. U1-1~U1-6 complete·설치본 반영. 2026-10-28 사용자 결정: experience pass는 설치본에 넣지 않음, 1.2.0 출시+main 합치기+푸시, U1-9 대체 연쇄 도우미 진행, 추가 A/B 8회, 오목은 rev 31 승인 뒤 새 명령으로 전환(지시 전달함), pwsh 설치 안 함.
-다음 작업: U1-9 커밋 → 추가 A/B 8회 → 1.2.0 출시 준비·전체 회귀 → main 합치기·푸시 → 설치본·JOEFLOW-ux 갱신.
+다음 작업: main 합치기·푸시 → 설치본·JOEFLOW-ux 갱신. 남은 후보: 담당자 결정 SUPERSEDED 허용·질문 종료 뒤 중간 상태(검증 계약 변경), U1-7, U1-8.
 
 상태어: not started · in progress · verification pending · complete · deferred
 
@@ -34,8 +34,10 @@
 | U1-6 | 레코드 작성 CLI(`add_unknown`·`add_decision` 등): 기본값을 채우고 바로 검증 | F4 | 중간 | 중간~큼 | complete | 최소 인자로 만든 unknown이 검증 통과, 오목 질문 1건을 CLI로 재현 — 2026-10-28: `new_records.py`(evidence·question·user-decision·authoring, 패치 파일에 추가)와 `record_builders.py`. 오목 rev 30의 근거 2·unknown 4·결정 4를 작성자가 정하는 필드만으로 다시 만들어 10개 모두 동일(결정 2개는 `--decision-affects` 사용). `grill_v2.py`의 'invalid unknown semantic shape'에 틀린 조건 이름, EVIDENCE_RESOLVABLE 판정에 이유·해법(마찰 24번)을 넣음. 시험 `tests/test_new_records_v020.py` — 전체 회귀 1,165개 중 새 실패 0(기준과 같은 환경 원인 8건) |
 | U1-7 | 로컬·무계정 앱 프로필: ASYNC 경량 축, UX 계정·세션 축 일괄 N/A 한 근거 | F7 | 중간 | 큼(계약 의미 변경) | not started | 프로필 없는 기존 fixture 결과 불변, 오목 사본에서 N/A 반복 셀 수 감소 측정 |
 | U1-8 | `FEATURE_EXTENSION` 부트스트랩 모드 | F6 | 중간 | 매우 큼(스키마·계약 버전) | deferred | 별도 설계 문서와 A/B 뒤 결정 |
-| U1-9 | 대체 연쇄 도우미 `supersede_records.py`: OLD=NEW 쌍으로 대체 표시, 현재 레코드의 참조 필드 재지정, 바인딩 이동을 패치에 추가(출처·자유 문구·과거 레코드는 그대로) | 마찰 26번 | 높음(방향 전환마다) | 중간 | verification pending | 오목 rev 30 사본에서 DEC-084·UNK-084를 새 결정으로 대체해 open_revision 검증 통과(참조 1곳 재지정), 바인딩 이동·출처 보존·자유 문구 보존 시험 `tests/test_supersede_records_v020.py`. 남은 한계: 담당자 결정(AGENT)의 SUPERSEDED 금지와 질문 종료 뒤 중간 상태(15번)는 검증 계약 변경이라 미포함 |
+| U1-9 | 대체 연쇄 도우미 `supersede_records.py`: OLD=NEW 쌍으로 대체 표시, 현재 레코드의 참조 필드 재지정, 바인딩 이동을 패치에 추가(출처·자유 문구·과거 레코드는 그대로) | 마찰 26번 | 높음(방향 전환마다) | 중간 | complete | 오목 rev 30 사본에서 DEC-084·UNK-084를 새 결정으로 대체해 open_revision 검증 통과(참조 1곳 재지정), 바인딩 이동·출처 보존·자유 문구 보존 시험 `tests/test_supersede_records_v020.py`. 남은 한계: 담당자 결정(AGENT)의 SUPERSEDED 금지와 질문 종료 뒤 중간 상태(15번)는 검증 계약 변경이라 미포함 |
 
 범위 밖 후보(마찰 기록에서 함께 나옴, 이번 계획에 넣지 않음): 사용자 직접 지시를 질문 없이 결정으로 기록(22번), 대체·폐기 연쇄 자동 추적(26번), 질문 종료와 FREEZE 사이 중간 상태(15·26번).
 
 A/B(2026-10-28, [보고](evals/joeflow-u1-approval-ab/REPORT.md)): 새 규칙(B) 2회는 승인을 `record_approval.py`로 기록하고 시각을 '기록 시각'으로 밝힘, 이전(A) 2회는 시각을 지어낼 수 없다며 사용자에게 물음. 묶인 rev는 양쪽 모두 맞힘. 기록 시각 허용은 2026-10-28 사용자 결정으로 유지(보고에 기록 시각임을 밝힘). 22번(사용자 직접 지시 기록)은 U1-6 `new_records.py user-decision`이 다룸.
+
+A/B 2차(2026-10-28, [보고](evals/joeflow-u1-approval-ab/REPORT-2.md)): 승인 대기 rev에서 구현 요청 시 이전(A) 2회는 구현을 보류, 새 규칙(B) 2회는 구현하고 미승인임을 밝힘(양쪽 모두 state 불변·미승인 고지). rev 31 작성은 4회 모두 유효·digest 일치, B는 패치+`open_revision.py`로 약 20% 빠름. 4회 모두 담당자 결정(DEC-083) 대체가 검증기에 막힘(계약 변경 필요, 미해결). 전체 회귀 1,169개 새 실패 0.
