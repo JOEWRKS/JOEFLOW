@@ -1,8 +1,8 @@
 {
   "schema_version": "joeflow.personal-install-overlay-receipt/1.0",
-  "recorded_at": "2026-10-28T23:07:56+09:00",
+  "recorded_at": "2026-10-28T23:44:04+09:00",
   "program": "JOEFLOW",
-  "program_version_file": "1.1.0",
+  "program_version_file": "1.2.0",
   "runtime_skill_id": "joewrks-product-definition",
   "installation_path": "C:\\Users\\tjdwo\\.codex\\skills\\joewrks-product-definition",
   "composition": {
@@ -55,6 +55,15 @@
           "references/workflow-v0.2.0.md (explain, open_revision and new_records paragraphs only)"
         ],
         "installed_on": "2026-10-28"
+      },
+      {
+        "item": "U1-9",
+        "commit": "b0a3c4b448c7bda4601b87f6232334c95bd63649",
+        "files": [
+          "scripts/supersede_records.py",
+          "references/workflow-v0.2.0.md (supersede paragraph only)"
+        ],
+        "installed_on": "2026-10-28"
       }
     ],
     "not_applied": [
@@ -66,9 +75,9 @@
     ],
     "matches_single_commit": false
   },
-  "tip_compared": "0c9bd7a2cab7b04f73b3841aa2b70922cf3490f2",
+  "tip_compared": "b7be8f9fd2f05b306baad6a800164345679e175e",
   "origin_counts": {
-    "branch_tip": 15,
+    "branch_tip": 16,
     "composed_v1.1.0_plus_u1": 2,
     "preserved_local_overlay": 2,
     "untracked_extra": 37,
@@ -91,11 +100,16 @@
       "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u1-4-6-29e9bdb-20261028",
       "file_count": 212,
       "manifest_sha256": "23ff302a0e3a04db36dbc6a5fbcbb24019e3e5739a93100365ef74d314df6ad8"
+    },
+    {
+      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u1-9-b0a3c4b-20261028",
+      "file_count": 219,
+      "manifest_sha256": "0b5628bcfdfc6e7c871689918bbecacf801d6c88c430074fe1b2046ae1171def"
     }
   ],
   "manifest_sha256_definition": "sha256 of UTF-8 lines '<sha256>  <posix path>\n' sorted by path",
-  "installed_file_count": 219,
-  "installed_manifest_sha256": "0b5628bcfdfc6e7c871689918bbecacf801d6c88c430074fe1b2046ae1171def",
+  "installed_file_count": 220,
+  "installed_manifest_sha256": "a79773759237f05d2b2ddd4e9c6a43fee6ae0ce4d17a05ee52ad2e893b28959b",
   "installed_manifest": [
     {
       "path": "SKILL.md",
@@ -814,7 +828,7 @@
     },
     {
       "path": "references/workflow-v0.2.0.md",
-      "sha256": "242a7c96c5f8ade74839538413a2c9ae5940da45cd46bd3cdd987179972577b6",
+      "sha256": "7641da7515fad94e0b207cda01f91859dab903eaf4211e18073f31627ea0df57",
       "origin": "composed_v1.1.0_plus_u1"
     },
     {
@@ -1116,6 +1130,11 @@
       "path": "scripts/state_validation_v2.py",
       "sha256": "c7848470967807152dbc9b650ddb5eefa375c8d97e40084b846213536f2f6dee",
       "origin": "v1.1.0_and_branch_tip"
+    },
+    {
+      "path": "scripts/supersede_records.py",
+      "sha256": "e1df3a951e5524a08d89d0c94d678f12e3a11fab7a4464760ef01139664b046b",
+      "origin": "branch_tip"
     },
     {
       "path": "scripts/validate_closure.py",
