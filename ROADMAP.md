@@ -1,7 +1,7 @@
 # JOEFLOW 로드맵
 
 현재: 별도 워크트리 `JOEFLOW-reinforce`(브랜치 `claude/joeflow-reinforce`)에서 작업한다. U1-1~U1-3 complete·설치본 반영. 2026-10-28 사용자 결정으로 U1-4·U1-5·U1-6을 한 번에 진행 중(항목별 커밋, 끝에 설치본 반영, 새 SKILL 규칙 A/B 4회, JOEFLOW-ux fast-forward 후 오목 세션 알림). U1-7·U1-8은 이번 범위 밖. 푸시 안 함.
-다음 작업: 설치본 반영·설치 기록 갱신 → JOEFLOW-ux 반영·오목 세션 알림. 사용자 결정 대기: 승인 시각을 모를 때 기록 시각(`--at observed`)을 허용할지.
+다음 작업: 남은 결정(experience pass 설치·버전 출시·브랜치 합치기·U1-7/U1-8·추가 A/B)은 사용자 선택 대기. 2026-10-28 결정: 승인 시각을 모르면 기록 시각(`--at observed`)을 허용하고 보고에 기록 시각임을 밝힌다.
 
 상태어: not started · in progress · verification pending · complete · deferred
 
@@ -37,4 +37,4 @@
 
 범위 밖 후보(마찰 기록에서 함께 나옴, 이번 계획에 넣지 않음): 사용자 직접 지시를 질문 없이 결정으로 기록(22번), 대체·폐기 연쇄 자동 추적(26번), 질문 종료와 FREEZE 사이 중간 상태(15·26번).
 
-A/B(2026-10-28, [보고](evals/joeflow-u1-approval-ab/REPORT.md)): 새 규칙(B) 2회는 승인을 `record_approval.py`로 기록하고 시각을 '기록 시각'으로 밝힘, 이전(A) 2회는 시각을 지어낼 수 없다며 사용자에게 물음. 묶인 rev는 양쪽 모두 맞힘. 기록 시각 허용 여부는 사용자 결정 사항으로 남김. 22번(사용자 직접 지시 기록)은 U1-6 `new_records.py user-decision`이 다룸.
+A/B(2026-10-28, [보고](evals/joeflow-u1-approval-ab/REPORT.md)): 새 규칙(B) 2회는 승인을 `record_approval.py`로 기록하고 시각을 '기록 시각'으로 밝힘, 이전(A) 2회는 시각을 지어낼 수 없다며 사용자에게 물음. 묶인 rev는 양쪽 모두 맞힘. 기록 시각 허용은 2026-10-28 사용자 결정으로 유지(보고에 기록 시각임을 밝힘). 22번(사용자 직접 지시 기록)은 U1-6 `new_records.py user-decision`이 다룸.

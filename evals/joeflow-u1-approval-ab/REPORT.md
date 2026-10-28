@@ -26,5 +26,6 @@ Do agents follow the U1-2/U1-3 SKILL rules (record approval only with `record_ap
 
 - The new rule changes behavior: both B runs completed the approval with the honest recording-time source; both A runs refused to invent a time and blocked on the user. Neither arm fabricated a time.
 - Whether a recording time is acceptable for `approved_at` is a product decision. U1-2 allows it and requires saying so; A's stricter stop is also defensible. The state itself cannot tell the two time sources apart (no schema field).
+- Decision (user, 2026-10-28): keep allowing the recording time when the send time is unknown, with the source stated in the report.
 - U1-3 made no difference here: A derived the same bundled revisions from `approval_history` gaps. Its value is in longer histories and pending-revision reporting, which this scenario did not exercise.
 - Not tested: the "build on a pending revision only when directed, report it as unapproved" rule (needs an implementation scenario), and U1-4..U1-6 tools in agent hands.
