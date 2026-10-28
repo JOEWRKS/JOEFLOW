@@ -44,6 +44,8 @@ python <skill-directory>/scripts/build_approval_manifest.py STATE_JSON
 
 Do not set a persistent `PYTHONPATH`.
 
+When `validate_state.py` reports errors, `python <skill-directory>/scripts/explain_state_errors.py STATE_JSON` reruns the same validation read-only and adds a `hint` to each error it can explain: the authority classes a source kind supports, and for a coverage cell the allowed record types and pointer roots, the status shape, and each failing binding with its bound and current value hash.
+
 `build_approval_manifest.py` writes one compact, key-sorted, ASCII-safe JSON line on every machine-readable success or error path. Success and semantic/lifecycle rejection use stdout with exit codes `0` and `1`; usage, read, and output failures use stderr with exit code `2`. Consumers must parse JSON rather than depend on localized unescaped text, and must discard any partial stdout when the exit code is `2`. The command remains read-only and has no file-output option.
 
 ## APPROVE — show the exact change before recording approval

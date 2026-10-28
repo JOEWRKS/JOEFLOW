@@ -1,7 +1,7 @@
 # JOEFLOW 로드맵
 
-현재: 별도 워크트리 `JOEFLOW-reinforce`(브랜치 `claude/joeflow-reinforce`)에서 작업한다. 실행 중인 오목 세션이 쓰는 `JOEFLOW-ux` 사본은 건드리지 않는다. U1-1 complete(커밋 `08d376f`), U1-2·U1-3 complete(커밋 `9b7bf3c`), 셋 다 개인 설치본 반영(2026-10-26, experience pass 문서는 설치본에 넣지 않음). 푸시 안 함. U1-4~U1-7 not started, U1-8 deferred.
-다음 작업: U1-4(오류 메시지에 허용 값)부터 사용자가 고른다. 전체 회귀: `python -B -m unittest discover -s tests -p "test*.py"`.
+현재: 별도 워크트리 `JOEFLOW-reinforce`(브랜치 `claude/joeflow-reinforce`)에서 작업한다. U1-1~U1-3 complete·설치본 반영. 2026-10-28 사용자 결정으로 U1-4·U1-5·U1-6을 한 번에 진행 중(항목별 커밋, 끝에 설치본 반영, 새 SKILL 규칙 A/B 4회, JOEFLOW-ux fast-forward 후 오목 세션 알림). U1-7·U1-8은 이번 범위 밖. 푸시 안 함.
+다음 작업: U1-5 개정 도우미 → U1-6 레코드 작성 CLI → 전체 회귀 → A/B 4회 → 설치본 반영·기록 → JOEFLOW-ux 반영. 전체 회귀: `python -B -m unittest discover -s tests -p "test*.py"`.
 
 상태어: not started · in progress · verification pending · complete · deferred
 
@@ -29,7 +29,7 @@
 | U1-1 | 사람이 읽는 CLI 4개의 표준 출력·오류를 UTF-8로 고정(`scripts/cli_output.py`, `PYTHONIOENCODING`을 지정하면 그 값을 따름) | F5 | 중(Windows 매 실행) | 작음 | complete | cp949 콘솔 파이프로 한글·`—` 출력 CLI 4개 실행 시 오류 0, 바이트가 UTF-8, 기존 출력 바이트 비교 시험 통과 — 전체 회귀 1,135개 중 새 실패 0(기준과 같은 환경 원인 8건), 커밋 `08d376f` |
 | U1-2 | `record_approval.py`: 사용자가 말한 Manifest digest·revision을 현재 state로 다시 계산해 대조한 뒤 `approval`·`approval_history`·`CLOSED`를 한 번에 기록. 시각은 `--at`(사용자 메시지 시각) 또는 `--at observed`(기록 시각, 출력에 표시) | F1 | 높음(rev마다) | 중간 | complete | digest·revision 불일치·READY_FOR_REVIEW 아님·시각 없음 거부 시험, 성공 후 `validate_state`·`validate_closure` 통과, 오목 rev 30 사본에 재현해 손 기록과 같은 결과 — 2026-10-26 결과: 오목 rev 30을 승인 전으로 되돌린 사본에 사용자 digest·시각으로 기록하니 손으로 쓴 rev 30 state와 바이트 동일, 검증·closure 통과. 시험 `tests/test_record_approval_v020.py` — 전체 회귀 1,144개 중 새 실패 0(기준과 같은 환경 원인 8건), 커밋 `9b7bf3c`, 설치본 반영·실행 확인 |
 | U1-3 | 승인 현황 명령: 현재 rev·승인 rev·승인 없이 지난 rev·마지막 승인 이후 바뀐 레코드 수를 한 화면에. SKILL에 "승인 전 구현은 사용자 지시가 있을 때만, 보고에 승인 대기 표시" 규칙 | F8 | 높음(보이지 않던 위험) | 작음~중간 | complete | 오목 rev 30 사본에서 rev 13·14·26·28이 "따로 승인 안 됨"으로 나옴, UNAPPROVED 상태에서 "승인 대기 rev N" 표시 — 2026-10-26 결과: `approval_status.py`가 오목 rev 30에서 13·14·26·28을 보고, 승인 전 사본에서 "rev 30 대기, rev 29 대비 추가 13·변경 8". SKILL APPROVE 단계·빠른 참조와 workflow APPROVE 절에 `record_approval.py`·`approval_status.py` 규칙 추가 — 전체 회귀 1,144개 중 새 실패 0(기준과 같은 환경 원인 8건), 커밋 `9b7bf3c`, 설치본 반영·실행 확인 |
-| U1-4 | 자주 걸리는 검증 오류에 허용 값·기대 값 넣기(authority class, reasoning_refs 종류, alternatives_presented, 축 허용 타입, ACTIVE rationale null) | F3 | 중간 | 중간 | not started | 오목 마찰 기록 3·8·12·16·24번 오류를 재현하면 메시지에 허용 값이 나옴, 오류 코드 불변 |
+| U1-4 | 자주 걸리는 검증 오류에 허용 값·기대 값 넣기(authority class, reasoning_refs 종류, alternatives_presented, 축 허용 타입, ACTIVE rationale null) | F3 | 중간 | 중간 | verification pending | 오목 마찰 기록 3·8·12·16·24번 오류를 재현하면 메시지에 허용 값이 나옴, 오류 코드 불변 — 2026-10-28: `state_validation_v2.py`·`authority_binding_v2.py`는 시험이 blob을 고정하므로 고치지 않음. 고정 아닌 `grill_v2.py` 문구 4종(unknown 필드, reasoning_refs, 추천 수락, grill profile)에 허용 값을 넣고, 고정 모듈 오류는 읽기 전용 `explain_state_errors.py`가 힌트(source kind별 class, 축별 허용 타입·포인터, 바인딩별 해시)를 붙임. 오목 rev 30 사본에 다섯 오류를 넣어 확인, 시험 `tests/test_error_hints_v020.py` |
 | U1-5 | 개정 도우미: `open_revision`(rev+1·UNAPPROVED·비CLOSED 한 번에), `refresh_bindings`(가리키는 내용이 바뀐 바인딩만 목록으로 보여 주고 확인 플래그로 해시 갱신) | F2 | 높음 | 큼 | not started | 오목 rev 29→30을 사본에서 도우미로 재현해 freeze 스크립트 없이 같은 state digest, 내용이 바뀐 바인딩을 묻지 않고 갱신하지 않음 |
 | U1-6 | 레코드 작성 CLI(`add_unknown`·`add_decision` 등): 기본값을 채우고 바로 검증 | F4 | 중간 | 중간~큼 | not started | 최소 인자로 만든 unknown이 검증 통과, 오목 질문 1건을 CLI로 재현 |
 | U1-7 | 로컬·무계정 앱 프로필: ASYNC 경량 축, UX 계정·세션 축 일괄 N/A 한 근거 | F7 | 중간 | 큼(계약 의미 변경) | not started | 프로필 없는 기존 fixture 결과 불변, 오목 사본에서 N/A 반복 셀 수 감소 측정 |

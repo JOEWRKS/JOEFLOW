@@ -553,6 +553,29 @@ def _accepted_recommendation_is_valid(value: Any, unknowns: list[dict[str, objec
     return True
 
 
+GRILL_PROFILE_STATUS_SHAPES = (
+    "ACTIVE needs current surface_refs, unknown_refs [] and rationale null; "
+    "N/A needs surface_refs [], unknown_refs [], current basis_refs and a meaningful rationale; "
+    "OPEN needs current OPEN unknown_refs for the domain pack; every status needs current basis_refs"
+)
+
+
+def _expected_acceptance_hint(unknowns: list[dict[str, object]]) -> str:
+    """Name the exact accepted_recommendation values the source unknown implies."""
+    for unknown in unknowns:
+        recommendation = unknown.get("recommendation") if isinstance(unknown, dict) else None
+        options = unknown.get("options") if isinstance(unknown, dict) else None
+        if isinstance(recommendation, dict) and isinstance(options, list):
+            option_ids = [option.get("id") for option in options if isinstance(option, dict)]
+            return (
+                f"; expected from {unknown.get('id')}: recommended_option "
+                f"{recommendation.get('recommended_option')!r}, alternatives_presented {option_ids} "
+                "(every option ID in order, including the recommended one), tradeoffs_presented equal "
+                "to recommendation.tradeoffs, accepted_by 'user', accepted_at null or text"
+            )
+    return "; the source unknown has no valid recommendation to accept"
+
+
 def _validate_unknown_shape(
     unknown: dict[str, object],
     *,
@@ -565,9 +588,12 @@ def _validate_unknown_shape(
         UNKNOWN_REQUIRED_FIELDS - set(unknown)
         or set(unknown) - UNKNOWN_REQUIRED_FIELDS - LIFECYCLE_FIELDS
     ):
+        missing = sorted(UNKNOWN_REQUIRED_FIELDS - set(unknown))
+        unexpected = sorted(set(unknown) - UNKNOWN_REQUIRED_FIELDS - LIFECYCLE_FIELDS)
         errors.append(_error(
             "invalid_unknown_contract",
-            "unknown fields do not match the canonical M3 contract",
+            "unknown fields do not match the canonical M3 contract"
+            f"; missing {missing}, unexpected {unexpected}",
             path,
         ))
 
@@ -603,18 +629,22 @@ def _validate_unknown_shape(
             ))
         else:
             reasoning_refs = recommendation["reasoning_refs"]
-            if any(
-                not _recommendation_ref_is_current_and_permitted(
+            rejected = [
+                reference for reference in reasoning_refs
+                if not _recommendation_ref_is_current_and_permitted(
                     reference,
                     required_authority_class=unknown.get("required_authority_class"),
                     id_index=id_index,
                     evidence_index=evidence_index,
                 )
-                for reference in reasoning_refs
-            ):
+            ]
+            if rejected:
                 errors.append(_error(
                     "invalid_recommendation_reference",
-                    "reasoning_refs must resolve to permitted current evidence or product authority",
+                    "reasoning_refs must resolve to permitted current evidence or product authority"
+                    f"; rejected {rejected}. Permitted: CURRENT evidence whose source kind supports "
+                    f"{unknown.get('required_authority_class')!r} (not INFERRED_INTENT or DESIGN_ARTIFACT), "
+                    "or CURRENT REQ, RULE, FLOW, DATA or INT records; decisions (DEC) are not permitted",
                     f"{path}.recommendation.reasoning_refs",
                 ))
 
@@ -887,7 +917,8 @@ def _validate_decision(
         if not _accepted_recommendation_is_valid(acceptance, source_unknowns):
             errors.append(_error(
                 "invalid_recommendation_acceptance",
-                "accepted recommendation must reproduce the presented option provenance",
+                "accepted recommendation must reproduce the presented option provenance"
+                + _expected_acceptance_hint(source_unknowns),
                 path,
             ))
     elif acceptance is not None:
@@ -1363,7 +1394,8 @@ def _profile_analysis(
         if not cell_valid:
             errors.append(_error(
                 "invalid_grill_profile",
-                "topology profile cell does not satisfy its declared status",
+                "topology profile cell does not satisfy its declared status"
+                f" {status!r}; " + GRILL_PROFILE_STATUS_SHAPES,
                 path,
             ))
             gaps += 1
