@@ -2,9 +2,9 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
-## 미출시 (Unreleased)
+## 1.2.0 — 2026-10-28
 
-오목(AI-Gomoku) 실사용 마찰 보강. 계획과 판정은 [ROADMAP U1](ROADMAP.md)에 있습니다. `VERSION`은 아직 1.1.0입니다.
+오목(AI-Gomoku) 실사용 마찰 보강. 계획과 판정은 [ROADMAP U1](ROADMAP.md)에, 에이전트 행동 비교는 [승인 규칙 A/B](evals/joeflow-u1-approval-ab/REPORT.md)에 있습니다. State 0.2.0, 고정 검증 모듈, downstream 2.1 계약은 바뀌지 않았습니다.
 
 - 2026-10-23: 기획 FREEZE 단계에 experience pass(여정·조작·작은 화면 정보 예산)를 추가했습니다. 개인 설치본에는 넣지 않았습니다.
 - U1-1: 사람이 읽는 CLI 4개(`next_product_question`, `authority_binding_value`, `build_discovery_baseline`, `migrate_state`)의 출력을 UTF-8로 고정해 Windows cp949 파이프에서 생기던 `UnicodeEncodeError`와 글자 깨짐을 없앴습니다.
@@ -13,8 +13,9 @@
 - U1-4: `grill_v2.py` 오류(unknown 필드·형태, 추천 근거, 추천 수락, grill profile, EVIDENCE_RESOLVABLE 판정)가 틀린 조건과 허용·기대 값을 알려 줍니다. 고정된 검증 모듈의 오류에는 `explain_state_errors.py`가 힌트를 붙입니다.
 - U1-5: `open_revision.py`가 작성자 패치로 다음 revision을 한 번에 열고, 패치한 레코드의 바인딩만 다시 해시하며, 검증을 통과할 때만 씁니다. `refresh_bindings.py`는 깨진 바인딩을 보여 주고 지정한 레코드만 갱신합니다.
 - U1-6: `new_records.py`가 근거·질문·사용자 결정·작성 작업 레코드를 패치 파일에 만들어 넣습니다.
+- U1-9: `supersede_records.py`가 레코드 대체를 패치에 넣으며, 현재 레코드의 참조와 커버리지 바인딩을 새 레코드로 옮깁니다.
 
-개인 설치본에는 U1-1~U1-6만 v1.1.0 위에 반영했습니다. 파일별 출처와 해시는 [U1 설치 기록](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)에 있습니다.
+개인 설치본은 v1.1.0 위에 U1 변경만 반영했고 experience pass는 넣지 않았습니다(사용자 결정). 파일별 출처와 해시는 [U1 설치 기록](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)에 있습니다.
 
 ## 1.1.0 — 2026-10-13
 

@@ -7,7 +7,7 @@
 
 ## 1. Summary
 
-- Program version: **`v1.1.0`**
+- Program version: **`v1.2.0`**
 - Runtime skill/package ID: **`joewrks-product-definition`**
 - Authoritative source: **`product-definition/<project-slug>/state.json`**
 - Mission: **Product planning tool for defining what to build before implementation**
@@ -48,6 +48,7 @@
 | Human-readable delivery | Project approved meaning into readable documents | `MASTER_PLANNING_SPEC.md`, `planning-review-core.html` |
 | Implementation handoff | Bind approved meaning and implementation obligations to stable IDs | Machine-readable handoff files and verification evidence when required |
 | Re-entry routing | Classify implementation mismatches | Code correction or affected Product Definition review |
+| Revision and approval tools | Open the next revision from a record patch, cascade supersessions, record the user's approval, and report pending or bundled revisions | `open_revision.py`, `new_records.py`, `supersede_records.py`, `record_approval.py`, `approval_status.py`, `explain_state_errors.py` |
 
 Default outputs:
 
@@ -161,7 +162,7 @@ Integration boundaries:
 - Requested results not observed remain `NOT VERIFIED`
 - Semantic review repeatability remains `NOT_MEASURED` until measured in a valid execution environment
 - Semantic review results cannot approve new product decisions
-- Program version `1.1.0` remains independent from internal state and contract versions
+- Program version `1.2.0` remains independent from internal state and contract versions
 - Frozen historical contract meaning remains unchanged
 
 Detailed references:
@@ -179,7 +180,7 @@ Detailed references:
 <a name="korean"></a>
 **한국어**
 
-- 프로그램 버전: **`v1.1.0`**
+- 프로그램 버전: **`v1.2.0`**
 - 런타임 skill/package ID: **`joewrks-product-definition`**
 - 제품 기준 원본: **`product-definition/<project-slug>/state.json`**
 
@@ -223,6 +224,7 @@ Detailed references:
 | 사람용 전달 | 승인 의미의 읽기용 문서화 | `MASTER_PLANNING_SPEC.md`, `planning-review-core.html` |
 | 구현 인계 | 승인 의미와 구현 의무의 고정 ID 연결 | 필요 시 기계용 인계 파일과 검증 근거 |
 | 재진입 판정 | 구현 불일치의 원인 분류 | 코드 수정 또는 해당 제품 범위 재검토 |
+| 개정·승인 도구 | 레코드 패치로 다음 revision 열기, 대체 연쇄 처리, 사용자 승인 기록, 승인 대기·묶인 revision 확인 | `open_revision.py`, `new_records.py`, `supersede_records.py`, `record_approval.py`, `approval_status.py`, `explain_state_errors.py` |
 
 기본 결과물:
 
@@ -336,7 +338,7 @@ JOENESS로 작업 정리
 - 요청된 결과 미확인 시 `NOT VERIFIED` 유지
 - 의미 검토의 반복 판단 신뢰도: 실제 환경 측정 전 상태인 `NOT_MEASURED`
 - 의미 검토 결과만으로 새 제품 결정 승인 불가
-- 프로그램 버전 `1.1.0`과 내부 상태·계약 버전의 독립 관리
+- 프로그램 버전 `1.2.0`과 내부 상태·계약 버전의 독립 관리
 - 과거 동결 계약의 의미 변경 없음
 
 상세 기준:

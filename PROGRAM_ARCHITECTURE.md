@@ -10,7 +10,7 @@
 | 항목 | 값 |
 | --- | --- |
 | 프로그램 이름 | `JOEFLOW` |
-| 프로그램 릴리스 | `v1.1.0` |
+| 프로그램 릴리스 | `v1.2.0` |
 | 저장소 | `JOEWRKS/JOEFLOW` |
 | 런타임 skill/package ID | `joewrks-product-definition` |
 | canonical Product Definition authority | `product-definition/<project-slug>/state.json` |
@@ -34,7 +34,7 @@ SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED
 - 현재 V2 semantic-review 경계: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`
 - 과거 호환성: 상태 `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, v0.4.3 evidence
 - 계약 버전: 상호 독립 관리
-- 이 기준선의 전체 프로그램 릴리스: `v1.1.0`
+- 이 기준선의 전체 프로그램 릴리스: `v1.2.0`
 
 ## 2. 설계 목적
 
@@ -259,6 +259,7 @@ tests/
 - **v0.4.3** — deterministic semantic-review contract, responsibility model, reliability gate, calibration controller, control-plane hardening
 - **v1.0.0** — native State 0.2.0 lifecycle, downstream 2.1 handoff, dogfood-proven human delivery output, conditional-branch preservation rule
 - **v1.1.0** — unified JOE tool handoff language, candidate/preflight 및 projection check, UTF-8 manifest output, reproducible Windows regression preparation; frozen contract identity 변경 없음
+- **v1.2.0** — experience pass, UTF-8 CLI 출력, 승인 기록·승인 현황, 오류 허용 값 힌트, 패치 기반 revision 개정·대체 연쇄·레코드 작성 CLI; frozen contract identity 변경 없음
 
 ## 6. 한계
 
