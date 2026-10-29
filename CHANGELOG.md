@@ -2,6 +2,10 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
+## 미출시 (Unreleased)
+
+- 사용자가 "승인"처럼 짧게 답하면 바로 앞에 보여 준 Manifest의 revision·digest로 승인을 기록합니다(`record_approval.py`가 다시 계산해 맞을 때만). 개정 패치 파일을 `state.json` 옆에 남기도록 권장합니다.
+
 ## 1.2.0 — 2026-10-28
 
 오목(AI-Gomoku) 실사용 마찰 보강. 계획과 판정은 [ROADMAP U1](ROADMAP.md)에, 에이전트 행동 비교는 [승인 규칙 A/B](evals/joeflow-u1-approval-ab/REPORT.md)에 있습니다. State 0.2.0, 고정 검증 모듈, downstream 2.1 계약은 바뀌지 않았습니다.

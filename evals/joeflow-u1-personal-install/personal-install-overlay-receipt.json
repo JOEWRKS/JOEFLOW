@@ -1,6 +1,6 @@
 {
   "schema_version": "joeflow.personal-install-overlay-receipt/1.0",
-  "recorded_at": "2026-10-28T23:44:04+09:00",
+  "recorded_at": "2026-10-29T19:47:26+09:00",
   "program": "JOEFLOW",
   "program_version_file": "1.2.0",
   "runtime_skill_id": "joewrks-product-definition",
@@ -64,6 +64,15 @@
           "references/workflow-v0.2.0.md (supersede paragraph only)"
         ],
         "installed_on": "2026-10-28"
+      },
+      {
+        "item": "approval wording",
+        "commit": "3eeca61844f8443b5ca2262c877677557d9607ea",
+        "files": [
+          "SKILL.md (APPROVE step sentence)",
+          "references/workflow-v0.2.0.md (APPROVE digest sentence, patch-file sentence)"
+        ],
+        "installed_on": "2026-10-29"
       }
     ],
     "not_applied": [
@@ -75,7 +84,7 @@
     ],
     "matches_single_commit": false
   },
-  "tip_compared": "b7be8f9fd2f05b306baad6a800164345679e175e",
+  "tip_compared": "3eeca61844f8443b5ca2262c877677557d9607ea",
   "origin_counts": {
     "branch_tip": 16,
     "composed_v1.1.0_plus_u1": 2,
@@ -105,15 +114,20 @@
       "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u1-9-b0a3c4b-20261028",
       "file_count": 219,
       "manifest_sha256": "0b5628bcfdfc6e7c871689918bbecacf801d6c88c430074fe1b2046ae1171def"
+    },
+    {
+      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-approval-wording-3eeca61-20261029",
+      "file_count": 220,
+      "manifest_sha256": "a79773759237f05d2b2ddd4e9c6a43fee6ae0ce4d17a05ee52ad2e893b28959b"
     }
   ],
   "manifest_sha256_definition": "sha256 of UTF-8 lines '<sha256>  <posix path>\n' sorted by path",
   "installed_file_count": 220,
-  "installed_manifest_sha256": "a79773759237f05d2b2ddd4e9c6a43fee6ae0ce4d17a05ee52ad2e893b28959b",
+  "installed_manifest_sha256": "208855001883666a5f05b384ab56b284e956c3b9b342613578271054280688fc",
   "installed_manifest": [
     {
       "path": "SKILL.md",
-      "sha256": "6d5434c7e31809dda0cc7dcda574ed7e360f299266b306fae4475a6879448ced",
+      "sha256": "697071a0fc7304734a768693fba823d9424b3e293d0bb9c3d5af97d60bd7c96f",
       "origin": "composed_v1.1.0_plus_u1"
     },
     {
@@ -828,7 +842,7 @@
     },
     {
       "path": "references/workflow-v0.2.0.md",
-      "sha256": "7641da7515fad94e0b207cda01f91859dab903eaf4211e18073f31627ea0df57",
+      "sha256": "1fc5fc7b8a3ed653638d67ab13af372a0b490871592e92847d98984fd0d4f837",
       "origin": "composed_v1.1.0_plus_u1"
     },
     {
