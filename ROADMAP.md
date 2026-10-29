@@ -41,3 +41,5 @@
 A/B(2026-10-28, [보고](evals/joeflow-u1-approval-ab/REPORT.md)): 새 규칙(B) 2회는 승인을 `record_approval.py`로 기록하고 시각을 '기록 시각'으로 밝힘, 이전(A) 2회는 시각을 지어낼 수 없다며 사용자에게 물음. 묶인 rev는 양쪽 모두 맞힘. 기록 시각 허용은 2026-10-28 사용자 결정으로 유지(보고에 기록 시각임을 밝힘). 22번(사용자 직접 지시 기록)은 U1-6 `new_records.py user-decision`이 다룸.
 
 A/B 2차(2026-10-28, [보고](evals/joeflow-u1-approval-ab/REPORT-2.md)): 승인 대기 rev에서 구현 요청 시 이전(A) 2회는 구현을 보류, 새 규칙(B) 2회는 구현하고 미승인임을 밝힘(양쪽 모두 state 불변·미승인 고지). rev 31 작성은 4회 모두 유효·digest 일치, B는 패치+`open_revision.py`로 약 20% 빠름. 4회 모두 담당자 결정(DEC-083) 대체가 검증기에 막힘(계약 변경 필요, 미해결). 전체 회귀 1,169개 새 실패 0.
+
+오목 9차 점검(2026-10-29, `_data/gomoku-audit-log.md`): rev 32를 1.2.0 새 명령으로 작성·승인, 커밋된 rev 31+패치로 바이트 동일 재현. 사용자 결정(2026-10-29): 사용자가 "승인"만 답해도 바로 앞에 보여 준 Manifest를 승인으로 인정하되, `record_approval.py`가 digest를 다시 계산해 맞을 때만 기록(SKILL APPROVE 단계·workflow APPROVE 절 문구). 패치 파일을 state 옆에 남기도록 workflow에 권장. 남은 후보: state → 기획서·검토 화면 갱신 도구(마찰 17번).
