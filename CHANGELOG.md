@@ -5,6 +5,7 @@
 ## 미출시 (Unreleased)
 
 - 사용자가 "승인"처럼 짧게 답하면 바로 앞에 보여 준 Manifest의 revision·digest로 승인을 기록합니다(`record_approval.py`가 다시 계산해 맞을 때만). 개정 패치 파일을 `state.json` 옆에 남기도록 권장합니다.
+- `projection_check.py`가 기획서·검토 화면이 현재 승인 revision·digest와 이번 개정의 새 레코드를 담고 있는지 읽기 전용으로 점검하고, `--draft`로 갱신 초안을 냅니다.
 
 ## 1.2.0 — 2026-10-28
 

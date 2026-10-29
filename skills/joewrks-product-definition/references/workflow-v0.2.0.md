@@ -118,6 +118,14 @@ The input must bind the exact canonical state, an independently hashed approved-
 
 A projection defect is fixed in the projection or its source mapping. Do not change product policy merely to make the projection simpler.
 
+After each approved revision, run the light read-only check before reporting delivery:
+
+```text
+python <skill-directory>/scripts/projection_check.py STATE_JSON --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html
+```
+
+It reports whether each projection names the current revision, definition digest and Approval Manifest digest, which records this revision added (`REQ`, `RULE`, `FLOW`, `SCR`, `STATE`, `DATA`, `INT`, `AC`, `TASK` by default) that the spec never names, which changed records the spec names and must be re-read, and which superseded or retired records the spec still names. `--draft` prints the identity lines and the current text of every added or changed record; condense it into the projection rather than pasting it. It does not replace the full audit above and does not judge meaning.
+
 Compile only from a valid approved V2 state and a `joewrks.handoff-definition/2.1` handoff definition:
 
 ```text

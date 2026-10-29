@@ -83,7 +83,7 @@ class SkillPackageTest(unittest.TestCase):
             "scripts/record_approval.py", "scripts/approval_status.py",
             "scripts/binding_diagnostics.py", "scripts/explain_state_errors.py",
             "scripts/revision_v2.py", "scripts/open_revision.py", "scripts/refresh_bindings.py",
-            "scripts/record_builders.py", "scripts/new_records.py", "scripts/supersede_records.py",
+            "scripts/record_builders.py", "scripts/new_records.py", "scripts/supersede_records.py", "scripts/projection_check.py",
             "scripts/materiality_v2.py", "scripts/grill_v2.py", "scripts/next_product_question.py",
             "scripts/authority_binding_v2.py", "scripts/authority_binding_value.py",
             "scripts/approval_v2.py", "scripts/build_approval_manifest.py",
