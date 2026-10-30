@@ -19,6 +19,8 @@
 
 개인 설치본은 v1.1.0 위에 U1 변경만 반영했고 experience pass는 넣지 않았습니다(사용자 결정). 파일별 출처와 해시는 [U1 설치 기록](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)에 있습니다.
 
+게시: 태그 `v1.2.0`(커밋 `62eb5418b84386f1e5fc5f6b6eeb48b08c4c6f59`)과 [GitHub Release](https://github.com/JOEWRKS/JOEFLOW/releases/tag/v1.2.0)를 2026-10-30에 만들었습니다(Latest). 이후 커밋은 문서 기록뿐이며 태그 대상은 그대로 둡니다.
+
 ## 1.1.0 — 2026-10-13
 
 - 처음 사용하는 사람이 바로 설치하고 요청할 수 있도록 README를 여섯 개 핵심 절로 정리했습니다.
