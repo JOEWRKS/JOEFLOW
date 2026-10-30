@@ -133,7 +133,7 @@ class UxBindingV020Test(unittest.TestCase):
         # Break caught: a UX row omitting or inventing a screen-state case.
         state = state_with_authorities()
         state["ux_coverage"] = [exact_ux_row(state)]
-        del state["ux_coverage"][0]["states"]["expired"]
+        del state["ux_coverage"][0]["states"]["loading"]  # "expired" is inheritable here: profile AUTH is N/A (U1-7)
         self.assertIn("screen_state_axis_inventory_mismatch", self.codes(state))
         self.assertEqual(ux_binding_metrics(state)["screen_state_gaps"], 1)
         state["ux_coverage"][0]["states"]["unexpected"] = {"status": "COVERED"}

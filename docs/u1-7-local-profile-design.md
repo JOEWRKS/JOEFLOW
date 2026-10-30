@@ -1,6 +1,6 @@
 # U1-7 설계: 계정 없는 앱의 UX 축 상속 (초안, 2026-10-31)
 
-상태: 승인 대기. 승인 전에는 코드를 바꾸지 않는다.
+상태: 2026-10-31 사용자 승인, 구현 완료. 구현하며 범위가 줄었다: `state_validation*.py`는 지표를 `authority_binding_v2`에서 받으므로 고치지 않았고, downstream_v2 seeds·reentry는 COVERED 칸만 읽어 생략된 N/A 칸의 영향이 없으므로 펼친 보기(`expand_inherited_ux`)는 만들지 않았다. 고정 blob은 `authority_binding_v2.py` 하나만 바뀌었다.
 
 ## 1. 문제
 

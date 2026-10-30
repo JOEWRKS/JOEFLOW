@@ -1,0 +1,88 @@
+{
+ "inheritable": [
+  [
+   "expired",
+   "permission_denied",
+   "unauthenticated"
+  ],
+  [
+   "permission",
+   "session_expiration"
+  ]
+ ],
+ "removed_cells": 16,
+ "na_before": 61,
+ "na_after": 46,
+ "orig": {
+  "state_errors": [],
+  "closure_ok": true,
+  "closure_errors": [],
+  "metrics_nonzero": {
+   "missing_user_approval": 1,
+   "stale_approval": 1,
+   "missing_or_stale_approval_manifest": 1
+  },
+  "manifest_digest": "24892059f74e662828bf9d6228720e74fb98e3b67aa2805b92ddbc00d8450bbe"
+ },
+ "slim": {
+  "state_errors": [],
+  "closure_ok": true,
+  "closure_errors": [],
+  "metrics_nonzero": {
+   "missing_user_approval": 1,
+   "stale_approval": 1,
+   "missing_or_stale_approval_manifest": 1
+  },
+  "manifest_digest": "86216072281275e7a58b87030d6636de59f223cf9c1e702c03a67a0248175e65"
+ },
+ "slim_AUTH_open": {
+  "state_errors": [
+   "action_axis_inventory_mismatch",
+   "invalid_grill_profile",
+   "screen_state_axis_inventory_mismatch",
+   "stale_discovery_baseline"
+  ],
+  "closure_ok": false,
+  "closure_errors": [
+   "action_axis_inventory_mismatch",
+   "invalid_grill_profile",
+   "screen_state_axis_inventory_mismatch",
+   "stale_discovery_baseline"
+  ],
+  "metrics_nonzero": {
+   "discovery_baseline_gaps": 1,
+   "active_grill_pack_gaps": 1,
+   "screen_state_gaps": 2,
+   "screen_action_inventory_gaps": 5,
+   "missing_user_approval": 1,
+   "stale_approval": 1,
+   "missing_or_stale_approval_manifest": 1
+  },
+  "manifest_digest": "d722d33d83c9e634b69bb8823bbb5212306c70e7939b752a904655d43c3d656e"
+ },
+ "slim_PERMISSION_open": {
+  "state_errors": [
+   "action_axis_inventory_mismatch",
+   "invalid_grill_profile",
+   "screen_state_axis_inventory_mismatch",
+   "stale_discovery_baseline"
+  ],
+  "closure_ok": false,
+  "closure_errors": [
+   "action_axis_inventory_mismatch",
+   "invalid_grill_profile",
+   "screen_state_axis_inventory_mismatch",
+   "stale_discovery_baseline"
+  ],
+  "metrics_nonzero": {
+   "discovery_baseline_gaps": 1,
+   "active_grill_pack_gaps": 1,
+   "screen_state_gaps": 2,
+   "screen_action_inventory_gaps": 5,
+   "missing_user_approval": 1,
+   "stale_approval": 1,
+   "missing_or_stale_approval_manifest": 1
+  },
+  "manifest_digest": "e1ca6d5d69ae67d1913d6c5d75acf3d8a7fe9f5fe1cdf5315540f2eda3639950"
+ }
+}
