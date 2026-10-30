@@ -153,6 +153,8 @@ class CoreCoverageBindingV020Test(unittest.TestCase):
     def test_missing_or_duplicate_material_requirement_rows_are_core_gaps(self):
         # Break caught: material requirements losing their frozen 20-axis Core row without a gap.
         state = state_with_authorities()
+        self.assertEqual(product_binding_metrics(state)["core_coverage_gaps"], 0)  # OPEN native: row may come later (U2-7)
+        state["project"]["definition_status"] = "READY_FOR_REVIEW"
         self.assertEqual(product_binding_metrics(state)["core_coverage_gaps"], 1)
         state["coverage"] = [exact_core_coverage(state), exact_core_coverage(state)]
         self.assertEqual(product_binding_metrics(state)["core_coverage_gaps"], 1)
