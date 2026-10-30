@@ -8,7 +8,7 @@ Date: 2026-10-26, updated 2026-10-28 twice, 2026-10-29 twice and 2026-10-31 (Asi
 - Base: v1.1.0 install, source commit `e3be5d11fe0e8f5b79c42e35a0bcb157f5bdda4a` ([v1.1.0 record](../joeflow-v1.1.0/PERSONAL_INSTALL_VERIFICATION.md))
 - Applied on top: ROADMAP U1-1 (commit `08d376fc4177decd3b18fe57c68fd69cdda65049`), U1-2/U1-3 (commit `9b7bf3cf0244001638c579e8c4eb4aa697c45252`, installed 2026-10-26), and U1-4/U1-5/U1-6 (commits `aae47aa05a6a239e97ae736707b7c27b5e331fbd`, `2fa087e7da5e143643accb1f30afba6573ab8343`, `29e9bdb9d42be34cf2102b4d539e3a708a6e3fe3`, installed 2026-10-28), and U1-9 (commit `b0a3c4b448c7bda4601b87f6232334c95bd63649`, installed 2026-10-28), and the approval wording change (commit `3eeca61844f8443b5ca2262c877677557d9607ea`, installed 2026-10-29), and U1-10 (commit `83fcdfe8bc9289e6d556c852984d325db1fa7ade`, installed 2026-10-29), and U1-7 (commit `c32d149`, installed 2026-10-31 by `install_u1_7.py`)
 - Not applied: commit `9891dc34141b04d3bfc5595d34433ae73a486d9d` (experience pass docs), by user choice on 2026-10-26
-- Repository `VERSION` is `1.2.0` (release notes in `CHANGELOG.md`). The install is 1.2.0 without the experience pass, by user choice, so it matches no single commit.
+- Repository `VERSION` is `1.3.0` (release notes in `CHANGELOG.md`). The install is 1.3.0 without the experience pass, by user choice, so it matches no single commit.
 
 The install matches no single commit. It is v1.1.0 plus the U1 files, and two documents are composed: v1.1.0 text plus only the U1 document hunks. The first 2026-10-28 install equals arm B of [A/B round 1](../joeflow-u1-approval-ab/REPORT.md); the U1-9 install equals arm B of [round 2](../joeflow-u1-approval-ab/REPORT-2.md).
 

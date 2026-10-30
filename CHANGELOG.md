@@ -2,9 +2,11 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
-## Unreleased
+## 1.3.0 — 2026-10-31
 
 - U1-7: 계정 없는 앱의 UX 축 상속. `surface_manifest.grill_profile`의 `AUTH`·`PERMISSION`이 근거 있는 `N/A`이면 화면마다 계정·권한·세션 축(`unauthenticated`·`expired`·`session_expiration`·`permission_denied`·`permission`)을 생략할 수 있습니다. 적힌 칸은 그대로 검증하고, 바인딩 계약 파일과 state 스키마 0.2.0은 바뀌지 않았습니다. 고정 모듈 `authority_binding_v2.py`의 고정 해시를 사용자 승인으로 갱신했습니다. 설계는 [U1-7 설계](docs/u1-7-local-profile-design.md), 측정은 [오목 사본 측정](evals/joeflow-u1-7-ux-inheritance/gomoku-result.json)에 있습니다.
+
+개인 설치본에는 2026-10-31에 U1-7을 반영했습니다(experience pass는 여전히 제외, [U1 설치 기록](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)).
 
 ## 1.2.0 — 2026-10-30
 
