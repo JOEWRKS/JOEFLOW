@@ -2,6 +2,18 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
+## Unreleased
+
+U2 1·2단계. 계획은 [U2 계획](docs/u2-planning-gaps.md)과 [ROADMAP U2](ROADMAP.md)에 있습니다. 바인딩 계약 identity와 State 0.2.0은 바뀌지 않았습니다.
+
+- U2-1: `update_projection.py`가 기획서·검토 화면의 식별 블록(revision·digest·변경 수·이전 승인)과 출처 블록을 다시 만들고, 바뀐 레코드를 적은 손글 줄을 알려 줍니다. 템플릿에 두 블록 표시를 넣었습니다.
+- U2-2: 검토 화면 다이어그램이 작은 화면에서 글자를 줄이지 않고 가로로 스크롤됩니다.
+- U2-3: DISCOVER·CLOSED 예제 state와 첫 기획 안내를 추가했습니다. `new_records.py user-decision|authoring --address CELL`이 답한 질문이 붙잡던 coverage 칸을 같은 패치에서 닫습니다.
+- U2-4: 첫 기획 안내에 근거별 위치 표를 넣었습니다.
+- U2-5·U2-7: native 정의가 OPEN인 동안 요구사항·화면을 coverage 행보다 먼저 둘 수 있습니다. READY_FOR_REVIEW부터는 빠진 행이 다시 오류입니다. 보호된 `authority_binding_v2.py`의 고정 해시를 갱신했습니다.
+- U2-6: 담당자 기본값 결정(AGENT)을 그 질문과 함께 대체할 수 있습니다.
+- U2-8: 관찰 사실(FACTUAL·BEHAVIORAL·CONSTRAINT)을 추천 근거로 쓸 수 있습니다.
+
 ## 1.3.0 — 2026-10-31
 
 - U1-7: 계정 없는 앱의 UX 축 상속. `surface_manifest.grill_profile`의 `AUTH`·`PERMISSION`이 근거 있는 `N/A`이면 화면마다 계정·권한·세션 축(`unauthenticated`·`expired`·`session_expiration`·`permission_denied`·`permission`)을 생략할 수 있습니다. 적힌 칸은 그대로 검증하고, 바인딩 계약 파일과 state 스키마 0.2.0은 바뀌지 않았습니다. 고정 모듈 `authority_binding_v2.py`의 고정 해시를 사용자 승인으로 갱신했습니다. 설계는 [U1-7 설계](docs/u1-7-local-profile-design.md), 측정은 [오목 사본 측정](evals/joeflow-u1-7-ux-inheritance/gomoku-result.json)에 있습니다.

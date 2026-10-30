@@ -2,9 +2,29 @@
 
 현재: 별도 워크트리 `JOEFLOW-reinforce`(브랜치 `claude/joeflow-reinforce`)에서 작업한다. U1-1~U1-6 complete·설치본 반영. 2026-10-28 사용자 결정: experience pass는 설치본에 넣지 않음, 1.2.0 출시+main 합치기+푸시, U1-9 대체 연쇄 도우미 진행, 추가 A/B 8회, 오목은 rev 31 승인 뒤 새 명령으로 전환(지시 전달함), pwsh 설치 안 함.
 2026-10-30: 1.2.0 main 합치기·푸시, 태그 `v1.2.0`(`62eb541`)·GitHub Release 게시 complete. 2026-10-31: U1-7 개인 설치본 반영, 1.3.0 main·태그 `v1.3.0`(`016a606`)·GitHub Release 게시 complete. U1-9·U1-10까지 개인 설치본 반영.
-다음 작업: JOEFLOW-ux 갱신(이 기록 시점에 확인 안 함). 남은 후보: 담당자 결정 SUPERSEDED 허용·질문 종료 뒤 중간 상태(검증 계약 변경), U1-7, U1-8.
+다음 작업: U2 3단계(가벼운 FREEZE) 설계 승인 → `draft_freeze.py` 구현·오목 사본 측정. U1-8은 U2-10으로 옮김.
 
 상태어: not started · in progress · verification pending · complete · deferred
+
+## U2. 기획툴로서 부족한 부분 (2026-10-31 계획)
+
+계획과 진단: [U2 계획](docs/u2-planning-gaps.md). 사용자 결정(2026-10-31): 추천 순서로 진행.
+
+| ID | 항목 | 상태 | Check |
+|---|---|---|---|
+| U2-1 | `update_projection.py`: 기획서·검토 화면의 식별·출처 블록 재생성, 바뀐 레코드를 적은 손글 줄 목록 | complete | 오목 rev 36 문서 + rev 37 state → digest·변경 수(추가 6·변경 13·대체 6)가 손으로 쓴 rev 37과 같음, 손글이 놓친 묶인 rev 13·14까지 표시, 두 번째 실행 변경 0, `projection_check` 통과. 시험 `tests/test_update_projection_v020.py`. 축약 본문은 여전히 손으로 씀 |
+| U2-2 | 검토 화면 다이어그램이 작은 화면에서 가로 스크롤 | complete | 375px에서 글자 약 5.5px → 12.8px, 페이지 가로 넘침 없음(브라우저 실측) |
+| U2-3 | DISCOVER·CLOSED 예제 state, [첫 기획 안내](skills/joewrks-product-definition/references/first-plan-guide.md), `new_records.py --address`(질문을 닫으며 그 coverage 칸도 닫기) | complete | 예제 2개 검증·질문 선택·closure 시험 `tests/test_examples_v020.py`, `--address` 시험(마찰 14) |
+| U2-4 | 근거 위치 표(질문 근거·추천 근거·N/A 근거·수락 선택지·전달된 의도) | complete | 첫 기획 안내 3절, 검증기 규칙과 대조 |
+| U2-5 | 질문 종료~FREEZE 사이 중간 상태 | complete | 새 상태값 대신 U2-7로 해결: OPEN이면 표면을 IN_SCOPE+요구사항 근거로 두고 coverage는 나중에. 화면 UX 행도 같은 규칙. 시험 `tests/test_open_authoring_v020.py` |
+| U2-6 | 담당자 결정(AGENT) 대체 허용 | complete | 질문과 함께 대체하면 open_revision 통과(이전엔 `unauthorized_agent_decision`). 시험 `test_supersede_records_v020` |
+| U2-7 | DISCOVER 중 요구사항·화면 등록 | complete | native+OPEN에서 Core·UX 행 누락 허용, READY_FOR_REVIEW부터 다시 오류, 이전된(MIGRATED) state는 그대로. 기존 시험 4건은 READY_FOR_REVIEW 기준으로 바꿈. 고정 `authority_binding_v2.py` 해시 갱신 |
+| U2-8 | 추천 근거에 실측·관찰 사실 허용 | complete(일부) | FACTUAL·BEHAVIORAL·CONSTRAINT 근거 허용, INFERRED_INTENT는 여전히 거부. 전달된 사용자 의도용 근거 종류는 보류: 그 근거로 material 질문을 닫을 수 있는지 사용자 결정 필요 |
+| U2-9 | 가벼운 FREEZE | 설계 승인 대기 | [설계](docs/u2-9-light-freeze-design.md): 오목 212칸 중 바인딩 칸 140개, 바인딩의 81%(Core)·90%(UX)가 이미 연결된 레코드 → 초안 생성기 먼저 |
+| U2-10 | 기능 추가 모드(=U1-8) | 보류 | U2-9 측정 뒤 결정 |
+| U2-11 | ASYNC 로컬 실행 프로필 | 보류 | |
+
+전체 회귀(2026-10-31): 1단계 커밋 `003e5ed` 1,191개, 2단계 `91653b9` 1,197개, 모두 새 실패 0(기준과 같은 환경 원인 8건).
 
 ## U1. 오목 실사용 마찰 보강 (2026-10-26 계획)
 
