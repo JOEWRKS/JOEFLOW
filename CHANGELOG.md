@@ -8,6 +8,8 @@
 
 개인 설치본에는 2026-10-31에 U1-7을 반영했습니다(experience pass는 여전히 제외, [U1 설치 기록](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)).
 
+게시: 태그 `v1.3.0`(커밋 `016a60645d37b1381f9b8d9e7ad7bab82c0e6497`)과 [GitHub Release](https://github.com/JOEWRKS/JOEFLOW/releases/tag/v1.3.0)를 2026-10-31에 만들었습니다(Latest). 이후 커밋은 문서 기록뿐이며 태그 대상은 그대로 둡니다.
+
 ## 1.2.0 — 2026-10-30
 
 오목(AI-Gomoku) 실사용 마찰 보강. 계획과 판정은 [ROADMAP U1](ROADMAP.md)에, 에이전트 행동 비교는 [승인 규칙 A/B](evals/joeflow-u1-approval-ab/REPORT.md)에 있습니다. State 0.2.0, 고정 검증 모듈, downstream 2.1 계약은 바뀌지 않았습니다.
