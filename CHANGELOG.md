@@ -2,12 +2,7 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
-## 미출시 (Unreleased)
-
-- 사용자가 "승인"처럼 짧게 답하면 바로 앞에 보여 준 Manifest의 revision·digest로 승인을 기록합니다(`record_approval.py`가 다시 계산해 맞을 때만). 개정 패치 파일을 `state.json` 옆에 남기도록 권장합니다.
-- `projection_check.py`가 기획서·검토 화면이 현재 승인 revision·digest와 이번 개정의 새 레코드를 담고 있는지 읽기 전용으로 점검하고, `--draft`로 갱신 초안을 냅니다.
-
-## 1.2.0 — 2026-10-28
+## 1.2.0 — 2026-10-30
 
 오목(AI-Gomoku) 실사용 마찰 보강. 계획과 판정은 [ROADMAP U1](ROADMAP.md)에, 에이전트 행동 비교는 [승인 규칙 A/B](evals/joeflow-u1-approval-ab/REPORT.md)에 있습니다. State 0.2.0, 고정 검증 모듈, downstream 2.1 계약은 바뀌지 않았습니다.
 
@@ -19,6 +14,8 @@
 - U1-5: `open_revision.py`가 작성자 패치로 다음 revision을 한 번에 열고, 패치한 레코드의 바인딩만 다시 해시하며, 검증을 통과할 때만 씁니다. `refresh_bindings.py`는 깨진 바인딩을 보여 주고 지정한 레코드만 갱신합니다.
 - U1-6: `new_records.py`가 근거·질문·사용자 결정·작성 작업 레코드를 패치 파일에 만들어 넣습니다.
 - U1-9: `supersede_records.py`가 레코드 대체를 패치에 넣으며, 현재 레코드의 참조와 커버리지 바인딩을 새 레코드로 옮깁니다.
+- U1-2 보강: 사용자가 "승인"처럼 짧게 답하면 바로 앞에 보여 준 Manifest의 revision·digest로 승인을 기록합니다(`record_approval.py`가 다시 계산해 맞을 때만). 개정 패치 파일을 `state.json` 옆에 남기도록 권장합니다.
+- U1-10: `projection_check.py`가 기획서·검토 화면이 현재 승인 revision·digest와 이번 개정의 새 레코드를 담고 있는지 읽기 전용으로 점검하고, `--draft`로 갱신 초안을 냅니다.
 
 개인 설치본은 v1.1.0 위에 U1 변경만 반영했고 experience pass는 넣지 않았습니다(사용자 결정). 파일별 출처와 해시는 [U1 설치 기록](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)에 있습니다.
 
