@@ -32,6 +32,8 @@ Questions about how the user experiences the product (first use, input mechanics
 
 ## FREEZE — bind claims to exact authority
 
+While a native definition is `OPEN`, requirements and screens may exist before their Core and UX coverage rows: once every question of a surface is answered, mark the surface `IN_SCOPE` with its requirement as authority and write the records and coverage at your pace. Rows that exist are validated; every missing row is an error again at `READY_FOR_REVIEW`. No placeholder authoring question is needed for this stretch.
+
 Complete the experience pass in `ux-state-taxonomy.md` first: user journey, interaction mechanics and smallest-viewport information budget. Bind Core, specialist Grill, and UX coverage to exact CURRENT canonical pointers and hashes. `COVERED` requires a valid authority binding, `OPEN` requires a truthful unknown, and `N/A` requires a rationale plus basis binding. When `surface_manifest.grill_profile.AUTH` or `PERMISSION` is a justified `N/A`, the UX axes listed for it in `ux-profile-inheritance-v1.json` (account, permission and session axes) may be omitted from every screen instead of repeating the same `N/A`; a written cell is still validated.
 
 Run from any consumer working directory by using the absolute installed skill directory:

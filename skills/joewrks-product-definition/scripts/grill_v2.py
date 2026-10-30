@@ -96,7 +96,22 @@ PRODUCT_AUTHORITY_GROUPS = {"requirements", "rules", "flows", "data", "integrati
 IMPACT_REVIEW_KEYS = {
     "scope", "rules", "flows", "states", "privacy", "money", "security", "acceptance",
 }
+def core_coverage_deferred(state: dict[str, object]) -> bool:
+    """A native definition still OPEN may hold requirements and screens before their coverage rows exist.
+
+    This is the stretch between closing the questions and finishing FREEZE. Rows that exist are
+    validated as usual; a missing Core or UX row is an error again from READY_FOR_REVIEW.
+    """
+    project = state.get("project") if isinstance(state, dict) else None
+    migration = state.get("migration") if isinstance(state, dict) else None
+    return (
+        isinstance(project, dict) and project.get("definition_status") == "OPEN"
+        and isinstance(migration, dict) and migration.get("mode") == "NATIVE"
+    )
+
+
 CANDIDATE_ONLY_SOURCE_KINDS = {"INFERRED_INTENT", "DESIGN_ARTIFACT"}
+RECOMMENDATION_FACT_CLASSES = ("FACTUAL", "BEHAVIORAL", "CONSTRAINT")
 SOURCE_KIND_CAPABILITIES = {
     "USER_CONFIRMED_INTENT": {"INTENT", "PREFERENCE"},
     "DOCUMENTED_INTENT": {"INTENT", "PREFERENCE"},
@@ -519,9 +534,12 @@ def _recommendation_ref_is_current_and_permitted(
         return False
     evidence = evidence_index.get(reference)
     if evidence is not None:
-        return (
-            isinstance(required_authority_class, str)
-            and _evidence_can_support(evidence, required_authority_class)
+        # Observed facts (a measurement, the current code) may justify a recommendation even when
+        # the question asks for intent; only evidence_refs decide whether evidence answers it.
+        return any(
+            _evidence_can_support(evidence, authority_class)
+            for authority_class in {required_authority_class, *RECOMMENDATION_FACT_CLASSES}
+            if isinstance(authority_class, str)
         )
     entry = id_index.get(reference)
     return (
@@ -662,7 +680,8 @@ def _validate_unknown_shape(
                     "invalid_recommendation_reference",
                     "reasoning_refs must resolve to permitted current evidence or product authority"
                     f"; rejected {rejected}. Permitted: CURRENT evidence whose source kind supports "
-                    f"{unknown.get('required_authority_class')!r} (not INFERRED_INTENT or DESIGN_ARTIFACT), "
+                    f"{unknown.get('required_authority_class')!r} or observed facts (FACTUAL, BEHAVIORAL, "
+                    "CONSTRAINT) (not INFERRED_INTENT or DESIGN_ARTIFACT), "
                     "or CURRENT REQ, RULE, FLOW, DATA or INT records; decisions (DEC) are not permitted",
                     f"{path}.recommendation.reasoning_refs",
                 ))
@@ -949,22 +968,30 @@ def _validate_decision(
 
     authority = decision.get("decision_authority")
     decision_id = decision.get("id")
-    reciprocal_provenance_valid = (
-        bool(source_unknowns)
-        and _unique_strings(source_refs, nonempty=True)
-        and len(source_unknowns) == len(source_refs)
-        and all(
+    # A superseded agent default keeps its history. Its source unknown may be superseded with it,
+    # which clears the unknown's resolution fields, so only its authority is compared then.
+    superseded = decision.get("status") == "SUPERSEDED"
+
+    def resolved_here(unknown: dict[str, object]) -> bool:
+        if superseded and unknown.get("status") == "SUPERSEDED":
+            return unknown.get("decision_authority") == authority
+        return (
             unknown.get("status") == "RESOLVED"
             and unknown.get("resolution_mode") == mode
             and unknown.get("decision_authority") == authority
             and unknown.get("resolved_by") == [decision_id]
-            for unknown in source_unknowns
         )
+
+    reciprocal_provenance_valid = (
+        bool(source_unknowns)
+        and _unique_strings(source_refs, nonempty=True)
+        and len(source_unknowns) == len(source_refs)
+        and all(resolved_here(unknown) for unknown in source_unknowns)
     )
     decision_materiality = decision.get("materiality")
     authorized_agent_decision = (
         decision.get("decided_by") == "AGENT"
-        and decision.get("status") == "CURRENT"
+        and (decision.get("status") == "CURRENT" or superseded)
         and mode == "AGENT_NON_MATERIAL_DEFAULT"
         and authority == "AGENT_AUTONOMOUS"
         and reciprocal_provenance_valid
@@ -1511,6 +1538,8 @@ def _coverage_analysis(
     )
     for target_ref in core_targets:
         rows = core_rows.get(target_ref, [])
+        if not rows and core_coverage_deferred(state):
+            continue
         if not rows:
             errors.append(_error(
                 "missing_core_grill_coverage",

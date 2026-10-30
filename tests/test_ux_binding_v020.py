@@ -123,6 +123,8 @@ class UxBindingV020Test(unittest.TestCase):
     def test_current_screen_requires_exactly_one_ux_row(self):
         # Break caught: a current product surface silently losing UX coverage or accepting a duplicate row.
         state = state_with_authorities()
+        self.assertNotIn("missing_ux_coverage", self.codes(state))  # OPEN native definition: row may come later (U2-5)
+        state["project"]["definition_status"] = "READY_FOR_REVIEW"
         self.assertIn("missing_ux_coverage", self.codes(state))
         self.assertEqual(ux_binding_metrics(state)["ux_coverage_gaps"], 1)
         state["ux_coverage"] = [exact_ux_row(state), exact_ux_row(state)]

@@ -99,6 +99,23 @@ class NewRecordsTest(unittest.TestCase):
 
         self.assertEqual(question["unknown_id"], "UNK-703")
 
+    def test_observed_fact_may_back_a_recommendation_but_inferred_intent_may_not(self):
+        # Friction 8: a measurement is a fair reason for a recommendation on an intent question.
+        self.add_observed_evidence()
+        self.add("evidence", "--id", "EVD-703", "--source-kind", "INFERRED_INTENT", "--class", "INTENT",
+                 "--locator", "agent reading", "--claim", "The team probably wants alerts.")
+        self.add("question", "--unknown", "UNK-704", "--question", "알림을 켤까요?", "--why", "사용자에게 보인다.",
+                 "--option", "A=켠다|알림이 생긴다", "--option", "B=끈다|지금과 같다", "--affects", self.requirement,
+                 "--evidence", "EVD-702", "--recommend", "B", "--reason", "EVD-702", "--tradeoff", "알림이 없다.")
+        opened = _run("open_revision.py", self.path, "--patch", self.patch, "--status", "OPEN")
+        self.assertEqual(opened.returncode, 0, opened.stdout.decode("utf-8")[:1500])
+
+        patch = json.loads(self.patch.read_text(encoding="utf-8"))
+        patch["objects"]["unknowns"][0]["recommendation"]["reasoning_refs"] = ["EVD-703"]
+        self.patch.write_text(json.dumps(patch, ensure_ascii=False), encoding="utf-8")
+        rejected = json.loads(_run("open_revision.py", self.path, "--patch", self.patch, "--status", "OPEN").stdout)
+        self.assertIn("invalid_recommendation_reference", {e["code"] for e in rejected["validation_errors"]})
+
     def test_accepted_recommendation_reproduces_presented_options(self):
         self.add_user_evidence()
         self.add("user-decision", "--unknown", "UNK-704", "--decision", "DEC-704", "--question", "q?", "--why", "w",

@@ -26,7 +26,10 @@ When an error names a field, `explain_state_errors.py state.json` adds the allow
    Without it the cell stays OPEN with no OPEN question and validation fails.
 4. Apply the patch: `open_revision.py state.json --patch PATCH --status OPEN --write`
    while discovering, `--status READY_FOR_REVIEW` when the definition is complete.
-   Each applied patch is one revision.
+   Each applied patch is one revision. While the status is `OPEN`, requirements and
+   screens may exist before their coverage rows; when a surface's questions are all
+   answered, mark it `IN_SCOPE` with its requirement as authority. Missing rows become
+   errors at `READY_FOR_REVIEW`.
 5. FREEZE, APPROVE and HANDOFF as in the workflow. After approval,
    `update_projection.py` refreshes the identity and source-map blocks of the planning
    documents and lists the rows that name changed records.
@@ -36,12 +39,13 @@ When an error names a field, `explain_state_errors.py state.json` adds the allow
 | You have | Put it in | Not in | Why |
 |---|---|---|---|
 | What the user said they want | the question's `recommendation.reasoning_refs` | the question's `evidence_refs` | intent evidence that supports the question's `required_authority_class` *answers* it: the question becomes `EVIDENCE_RESOLVABLE` and is never asked |
-| Facts about the current product or code (observed implementation, runtime) | the question's `evidence_refs` | `reasoning_refs` of an `INTENT` question | they frame the question; for an `INTENT` question they do not support the recommendation |
+| Facts about the current product or code (observed implementation, runtime, a measurement) | the question's `evidence_refs` to frame it, and `reasoning_refs` when they justify the recommendation | — | facts never answer an `INTENT` question, so they cannot hide it; inferred intent and design artifacts are not accepted as reasons |
 | A requirement, rule, flow, data or integration record behind a recommendation | `reasoning_refs` | — | `DEC` records are not allowed there; cite the rule or requirement the decision produced |
 | Why a coverage cell does not apply | the cell's `basis_bindings` plus a `rationale` | `authority_bindings` | `N/A` needs both a basis and a meaningful rationale |
 | Why a whole specialist domain does not apply | `surface_manifest.grill_profile.<DOMAIN>` as `N/A` with `basis_refs` | each cell | AUTH/PERMISSION `N/A` also lets screens omit the account, permission and session UX axes |
 | The options shown when the user accepts a recommendation | `accepted_recommendation.alternatives_presented` = **every** option ID, the recommended one included | only the alternatives | the validator compares it with the full option list |
 | A user instruction relayed by another session or person | evidence with a `locator` naming who relayed it | — | there is no separate source kind yet; say it was relayed |
+| A decision that replaces an earlier one, agent defaults included | the new records in a patch, then `supersede_records.py --replace OLD=NEW` for the decision and its question | editing the old decision | the old pair stays as history; an agent default may be superseded like a user decision |
 
 ## 4. Size before you freeze
 

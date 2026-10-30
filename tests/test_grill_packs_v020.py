@@ -541,6 +541,8 @@ class GrillPacksV020Test(unittest.TestCase):
         self.assertEqual(core["target_refs"], ["REQ-001", "REQ-002"])
 
         missing = copy.deepcopy(state)
+        self.assertEqual(grill.grill_pack_metrics(missing)["active_grill_pack_gaps"], 0)  # OPEN native: deferred (U2-7)
+        missing["project"]["definition_status"] = "READY_FOR_REVIEW"
         self.assertEqual(grill.grill_pack_metrics(missing)["active_grill_pack_gaps"], 2)
         self.assertIn("missing_core_grill_coverage", {
             error["code"] for error in grill.validate_grill_coverage(missing)

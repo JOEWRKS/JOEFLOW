@@ -94,6 +94,36 @@ class SupersedeRecordsTest(unittest.TestCase):
         self.assertEqual(opened.returncode, 0, json.dumps(report["validation_errors"], ensure_ascii=False)[:1500])
         self.assertTrue(report["written"])
 
+    def test_agent_default_can_be_superseded_with_its_question(self):
+        # Friction 26: an agent default (AGENT_NON_MATERIAL_DEFAULT) could not leave CURRENT.
+        requirement = self.state["objects"]["requirements"][0]["id"]
+        directory = Path(self.directory.name)
+
+        def authoring(patch, unknown, decision, statement):
+            evidence = ["--evidence", self.state["evidence"][0]["id"]]
+            result = _run("new_records.py", "--patch", patch, "authoring", "--unknown", unknown, "--decision", decision,
+                          "--task", "write records", "--why", "authoring", "--summary", statement,
+                          "--statement", statement, "--affects", requirement, *evidence)
+            self.assertEqual(result.returncode, 0, result.stdout.decode("utf-8"))
+
+        first = directory / "rev2.json"
+        authoring(first, "UNK-801", "DEC-801", "Records are written in one pass.")
+        opened = _run("open_revision.py", self.path, "--patch", first, "--write")
+        self.assertEqual(opened.returncode, 0, opened.stdout.decode("utf-8")[:1500])
+
+        second = directory / "rev3.json"
+        authoring(second, "UNK-802", "DEC-802", "Records are written screen by screen.")
+        replaced = _run("supersede_records.py", self.path, "--patch", second,
+                        "--replace", "DEC-801=DEC-802", "--replace", "UNK-801=UNK-802")
+        self.assertEqual(replaced.returncode, 0, replaced.stdout.decode("utf-8"))
+        opened = _run("open_revision.py", self.path, "--patch", second, "--write")
+
+        report = json.loads(opened.stdout)
+        self.assertEqual(opened.returncode, 0, json.dumps(report["validation_errors"], ensure_ascii=False)[:1500])
+        written = json.loads(self.path.read_text(encoding="utf-8"))
+        old = next(d for d in written["objects"]["decisions"] if d["id"] == "DEC-801")
+        self.assertEqual((old["status"], old["superseded_by"]), ("SUPERSEDED", "DEC-802"))
+
 
 if __name__ == "__main__":
     unittest.main()

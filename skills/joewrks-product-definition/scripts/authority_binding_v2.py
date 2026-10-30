@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from grill_v2 import load_grill_packs
+from grill_v2 import core_coverage_deferred, load_grill_packs
 from materiality_v2 import classify_materiality
 from ux_profile_inheritance import inheritable_ux_axes
 
@@ -466,6 +466,8 @@ def _product_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, 
     for target in sorted(material_targets):
         target_rows = by_target.get(target, [])
         target_path = f"coverage.{target}"
+        if not target_rows and core_coverage_deferred(state):
+            continue
         if not target_rows:
             errors.append(_coverage_error("missing_core_coverage", "current MATERIAL requirement requires one Core coverage row", target_path))
             metric_cells["core_coverage_gaps"].add(target_path)
@@ -682,6 +684,8 @@ def _ux_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]]
     for screen_id in sorted(_current_screen_targets(state)):
         target_rows = by_screen.get(screen_id, [])
         target_path = f"ux_coverage.{screen_id}"
+        if not target_rows and core_coverage_deferred(state):
+            continue
         if not target_rows:
             errors.append(_coverage_error("missing_ux_coverage", "current screen requires one UX coverage row", target_path))
             metric_cells["ux_coverage_gaps"].add(target_path)

@@ -9,7 +9,7 @@ FROZEN_TREES = {
     "evals/semantic-review-v0.4.3": "a2dc7eed1a9b0a86e3295f2bde679cdd3b5c1c43",
 }
 PROTECTED_CORE_BLOBS = {
-    "skills/joewrks-product-definition/scripts/authority_binding_v2.py": "9a4e274532f4434f2545da39eba8ffe211f65059",
+    "skills/joewrks-product-definition/scripts/authority_binding_v2.py": "c501fff9b0c71077dd1fb574fe72555a6fd59962",
     "skills/joewrks-product-definition/scripts/approval_v2.py": "41a70074d483b4e10a5954d1828a8de316919abe",
     "skills/joewrks-product-definition/scripts/state_validation_v2.py": "4efccf928e70c7a5cb636125d2b947a359f82a74",
     "skills/joewrks-product-definition/schemas/state-v0.2.0.schema.json": "65cbe33327095953568e91985a2e74f8ac2797c5",
