@@ -5,10 +5,16 @@
 
 ## Approved identity
 
+<!-- JOEFLOW:IDENTITY:BEGIN -->
 - Revision: `{{APPROVED_DEFINITION_REVISION}}`
 - Definition digest: `{{APPROVED_DEFINITION_DIGEST}}`
 - Approval Manifest digest: `{{APPROVED_MANIFEST_DIGEST}}`
 - Status: `{{APPROVAL_STATUS}}`
+<!-- JOEFLOW:IDENTITY:END -->
+
+`scripts/update_projection.py STATE --spec THIS_FILE --review REVIEW_FILE --write`
+regenerates the two `JOEFLOW:` blocks and lists the rows that name changed
+records; the condensed text elsewhere stays hand-written.
 
 ## 1. Product, users, goals, scope
 
@@ -77,4 +83,9 @@ provider, visual, or integration verification that has simply not run.
 
 Provide exact canonical pointers/stable IDs so reviewers and downstream agents
 can trace each material section without reconstructing product meaning from
-many editable documents.
+many editable documents. The record table below is generated.
+
+<!-- JOEFLOW:SOURCE-MAP:BEGIN -->
+| Type | Current | Superseded or retired |
+|---|---|---|
+<!-- JOEFLOW:SOURCE-MAP:END -->

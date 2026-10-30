@@ -1,0 +1,242 @@
+{
+  "schema_version": "0.2.0",
+  "project": {
+    "slug": "example-feedback",
+    "definition_status": "OPEN",
+    "definition_revision": 1,
+    "bootstrap_mode": "NEW_PRODUCT",
+    "closure_contract": {
+      "level": "SEMANTIC_CLOSURE",
+      "product_binding_contract": {
+        "contract_id": "joewrks.product-coverage-binding",
+        "version": "1.0",
+        "digest": "b57459533247de52038aacb158e785c2184edcdd2fa6831f0edc3db713775f3c"
+      },
+      "ux_binding_contract": {
+        "contract_id": "joewrks.ux-coverage-binding",
+        "version": "1.0",
+        "digest": "8fc84057a4a6f0f0ce329a58d11b8e208989800147d703665cea52088de0be0d"
+      }
+    }
+  },
+  "migration": {
+    "mode": "NATIVE"
+  },
+  "evidence": [
+    {
+      "id": "EVD-001",
+      "status": "CURRENT",
+      "source_kind": "USER_CONFIRMED_INTENT",
+      "locator": "chat 2026-10-31 (project brief)",
+      "claim": "Customers send feedback from the app; the team wants to reply within a day.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-900",
+      "status": "CURRENT",
+      "source_kind": "USER_CONFIRMED_INTENT",
+      "locator": "product-definition/topology-classification",
+      "claim": "The six specialist topology domains were explicitly classified.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    }
+  ],
+  "surface_manifest": {
+    "records": [
+      {
+        "id": "SURF-001",
+        "kind": "FEATURE_AREA",
+        "name": "Feedback submission",
+        "status": "OPEN",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "evidence_refs": [
+          "EVD-001"
+        ],
+        "authority_refs": [],
+        "unknown_refs": [
+          "UNK-001"
+        ],
+        "decision_refs": [],
+        "contradiction_refs": [],
+        "rationale": null,
+        "intent_classification": null
+      }
+    ],
+    "grill_profile": {
+      "AUTH": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-900"
+        ],
+        "rationale": "Discovery found no applicable topology in this domain."
+      },
+      "MONEY": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-900"
+        ],
+        "rationale": "Discovery found no applicable topology in this domain."
+      },
+      "FILE_UPLOAD": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-900"
+        ],
+        "rationale": "Discovery found no applicable topology in this domain."
+      },
+      "ASYNC": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-900"
+        ],
+        "rationale": "Discovery found no applicable topology in this domain."
+      },
+      "PERMISSION": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-900"
+        ],
+        "rationale": "Discovery found no applicable topology in this domain."
+      },
+      "DESTRUCTIVE_ACTION": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-900"
+        ],
+        "rationale": "Discovery found no applicable topology in this domain."
+      }
+    }
+  },
+  "contradictions": [],
+  "objects": {
+    "goals": [],
+    "users": [],
+    "requirements": [],
+    "unknowns": [
+      {
+        "id": "UNK-001",
+        "status": "OPEN",
+        "question": "Can a customer send feedback without signing in?",
+        "why_it_matters": "Anonymous feedback changes the submission flow, spam handling and how the team replies.",
+        "required_authority_class": "INTENT",
+        "question_category": "CORE_FLOW",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "PRODUCT_SURFACE",
+          "surface_ref": "SURF-001",
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "Signed-in customers only.",
+            "consequences": [
+              "Every message has an account to reply to."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "Anyone, with an optional email for replies.",
+            "consequences": [
+              "More feedback arrives; some cannot be answered."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "Anonymous visitors cannot send feedback."
+          ],
+          "confidence": "MEDIUM"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      }
+    ],
+    "decisions": [],
+    "rules": [],
+    "flows": [],
+    "screens": [],
+    "states": [],
+    "data": [],
+    "integrations": [],
+    "acceptance_criteria": [],
+    "tasks": []
+  },
+  "coverage": [],
+  "ux_coverage": [],
+  "grill_coverage": [],
+  "discovery_baseline": {
+    "status": "NOT_ESTABLISHED"
+  },
+  "approval": {
+    "status": "UNAPPROVED"
+  },
+  "approval_history": []
+}

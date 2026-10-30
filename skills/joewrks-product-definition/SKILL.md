@@ -33,7 +33,7 @@ Both projections remain subordinate to canonical `state.json`. Link the exact ap
 
 ## State-contract dispatch
 
-- **New project:** create `state.json` from `templates/state-v0.2.0.example.json`, validate it through `scripts/validate_state.py` against the V2 dispatcher and `schemas/state-v0.2.0.schema.json`, and continue under [state-contract-v0.2.0.md](references/state-contract-v0.2.0.md).
+- **New project:** create `state.json` from `templates/state-v0.2.0.example.json`, validate it through `scripts/validate_state.py` against the V2 dispatcher and `schemas/state-v0.2.0.schema.json`, and continue under [state-contract-v0.2.0.md](references/state-contract-v0.2.0.md). For a first plan, read [first-plan-guide.md](references/first-plan-guide.md): example states, the record loop, and where each kind of evidence goes.
 - **Existing `0.2.0` state:** resume the V2 workflow at the current canonical state. Do not replace it with a fresh template.
 - **Existing `0.1.2.1` state:** validate it with the frozen legacy dispatcher, `schemas/state.schema.json`, `templates/state.example.json`, and [state-contract.md](references/state-contract.md). Preserve it as legacy; never silently migrate. Run `scripts/migrate_state.py --apply` only when the user explicitly asks to adopt V2.
 
@@ -79,7 +79,7 @@ Resolve the absolute directory containing this loaded `SKILL.md`; never resolve 
 | Recommendation accepted | Record `USER_ACCEPTED_RECOMMENDATION` (`scripts/new_records.py ... user-decision --accepted` builds it) |
 | Material semantic state changes | Prepare complete records off-state, then atomically increment revision, set non-`CLOSED`/`UNAPPROVED`, stale affected dependencies, and register the complete records; `scripts/open_revision.py STATE_JSON --patch PATCH_JSON --write` does this in one validated write |
 | Coverage item does not apply | Record `N/A` with rationale and exact basis binding; UX account/permission/session axes may be omitted when the grill profile marks `AUTH`/`PERMISSION` `N/A` |
-| Approved planning delivery | Produce `MASTER_PLANNING_SPEC.md` + `planning-review-core.html`; preserve approved identity and branch meaning; run `scripts/projection_check.py` after each approved revision |
+| Approved planning delivery | Produce `MASTER_PLANNING_SPEC.md` + `planning-review-core.html`; preserve approved identity and branch meaning; run `scripts/update_projection.py --write` then `scripts/projection_check.py` after each approved revision |
 | Human review rendering not observed | Mark render/click behavior `NOT_VERIFIED`; do not substitute static link/file checks |
 | No optional Figma work selected | Deliver the common implementation handoff; omit Figma-only artifacts or mark the optional block `NOT USED` |
 | Requested Figma or Figma Make result not observed | Record `NOT VERIFIED` and the exact missing result; do not relabel it `NOT USED` |

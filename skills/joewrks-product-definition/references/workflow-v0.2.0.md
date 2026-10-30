@@ -10,7 +10,7 @@ This is the installed workflow for native State `0.2.0` projects. The canonical 
 
 ## Choose the state contract first
 
-- For a new project, copy `templates/state-v0.2.0.example.json`. Keep `migration.mode = NATIVE`, `project.definition_status = OPEN`, and `approval.status = UNAPPROVED` until the real workflow establishes otherwise.
+- For a new project, copy `templates/state-v0.2.0.example.json`; [first-plan-guide.md](first-plan-guide.md) shows example states at the DISCOVER and CLOSED stages and where each kind of evidence goes. Keep `migration.mode = NATIVE`, `project.definition_status = OPEN`, and `approval.status = UNAPPROVED` until the real workflow establishes otherwise.
 - For an existing State `0.2.0` project, read its canonical state first and resume from its current lifecycle position.
 - For an existing State `0.1.2.1` project, validate with the frozen legacy contract. Do not silently migrate. Use `scripts/migrate_state.py --apply` only after the user explicitly asks to adopt V2; the result is an OPEN, UNAPPROVED reconciliation candidate rather than automatic Semantic Closure.
 
@@ -118,7 +118,14 @@ The input must bind the exact canonical state, an independently hashed approved-
 
 A projection defect is fixed in the projection or its source mapping. Do not change product policy merely to make the projection simpler.
 
-After each approved revision, run the light read-only check before reporting delivery:
+After each approved revision, first refresh the mechanical parts, then run the light read-only check before reporting delivery:
+
+```text
+python <skill-directory>/scripts/update_projection.py STATE_JSON --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html [--adopt] --write
+```
+
+It regenerates the `<!-- JOEFLOW:IDENTITY -->` and `<!-- JOEFLOW:SOURCE-MAP -->` blocks (revision, digests, change counts, earlier approvals, and the record ID table) and, outside them, updates the value after the `Revision:`, `Definition digest:` and `Approval Manifest digest:` labels. `--adopt` wraps an older document's identity lines in a block once. It lists, for each added, changed, superseded or retired record, the hand-written lines that name it; edit those rows yourself. Without `--write` it only shows the diff.
+
 
 ```text
 python <skill-directory>/scripts/projection_check.py STATE_JSON --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html

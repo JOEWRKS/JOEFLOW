@@ -78,6 +78,9 @@ def _parser() -> argparse.ArgumentParser:
     decided.add_argument("--accepted", action="store_true", help="the user accepted the recommendation")
     decided.add_argument("--decision-affects", action="append",
                          help="decision affects when wider than the question's, e.g. the REQ it changes (repeat)")
+    decided.add_argument("--address", action="append", default=[], metavar="CELL",
+                         help="coverage cell this decision now answers, e.g. grill_coverage[GRILL-ASYNC-1].axes.retry;"
+                              " the patch replaces it with ADDRESSED/COVERED bound to the decision statement (repeat)")
 
     authoring = sub.add_parser("authoring", help="a non-material agent authoring unknown plus its decision")
     authoring.add_argument("--unknown", required=True)
@@ -90,7 +93,17 @@ def _parser() -> argparse.ArgumentParser:
     authoring.add_argument("--evidence", action="append", required=True)
     authoring.add_argument("--surface")
     authoring.add_argument("--option", action="append", type=_option, help="override the two default authoring options")
+    authoring.add_argument("--address", action="append", default=[], metavar="CELL", help="as for user-decision (repeat)")
     return parser
+
+
+def address_cells(decision_id: str, cells: list[str]) -> list[dict[str, object]]:
+    """Cell edits that close the OPEN cells a resolved unknown was holding open."""
+    return [{
+        "cell": cell,
+        "replace": {"status": "ADDRESSED" if cell.startswith("grill_coverage[") else "COVERED",
+                    "bind": [{"record_id": decision_id, "pointer": "/statement"}]},
+    } for cell in cells]
 
 
 def build_records(args: argparse.Namespace) -> dict[str, list[dict[str, object]]]:
@@ -102,7 +115,7 @@ def build_records(args: argparse.Namespace) -> dict[str, list[dict[str, object]]
             args.unknown, args.decision, task=args.task, why=args.why, summary=args.summary,
             statement=args.statement, affects=args.affects, evidence_refs=args.evidence,
             surface=args.surface, options=args.option)
-        return {"unknowns": [record], "decisions": [decision]}
+        return {"unknowns": [record], "decisions": [decision], "cells": address_cells(args.decision, args.address)}
     rec = build.recommendation(args.recommend, args.reason, args.tradeoff) if args.recommend else None
     record = build.unknown(args.unknown, question=args.question, why=args.why, category=args.category,
                            options=args.option, affects=args.affects, evidence_refs=args.evidence,
@@ -113,7 +126,7 @@ def build_records(args: argparse.Namespace) -> dict[str, list[dict[str, object]]
                                    decision_type=args.decision_type, accepted=args.accepted)
     if args.decision_affects:
         decision["affects"] = sorted(set(args.decision_affects))
-    return {"unknowns": [record], "decisions": [decision]}
+    return {"unknowns": [record], "decisions": [decision], "cells": address_cells(args.decision, args.address)}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -129,6 +142,7 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as exc:
         print(json.dumps({"written": False, "error": str(exc)}, ensure_ascii=False))
         return 1
+    cells = built.pop("cells", [])
     existing = {record.get("id") for record in patch.get("evidence", [])}
     existing |= {record.get("id") for group in patch.get("objects", {}).values() for record in group}
     new_ids = [record["id"] for records in built.values() for record in records]
@@ -139,8 +153,11 @@ def main(argv: list[str] | None = None) -> int:
     for group, records in built.items():
         target = patch.setdefault("evidence", []) if group == "evidence" else patch.setdefault("objects", {}).setdefault(group, [])
         target.extend(records)
+    if cells:
+        patch.setdefault("cells", []).extend(cells)
     path.write_text(json.dumps(patch, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
-    print(json.dumps({"written": True, "patch": str(path), "added": new_ids}, ensure_ascii=False, indent=2))
+    print(json.dumps({"written": True, "patch": str(path), "added": new_ids,
+                      "cells": [edit["cell"] for edit in cells]}, ensure_ascii=False, indent=2))
     return 0
 
 

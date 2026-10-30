@@ -1,0 +1,1387 @@
+{
+  "schema_version": "0.2.0",
+  "project": {
+    "slug": "semantic-closure-v2",
+    "definition_status": "CLOSED",
+    "definition_revision": 1,
+    "bootstrap_mode": "NEW_PRODUCT",
+    "closure_contract": {
+      "level": "SEMANTIC_CLOSURE",
+      "product_binding_contract": {
+        "contract_id": "joewrks.product-coverage-binding",
+        "version": "1.0",
+        "digest": "b57459533247de52038aacb158e785c2184edcdd2fa6831f0edc3db713775f3c"
+      },
+      "ux_binding_contract": {
+        "contract_id": "joewrks.ux-coverage-binding",
+        "version": "1.0",
+        "digest": "8fc84057a4a6f0f0ce329a58d11b8e208989800147d703665cea52088de0be0d"
+      }
+    }
+  },
+  "migration": {
+    "mode": "NATIVE"
+  },
+  "evidence": [
+    {
+      "id": "EVD-900",
+      "status": "CURRENT",
+      "source_kind": "USER_CONFIRMED_INTENT",
+      "locator": "product-definition/topology-classification",
+      "claim": "The specialist topology and non-applicable axes were explicitly classified.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    }
+  ],
+  "surface_manifest": {
+    "records": [
+      {
+        "id": "SURF-001",
+        "kind": "FEATURE_AREA",
+        "name": "Request submission",
+        "status": "IN_SCOPE",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "evidence_refs": [],
+        "authority_refs": [
+          "REQ-001"
+        ],
+        "unknown_refs": [],
+        "decision_refs": [],
+        "contradiction_refs": [],
+        "rationale": null,
+        "intent_classification": null
+      }
+    ],
+    "grill_profile": {
+      "AUTH": {
+        "status": "ACTIVE",
+        "surface_refs": [
+          "SURF-001"
+        ],
+        "unknown_refs": [],
+        "basis_refs": [],
+        "rationale": null
+      },
+      "MONEY": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-900"
+        ],
+        "rationale": "The user confirmed this topology is not applicable."
+      },
+      "FILE_UPLOAD": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-900"
+        ],
+        "rationale": "The user confirmed this topology is not applicable."
+      },
+      "ASYNC": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-900"
+        ],
+        "rationale": "The user confirmed this topology is not applicable."
+      },
+      "PERMISSION": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-900"
+        ],
+        "rationale": "The user confirmed this topology is not applicable."
+      },
+      "DESTRUCTIVE_ACTION": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "EVD-900"
+        ],
+        "rationale": "The user confirmed this topology is not applicable."
+      }
+    }
+  },
+  "contradictions": [],
+  "objects": {
+    "goals": [
+      {
+        "id": "GOAL-001",
+        "status": "CURRENT",
+        "statement": "A requester completes a valid submission."
+      }
+    ],
+    "users": [
+      {
+        "id": "USR-001",
+        "status": "CURRENT",
+        "description": "A signed-in requester.",
+        "actor_kind": "REQUESTER"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "REQ-001",
+        "status": "CURRENT",
+        "statement": "A requester can submit a valid request.",
+        "scope": "The primary request workflow.",
+        "ui_required": true,
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        }
+      }
+    ],
+    "unknowns": [
+      {
+        "id": "UNK-001",
+        "status": "RESOLVED",
+        "question": "Which submission policy should control?",
+        "why_it_matters": "The answer changes visible request behavior.",
+        "required_authority_class": "INTENT",
+        "question_category": "CORE_FLOW",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "RULE-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "MANUAL",
+          "surface_ref": null,
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "Use validated submission.",
+            "consequences": [
+              "Invalid requests are rejected."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "Allow any submission.",
+            "consequences": [
+              "Invalid requests may enter the system."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-001"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "The user selected validated submission.",
+        "deferral": null,
+        "blocked_reason": null
+      }
+    ],
+    "decisions": [
+      {
+        "id": "DEC-001",
+        "status": "CURRENT",
+        "statement": "Validate the request before submission.",
+        "decision_type": "PRODUCT_POLICY",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-001"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "RULE-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      }
+    ],
+    "rules": [
+      {
+        "id": "RULE-001",
+        "status": "CURRENT",
+        "statement": "Only valid requests may be submitted.",
+        "applies_to": [
+          "REQ-001"
+        ]
+      }
+    ],
+    "flows": [
+      {
+        "id": "FLOW-001",
+        "status": "CURRENT",
+        "goal_refs": [
+          "GOAL-001"
+        ],
+        "entry": "Open the request form.",
+        "preconditions": [
+          "The requester is signed in."
+        ],
+        "paths": [
+          "Validate and submit."
+        ],
+        "outcomes": [
+          "The request is accepted."
+        ]
+      }
+    ],
+    "screens": [
+      {
+        "id": "SCR-001",
+        "status": "CURRENT",
+        "purpose": "Submit a request.",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "interaction_mode": "INTERACTIVE",
+        "major_actions": [
+          "submit"
+        ]
+      }
+    ],
+    "states": [
+      {
+        "id": "STATE-001",
+        "status": "CURRENT",
+        "owner_refs": [
+          "SCR-001"
+        ],
+        "state_name": "REQUEST_READY",
+        "conditions": [
+          "Required input is valid."
+        ]
+      }
+    ],
+    "data": [
+      {
+        "id": "DATA-001",
+        "status": "CURRENT",
+        "name": "Request",
+        "purpose": "Carry request input.",
+        "ownership": "REQUESTER"
+      }
+    ],
+    "integrations": [
+      {
+        "id": "INT-001",
+        "status": "CURRENT",
+        "name": "Request API",
+        "purpose": "Persist accepted requests."
+      }
+    ],
+    "acceptance_criteria": [
+      {
+        "id": "AC-001",
+        "status": "CURRENT",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "assertion": "A valid request is accepted and persisted."
+      }
+    ],
+    "tasks": [
+      {
+        "id": "TASK-001",
+        "status": "CURRENT",
+        "implements": [
+          "REQ-001"
+        ],
+        "acceptance_refs": [
+          "AC-001"
+        ]
+      }
+    ]
+  },
+  "coverage": [
+    {
+      "feature_id": "REQ-001",
+      "cells": {
+        "actor": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "USR-001",
+              "pointer": "/description",
+              "value_sha256": "f9a9c1f0886751b0b5bcc0674cedd18f24db5e7ed2ad4a0d71139a4e7a0a3605"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "goal": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "GOAL-001",
+              "pointer": "/statement",
+              "value_sha256": "8407afde3cff2beec248223f750c920d45c3b210b34c3d539ee9af82649689eb"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "entry_point": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "FLOW-001",
+              "pointer": "/entry",
+              "value_sha256": "be4a594a7b9ac9e221db873c6d1d998b90f0b33643edf82993bcfe8f1072ce81"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "precondition": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "happy_path": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "REQ-001",
+              "pointer": "/statement",
+              "value_sha256": "ff1998300006398809107313760faa2ad8f62cf57549a9efeefaeb6afe8bb6df"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "alternative_path": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "FLOW-001",
+              "pointer": "/paths",
+              "value_sha256": "26f37da346dc4eb8778cdc448c48eb0e2d1ccc079187256e9f410098b5b24ee4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "error": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-001",
+              "pointer": "/conditions",
+              "value_sha256": "cea7d3acae29fb9f401aa26d632a6893a7c125b6c2923cba8f4e0f21e08fd2e0"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "recovery": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "permission": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "state": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-001",
+              "pointer": "/state_name",
+              "value_sha256": "701ae984c139d6aa423a3692b9f529d6425cb07ae5165e1fc5d6eb68eb60293e"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "data": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-001",
+              "pointer": "/name",
+              "value_sha256": "f9939f2c12bf64be5f65862ad0206118b6a98eaf9dd8a7c25498571662455346"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "side_effect": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "INT-001",
+              "pointer": "/purpose",
+              "value_sha256": "930a35651d14f5f46cd3a8f2549d7ad78aed8d81d11562cdd0a5137a77eecc8a"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "notification": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "FLOW-001",
+              "pointer": "/outcomes",
+              "value_sha256": "3b01c447c5d21318c2bf5e77acf0355927e8b962078288125982d668d2c6ce9c"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "validation": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "AC-001",
+              "pointer": "/assertion",
+              "value_sha256": "3c0f9d55eeab66c4b2dc3d6b5d6bbefaf4104bca9d0e48418e6223186b4fdbcc"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "boundary": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-001",
+              "pointer": "/statement",
+              "value_sha256": "3b3c88838cfb444164200c2940b94aa5faa3c90219ea05fd9e4f198924135c3e"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "persistence": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-001",
+              "pointer": "/purpose",
+              "value_sha256": "02d325e8217b3751b45464788de6d625d0cc01cb579e4517e608ffab491c1bcd"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "security": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "privacy": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DATA-001",
+              "pointer": "/ownership",
+              "value_sha256": "295963b47f34eeef4bd8727ca10f5b80cfe742ebb741feccdd59a9830e2defe3"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "analytics": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "INT-001",
+              "pointer": "/name",
+              "value_sha256": "c129205f6b7d3a1be345e1a413a13b003af32a7f7700b5f49cba197cfcceeee2"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "acceptance": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "AC-001",
+              "pointer": "/assertion",
+              "value_sha256": "3c0f9d55eeab66c4b2dc3d6b5d6bbefaf4104bca9d0e48418e6223186b4fdbcc"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        }
+      }
+    }
+  ],
+  "ux_coverage": [
+    {
+      "screen_id": "SCR-001",
+      "states": {
+        "default": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "SCR-001",
+              "pointer": "/purpose",
+              "value_sha256": "8af8d594f354795a246b6f6c3f63c7cad10c5f0a40b0c174a5454ca512b50f64"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "loading": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "FLOW-001",
+              "pointer": "/entry",
+              "value_sha256": "be4a594a7b9ac9e221db873c6d1d998b90f0b33643edf82993bcfe8f1072ce81"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "empty": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "partial": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-001",
+              "pointer": "/conditions",
+              "value_sha256": "cea7d3acae29fb9f401aa26d632a6893a7c125b6c2923cba8f4e0f21e08fd2e0"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "success": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "AC-001",
+              "pointer": "/assertion",
+              "value_sha256": "3c0f9d55eeab66c4b2dc3d6b5d6bbefaf4104bca9d0e48418e6223186b4fdbcc"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "error": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "disabled": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-001",
+              "pointer": "/state_name",
+              "value_sha256": "701ae984c139d6aa423a3692b9f529d6425cb07ae5165e1fc5d6eb68eb60293e"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "permission_denied": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-001",
+              "pointer": "/statement",
+              "value_sha256": "3b3c88838cfb444164200c2940b94aa5faa3c90219ea05fd9e4f198924135c3e"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "unauthenticated": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "FLOW-001",
+              "pointer": "/preconditions",
+              "value_sha256": "de6c7b0db8022ac8c223711618c7642ccbbcb0129b910f0f76725a0b9236f479"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "offline": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "timeout": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-001",
+              "pointer": "/conditions",
+              "value_sha256": "cea7d3acae29fb9f401aa26d632a6893a7c125b6c2923cba8f4e0f21e08fd2e0"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "retrying": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "FLOW-001",
+              "pointer": "/paths",
+              "value_sha256": "26f37da346dc4eb8778cdc448c48eb0e2d1ccc079187256e9f410098b5b24ee4"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "submitting": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "FLOW-001",
+              "pointer": "/entry",
+              "value_sha256": "be4a594a7b9ac9e221db873c6d1d998b90f0b33643edf82993bcfe8f1072ce81"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "completed": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "AC-001",
+              "pointer": "/assertion",
+              "value_sha256": "3c0f9d55eeab66c4b2dc3d6b5d6bbefaf4104bca9d0e48418e6223186b4fdbcc"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "cancelled": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "expired": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "STATE-001",
+              "pointer": "/state_name",
+              "value_sha256": "701ae984c139d6aa423a3692b9f529d6425cb07ae5165e1fc5d6eb68eb60293e"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        }
+      },
+      "actions": [
+        {
+          "key": "submit",
+          "cells": {
+            "entry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "SCR-001",
+                  "pointer": "/purpose",
+                  "value_sha256": "8af8d594f354795a246b6f6c3f63c7cad10c5f0a40b0c174a5454ca512b50f64"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "precondition": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-001",
+                  "pointer": "/preconditions",
+                  "value_sha256": "de6c7b0db8022ac8c223711618c7642ccbbcb0129b910f0f76725a0b9236f479"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "input": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-001",
+                  "pointer": "/name",
+                  "value_sha256": "f9939f2c12bf64be5f65862ad0206118b6a98eaf9dd8a7c25498571662455346"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "validation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "AC-001",
+                  "pointer": "/assertion",
+                  "value_sha256": "3c0f9d55eeab66c4b2dc3d6b5d6bbefaf4104bca9d0e48418e6223186b4fdbcc"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "submit": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-001",
+                  "pointer": "/paths",
+                  "value_sha256": "26f37da346dc4eb8778cdc448c48eb0e2d1ccc079187256e9f410098b5b24ee4"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "success": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "AC-001",
+                  "pointer": "/assertion",
+                  "value_sha256": "3c0f9d55eeab66c4b2dc3d6b5d6bbefaf4104bca9d0e48418e6223186b4fdbcc"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "failure": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-001",
+                  "pointer": "/statement",
+                  "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "retry": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-001",
+                  "pointer": "/paths",
+                  "value_sha256": "26f37da346dc4eb8778cdc448c48eb0e2d1ccc079187256e9f410098b5b24ee4"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "cancel": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-001",
+                  "pointer": "/statement",
+                  "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "back": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "SCR-001",
+                  "pointer": "/purpose",
+                  "value_sha256": "8af8d594f354795a246b6f6c3f63c7cad10c5f0a40b0c174a5454ca512b50f64"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "refresh": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-001",
+                  "pointer": "/entry",
+                  "value_sha256": "be4a594a7b9ac9e221db873c6d1d998b90f0b33643edf82993bcfe8f1072ce81"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "duplicate_concurrent_action": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-001",
+                  "pointer": "/statement",
+                  "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "timeout": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "STATE-001",
+                  "pointer": "/conditions",
+                  "value_sha256": "cea7d3acae29fb9f401aa26d632a6893a7c125b6c2923cba8f4e0f21e08fd2e0"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "offline": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-001",
+                  "pointer": "/statement",
+                  "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "permission": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DEC-001",
+                  "pointer": "/statement",
+                  "value_sha256": "3b3c88838cfb444164200c2940b94aa5faa3c90219ea05fd9e4f198924135c3e"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "session_expiration": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-001",
+                  "pointer": "/preconditions",
+                  "value_sha256": "de6c7b0db8022ac8c223711618c7642ccbbcb0129b910f0f76725a0b9236f479"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "data_mutation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-001",
+                  "pointer": "/purpose",
+                  "value_sha256": "02d325e8217b3751b45464788de6d625d0cc01cb579e4517e608ffab491c1bcd"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "side_effect": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "INT-001",
+                  "pointer": "/purpose",
+                  "value_sha256": "930a35651d14f5f46cd3a8f2549d7ad78aed8d81d11562cdd0a5137a77eecc8a"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "notification": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "FLOW-001",
+                  "pointer": "/outcomes",
+                  "value_sha256": "3b01c447c5d21318c2bf5e77acf0355927e8b962078288125982d668d2c6ce9c"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "persistence": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DATA-001",
+                  "pointer": "/ownership",
+                  "value_sha256": "295963b47f34eeef4bd8727ca10f5b80cfe742ebb741feccdd59a9830e2defe3"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "undo": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "RULE-001",
+                  "pointer": "/statement",
+                  "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            },
+            "destructive_confirmation": {
+              "status": "COVERED",
+              "authority_bindings": [
+                {
+                  "record_id": "DEC-001",
+                  "pointer": "/statement",
+                  "value_sha256": "3b3c88838cfb444164200c2940b94aa5faa3c90219ea05fd9e4f198924135c3e"
+                }
+              ],
+              "unknown_refs": [],
+              "basis_bindings": [],
+              "rationale": null
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "grill_coverage": [
+    {
+      "target_ref": "SURF-001",
+      "pack_id": "GRILL-AUTH-1",
+      "pack_version": "1.0",
+      "pack_digest": "e938ee7a52a4039d1b636f9dbd113a46bb9a94a616b890687b3c1b30554cb4f6",
+      "axes": {
+        "registration": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "8849af746975c6beee14a41a4a23be944ecf76c08e7430e140f370c8d6c3bce6"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "verification": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-900",
+              "pointer": "/claim",
+              "value_sha256": "49b0d08e7764e099e1fae397d92ff34ec1576036ac09a780f2479ab6b703766c"
+            }
+          ],
+          "rationale": "The user-confirmed product topology makes this axis inapplicable."
+        },
+        "login": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-900",
+              "pointer": "/claim",
+              "value_sha256": "49b0d08e7764e099e1fae397d92ff34ec1576036ac09a780f2479ab6b703766c"
+            }
+          ],
+          "rationale": "The user-confirmed product topology makes this axis inapplicable."
+        },
+        "logout": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-900",
+              "pointer": "/claim",
+              "value_sha256": "49b0d08e7764e099e1fae397d92ff34ec1576036ac09a780f2479ab6b703766c"
+            }
+          ],
+          "rationale": "The user-confirmed product topology makes this axis inapplicable."
+        },
+        "session_expiry": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-900",
+              "pointer": "/claim",
+              "value_sha256": "49b0d08e7764e099e1fae397d92ff34ec1576036ac09a780f2479ab6b703766c"
+            }
+          ],
+          "rationale": "The user-confirmed product topology makes this axis inapplicable."
+        },
+        "session_renewal": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-900",
+              "pointer": "/claim",
+              "value_sha256": "49b0d08e7764e099e1fae397d92ff34ec1576036ac09a780f2479ab6b703766c"
+            }
+          ],
+          "rationale": "The user-confirmed product topology makes this axis inapplicable."
+        },
+        "password_reset": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-900",
+              "pointer": "/claim",
+              "value_sha256": "49b0d08e7764e099e1fae397d92ff34ec1576036ac09a780f2479ab6b703766c"
+            }
+          ],
+          "rationale": "The user-confirmed product topology makes this axis inapplicable."
+        },
+        "account_recovery": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-900",
+              "pointer": "/claim",
+              "value_sha256": "49b0d08e7764e099e1fae397d92ff34ec1576036ac09a780f2479ab6b703766c"
+            }
+          ],
+          "rationale": "The user-confirmed product topology makes this axis inapplicable."
+        },
+        "revocation": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-900",
+              "pointer": "/claim",
+              "value_sha256": "49b0d08e7764e099e1fae397d92ff34ec1576036ac09a780f2479ab6b703766c"
+            }
+          ],
+          "rationale": "The user-confirmed product topology makes this axis inapplicable."
+        },
+        "role_change": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-900",
+              "pointer": "/claim",
+              "value_sha256": "49b0d08e7764e099e1fae397d92ff34ec1576036ac09a780f2479ab6b703766c"
+            }
+          ],
+          "rationale": "The user-confirmed product topology makes this axis inapplicable."
+        },
+        "provider_failure": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-900",
+              "pointer": "/claim",
+              "value_sha256": "49b0d08e7764e099e1fae397d92ff34ec1576036ac09a780f2479ab6b703766c"
+            }
+          ],
+          "rationale": "The user-confirmed product topology makes this axis inapplicable."
+        },
+        "duplicate_identity": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-900",
+              "pointer": "/claim",
+              "value_sha256": "49b0d08e7764e099e1fae397d92ff34ec1576036ac09a780f2479ab6b703766c"
+            }
+          ],
+          "rationale": "The user-confirmed product topology makes this axis inapplicable."
+        },
+        "account_linking": {
+          "status": "N/A",
+          "authority_bindings": [],
+          "unknown_refs": [],
+          "basis_bindings": [
+            {
+              "record_id": "EVD-900",
+              "pointer": "/claim",
+              "value_sha256": "49b0d08e7764e099e1fae397d92ff34ec1576036ac09a780f2479ab6b703766c"
+            }
+          ],
+          "rationale": "The user-confirmed product topology makes this axis inapplicable."
+        }
+      }
+    }
+  ],
+  "discovery_baseline": {
+    "status": "CURRENT",
+    "definition_revision": 1,
+    "surface_manifest_digest": "3ec95b5ad2d5cbcc65a6ab4498a12baf46aec7ca0d898dfe1573012787e7e8d6",
+    "evidence_commitment_digest": "e362daaf4b4b9c92c87edb3ae8bdd943222f270bdf0a3062d8fc4650398d15af",
+    "open_material_surface_count": 0,
+    "unresolved_material_contradiction_count": 0,
+    "procedure_complete": true,
+    "applicable_surface_classes_complete": true,
+    "active_grill_packs": [
+      {
+        "pack_id": "GRILL-AUTH-1",
+        "version": "1.0",
+        "digest": "e938ee7a52a4039d1b636f9dbd113a46bb9a94a616b890687b3c1b30554cb4f6",
+        "target_refs": [
+          "SURF-001"
+        ]
+      },
+      {
+        "pack_id": "GRILL-CORE-1",
+        "version": "1.0",
+        "digest": "45b87b1d77916ae5a6e0d624b3a8452f787a7754daf18635157157c4497b951e",
+        "target_refs": [
+          "REQ-001"
+        ]
+      }
+    ],
+    "active_grill_packs_complete": true,
+    "unknown_unknown_exhaustiveness_claimed": false
+  },
+  "approval": {
+    "status": "APPROVED",
+    "approved_revision": 1,
+    "approved_definition_digest": "dd1a16a678b431fc971d65e61eef77b68edef26c33b8d5891f3f9b5f888d8876",
+    "approved_manifest_digest": "dd1e837be6e1b79048905773b1563a2f8c07aa9f47bb7e1c0e5fc99b3e32b222",
+    "approved_at": "2026-08-29T00:00:00Z",
+    "approved_by": "user"
+  },
+  "approval_history": [
+    {
+      "revision": 1,
+      "definition_digest": "dd1a16a678b431fc971d65e61eef77b68edef26c33b8d5891f3f9b5f888d8876",
+      "manifest_digest": "dd1e837be6e1b79048905773b1563a2f8c07aa9f47bb7e1c0e5fc99b3e32b222",
+      "record_hashes": {
+        "AC-001": "6069e0f4208eb32433664c1414c3b226b9681fc9c3f2a47910be624dd4e227e4",
+        "DATA-001": "afeb0f9a9e6e4dc51dba97efb88343b87b3a0996d73b6c31c3e568d391142844",
+        "DEC-001": "880a8490bb39e7057f92cbfc601c280173ccc994bcf5fa6749a831b8cef18cc3",
+        "EVD-900": "73fc5e74def3851e019e9527d778db033c5c1dd9f42f051fad6deb5842fe50ff",
+        "FLOW-001": "64bc5bca6ffad05a166424e13461075824cbf66bd5135fb91bb16bd410f06314",
+        "GOAL-001": "fe8efd106398ec95401f2a09621d61a6f891e72b58ada1015bdfc30836a4ac31",
+        "INT-001": "d804d22e81148f55d0628efba8c782f0c9585216f6bc81771c50572937712509",
+        "REQ-001": "29a3426a16f80c29aada6bca97956bbc90a46f9bbf29fadf6bc800dde8aeb355",
+        "RULE-001": "c86964e89db53c8003787aaefa96dfd3f4a884507b5b581b84a5411d1c354ef7",
+        "SCR-001": "ac6b53c60da38d8b1987012882bd16cebb50fd6d9557ea16b4e52ed5c7ee74d5",
+        "STATE-001": "d1b4213d6185e631f6706023d75662b2b5c70e21dfedc63e6ab8d1799edd3999",
+        "SURF-001": "07a87beeca7cc899c4efc3c74784b987445c5d58a67842832ee3b4fc60dc2ba7",
+        "TASK-001": "1132f754b922908a81cdfb1fe0763b69b177a769301a77d80b9ba5aec523ddde",
+        "UNK-001": "77eac108d178d2d2e29f264db4e5595510947d8eb86dafdc6082fe034fed7157",
+        "USR-001": "b2510c2d3505f4de498193ffbdaf8882cf26235775e2ae6c46ecf985a36b8736"
+      },
+      "coverage_digest": "2d54e7889a2516ffe86c578b8f13ebbfbc310f8c9d882d5c6ef85f2ae3d0c365",
+      "surface_digest": "1d2b55b30d985ea522c20b4bc1caebd117dc5bf7f2b0990038889aa429c13b5f",
+      "grill_pack_set_digest": "d7f7e64053201db988d1376aa0ab8f07c5c27fb3cfee89a7d0210fcba86f17cf"
+    }
+  ]
+}

@@ -61,6 +61,31 @@ class NewRecordsTest(unittest.TestCase):
         decision = next(d for d in written["objects"]["decisions"] if d["id"] == "DEC-701")
         self.assertEqual((decision["decided_by"], decision["resolution_mode"]), ("USER", "USER_DECISION"))
 
+    def test_user_decision_can_close_the_coverage_cell_it_answers(self):
+        self.add_user_evidence()
+        pack = self.state["grill_coverage"][0]
+        axis = sorted(pack["axes"])[0]
+        cell = f"grill_coverage[{pack['pack_id']}].axes.{axis}"
+        report = self.add("user-decision", "--unknown", "UNK-701", "--decision", "DEC-701",
+                          "--question", "이 축을 어떻게 할까요?", "--why", "승인된 동작이 바뀐다.",
+                          "--option", "A=새 방식|사용자 지시", "--option", "B=그대로|바뀌지 않음",
+                          "--affects", self.requirement, "--evidence", "EVD-701",
+                          "--statement", "이 축은 새 방식으로 처리한다.", "--summary", "사용자 지시: \"새 방식\"",
+                          "--address", cell)
+        self.assertEqual(report["cells"], [cell])
+        patch = json.loads(self.patch.read_text(encoding="utf-8"))
+        self.assertEqual(patch["cells"], [{"cell": cell, "replace": {
+            "status": "ADDRESSED", "bind": [{"record_id": "DEC-701", "pointer": "/statement"}]}}])
+
+        result = _run("open_revision.py", self.path, "--patch", self.patch, "--write")
+
+        opened = json.loads(result.stdout)
+        self.assertEqual(result.returncode, 0, json.dumps(opened.get("validation_errors"), ensure_ascii=False)[:2000])
+        written = json.loads(self.path.read_text(encoding="utf-8"))
+        closed = next(row for row in written["grill_coverage"] if row["pack_id"] == pack["pack_id"])["axes"][axis]
+        self.assertEqual(closed["status"], "ADDRESSED")
+        self.assertEqual([b["record_id"] for b in closed["authority_bindings"]], ["DEC-701"])
+
     def test_open_question_with_recommendation_is_asked_next(self):
         # Intent evidence goes in --reason; --evidence holding it would make the question EVIDENCE_RESOLVABLE.
         self.add_user_evidence()
