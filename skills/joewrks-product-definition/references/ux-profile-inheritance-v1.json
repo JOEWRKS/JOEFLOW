@@ -1,0 +1,8 @@
+{
+  "contract_id": "joewrks.ux-profile-inheritance",
+  "version": "1.0",
+  "domains": {
+    "AUTH": {"state_axes": ["expired", "unauthenticated"], "action_axes": ["session_expiration"]},
+    "PERMISSION": {"state_axes": ["permission_denied"], "action_axes": ["permission"]}
+  }
+}

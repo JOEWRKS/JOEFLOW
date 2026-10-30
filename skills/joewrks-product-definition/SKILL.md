@@ -78,7 +78,7 @@ Resolve the absolute directory containing this loaded `SKILL.md`; never resolve 
 | Human judgment is required | Create a truthful material `UNK`; ask with options and a recommendation when appropriate |
 | Recommendation accepted | Record `USER_ACCEPTED_RECOMMENDATION` (`scripts/new_records.py ... user-decision --accepted` builds it) |
 | Material semantic state changes | Prepare complete records off-state, then atomically increment revision, set non-`CLOSED`/`UNAPPROVED`, stale affected dependencies, and register the complete records; `scripts/open_revision.py STATE_JSON --patch PATCH_JSON --write` does this in one validated write |
-| Coverage item does not apply | Record `N/A` with rationale and exact basis binding |
+| Coverage item does not apply | Record `N/A` with rationale and exact basis binding; UX account/permission/session axes may be omitted when the grill profile marks `AUTH`/`PERMISSION` `N/A` |
 | Approved planning delivery | Produce `MASTER_PLANNING_SPEC.md` + `planning-review-core.html`; preserve approved identity and branch meaning; run `scripts/projection_check.py` after each approved revision |
 | Human review rendering not observed | Mark render/click behavior `NOT_VERIFIED`; do not substitute static link/file checks |
 | No optional Figma work selected | Deliver the common implementation handoff; omit Figma-only artifacts or mark the optional block `NOT USED` |

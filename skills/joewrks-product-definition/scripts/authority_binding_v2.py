@@ -10,6 +10,7 @@ from typing import Any
 
 from grill_v2 import load_grill_packs
 from materiality_v2 import classify_materiality
+from ux_profile_inheritance import inheritable_ux_axes
 
 
 CONTRACT_DIR = Path(__file__).resolve().parents[1] / "references" / "binding-contracts"
@@ -566,6 +567,7 @@ def _ux_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]]
     basis_types = set(contract["basis_types"])
     state_types = {axis: set(values) for axis, values in contract["state_axis_types"].items()}
     action_types = {axis: set(values) for axis, values in contract["action_axis_types"].items()}
+    inherited_state_axes, inherited_action_axes = inheritable_ux_axes(state)
     errors: list[dict[str, str]] = []
     metric_cells = {
         "ux_coverage_gaps": set(), "screen_state_gaps": set(),
@@ -613,8 +615,9 @@ def _ux_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]]
             errors.append(_coverage_error("invalid_ux_coverage_cell", "UX status must be COVERED, OPEN, or N/A", cell_path))
             metric_cells["ux_invalid_authority_binding"].add(cell_path)
 
-    def validate_axes(cells: object, expected: dict[str, set[str]], path: str, mismatch_code: str, mismatch_message: str, gap_metric: str) -> None:
-        if not isinstance(cells, dict) or set(cells) != set(expected):
+    def validate_axes(cells: object, expected: dict[str, set[str]], path: str, mismatch_code: str, mismatch_message: str, gap_metric: str, inherited: set[str]) -> None:
+        # An axis inherited from an N/A grill profile domain may be omitted; a written one is still checked.
+        if not isinstance(cells, dict) or not (set(expected) - inherited <= set(cells) <= set(expected)):
             errors.append(_coverage_error(mismatch_code, mismatch_message, path))
             metric_cells[gap_metric].add(path.rsplit(".", 1)[0])
         if not isinstance(cells, dict):
@@ -639,7 +642,7 @@ def _ux_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]]
         validate_axes(
             row.get("states"), state_types, f"{row_path}.states",
             "screen_state_axis_inventory_mismatch", "screen states must equal the frozen 16-axis inventory",
-            "screen_state_gaps",
+            "screen_state_gaps", inherited_state_axes,
         )
         actions = row.get("actions")
         if not isinstance(actions, list):
@@ -661,7 +664,7 @@ def _ux_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, str]]
             validate_axes(
                 action.get("cells"), action_types, f"{action_path}.cells",
                 "action_axis_inventory_mismatch", "action cells must equal the frozen 22-axis inventory",
-                "screen_action_inventory_gaps",
+                "screen_action_inventory_gaps", inherited_action_axes,
             )
         screen_id = row.get("screen_id")
         target = _current_screen_targets(state).get(screen_id) if isinstance(screen_id, str) else None
