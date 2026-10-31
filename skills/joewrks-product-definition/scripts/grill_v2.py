@@ -1519,6 +1519,9 @@ def _coverage_analysis(
     profile_gaps: int,
     valid_active: dict[str, tuple[str, ...]],
 ) -> tuple[list[dict[str, str]], dict[str, int]]:
+    from coverage_inheritance import expand_coverage  # local import: coverage_inheritance has no grill dependency
+
+    state = expand_coverage(state, strip=True)  # Core rows may inherit cells from a default_authority
     errors: list[dict[str, str]] = []
     active_gaps = profile_gaps
     unresolved_axes = 0

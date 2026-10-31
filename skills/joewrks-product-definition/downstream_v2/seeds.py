@@ -1,6 +1,7 @@
 """Deterministically compile and audit M4 positive authority bindings as source seeds."""
 
 from authority_binding_v2 import canonical_record_index, resolve_record_pointer
+from coverage_inheritance import expand_coverage
 
 from .authority import DownstreamV2Error, require_closed_authority, sha256_json
 
@@ -48,6 +49,7 @@ def _binding_seed(index, location, binding):
 
 
 def _positive_locations(state):
+    state = expand_coverage(state, strip=True)
     coverage = state.get("coverage") if isinstance(state, dict) else None
     for row in coverage if isinstance(coverage, list) else []:
         if not isinstance(row, dict) or not isinstance(row.get("feature_id"), str) or not isinstance(row.get("cells"), dict):

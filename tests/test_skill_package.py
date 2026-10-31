@@ -84,7 +84,8 @@ class SkillPackageTest(unittest.TestCase):
             "scripts/binding_diagnostics.py", "scripts/explain_state_errors.py",
             "scripts/revision_v2.py", "scripts/open_revision.py", "scripts/refresh_bindings.py",
             "scripts/record_builders.py", "scripts/new_records.py", "scripts/supersede_records.py", "scripts/projection_check.py",
-            "scripts/ux_profile_inheritance.py", "references/ux-profile-inheritance-v1.json", "scripts/update_projection.py", "scripts/draft_freeze.py", "references/first-plan-guide.md",
+            "scripts/ux_profile_inheritance.py", "references/ux-profile-inheritance-v1.json", "scripts/update_projection.py",
+            "scripts/coverage_inheritance.py", "scripts/compact_coverage.py", "references/ux-action-shapes-v1.json", "references/coverage-inheritance.md", "scripts/draft_freeze.py", "references/first-plan-guide.md",
             "templates/examples/discover-one-question.state.json", "templates/examples/closed-minimal.state.json",
             "scripts/materiality_v2.py", "scripts/grill_v2.py", "scripts/next_product_question.py",
             "scripts/authority_binding_v2.py", "scripts/authority_binding_value.py",
@@ -112,7 +113,7 @@ class SkillPackageTest(unittest.TestCase):
         self.assertIn("Preserve conditional outcomes as conditional", workflow_text)
 
     def test_validator_scripts_only_import_standard_library_or_sibling_module(self):
-        allowed = {"__future__", "argparse", "collections", "copy", "datetime", "difflib", "hashlib", "importlib", "json", "os", "pathlib", "re", "stat", "subprocess", "sys", "typing", "uuid", "migration_v2", "state_contract_dispatch", "state_validation", "state_validation_v2", "discovery_v2", "materiality_v2", "grill_v2", "authority_binding_v2", "approval_v2", "downstream_v2", "integration_v2", "candidate_preflight_v2", "projection_audit_v2", "build_approval_manifest", "cli_output", "binding_diagnostics", "revision_v2", "approval_status", "explain_state_errors", "record_builders", "ux_profile_inheritance"}
+        allowed = {"__future__", "argparse", "collections", "copy", "datetime", "difflib", "hashlib", "importlib", "json", "os", "pathlib", "re", "stat", "subprocess", "sys", "typing", "uuid", "migration_v2", "state_contract_dispatch", "state_validation", "state_validation_v2", "discovery_v2", "materiality_v2", "grill_v2", "authority_binding_v2", "approval_v2", "downstream_v2", "integration_v2", "candidate_preflight_v2", "projection_audit_v2", "build_approval_manifest", "cli_output", "binding_diagnostics", "revision_v2", "approval_status", "explain_state_errors", "record_builders", "ux_profile_inheritance", "coverage_inheritance"}
         imports = set()
         for script in (SKILL / "scripts").glob("*.py"):
             tree = ast.parse(script.read_text(encoding="utf-8"))

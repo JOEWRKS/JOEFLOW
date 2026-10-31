@@ -50,11 +50,20 @@ def iter_coverage_cells(state: dict[str, Any]) -> Iterator[dict[str, Any]]:
         value = state.get(name)
         return [(i, row) for i, row in enumerate(value) if isinstance(row, dict)] if isinstance(value, list) else []
 
+    def declared(row: dict[str, Any]) -> dict[str, Any] | None:
+        # A default_authority re-hashes like a COVERED cell; the binding list is shared on purpose.
+        bindings = row.get("default_authority")
+        return ({"status": "COVERED", "authority_bindings": bindings, "unknown_refs": [], "basis_bindings": [], "rationale": None}
+                if isinstance(bindings, list) else None)
+
     for i, row in rows("coverage"):
         cells = row.get("cells") if isinstance(row.get("cells"), dict) else {}
         for axis, cell in cells.items():
             yield {"path": f"coverage[{i}].cells.{axis}", "cell": cell,
                    "allowed_types": set(product["core_axis_types"].get(axis, [])), **product_policy}
+        if declared(row):
+            yield {"path": f"coverage[{i}].default_authority", "cell": declared(row),
+                   "allowed_types": {t for v in product["core_axis_types"].values() for t in v}, **product_policy}
     for i, row in rows("grill_coverage"):
         axes = row.get("axes") if isinstance(row.get("axes"), dict) else {}
         allowed = set(product["specialist_pack_types"].get(row.get("pack_id"), []))
@@ -66,12 +75,18 @@ def iter_coverage_cells(state: dict[str, Any]) -> Iterator[dict[str, Any]]:
         for axis, cell in states.items():
             yield {"path": f"ux_coverage[{i}].states.{axis}", "cell": cell,
                    "allowed_types": set(ux["state_axis_types"].get(axis, [])), **ux_policy}
+        if declared(row):
+            yield {"path": f"ux_coverage[{i}].default_authority", "cell": declared(row),
+                   "allowed_types": {t for v in ux["state_axis_types"].values() for t in v}, **ux_policy}
         actions = row.get("actions") if isinstance(row.get("actions"), list) else []
         for j, action in enumerate(actions):
             cells = action.get("cells") if isinstance(action, dict) and isinstance(action.get("cells"), dict) else {}
             for axis, cell in cells.items():
                 yield {"path": f"ux_coverage[{i}].actions[{j}].cells.{axis}", "cell": cell,
                        "allowed_types": set(ux["action_axis_types"].get(axis, [])), **ux_policy}
+            if isinstance(action, dict) and declared(action):
+                yield {"path": f"ux_coverage[{i}].actions[{j}].default_authority", "cell": declared(action),
+                       "allowed_types": {t for v in ux["action_axis_types"].values() for t in v}, **ux_policy}
 
 
 def diagnose_binding(

@@ -1,0 +1,18 @@
+== AI-Gomoku
+  core      cells   60  A removes    7 (12%)  B removes    7 (12%)  A+B ->   46 left (77%)
+  ux_state  cells   32  A removes   10 (31%)  B removes    2 ( 6%)  A+B ->   20 left (62%)
+  ux_action cells  110  A removes   51 (46%)  B removes   19 (17%)  A+B ->   40 left (36%)
+  distinct N/A patterns across 5 actions: 4
+    ×2: ['back', 'cancel', 'destructive_confirmation', 'duplicate_concurrent_action', 'failure', 'notification', 'permission', 'refresh', 'retry', 'session_expiration', 'timeout', 'undo', 'validation']
+    ×1: ['back', 'destructive_confirmation', 'notification', 'permission', 'session_expiration']
+    ×1: ['failure', 'input', 'notification', 'permission', 'refresh', 'retry', 'session_expiration', 'timeout', 'undo', 'validation']
+    ×1: ['back', 'cancel', 'destructive_confirmation', 'duplicate_concurrent_action', 'notification', 'permission', 'refresh', 'retry', 'session_expiration', 'undo']
+== D:
+  core      cells  240  A removes   18 ( 8%)  B removes   26 (11%)  A+B ->  196 left (82%)
+  ux_state  cells  112  A removes   20 (18%)  B removes    0 ( 0%)  A+B ->   92 left (82%)
+  ux_action cells  968  A removes  123 (13%)  B removes  563 (58%)  A+B ->  282 left (29%)
+  distinct N/A patterns across 44 actions: 4
+    ×23: ['destructive_confirmation', 'session_expiration', 'undo']
+    ×9: ['destructive_confirmation', 'session_expiration', 'timeout', 'undo']
+    ×6: ['session_expiration']
+    ×6: ['destructive_confirmation', 'session_expiration']

@@ -1,0 +1,26 @@
+{
+  "contract_id": "joewrks.ux-action-shapes",
+  "version": "1.0",
+  "shapes": {
+    "navigate": {
+      "meaning": "Opens or moves to another screen or area; nothing is submitted or changed.",
+      "not_applicable": ["destructive_confirmation", "undo"]
+    },
+    "local_choice": {
+      "meaning": "Picks a value on the current screen; no request leaves the device until a later submit.",
+      "not_applicable": ["back", "cancel", "destructive_confirmation", "duplicate_concurrent_action", "failure", "notification", "refresh", "retry", "timeout", "undo", "validation"]
+    },
+    "toggle": {
+      "meaning": "Flips one reversible flag in place, such as a favourite.",
+      "not_applicable": ["destructive_confirmation", "undo"]
+    },
+    "submit": {
+      "meaning": "Commits input or starts work whose result the user waits for; every axis applies.",
+      "not_applicable": []
+    },
+    "destructive": {
+      "meaning": "Removes or irreversibly changes something; every axis applies.",
+      "not_applicable": []
+    }
+  }
+}

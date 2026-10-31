@@ -1,0 +1,198 @@
+== AI-Gomoku
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['GOAL-001', 'REQ-001']×1
+  core      entry           2 answers: COVERED:['FLOW-001', 'FLOW-004']×1 | COVERED:['RULE-012']×1
+  core      paths           2 answers: COVERED:['FLOW-001', 'REQ-001']×1 | COVERED:['RULE-017', 'RULE-023']×1
+  core      failure         2 answers: COVERED:['RULE-022', 'STATE-005']×1 | COVERED:['RULE-022']×1
+  core      state_and_data  2 answers: COVERED:['RULE-006', 'STATE-001']×1 | COVERED:['DATA-002']×2
+  core      effects         3 answers: COVERED:['RULE-014']×1 | N/A:['RULE-014']×1 | COVERED:['RULE-013']×1
+  core      guards          2 answers: N/A:['EVD-001']×1 | COVERED:['RULE-013']×2
+  core      rules           2 answers: COVERED:['RULE-019', 'RULE-023']×1 | COVERED:['RULE-021', 'RULE-025']×1
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['GOAL-001', 'REQ-003']×1
+  core      entry           2 answers: COVERED:['FLOW-003']×1 | COVERED:['RULE-012']×1
+  core      paths           2 answers: COVERED:['FLOW-003', 'REQ-003']×1 | COVERED:['RULE-012', 'RULE-022']×1
+  core      failure         2 answers: COVERED:['RULE-022', 'STATE-005']×1 | COVERED:['RULE-022']×1
+  core      state_and_data  2 answers: COVERED:['STATE-005', 'STATE-006']×1 | COVERED:['DATA-002']×2
+  core      effects         3 answers: COVERED:['RULE-014']×1 | N/A:['RULE-014']×1 | COVERED:['RULE-013']×1
+  core      guards          2 answers: N/A:['EVD-001']×1 | COVERED:['RULE-013']×2
+  core      rules           2 answers: COVERED:['RULE-011']×1 | COVERED:['RULE-013', 'RULE-020']×1
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['GOAL-001', 'REQ-004']×1
+  core      entry           2 answers: COVERED:['FLOW-004', 'SCR-002']×1 | COVERED:['RULE-027']×1
+  core      paths           2 answers: COVERED:['FLOW-004', 'REQ-004']×1 | COVERED:['RULE-027', 'RULE-034']×1
+  core      failure         2 answers: COVERED:['RULE-027', 'STATE-010']×1 | N/A:['RULE-027']×1
+  core      state_and_data  3 answers: COVERED:['STATE-008', 'STATE-010']×1 | COVERED:['RULE-027']×1 | COVERED:['RULE-013']×1
+  core      effects         3 answers: COVERED:['RULE-027']×1 | N/A:['RULE-014']×1 | COVERED:['RULE-013']×1
+  core      guards          2 answers: N/A:['EVD-001']×1 | COVERED:['RULE-013']×2
+  core      rules           2 answers: COVERED:['RULE-026', 'RULE-027']×1 | COVERED:['RULE-026', 'RULE-028']×1
+  ux_state  normal          5 answers: COVERED:['FLOW-001', 'SCR-001']×1 | COVERED:['STATE-001']×1 | COVERED:['STATE-007']×1 | COVERED:['RULE-021']×1 | COVERED:['STATE-003']×2
+  ux_state  blocked         3 answers: COVERED:['RULE-012', 'STATE-007']×1 | N/A:['EVD-001']×2 | COVERED:['RULE-011']×1
+  ux_state  trouble         4 answers: COVERED:['RULE-022', 'STATE-009']×1 | COVERED:['RULE-013']×1 | COVERED:['RULE-020', 'RULE-022']×1 | COVERED:['STATE-005']×1
+  ux_action start           4 answers: COVERED:['FLOW-001', 'RULE-017']×1 | COVERED:['RULE-012']×1 | COVERED:['RULE-017']×1 | COVERED:['RULE-014', 'RULE-023']×1
+  ux_action commit          4 answers: COVERED:['RULE-014', 'RULE-017']×1 | COVERED:['AC-007', 'AC-017']×1 | COVERED:['RULE-014']×1 | COVERED:['DATA-002']×1
+  ux_action failure         5 answers: COVERED:['RULE-022', 'STATE-005']×1 | COVERED:['RULE-022']×1 | COVERED:['RULE-020']×1 | COVERED:['RULE-013']×1 | COVERED:['RULE-011']×1
+  ux_action leave           4 answers: COVERED:['RULE-017', 'RULE-030']×1 | N/A:['RULE-017']×1 | COVERED:['FLOW-004']×1 | COVERED:['RULE-011']×1
+  ux_action start           3 answers: COVERED:['FLOW-004', 'RULE-027']×1 | COVERED:['RULE-027']×1 | N/A:['RULE-027']×2
+  ux_action commit          3 answers: COVERED:['RULE-027']×2 | COVERED:['AC-012']×1 | COVERED:['RULE-013']×1
+  ux_action failure         3 answers: N/A:['RULE-027']×3 | COVERED:['RULE-013']×1 | COVERED:['RULE-012']×1
+  ux_action leave           3 answers: COVERED:['RULE-027']×2 | N/A:['RULE-027']×1 | N/A:['RULE-013']×1
+  ux_state  normal          4 answers: COVERED:['FLOW-004', 'SCR-002']×1 | COVERED:['STATE-008']×2 | N/A:['RULE-027']×1 | COVERED:['FLOW-004']×2
+  ux_state  blocked         3 answers: COVERED:['RULE-027', 'STATE-008']×1 | N/A:['EVD-001']×2 | N/A:['RULE-013']×1
+  ux_state  trouble         3 answers: COVERED:['STATE-010']×2 | COVERED:['RULE-013']×1 | N/A:['RULE-027']×1
+  ux_action start           3 answers: COVERED:['RULE-027', 'SCR-002']×1 | COVERED:['RULE-027']×2 | N/A:['RULE-027']×1
+  ux_action commit          3 answers: COVERED:['RULE-027']×2 | COVERED:['AC-011', 'FLOW-004']×1 | COVERED:['RULE-013']×1
+  ux_action start           3 answers: COVERED:['RULE-027', 'SCR-002']×1 | COVERED:['RULE-027']×2 | N/A:['RULE-027']×1
+  ux_action commit          3 answers: COVERED:['RULE-027']×2 | COVERED:['AC-011', 'FLOW-004']×1 | COVERED:['RULE-013']×1
+  ux_action commit          3 answers: COVERED:['RULE-027']×2 | COVERED:['AC-011', 'FLOW-004']×1 | COVERED:['RULE-013']×1
+  ux_action failure         4 answers: COVERED:['AC-013', 'STATE-010']×1 | N/A:['RULE-027']×2 | COVERED:['STATE-010']×1 | COVERED:['RULE-013']×1
+  cells 202 -> groups 65 (+ splits where answers differ: 157)
+== D:
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['REQ-001']×1
+  core      entry           2 answers: COVERED:['FLOW-001', 'RULE-009']×1 | COVERED:['FLOW-001', 'RULE-022']×1
+  core      paths           2 answers: COVERED:['FLOW-001']×1 | COVERED:['FLOW-001', 'RULE-029']×1
+  core      failure         2 answers: COVERED:['RULE-023', 'RULE-028']×1 | COVERED:['FLOW-001', 'RULE-016']×1
+  core      state_and_data  3 answers: COVERED:['RULE-021', 'RULE-030']×1 | COVERED:['DATA-003', 'DATA-006']×1 | COVERED:['DATA-003', 'DATA-006']×1
+  core      effects         3 answers: COVERED:['RULE-051', 'RULE-066']×1 | COVERED:['RULE-053']×1 | N/A:['RULE-053']×1
+  core      guards          2 answers: COVERED:['RULE-050']×1 | COVERED:['RULE-052']×2
+  core      rules           2 answers: COVERED:['RULE-025', 'RULE-026']×1 | COVERED:['DEC-008', 'DEC-015']×1
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['REQ-002']×1
+  core      entry           2 answers: COVERED:['FLOW-002', 'RULE-004']×1 | COVERED:['FLOW-002', 'RULE-022']×1
+  core      paths           2 answers: COVERED:['FLOW-002']×1 | COVERED:['FLOW-002', 'RULE-029']×1
+  core      failure         2 answers: COVERED:['RULE-023', 'RULE-028']×1 | COVERED:['FLOW-002', 'RULE-016']×1
+  core      state_and_data  3 answers: COVERED:['RULE-021', 'RULE-030']×1 | COVERED:['DATA-001', 'DATA-002']×1 | COVERED:['DATA-001', 'DATA-002']×1
+  core      effects         3 answers: COVERED:['RULE-051', 'RULE-066']×1 | COVERED:['RULE-053']×1 | N/A:['RULE-053']×1
+  core      guards          2 answers: COVERED:['RULE-050']×1 | COVERED:['RULE-052']×2
+  core      rules           2 answers: COVERED:['RULE-003', 'RULE-010']×1 | COVERED:['DEC-002', 'DEC-003']×1
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['REQ-003']×1
+  core      entry           2 answers: COVERED:['FLOW-003', 'RULE-009']×1 | COVERED:['FLOW-003', 'RULE-022']×1
+  core      paths           2 answers: COVERED:['FLOW-003']×1 | COVERED:['FLOW-003', 'RULE-029']×1
+  core      failure         2 answers: COVERED:['RULE-023', 'RULE-028']×1 | COVERED:['FLOW-003', 'RULE-016']×1
+  core      state_and_data  3 answers: COVERED:['RULE-021', 'RULE-030']×1 | COVERED:['DATA-003', 'DATA-004']×1 | COVERED:['DATA-003', 'DATA-004']×1
+  core      effects         3 answers: COVERED:['RULE-051', 'RULE-066']×1 | COVERED:['RULE-053']×1 | N/A:['RULE-053']×1
+  core      guards          2 answers: COVERED:['RULE-050']×1 | COVERED:['RULE-052']×2
+  core      rules           2 answers: COVERED:['RULE-003', 'RULE-010']×1 | COVERED:['DEC-002', 'DEC-008']×1
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['REQ-004']×1
+  core      entry           2 answers: COVERED:['FLOW-004', 'RULE-064']×1 | COVERED:['FLOW-004', 'RULE-005']×1
+  core      failure         2 answers: COVERED:['RULE-057', 'RULE-060']×1 | COVERED:['RULE-007', 'RULE-017']×1
+  core      state_and_data  3 answers: COVERED:['RULE-015', 'STATE-001']×1 | COVERED:['DATA-007', 'RULE-011']×1 | COVERED:['DATA-007', 'RULE-001']×1
+  core      effects         3 answers: COVERED:['RULE-035', 'RULE-051']×1 | COVERED:['RULE-038', 'RULE-053']×1 | N/A:['RULE-053']×1
+  core      guards          2 answers: COVERED:['RULE-050']×1 | COVERED:['RULE-052']×2
+  core      rules           2 answers: COVERED:['RULE-018', 'RULE-056']×1 | COVERED:['DEC-001', 'DEC-004']×1
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['REQ-005']×1
+  core      failure         2 answers: COVERED:['RULE-057', 'RULE-060']×1 | COVERED:['FLOW-005', 'RULE-007']×1
+  core      state_and_data  3 answers: COVERED:['STATE-001', 'STATE-006']×1 | COVERED:['DATA-004', 'DATA-005']×1 | COVERED:['DATA-004', 'DATA-005']×1
+  core      effects         3 answers: COVERED:['RULE-013', 'RULE-014']×1 | COVERED:['RULE-053']×1 | N/A:['RULE-053']×1
+  core      guards          2 answers: COVERED:['RULE-050']×1 | COVERED:['RULE-052']×2
+  core      rules           2 answers: COVERED:['RULE-012', 'RULE-056']×1 | COVERED:['DEC-006', 'DEC-011']×1
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['REQ-006']×1
+  core      entry           2 answers: COVERED:['FLOW-006', 'RULE-064']×1 | COVERED:['FLOW-006']×1
+  core      failure         2 answers: COVERED:['RULE-057', 'RULE-060']×1 | COVERED:['RULE-007', 'RULE-017']×1
+  core      state_and_data  3 answers: COVERED:['RULE-015', 'RULE-058']×1 | COVERED:['DATA-005', 'DATA-008']×1 | COVERED:['DATA-005', 'DATA-008']×1
+  core      effects         3 answers: COVERED:['RULE-013', 'RULE-014']×1 | COVERED:['RULE-038', 'RULE-053']×1 | N/A:['RULE-053']×1
+  core      guards          2 answers: COVERED:['RULE-050']×1 | COVERED:['RULE-052']×2
+  core      rules           2 answers: COVERED:['RULE-012', 'RULE-018']×1 | COVERED:['DEC-001', 'DEC-006']×1
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['REQ-007']×1
+  core      entry           2 answers: COVERED:['FLOW-008', 'RULE-004']×1 | COVERED:['FLOW-008']×1
+  core      paths           2 answers: COVERED:['FLOW-008']×1 | COVERED:['FLOW-008', 'RULE-008']×1
+  core      failure         2 answers: COVERED:['RULE-057']×1 | COVERED:['FLOW-008', 'RULE-062']×1
+  core      state_and_data  3 answers: COVERED:['STATE-001', 'STATE-006']×1 | COVERED:['DATA-009', 'DATA-010']×1 | COVERED:['DATA-009', 'DATA-010']×1
+  core      effects         3 answers: COVERED:['RULE-051', 'RULE-066']×1 | COVERED:['RULE-053']×1 | N/A:['RULE-053']×1
+  core      guards          2 answers: COVERED:['RULE-050']×1 | COVERED:['RULE-052']×2
+  core      rules           2 answers: COVERED:['RULE-056']×1 | COVERED:['DEC-003', 'DEC-007']×1
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['REQ-008']×1
+  core      entry           2 answers: COVERED:['RULE-064']×1 | COVERED:['RULE-063']×1
+  core      paths           2 answers: COVERED:['REQ-008']×1 | COVERED:['FLOW-002']×1
+  core      failure         2 answers: COVERED:['RULE-057']×1 | COVERED:['FLOW-002', 'RULE-062']×1
+  core      state_and_data  3 answers: COVERED:['STATE-001', 'STATE-006']×1 | COVERED:['DATA-009', 'DATA-010']×1 | COVERED:['DATA-009', 'DATA-010']×1
+  core      effects         3 answers: COVERED:['RULE-051', 'RULE-066']×1 | COVERED:['RULE-053']×1 | N/A:['RULE-053']×1
+  core      guards          2 answers: COVERED:['RULE-050']×1 | COVERED:['RULE-052']×2
+  core      rules           2 answers: COVERED:['AC-025', 'RULE-020']×1 | COVERED:['DEC-019', 'RULE-051']×1
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['REQ-009']×1
+  core      entry           2 answers: COVERED:['FLOW-008']×1 | COVERED:['FLOW-008', 'RULE-005']×1
+  core      paths           2 answers: COVERED:['FLOW-008']×1 | COVERED:['FLOW-008', 'RULE-029']×1
+  core      failure         2 answers: COVERED:['RULE-023', 'RULE-028']×1 | COVERED:['RULE-016', 'RULE-024']×1
+  core      state_and_data  3 answers: COVERED:['RULE-015', 'RULE-021']×1 | COVERED:['DATA-001', 'DATA-002']×1 | COVERED:['DATA-001', 'DATA-002']×1
+  core      effects         3 answers: COVERED:['RULE-014', 'RULE-051']×1 | COVERED:['RULE-053']×1 | N/A:['RULE-053']×1
+  core      guards          2 answers: COVERED:['RULE-050']×1 | COVERED:['RULE-052']×2
+  core      rules           2 answers: COVERED:['RULE-025', 'RULE-026']×1 | COVERED:['DEC-004', 'DEC-013']×1
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['REQ-010']×1
+  core      entry           2 answers: COVERED:['FLOW-006']×1 | COVERED:['RULE-051']×1
+  core      state_and_data  3 answers: COVERED:['STATE-001', 'STATE-006']×1 | COVERED:['DATA-008']×1 | COVERED:['DATA-008', 'RULE-054']×1
+  core      effects         3 answers: COVERED:['RULE-014', 'RULE-051']×1 | COVERED:['RULE-053']×1 | N/A:['RULE-053']×1
+  core      guards          2 answers: COVERED:['RULE-050']×1 | COVERED:['RULE-052']×2
+  core      rules           2 answers: COVERED:['RULE-056']×1 | COVERED:['DEC-013', 'RULE-002']×1
+  core      who_and_why     2 answers: COVERED:['RULE-065']×1 | COVERED:['REQ-011']×1
+  core      entry           2 answers: N/A:['RULE-065']×1 | COVERED:['RULE-065']×1
+  core      paths           2 answers: COVERED:['REQ-011']×1 | N/A:['RULE-065']×1
+  core      state_and_data  2 answers: COVERED:['RULE-065']×2 | N/A:['RULE-065']×1
+  core      rules           2 answers: COVERED:['RULE-065']×1 | COVERED:['RULE-065', 'RULE-067']×1
+  core      who_and_why     2 answers: COVERED:['USR-001']×1 | COVERED:['REQ-012']×1
+  core      entry           2 answers: COVERED:['FLOW-008']×1 | COVERED:['FLOW-008', 'RULE-005']×1
+  core      failure         2 answers: COVERED:['RULE-057', 'RULE-060']×1 | COVERED:['RULE-007', 'RULE-061']×1
+  core      state_and_data  3 answers: COVERED:['RULE-058', 'STATE-017']×1 | COVERED:['DATA-007', 'DATA-008']×1 | COVERED:['DATA-007', 'DATA-008']×1
+  core      effects         3 answers: COVERED:['RULE-051', 'RULE-066']×1 | COVERED:['RULE-053']×1 | N/A:['RULE-053']×1
+  core      guards          2 answers: COVERED:['RULE-050']×1 | COVERED:['RULE-052']×2
+  core      rules           2 answers: COVERED:['RULE-018', 'RULE-056']×1 | COVERED:['DEC-001', 'DEC-004']×1
+  ux_state  normal          6 answers: COVERED:['STATE-001']×1 | COVERED:['STATE-002']×1 | COVERED:['STATE-003']×1 | COVERED:['STATE-004']×1 | COVERED:['STATE-005']×1 | COVERED:['STATE-014']×1
+  ux_state  blocked         3 answers: COVERED:['STATE-007']×1 | N/A:['RULE-050', 'STATE-008']×2 | COVERED:['STATE-016']×1
+  ux_state  trouble         4 answers: COVERED:['RULE-057', 'RULE-060']×1 | COVERED:['RULE-059', 'STATE-010']×1 | COVERED:['RULE-062', 'STATE-011']×1 | COVERED:['STATE-012']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-101']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-102']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-103']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | COVERED:['RULE-017']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-105']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-129']×1
+  ux_state  normal          6 answers: COVERED:['STATE-001']×1 | COVERED:['STATE-002']×1 | COVERED:['STATE-003']×1 | COVERED:['STATE-004']×1 | COVERED:['STATE-005']×1 | COVERED:['STATE-014']×1
+  ux_state  blocked         3 answers: COVERED:['STATE-007']×1 | N/A:['RULE-050', 'STATE-008']×2 | COVERED:['STATE-016']×1
+  ux_state  trouble         4 answers: COVERED:['RULE-057', 'RULE-060']×1 | COVERED:['RULE-059', 'STATE-010']×1 | COVERED:['RULE-062', 'STATE-011']×1 | COVERED:['STATE-012']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-106']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-107']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-108']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-109']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-110']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-111']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-112']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | COVERED:['RULE-017']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-129']×1
+  ux_state  normal          6 answers: COVERED:['STATE-001']×1 | COVERED:['STATE-002']×1 | COVERED:['STATE-003']×1 | COVERED:['STATE-004']×1 | COVERED:['STATE-005']×1 | N/A:['SCR-003']×1
+  ux_state  trouble         4 answers: COVERED:['RULE-057', 'RULE-060']×1 | COVERED:['RULE-059', 'STATE-010']×1 | COVERED:['RULE-062', 'STATE-011']×1 | COVERED:['STATE-012']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-114']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-115']×1
+  ux_state  normal          6 answers: COVERED:['STATE-001']×1 | COVERED:['STATE-002']×1 | N/A:['SCR-004']×1 | COVERED:['STATE-004']×1 | COVERED:['STATE-005']×1 | COVERED:['STATE-014']×1
+  ux_state  blocked         3 answers: COVERED:['STATE-007']×1 | N/A:['RULE-050', 'STATE-008']×2 | COVERED:['STATE-016']×1
+  ux_state  trouble         4 answers: COVERED:['RULE-057', 'RULE-060']×1 | COVERED:['RULE-059', 'STATE-010']×1 | COVERED:['RULE-062', 'STATE-011']×1 | COVERED:['STATE-012']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-116']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | COVERED:['RULE-017']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-118']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-119']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-129']×1
+  ux_state  normal          6 answers: COVERED:['STATE-001']×1 | COVERED:['STATE-002']×1 | N/A:['SCR-005']×1 | COVERED:['STATE-004']×1 | COVERED:['STATE-005']×1 | COVERED:['STATE-014']×1
+  ux_state  blocked         3 answers: COVERED:['STATE-007']×1 | N/A:['RULE-050', 'STATE-008']×2 | COVERED:['STATE-016']×1
+  ux_state  trouble         4 answers: COVERED:['RULE-057', 'RULE-060']×1 | COVERED:['RULE-059', 'STATE-010']×1 | COVERED:['RULE-062', 'STATE-011']×1 | COVERED:['STATE-012']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-120']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-121']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-122']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | COVERED:['RULE-017']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-124']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-125']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-126']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-129']×1
+  ux_state  normal          6 answers: COVERED:['STATE-001']×1 | COVERED:['STATE-002']×1 | COVERED:['STATE-003']×1 | COVERED:['STATE-004']×1 | COVERED:['STATE-005']×1 | COVERED:['STATE-014']×1
+  ux_state  blocked         3 answers: COVERED:['STATE-007']×1 | N/A:['RULE-050', 'STATE-008']×2 | COVERED:['STATE-016']×1
+  ux_state  trouble         4 answers: COVERED:['RULE-057', 'RULE-060']×1 | COVERED:['RULE-059', 'STATE-010']×1 | COVERED:['RULE-062', 'STATE-011']×1 | COVERED:['STATE-012']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-127']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | COVERED:['RULE-017']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-129']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-130']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-131']×1
+  ux_state  normal          6 answers: COVERED:['STATE-001']×1 | COVERED:['STATE-002']×1 | COVERED:['RULE-058', 'STATE-003']×1 | COVERED:['RULE-058', 'STATE-004']×1 | COVERED:['STATE-005']×1 | COVERED:['STATE-014']×1
+  ux_state  blocked         3 answers: COVERED:['STATE-007']×1 | N/A:['RULE-050', 'STATE-008']×2 | COVERED:['STATE-016']×1
+  ux_state  trouble         4 answers: COVERED:['RULE-057', 'RULE-060']×1 | COVERED:['RULE-059', 'STATE-010']×1 | COVERED:['RULE-062', 'STATE-011']×1 | COVERED:['STATE-012']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-132']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-133']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-134']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-135']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-136']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | COVERED:['RULE-017']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-138']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-139']×1
+  ux_action guards          3 answers: COVERED:['RULE-050']×1 | N/A:['RULE-050']×1 | N/A:['RULE-140']×1
+  cells 1320 -> groups 400 (+ splits where answers differ: 857)

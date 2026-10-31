@@ -15,6 +15,7 @@ from authority_binding_v2 import (
     sha256_json,
     ux_binding_metrics,
 )
+from coverage_inheritance import expand_coverage
 from discovery_v2 import validate_discovery_baseline
 from grill_v2 import compile_active_grill_packs, grill_pack_metrics, grill_unknown_metrics
 from materiality_v2 import classify_materiality, is_high_risk, validate_materiality_classification
@@ -108,6 +109,8 @@ def _sorted_records(
 
 
 def _coverage_projection(state: dict[str, object]) -> dict[str, object]:
+    # Digests see the canonical explicit form: inherited cells written out, declarations removed.
+    state = expand_coverage(state, strip=True)
     core = state.get("coverage") if isinstance(state.get("coverage"), list) else []
     specialist = state.get("grill_coverage") if isinstance(state.get("grill_coverage"), list) else []
     ux = state.get("ux_coverage") if isinstance(state.get("ux_coverage"), list) else []

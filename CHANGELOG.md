@@ -13,6 +13,7 @@ U2 1·2단계. 계획은 [U2 계획](docs/u2-planning-gaps.md)과 [ROADMAP U2](R
 - U2-5·U2-7: native 정의가 OPEN인 동안 요구사항·화면을 coverage 행보다 먼저 둘 수 있습니다. READY_FOR_REVIEW부터는 빠진 행이 다시 오류입니다. 보호된 `authority_binding_v2.py`의 고정 해시를 갱신했습니다.
 - U2-6: 담당자 기본값 결정(AGENT)을 그 질문과 함께 대체할 수 있습니다.
 - U2-8: 관찰 사실(FACTUAL·BEHAVIORAL·CONSTRAINT)을 추천 근거로 쓸 수 있습니다.
+- U2-12: 확정 칸 상속. 행동 행의 `shape`(`navigate`·`local_choice`·`toggle`·`submit`·`destructive`)가 해당 없는 축을, 요구사항·화면·행동 행의 `default_authority`가 적지 않은 축을 채웁니다. 적은 칸이 이깁니다. 검증·digest·다운스트림은 펼친 보기를 읽어 압축 상태와 펼친 상태의 digest가 같고, 두 필드가 없는 0.2.0 기록은 그대로 유효합니다. `compact_coverage.py`가 기존 행을 손실 없이 압축합니다(오목 38/202, WebAppDev 209/1,320). 고정 모듈 `authority_binding_v2.py`·`approval_v2.py` 해시 갱신. 설명 `references/coverage-inheritance.md`.
 - U2-9: `draft_freeze.py`가 빠진 coverage 행을 정확한 칸 목록으로 패치에 쓰고, 기록 그래프로 정해지는 칸(완료 기준·사용자·목표·흐름)만 채우며 나머지는 후보와 함께 `DECIDE`로 둡니다. 패치에 `rows`로 새 coverage 행을 넣을 수 있습니다. 오목 측정에서는 212칸 중 11칸만 정해져 효과가 작습니다([측정](docs/u2-9-light-freeze-design.md)).
 
 ## 1.3.0 — 2026-10-31
