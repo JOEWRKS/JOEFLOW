@@ -2,7 +2,8 @@
 
 현재: 별도 워크트리 `JOEFLOW-reinforce`(브랜치 `claude/joeflow-reinforce`)에서 작업한다. U1-1~U1-6 complete·설치본 반영. 2026-10-28 사용자 결정: experience pass는 설치본에 넣지 않음, 1.2.0 출시+main 합치기+푸시, U1-9 대체 연쇄 도우미 진행, 추가 A/B 8회, 오목은 rev 31 승인 뒤 새 명령으로 전환(지시 전달함), pwsh 설치 안 함.
 2026-10-30: 1.2.0 main 합치기·푸시, 태그 `v1.2.0`(`62eb541`)·GitHub Release 게시 complete. 2026-10-31: U1-7 개인 설치본 반영, 1.3.0 main·태그 `v1.3.0`(`016a606`)·GitHub Release 게시 complete. U1-9·U1-10까지 개인 설치본 반영.
-다음 작업: 1.4.0 게시·설치. U1-8은 U2-10으로 옮김.
+2026-10-31: U2 전체 개인 설치본 반영(`install_u2.py`), 1.4.0 main(`ed30684`) 푸시; 태그 `v1.4.0`·GitHub Release는 사용자 실행 대기.
+다음 작업: U2-10(기능 추가 모드)·U2-11(ASYNC 프로필). U1-8은 U2-10으로 옮김.
 
 상태어: not started · in progress · verification pending · complete · deferred
 

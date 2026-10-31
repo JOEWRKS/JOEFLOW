@@ -4,6 +4,8 @@
 
 ## 1.4.0 — 2026-10-31
 
+개인 설치본에는 2026-10-31에 U2 전체를 반영했습니다(experience pass는 여전히 제외, [설치 기록](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)).
+
 U2 1·2·3단계와 U2-12. 계획은 [U2 계획](docs/u2-planning-gaps.md)과 [ROADMAP U2](ROADMAP.md)에 있습니다. 바인딩 계약 identity와 State 0.2.0은 바뀌지 않았습니다.
 
 - U2-1: `update_projection.py`가 기획서·검토 화면의 식별 블록(revision·digest·변경 수·이전 승인)과 출처 블록을 다시 만들고, 바뀐 레코드를 적은 손글 줄을 알려 줍니다. 템플릿에 두 블록 표시를 넣었습니다.

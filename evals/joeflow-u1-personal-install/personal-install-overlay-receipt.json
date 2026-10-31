@@ -1,8 +1,8 @@
 {
   "schema_version": "joeflow.personal-install-overlay-receipt/1.0",
-  "recorded_at": "2026-10-31T03:01:18+09:00",
+  "recorded_at": "2026-10-31T20:29:28+09:00",
   "program": "JOEFLOW",
-  "program_version_file": "1.2.0",
+  "program_version_file": "1.4.0",
   "runtime_skill_id": "joewrks-product-definition",
   "installation_path": "C:\\Users\\tjdwo\\.codex\\skills\\joewrks-product-definition",
   "composition": {
@@ -95,6 +95,41 @@
           "references/workflow-v0.2.0.md (UX inheritance sentence)"
         ],
         "installed_on": "2026-10-31"
+      },
+      {
+        "item": "U2 (1.4.0)",
+        "commit": "ed306847a5134ede09041f0722555fa377f35d83",
+        "base_commit": "c32d149faf346028972cd25ba80ace7cc9f65fd3",
+        "files": [
+          "downstream_v21/audit.py",
+          "downstream_v21/compiler.py",
+          "references/coverage-inheritance.md",
+          "references/first-plan-guide.md",
+          "references/grill-contract-v0.2.0.md",
+          "references/ux-action-shapes-v2.json",
+          "scripts/approval_v2.py",
+          "scripts/authority_binding_v2.py",
+          "scripts/binding_diagnostics.py",
+          "scripts/compact_coverage.py",
+          "scripts/coverage_inheritance.py",
+          "scripts/draft_freeze.py",
+          "scripts/grill_v2.py",
+          "scripts/new_records.py",
+          "scripts/open_revision.py",
+          "scripts/revision_v2.py",
+          "scripts/update_projection.py",
+          "scripts/verify_runtime_v2.py",
+          "templates/examples/closed-minimal.state.json",
+          "templates/examples/discover-one-question.state.json",
+          "templates/planning-review-core.html"
+        ],
+        "composed": {
+          "SKILL.md": "patch: all hunks",
+          "references/workflow-v0.2.0.md": "patch: 2 of 3 hunks; FREEZE paragraph inserted by anchor (its context is the experience pass)",
+          "templates/master-planning-spec.md": "patch: 1 hunks"
+        },
+        "not_installed_at_tip": [],
+        "installed_on": "2026-10-31"
       }
     ],
     "not_applied": [
@@ -106,14 +141,14 @@
     ],
     "matches_single_commit": false
   },
-  "tip_compared": "c169018a564c2ac9145281516e24622fc73bcb30",
+  "tip_compared": "ed306847a5134ede09041f0722555fa377f35d83",
   "origin_counts": {
-    "branch_tip": 20,
-    "composed_v1.1.0_plus_u1": 2,
+    "branch_tip": 35,
+    "composed_v1.1.0_plus_u1_u2": 3,
     "preserved_local_overlay": 2,
     "untracked_extra": 37,
-    "v1.1.0_and_branch_tip": 160,
-    "v1.1.0_only": 2
+    "v1.1.0_and_branch_tip": 154,
+    "v1.1.0_only": 1
   },
   "tip_tracked_files_missing_from_install": [],
   "backups": [
@@ -151,16 +186,21 @@
       "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u1-7-c32d149-20261031",
       "file_count": 221,
       "manifest_sha256": "bfe3bc33385ad61cc70cc4b16788f506b8e8bf42be477a18a11aa9267c0013e7"
+    },
+    {
+      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u2-ed30684-20261031",
+      "file_count": 223,
+      "manifest_sha256": "dd0275ca03349f3bbe59d5c5c3fc56753f8ef9d31ba16d9239a41b589c4bdcd4"
     }
   ],
   "manifest_sha256_definition": "sha256 of UTF-8 lines '<sha256>  <posix path>\n' sorted by path",
-  "installed_file_count": 223,
-  "installed_manifest_sha256": "dd0275ca03349f3bbe59d5c5c3fc56753f8ef9d31ba16d9239a41b589c4bdcd4",
+  "installed_file_count": 232,
+  "installed_manifest_sha256": "a7d852df0b3b33e331461a54abd0e02016043c733cee8f9a7e2f69f39abaf6f2",
   "installed_manifest": [
     {
       "path": "SKILL.md",
-      "sha256": "f8060bed3d3d9162b36f9925158523abebcf5265ef45ab4ac394615edc081746",
-      "origin": "composed_v1.1.0_plus_u1"
+      "sha256": "8f0e6bd8ffa4d467e927a54e6b10fa20422e0635aad9da88dfc436b1553ac2e6",
+      "origin": "composed_v1.1.0_plus_u1_u2"
     },
     {
       "path": "agents/openai.yaml",
@@ -544,13 +584,13 @@
     },
     {
       "path": "downstream_v21/audit.py",
-      "sha256": "0b3a13be8f607ea23bd59e000ccef99c0c92fffaa352b8964229a33d97a5cb01",
-      "origin": "v1.1.0_and_branch_tip"
+      "sha256": "64115ed5e3f21c5d29d8477061d0bf938f4817d458df9eb8fe55dc20da89a3a6",
+      "origin": "branch_tip"
     },
     {
       "path": "downstream_v21/compiler.py",
-      "sha256": "530b3c42684326165e9da6ee0165e04e3911fc55ca3c622ac4bf9f095e591277",
-      "origin": "v1.1.0_and_branch_tip"
+      "sha256": "64d9edd5a8008b8044c7a5d1ae7484a2eb4ed11714b40b63e3b9d7ec4e99e0e7",
+      "origin": "branch_tip"
     },
     {
       "path": "downstream_v21/contracts.py",
@@ -733,6 +773,11 @@
       "origin": "v1.1.0_and_branch_tip"
     },
     {
+      "path": "references/coverage-inheritance.md",
+      "sha256": "d266430542f5858ebb9c58efebc5269a63a3f7fe3659b63ea9ffce9484e7c3b6",
+      "origin": "branch_tip"
+    },
+    {
       "path": "references/discovery-contract-v0.2.0.md",
       "sha256": "ac765247622ebf42c6abd47b28925677e3f881626e6c168895524a538adc3325",
       "origin": "v1.1.0_and_branch_tip"
@@ -758,9 +803,14 @@
       "origin": "preserved_local_overlay"
     },
     {
+      "path": "references/first-plan-guide.md",
+      "sha256": "ffac29769d3bf6b57222d9d6e4d217feb0956e99725871024b8e1b190f8bed42",
+      "origin": "branch_tip"
+    },
+    {
       "path": "references/grill-contract-v0.2.0.md",
-      "sha256": "db5fbc04c4c28dbfca13fed140b458a9ecdf3dbd7c59599858212dbbeaa36d8e",
-      "origin": "v1.1.0_and_branch_tip"
+      "sha256": "43b17a95319bcb16dcd3e77d5ce37e62f4890312e63e3be6e452f7e5ab84622a",
+      "origin": "branch_tip"
     },
     {
       "path": "references/grill-packs/async.json",
@@ -868,6 +918,11 @@
       "origin": "v1.1.0_and_branch_tip"
     },
     {
+      "path": "references/ux-action-shapes-v2.json",
+      "sha256": "5294ba0d09dad771713c3c34a0fb5c2bf2e0f004ad2a1d6a434bb1ac791dfd45",
+      "origin": "branch_tip"
+    },
+    {
       "path": "references/ux-profile-inheritance-v1.json",
       "sha256": "a39bcea6c10a952c6826ca19840a491f90341be2545d9604789f54897b4b6f23",
       "origin": "branch_tip"
@@ -879,8 +934,8 @@
     },
     {
       "path": "references/workflow-v0.2.0.md",
-      "sha256": "83cdcd67a95c1634c28e67696cdf307e20d367655557db8443e37e7609ac114f",
-      "origin": "composed_v1.1.0_plus_u1"
+      "sha256": "7eea6b62848b2217dab645a60bf8d69d264698f8fdc3214c3c9ea90adf779e32",
+      "origin": "composed_v1.1.0_plus_u1_u2"
     },
     {
       "path": "reviewer_runner/__init__.py",
@@ -1029,8 +1084,8 @@
     },
     {
       "path": "scripts/approval_v2.py",
-      "sha256": "dadc41ae71ae309e841b747dee6bc952ef4d4d59c87bbeb3b71c65d2232bd8fc",
-      "origin": "v1.1.0_and_branch_tip"
+      "sha256": "a2d7577c812078a9658b34a0bbf4816064ec7d8f001057921a85bb84b5ae8dc4",
+      "origin": "branch_tip"
     },
     {
       "path": "scripts/audit_downstream_v2.py",
@@ -1049,7 +1104,7 @@
     },
     {
       "path": "scripts/authority_binding_v2.py",
-      "sha256": "965d5ccab556512b04f4ec188b97f5e417d41c34752cda75d284e5b8cba9c92d",
+      "sha256": "6c36adba39836216f4ff5c1dc1d823cdcf16213d1c78577000dacb7df5e26326",
       "origin": "branch_tip"
     },
     {
@@ -1059,7 +1114,7 @@
     },
     {
       "path": "scripts/binding_diagnostics.py",
-      "sha256": "9a7155b014d42ccd97255e3f47e0cb81166ecedcfc96012a0efe98f089766bb0",
+      "sha256": "8f67259e9843cf63e2409c3abf855864f079719c2c29aee9cafe409f3f834666",
       "origin": "branch_tip"
     },
     {
@@ -1088,14 +1143,29 @@
       "origin": "branch_tip"
     },
     {
+      "path": "scripts/compact_coverage.py",
+      "sha256": "4866b47d44625dee38bb3241282d470974f0e7f90d7fd0c661ffd9c65d29098f",
+      "origin": "branch_tip"
+    },
+    {
       "path": "scripts/compile_downstream_v2.py",
       "sha256": "1d586886b5f4debc5a4d7ab6a1b93c5431a26fe1e675de8fb1ebbf671f1e2042",
       "origin": "v1.1.0_and_branch_tip"
     },
     {
+      "path": "scripts/coverage_inheritance.py",
+      "sha256": "b2af949bea77d920598ebd0fcbc4791b8430e3fa32e3c56cab9a2ccc8561d8f1",
+      "origin": "branch_tip"
+    },
+    {
       "path": "scripts/discovery_v2.py",
       "sha256": "eb869048b9304223a34876d3904dddb18b17e65a62b809ed8ac37c67faba4c99",
       "origin": "v1.1.0_and_branch_tip"
+    },
+    {
+      "path": "scripts/draft_freeze.py",
+      "sha256": "a301dbf92b86fdc92fe6df1335acc5c0a91737415b9cb24e16229da9ccb2c0af",
+      "origin": "branch_tip"
     },
     {
       "path": "scripts/explain_state_errors.py",
@@ -1104,7 +1174,7 @@
     },
     {
       "path": "scripts/grill_v2.py",
-      "sha256": "f794789391772e056f43d780c054f061db5bc249ea0a2cbcb7be9fe196681c2a",
+      "sha256": "7fcb70e31860813aff2fe2ef8325cbf00fbad318ed9c779f8c1dd0cb64ce3897",
       "origin": "branch_tip"
     },
     {
@@ -1124,7 +1194,7 @@
     },
     {
       "path": "scripts/new_records.py",
-      "sha256": "dd34b6f8e0e7f60fc02b93a7a879c34545c105ac6326f5606d5723d83b7496c5",
+      "sha256": "9bb61be002c831a6176dd487d325ef698ebe702f8478ff563e69bd1294321dbb",
       "origin": "branch_tip"
     },
     {
@@ -1134,7 +1204,7 @@
     },
     {
       "path": "scripts/open_revision.py",
-      "sha256": "9bd1ac4c7c910bb6c7a9a4f38329651cf6c872b5f6a24f7bca7f6c04738f3b57",
+      "sha256": "cb03771217ab9cfb90214ac0609377643a1881984d324027a18d062fbf04062b",
       "origin": "branch_tip"
     },
     {
@@ -1169,7 +1239,7 @@
     },
     {
       "path": "scripts/revision_v2.py",
-      "sha256": "97903f52bc6b1ca8bdedad0bc646455cf5c59ff2be14621fbae928a7e88bd148",
+      "sha256": "da26d450fdc90567021af47d672439efadea83fb0c183000ec28e6b7cea12d5a",
       "origin": "branch_tip"
     },
     {
@@ -1193,6 +1263,11 @@
       "origin": "branch_tip"
     },
     {
+      "path": "scripts/update_projection.py",
+      "sha256": "7a84d98e65ca81248b055144f734a8fe97baa9e0b8c409ae4dc0174de9a5fdeb",
+      "origin": "branch_tip"
+    },
+    {
       "path": "scripts/ux_profile_inheritance.py",
       "sha256": "395ad2c44494210e53f2e7aba344e165530254e80625d9ce9a24b293a3b93635",
       "origin": "branch_tip"
@@ -1209,8 +1284,8 @@
     },
     {
       "path": "scripts/verify_runtime_v2.py",
-      "sha256": "978b5bc0d552450edc35da344b9fc8da1d4e65334d576606c8ec3cee1b83f39d",
-      "origin": "v1.1.0_and_branch_tip"
+      "sha256": "3170f069620917bf448c89437641b9566281f3588f22cb542232f7ea77138302",
+      "origin": "branch_tip"
     },
     {
       "path": "scripts/verify_runtime_v21.py",
@@ -1221,6 +1296,16 @@
       "path": "templates/decision-ledger.md",
       "sha256": "f5936e4fb1ab2c31e73176582a3f04c92e02be13b79ef924c0f5005dcabafcbb",
       "origin": "v1.1.0_and_branch_tip"
+    },
+    {
+      "path": "templates/examples/closed-minimal.state.json",
+      "sha256": "3e87c264b7b44f8472116ac3b954c39c4e4767e0de79d8293dc0b03e645e7f2a",
+      "origin": "branch_tip"
+    },
+    {
+      "path": "templates/examples/discover-one-question.state.json",
+      "sha256": "8cc342d3d7ffd50d4bdf0d5f93954df93e1bf5f02ce56bf5e887ffba4ac8fe06",
+      "origin": "branch_tip"
     },
     {
       "path": "templates/figma-make-handoff.md",
@@ -1234,13 +1319,13 @@
     },
     {
       "path": "templates/master-planning-spec.md",
-      "sha256": "9723a79184d34a2ea37ac0553d6e910bedcb30cf873f6cdf9c79f589ac5a521c",
-      "origin": "v1.1.0_only"
+      "sha256": "021aafd43e90ee28f353c157ff3c11e6e9e97add6a4b8308b2b0906236ddc2e3",
+      "origin": "composed_v1.1.0_plus_u1_u2"
     },
     {
       "path": "templates/planning-review-core.html",
-      "sha256": "04ce3acec7ffd1bc8211b5516871ce64bc8fe391dc06bf010e12137ee971e3e5",
-      "origin": "v1.1.0_and_branch_tip"
+      "sha256": "4be10158d6cc2125611b013ec0239afe82d7ee8c96a3e2c6b25e641cd8b9b8ef",
+      "origin": "branch_tip"
     },
     {
       "path": "templates/product-definition.md",
