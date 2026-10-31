@@ -1,0 +1,10 @@
+== navigate (12 actions)
+   validation 12/12, failure 12/12, retry 12/12, cancel 12/12, timeout 12/12, destructive_confirmation 12/12, notification 11/12, duplicate_concurrent_action 5/12, refresh 4/12, input 3/12, undo 2/12
+== browse (24 actions)
+   destructive_confirmation 24/24, notification 24/24, validation 10/24, retry 6/24, undo 6/24, failure 4/24, cancel 4/24, timeout 2/24
+== discard (13 actions)
+   validation 13/13, failure 13/13, retry 13/13, timeout 13/13, notification 13/13, undo 13/13, input 10/13, refresh 6/13, back 4/13
+== local_choice (2 actions)
+   validation 2/2, retry 2/2, cancel 2/2, back 2/2, refresh 2/2, duplicate_concurrent_action 2/2, timeout 2/2, notification 2/2, undo 2/2, destructive_confirmation 2/2, failure 2/2
+== submit (2 actions)
+   back 2/2, notification 2/2, destructive_confirmation 2/2, retry 1/2, cancel 1/2, refresh 1/2, duplicate_concurrent_action 1/2, undo 1/2

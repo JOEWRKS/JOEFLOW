@@ -46,9 +46,10 @@ class ShapeInheritanceTest(unittest.TestCase):
             del act["cells"][axis]
         self.assertEqual(codes(state), set())
         expanded = action(expand_coverage(state))
-        self.assertEqual(expanded["cells"]["undo"][TAG], "shape:navigate")
-        self.assertEqual(expanded["cells"]["undo"]["status"], "N/A")
-        self.assertNotIn(TAG, action(expand_coverage(state, strip=True))["cells"]["undo"])
+        for axis in load_shapes()["navigate"]["not_applicable"]:
+            self.assertEqual(expanded["cells"][axis][TAG], "shape:navigate")
+            self.assertEqual(expanded["cells"][axis]["status"], "N/A")
+            self.assertNotIn(TAG, action(expand_coverage(state, strip=True))["cells"][axis])
 
     def test_a_rows_patch_carries_shape_and_default_authority(self):
         # The patch route is the only way an author writes a new row; a declaration must survive it.
@@ -77,7 +78,7 @@ class ShapeInheritanceTest(unittest.TestCase):
         self.assertEqual(built["shape"], "navigate")
         self.assertTrue(all("value_sha256" in b for b in built["default_authority"]))
         expanded = expand_coverage(trimmed)["ux_coverage"][0]["actions"][0]
-        self.assertEqual(expanded["cells"]["undo"][TAG], "shape:navigate")
+        self.assertEqual(expanded["cells"]["validation"][TAG], "shape:navigate")
         self.assertEqual(expanded["cells"]["entry"][TAG], "row")
         self.assertEqual(set(expanded["cells"]), set(action(state)["cells"]))
 
@@ -94,7 +95,7 @@ class ShapeInheritanceTest(unittest.TestCase):
         state = literal_ready_state()
         act = action(state)
         act["shape"] = "navigate"
-        self.assertEqual(action(expand_coverage(state))["cells"]["undo"], act["cells"]["undo"])
+        self.assertEqual(action(expand_coverage(state))["cells"]["validation"], act["cells"]["validation"])
 
 
 class DefaultAuthorityTest(unittest.TestCase):

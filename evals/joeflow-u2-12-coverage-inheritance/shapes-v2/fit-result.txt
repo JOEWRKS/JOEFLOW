@@ -1,0 +1,110 @@
+== ux-action-shapes-v1.json: 97 actions, hand N/A 387
+   AI-Gomoku  SCR-001/preview-then-place     N/A  3 -> -            explains 0
+   AI-Gomoku  SCR-001/new-game               N/A  8 -> -            explains 0
+   AI-Gomoku  SCR-002/choose-color           N/A 11 -> local_choice explains 11
+   AI-Gomoku  SCR-002/choose-strength        N/A 11 -> local_choice explains 11
+   AI-Gomoku  SCR-002/start-game             N/A  8 -> toggle       explains 2
+   A/B t1     SCR-003/step-move              N/A  4 -> -            explains 0
+   A/B t1     SCR-003/jump-to-move           N/A  5 -> -            explains 0
+   A/B t1     SCR-003/back-to-final          N/A  7 -> -            explains 0
+   A/B t1     SCR-003/new-game-from-review   N/A  7 -> -            explains 0
+   A/B t10    SCR-003/step-move              N/A  2 -> -            explains 0
+   A/B t10    SCR-003/jump-to-move           N/A  3 -> -            explains 0
+   A/B t10    SCR-003/back-to-final          N/A  8 -> -            explains 0
+   A/B t10    SCR-003/new-game-from-review   N/A  9 -> -            explains 0
+   A/B t11    SCR-003/step-move              N/A  2 -> -            explains 0
+   A/B t11    SCR-003/jump-to-move           N/A  3 -> -            explains 0
+   A/B t11    SCR-003/back-to-final          N/A  8 -> -            explains 0
+   A/B t11    SCR-003/new-game-from-review   N/A  7 -> -            explains 0
+   A/B t12    SCR-003/step-move              N/A  3 -> -            explains 0
+   A/B t12    SCR-003/jump-to-move           N/A  4 -> -            explains 0
+   A/B t12    SCR-003/back-to-final          N/A  7 -> -            explains 0
+   A/B t12    SCR-003/new-game-from-review   N/A  7 -> -            explains 0
+   A/B t2     SCR-003/step-move              N/A  5 -> -            explains 0
+   A/B t2     SCR-003/jump-to-move           N/A  6 -> -            explains 0
+   A/B t2     SCR-003/back-to-final          N/A  8 -> -            explains 0
+   A/B t2     SCR-003/new-game-from-review   N/A  7 -> -            explains 0
+   A/B t3     SCR-003/step-move              N/A  3 -> -            explains 0
+   A/B t3     SCR-003/jump-to-move           N/A  4 -> -            explains 0
+   A/B t3     SCR-003/back-to-final          N/A  8 -> -            explains 0
+   A/B t3     SCR-003/new-game-from-review   N/A  6 -> -            explains 0
+   A/B t4     SCR-003/step-move              N/A  3 -> toggle       explains 2
+   A/B t4     SCR-003/jump-to-move           N/A  3 -> toggle       explains 2
+   A/B t4     SCR-003/back-to-final          N/A  9 -> toggle       explains 2
+   A/B t4     SCR-003/new-game-from-review   N/A  9 -> -            explains 0
+   A/B t5     SCR-003/step-move              N/A  2 -> -            explains 0
+   A/B t5     SCR-003/jump-to-move           N/A  3 -> -            explains 0
+   A/B t5     SCR-003/back-to-final          N/A 10 -> -            explains 0
+   A/B t5     SCR-003/new-game-from-review   N/A  8 -> -            explains 0
+   A/B t6     SCR-003/step-move              N/A  3 -> -            explains 0
+   A/B t6     SCR-003/jump-to-move           N/A  4 -> -            explains 0
+   A/B t6     SCR-003/back-to-final          N/A  9 -> -            explains 0
+   A/B t6     SCR-003/new-game-from-review   N/A  8 -> -            explains 0
+   A/B t7     SCR-003/step-move              N/A  3 -> toggle       explains 2
+   A/B t7     SCR-003/jump-to-move           N/A  4 -> toggle       explains 2
+   A/B t7     SCR-003/back-to-final          N/A  7 -> -            explains 0
+   A/B t7     SCR-003/new-game-from-review   N/A  8 -> -            explains 0
+   A/B t8     SCR-003/step-move              N/A  3 -> toggle       explains 2
+   A/B t8     SCR-003/jump-to-move           N/A  4 -> toggle       explains 2
+   A/B t8     SCR-003/back-to-final          N/A  9 -> toggle       explains 2
+   A/B t8     SCR-003/new-game-from-review   N/A  7 -> -            explains 0
+   A/B t9     SCR-003/step-move              N/A  2 -> -            explains 0
+   A/B t9     SCR-003/jump-to-move           N/A  2 -> -            explains 0
+   A/B t9     SCR-003/back-to-final          N/A  7 -> -            explains 0
+   A/B t9     SCR-003/new-game-from-review   N/A  7 -> -            explains 0
+   explained 104 / 387  shapes used {'-': 54, 'local_choice': 2, 'toggle': 41}
+== ux-action-shapes-v2.json: 97 actions, hand N/A 387
+   AI-Gomoku  SCR-001/preview-then-place     N/A  3 -> browse       explains 2
+   AI-Gomoku  SCR-001/new-game               N/A  8 -> discard      explains 6
+   AI-Gomoku  SCR-002/choose-color           N/A 11 -> local_choice explains 11
+   AI-Gomoku  SCR-002/choose-strength        N/A 11 -> local_choice explains 11
+   AI-Gomoku  SCR-002/start-game             N/A  8 -> toggle       explains 2
+   A/B t1     SCR-003/step-move              N/A  4 -> browse       explains 2
+   A/B t1     SCR-003/jump-to-move           N/A  5 -> browse       explains 2
+   A/B t1     SCR-003/back-to-final          N/A  7 -> navigate     explains 7
+   A/B t1     SCR-003/new-game-from-review   N/A  7 -> discard      explains 6
+   A/B t10    SCR-003/step-move              N/A  2 -> browse       explains 2
+   A/B t10    SCR-003/jump-to-move           N/A  3 -> browse       explains 2
+   A/B t10    SCR-003/back-to-final          N/A  8 -> navigate     explains 7
+   A/B t10    SCR-003/new-game-from-review   N/A  9 -> discard      explains 6
+   A/B t11    SCR-003/step-move              N/A  2 -> browse       explains 2
+   A/B t11    SCR-003/jump-to-move           N/A  3 -> browse       explains 2
+   A/B t11    SCR-003/back-to-final          N/A  8 -> navigate     explains 7
+   A/B t11    SCR-003/new-game-from-review   N/A  7 -> discard      explains 6
+   A/B t12    SCR-003/step-move              N/A  3 -> browse       explains 2
+   A/B t12    SCR-003/jump-to-move           N/A  4 -> browse       explains 2
+   A/B t12    SCR-003/back-to-final          N/A  7 -> navigate     explains 7
+   A/B t12    SCR-003/new-game-from-review   N/A  7 -> discard      explains 6
+   A/B t2     SCR-003/step-move              N/A  5 -> browse       explains 2
+   A/B t2     SCR-003/jump-to-move           N/A  6 -> browse       explains 2
+   A/B t2     SCR-003/back-to-final          N/A  8 -> navigate     explains 7
+   A/B t2     SCR-003/new-game-from-review   N/A  7 -> discard      explains 6
+   A/B t3     SCR-003/step-move              N/A  3 -> browse       explains 2
+   A/B t3     SCR-003/jump-to-move           N/A  4 -> browse       explains 2
+   A/B t3     SCR-003/back-to-final          N/A  8 -> navigate     explains 7
+   A/B t3     SCR-003/new-game-from-review   N/A  6 -> discard      explains 6
+   A/B t4     SCR-003/step-move              N/A  3 -> toggle       explains 2
+   A/B t4     SCR-003/jump-to-move           N/A  3 -> toggle       explains 2
+   A/B t4     SCR-003/back-to-final          N/A  9 -> navigate     explains 7
+   A/B t4     SCR-003/new-game-from-review   N/A  9 -> discard      explains 6
+   A/B t5     SCR-003/step-move              N/A  2 -> browse       explains 2
+   A/B t5     SCR-003/jump-to-move           N/A  3 -> browse       explains 2
+   A/B t5     SCR-003/back-to-final          N/A 10 -> navigate     explains 7
+   A/B t5     SCR-003/new-game-from-review   N/A  8 -> discard      explains 6
+   A/B t6     SCR-003/step-move              N/A  3 -> browse       explains 2
+   A/B t6     SCR-003/jump-to-move           N/A  4 -> browse       explains 2
+   A/B t6     SCR-003/back-to-final          N/A  9 -> navigate     explains 7
+   A/B t6     SCR-003/new-game-from-review   N/A  8 -> discard      explains 6
+   A/B t7     SCR-003/step-move              N/A  3 -> toggle       explains 2
+   A/B t7     SCR-003/jump-to-move           N/A  4 -> toggle       explains 2
+   A/B t7     SCR-003/back-to-final          N/A  7 -> -            explains 0
+   A/B t7     SCR-003/new-game-from-review   N/A  8 -> discard      explains 6
+   A/B t8     SCR-003/step-move              N/A  3 -> toggle       explains 2
+   A/B t8     SCR-003/jump-to-move           N/A  4 -> toggle       explains 2
+   A/B t8     SCR-003/back-to-final          N/A  9 -> navigate     explains 7
+   A/B t8     SCR-003/new-game-from-review   N/A  7 -> discard      explains 6
+   A/B t9     SCR-003/step-move              N/A  2 -> browse       explains 2
+   A/B t9     SCR-003/jump-to-move           N/A  2 -> browse       explains 2
+   A/B t9     SCR-003/back-to-final          N/A  7 -> navigate     explains 7
+   A/B t9     SCR-003/new-game-from-review   N/A  7 -> discard      explains 6
+   explained 293 / 387  shapes used {'browse': 19, 'discard': 13, 'local_choice': 2, 'toggle': 39, '-': 13, 'navigate': 11}

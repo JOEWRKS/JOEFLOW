@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "skills" / "joewrks-product-definition" / "scripts"))
 sys.path.insert(0, str(ROOT))
 
+from coverage_inheritance import load_shapes  # noqa: E402
 from draft_freeze import Drafter, _cells_of  # noqa: E402
 from revision_v2 import RevisionError, apply_patch, open_revision  # noqa: E402
 from state_validation_v2 import validate_state_v2  # noqa: E402
@@ -75,6 +76,16 @@ class DraftFreezeTest(unittest.TestCase):
         for spec in Drafter(self.bare).missing_rows():
             for action in spec.get("ux_coverage", {}).get("actions", []):
                 self.assertEqual(action["shape"], "DECIDE")
+
+    def test_a_declared_shape_leaves_out_the_cells_it_implies(self):
+        screen = self.state["ux_coverage"][0]["screen_id"]
+        key = self.state["ux_coverage"][0]["actions"][0]["key"]
+        rows = Drafter(self.bare).missing_rows({f"{screen}/{key}": "navigate"})
+        drafted = next(a for spec in rows for a in spec.get("ux_coverage", {}).get("actions", []) if a["key"] == key)
+        self.assertEqual(drafted["shape"], "navigate")
+        self.assertFalse(set(load_shapes()["navigate"]["not_applicable"]) & set(drafted["cells"]))
+        with self.assertRaises(ValueError):
+            Drafter(self.bare).missing_rows({key: "made_up"})
 
     def test_an_unsettled_draft_cannot_be_applied(self):
         rows = Drafter(self.bare).missing_rows()

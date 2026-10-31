@@ -3,7 +3,7 @@
 Three sources, all optional, all inside State 0.2.0 (a state without them is unchanged):
   * `surface_manifest.grill_profile.AUTH|PERMISSION` = N/A  -> UX account, permission and
     session axes are N/A (ux_profile_inheritance);
-  * an action row's `shape` (ux-action-shapes-v1.json) -> that shape's axes are N/A;
+  * an action row's `shape` (ux-action-shapes-v2.json) -> that shape's axes are N/A;
   * a row's `default_authority` (authority bindings)  -> every other omitted axis is COVERED
     by those bindings.
 `expand_coverage` returns the canonical explicit state: omitted cells are written out and
@@ -22,7 +22,7 @@ from typing import Any
 
 from ux_profile_inheritance import inheritable_ux_axes
 
-SHAPES_PATH = Path(__file__).resolve().parents[1] / "references" / "ux-action-shapes-v1.json"
+SHAPES_PATH = Path(__file__).resolve().parents[1] / "references" / "ux-action-shapes-v2.json"
 ROW_FIELDS = {"shape", "default_authority"}
 TAG = "inherited_from"
 _UX_STATE_AXES = (
@@ -44,7 +44,7 @@ _CORE_AXES = (
 
 def load_shapes() -> dict[str, dict[str, Any]]:
     contract = json.loads(SHAPES_PATH.read_text(encoding="utf-8"))
-    if contract.get("contract_id") != "joewrks.ux-action-shapes" or contract.get("version") != "1.0":
+    if contract.get("contract_id") != "joewrks.ux-action-shapes" or contract.get("version") != "2.0":
         raise ValueError("ux_action_shapes_drift")
     return contract["shapes"]
 

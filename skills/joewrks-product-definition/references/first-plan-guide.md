@@ -35,7 +35,8 @@ When an error names a field, `explain_state_errors.py state.json` adds the allow
    requirement's acceptance criteria, users, goal and flows) and marks the rest
    `DECIDE` with candidate records. Replace each `DECIDE` with your own choice; the
    draft cannot be applied until none is left. Before filling an action's cells, give it a
-   `shape` (`navigate`, `local_choice`, `toggle`, `submit`, `destructive`) and, when one record
+   `shape` (`navigate`, `browse`, `local_choice`, `discard`, `toggle`, `submit`, `destructive`;
+   `draft_freeze.py --shape KEY=SHAPE` leaves out the cells it implies) and, when one record
    answers most of a row, a `default_authority`; the cells they imply may be left out
    ([coverage-inheritance.md](coverage-inheritance.md)). Then APPROVE and HANDOFF as in the workflow. After approval,
    `update_projection.py` refreshes the identity and source-map blocks of the planning

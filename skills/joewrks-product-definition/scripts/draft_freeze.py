@@ -10,8 +10,10 @@ that has no coverage row yet, this writes the exact axis inventory and:
     siblings answered the axis with N/A. DECIDE is not a valid status, so the draft
     cannot be applied until the author settles those cells;
   * marks every action's `shape` DECIDE. Choose one of the shapes in
-    references/ux-action-shapes-v1.json, then delete the cells it implies, and the cells a
-    row `default_authority` implies (references/coverage-inheritance.md).
+    references/ux-action-shapes-v2.json and pass it as `--shape KEY=SHAPE` (or
+    `--shape SCR-003/KEY=SHAPE`): the draft then declares it and leaves out the cells it
+    implies. Delete yourself the cells a row `default_authority` implies
+    (references/coverage-inheritance.md).
 Sibling answers are not prefilled: on AI-Gomoku they were right only about half the
 time, and a wrong binding still passes validation. UX axes inherited from an N/A grill
 profile domain are left out. open_revision.py checks the edited patch like any other.
@@ -27,6 +29,7 @@ from typing import Any
 
 from authority_binding_v2 import canonical_record_index, load_binding_contracts
 from cli_output import use_utf8_stdio
+from coverage_inheritance import load_shapes
 from grill_v2 import compile_active_grill_packs, load_grill_packs
 from ux_profile_inheritance import inheritable_ux_axes
 
@@ -139,8 +142,14 @@ class Drafter:
         return {"status": "DECIDE", "candidates": shortlist[:5],
                 "why": "; ".join(hints) or ("choose from linked records" if shortlist else "no linked record of an allowed type")}
 
-    def missing_rows(self) -> list[dict[str, Any]]:
+    def missing_rows(self, shapes: dict[str, str] | None = None) -> list[dict[str, Any]]:
+        """`shapes` maps an action key or `SCR-ID/key` to a declared shape; its cells are left out."""
         objects = self.state["objects"]
+        shapes = dict(shapes or {})
+        table = load_shapes()
+        unknown = sorted(set(shapes.values()) - set(table))
+        if unknown:
+            raise ValueError(f"unknown shape {unknown}; shapes are {sorted(table)}")
         product, ux = self.contracts["product"], self.contracts["ux"]
         rows: list[dict[str, Any]] = []
         have_core = {row.get("feature_id") for row in self.state.get("coverage", [])}
@@ -156,10 +165,14 @@ class Drafter:
                 continue
             states = {axis: self.propose("ux_coverage", ("ux_state", axis), screen["id"], set(types))
                       for axis, types in ux["state_axis_types"].items() if axis not in skip_states}
-            actions = [{"key": key, "shape": "DECIDE",
-                        "cells": {axis: self.propose("ux_coverage", ("ux_action", axis), screen["id"], set(types))
-                                  for axis, types in ux["action_axis_types"].items() if axis not in skip_actions}}
-                       for key in screen.get("major_actions", [])]
+            actions = []
+            for key in screen.get("major_actions", []):
+                shape = shapes.get(f"{screen['id']}/{key}") or shapes.get(key)
+                implied = set(table[shape]["not_applicable"]) if shape else set()
+                actions.append({"key": key, "shape": shape or "DECIDE",
+                                "cells": {axis: self.propose("ux_coverage", ("ux_action", axis), screen["id"], set(types))
+                                          for axis, types in ux["action_axis_types"].items()
+                                          if axis not in skip_actions and axis not in implied}})
             rows.append({"ux_coverage": {"screen_id": screen["id"], "states": states, "actions": actions}})
         packs = load_grill_packs()
         have_grill = {(row.get("pack_id"), row.get("target_ref")) for row in self.state.get("grill_coverage", [])}
@@ -193,10 +206,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("state", help="canonical state.json (schema 0.2.0)")
     parser.add_argument("--patch", help="write the draft rows into this patch file (created or extended)")
+    parser.add_argument("--shape", action="append", default=[], metavar="KEY=SHAPE",
+                        help="declare an action's shape (KEY or SCR-ID/KEY) and leave out the cells it implies; repeatable")
     args = parser.parse_args(argv)
     try:
+        shapes = dict(item.split("=", 1) for item in args.shape)
         state = json.loads(Path(args.state).read_text(encoding="utf-8"))
-        rows = Drafter(state).missing_rows()
+        rows = Drafter(state).missing_rows(shapes)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
         print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False))
         return 2

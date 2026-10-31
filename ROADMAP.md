@@ -2,7 +2,7 @@
 
 현재: 별도 워크트리 `JOEFLOW-reinforce`(브랜치 `claude/joeflow-reinforce`)에서 작업한다. U1-1~U1-6 complete·설치본 반영. 2026-10-28 사용자 결정: experience pass는 설치본에 넣지 않음, 1.2.0 출시+main 합치기+푸시, U1-9 대체 연쇄 도우미 진행, 추가 A/B 8회, 오목은 rev 31 승인 뒤 새 명령으로 전환(지시 전달함), pwsh 설치 안 함.
 2026-10-30: 1.2.0 main 합치기·푸시, 태그 `v1.2.0`(`62eb541`)·GitHub Release 게시 complete. 2026-10-31: U1-7 개인 설치본 반영, 1.3.0 main·태그 `v1.3.0`(`016a606`)·GitHub Release 게시 complete. U1-9·U1-10까지 개인 설치본 반영.
-다음 작업: 1.4.0 게시·설치. 후속 설계: 모양 표 v2(A/B 실측 N/A 패턴 반영). U1-8은 U2-10으로 옮김.
+다음 작업: 1.4.0 게시·설치. U1-8은 U2-10으로 옮김.
 
 상태어: not started · in progress · verification pending · complete · deferred
 
@@ -23,7 +23,7 @@
 | U2-9 | 가벼운 FREEZE | 초안 도구 complete·효과 작음, 다음은 사용자 결정 | [설계·측정](docs/u2-9-light-freeze-design.md): `draft_freeze.py`(정확한 칸 목록·그래프로 정해지는 칸·후보)와 패치 `rows`. 오목 rev 37에서 212칸 중 11칸만 확정 가능(11/11 맞음), 185칸은 직접 판단, 후보에 정답 12~22/128. 형제 답 채우기는 절반만 맞아 채우지 않음. 비용은 칸마다의 의미 판단이라 칸 수를 줄이는 계약 변경(B 행동 종류 프로필, C' 묶음 coverage)이 필요. 시험 `tests/test_draft_freeze_v020.py` |
 | U2-10 | 기능 추가 모드(=U1-8) | 보류 | U2-9 측정 뒤 결정 |
 | U2-11 | ASYNC 로컬 실행 프로필 | 보류 | |
-| U2-12 | 확정 칸 상속(행동 `shape`·행 `default_authority`, 0.2.0 안의 작성 형식) | complete | [설계·측정](docs/u2-12-coverage-inheritance-design.md): 축 묶기는 정보 손실(오목 202칸에 서로 다른 답 157개)이라 폐기. 펼친 보기로 검증·digest·다운스트림 통일, 기존 기록 무수정 유효. 손실 없는 압축: 오목 38/202, WebAppDev 209/1,320, digest 동일. 새 행은 모양 상속으로 N/A 칸(오목 행동 칸의 46%)도 생략. 에이전트 A/B 12회([결과](evals/joeflow-u2-12-coverage-inheritance/agent-ab/README.md)): `rows` 패치가 선언을 버리던 결함 수정 뒤 4/4 모양 선언, 칸 −6/113, `default_authority` 0/4, 손글 N/A는 실행마다 달라 모양 표 v2 필요. 시험 `tests/test_coverage_inheritance_v020.py` |
+| U2-12 | 확정 칸 상속(행동 `shape`·행 `default_authority`, 0.2.0 안의 작성 형식) | complete | [설계·측정](docs/u2-12-coverage-inheritance-design.md): 축 묶기는 정보 손실(오목 202칸에 서로 다른 답 157개)이라 폐기. 펼친 보기로 검증·digest·다운스트림 통일, 기존 기록 무수정 유효. 손실 없는 압축: 오목 38/202, WebAppDev 209/1,320, digest 동일. 새 행은 모양 상속으로 N/A 칸(오목 행동 칸의 46%)도 생략. 에이전트 A/B 12회([결과](evals/joeflow-u2-12-coverage-inheritance/agent-ab/README.md)): `rows` 패치가 선언을 버리던 결함 수정 뒤 4/4 모양 선언, 칸 −6/113, `default_authority` 0/4, 손글 N/A는 실행마다 달랐음 → [모양 표 v2](evals/joeflow-u2-12-coverage-inheritance/shapes-v2/README.md)(실측 100% N/A 축만, `browse`·`discard` 신설, `draft_freeze.py --shape`) 검증 4회 4/4 같은 모양, 손글 칸 113 → 96. 시험 `tests/test_coverage_inheritance_v020.py` |
 
 전체 회귀(2026-10-31): 1단계 커밋 `003e5ed` 1,191개, 2단계 `91653b9` 1,197개, 모두 새 실패 0(기준과 같은 환경 원인 8건).
 

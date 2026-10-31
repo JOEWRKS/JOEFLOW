@@ -70,5 +70,29 @@
   "arm": "B2",
   "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t12",
   "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B2\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t13",
+  "arm": "B3",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t13",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B3\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t14",
+  "arm": "B3",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t14",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B3\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t15",
+  "arm": "B3",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t15",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B3\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t16",
+  "arm": "B3",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t16",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B3\\skills\\joewrks-product-definition"
  }
 ]

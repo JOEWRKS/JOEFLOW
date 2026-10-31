@@ -4,7 +4,7 @@
 import collections, json, subprocess, sys
 from pathlib import Path
 ROOT = Path(sys.argv[1]).resolve()
-SKILL = ROOT / "skill-B/skills/joewrks-product-definition"
+SKILL = ROOT / "skill-B3/skills/joewrks-product-definition"
 sys.path.insert(0, str(SKILL / "scripts"))
 from coverage_inheritance import TAG, expand_coverage  # noqa: E402
 FX = json.load(open(ROOT / "fixture/product-definition/ai-coach/state.json", encoding="utf-8"))

@@ -14,7 +14,7 @@ Approval Manifest digest.
 | Declaration | Where | Omitted cell becomes |
 |---|---|---|
 | `surface_manifest.grill_profile.AUTH` / `PERMISSION` = `N/A` | the profile (1.3.0) | `N/A` on the account, permission and session UX axes of every screen |
-| `shape` | an action row | `N/A` on the axes listed for that shape in `ux-action-shapes-v1.json` (`navigate`, `local_choice`, `toggle`, `submit`, `destructive`) |
+| `shape` | an action row | `N/A` on the axes listed for that shape in `ux-action-shapes-v2.json`: `navigate` (leave at once), `browse` (change what the screen shows), `local_choice`, `discard` (confirm, throw away, leave), `toggle`, `submit`, `destructive` |
 | `default_authority` | a requirement, screen or action row | `COVERED` with those bindings |
 
 A written cell always wins. An omitted axis that no declaration covers is still an
@@ -30,8 +30,9 @@ answer from a hand-written one; the digest projection strips the tag and the dec
   action carries `"shape": "navigate"` next to its `key`, and a requirement, screen or
   action row carries `"default_authority": [{"record_id": "FLOW-005", "pointer": "/paths"}]`;
   `open_revision.py` hashes the default like any binding. `draft_freeze.py` marks every
-  action's `shape` `DECIDE` and still writes the full inventory: choose the shape, then
-  delete the cells it and a default imply.
+  action's `shape` `DECIDE`; rerun it with `--shape KEY=SHAPE` for each action and the
+  draft declares the shape and leaves out the cells it implies. Delete yourself the cells
+  a default implies.
 - Existing rows: `python <skill-directory>/scripts/compact_coverage.py STATE_JSON --write`
   turns the most reused COVERED binding set of each row into its `default_authority` and
   drops the cells it reproduces. It writes only when the result expands back to the
@@ -45,5 +46,7 @@ answer from a hand-written one; the digest projection strips the tag and the dec
 ## Measured on real definitions (2026-10-31)
 
 Lossless compaction of existing rows: AI-Gomoku rev 38 removed 38 of 202 cells, the
-curated-lifestyle-store definition 209 of 1,320. Shapes apply to new rows: the five shapes
-account for every N/A pattern the two projects used.
+curated-lifestyle-store definition 209 of 1,320. Shapes apply to new rows. The v2 table
+keeps, per shape, only the axes every measured action of that shape answered N/A
+(AI-Gomoku and 48 agent-written actions); hand-written N/A sets otherwise varied from
+author to author for the same action, which is what a declared shape removes.

@@ -92,3 +92,7 @@ U2-10(기능 추가 모드)은 이 설계와 독립이며 영향받지 않는다
 - **B′는 4/4가 모양을 선언했지만 줄어든 칸은 6/113(5%)**, `default_authority`는 0/4. 행마다 바인딩 집합이 12개쯤 서로 달라 기본 근거로 묶을 칸이 적다(집중도 0.17, A·B·B′ 모두 같음). 1절에서 우려한 도장 찍기는 이 과제에서 나타나지 않았다.
 - **손으로 쓴 N/A는 실행마다 다르다**(back-to-final 12회에 10가지). 공통으로 N/A인 축(cancel·failure·retry·timeout·validation 12/12, notification 10/12)을 현재 `navigate` 모양이 담지 않는다. 선언의 값은 칸 수보다 일관성에 있고, 그러려면 모양 표를 실측 패턴으로 넓혀야 한다 → 후속 설계(모양 표 v2).
 - 바인딩 품질·속도는 세 팔이 같았다(검증 통과 12/12, 도구 호출 22~27회, 5~6분).
+
+## 8. 모양 표 v2 (2026-10-31, [측정](../evals/joeflow-u2-12-coverage-inheritance/shapes-v2/README.md))
+
+모양마다 **실측 행동 전부가 N/A로 답한 축만** 담는다(오목 5 + A/B 48 행동). `navigate`는 cancel·destructive_confirmation·failure·notification·retry·timeout·validation 7축, 신설 `browse`(현재 화면이 보이는 것을 바꿈)는 destructive_confirmation·notification, 신설 `discard`(확인 뒤 버리고 떠남)는 failure·notification·retry·timeout·undo·validation. v1이 navigate에 넣었던 undo는 작성자 절반이 COVERED로 써서 뺐다. 설명된 실측 N/A 104/387 → 293/387. `draft_freeze.py --shape KEY=SHAPE`가 모양을 선언하고 암시 칸을 뺀 초안을 쓴다. 검증 실행 4회(B″): 4/4가 같은 네 모양을 골랐고 손글 칸 113 → 96, 손글 N/A 27 → 8, 검증 통과 4/4. 게시된 기록에는 모양 선언이 없어 v1→v2 교체에 이전은 없다.

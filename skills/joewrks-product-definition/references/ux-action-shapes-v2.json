@@ -1,0 +1,68 @@
+{
+  "contract_id": "joewrks.ux-action-shapes",
+  "version": "2.0",
+  "basis": "Axes an author answered N/A in every measured action of the shape (AI-Gomoku rev 39 and 48 agent-written actions of the 2026-10-31 FREEZE A/B, states expanded first), kept only where the mechanism of the shape explains the N/A. v1 implied undo on navigate and browse; authors answered undo both ways (6/12, 14/24), so it is written by hand now.",
+  "shapes": {
+    "navigate": {
+      "meaning": "Leaves for another screen or area at once: no input to check, no request that can fail, nothing confirmed or changed.",
+      "not_applicable": [
+        "cancel",
+        "destructive_confirmation",
+        "failure",
+        "notification",
+        "retry",
+        "timeout",
+        "validation"
+      ]
+    },
+    "browse": {
+      "meaning": "Changes what the current screen shows (a step, page, filter or position) and may compute or load for it; nothing is changed.",
+      "not_applicable": [
+        "destructive_confirmation",
+        "notification"
+      ]
+    },
+    "local_choice": {
+      "meaning": "Picks a value on the current screen; no request leaves the device until a later submit.",
+      "not_applicable": [
+        "back",
+        "cancel",
+        "destructive_confirmation",
+        "duplicate_concurrent_action",
+        "failure",
+        "notification",
+        "refresh",
+        "retry",
+        "timeout",
+        "undo",
+        "validation"
+      ]
+    },
+    "discard": {
+      "meaning": "Confirms, then throws local state away and leaves (new game, clear, sign out): no input to check, no request that can fail, nothing to undo.",
+      "not_applicable": [
+        "failure",
+        "notification",
+        "retry",
+        "timeout",
+        "undo",
+        "validation"
+      ]
+    },
+    "toggle": {
+      "meaning": "Flips one reversible flag in place, such as a favourite; flipping it back is its undo.",
+      "not_applicable": [
+        "destructive_confirmation",
+        "undo"
+      ]
+    },
+    "submit": {
+      "meaning": "Commits input or starts work whose result the user waits for; every axis applies.",
+      "not_applicable": []
+    },
+    "destructive": {
+      "meaning": "Removes or irreversibly changes something; every axis applies.",
+      "not_applicable": []
+    }
+  }
+}
