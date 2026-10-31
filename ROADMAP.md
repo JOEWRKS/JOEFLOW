@@ -2,7 +2,7 @@
 
 현재: 별도 워크트리 `JOEFLOW-reinforce`(브랜치 `claude/joeflow-reinforce`)에서 작업한다. U1-1~U1-6 complete·설치본 반영. 2026-10-28 사용자 결정: experience pass는 설치본에 넣지 않음, 1.2.0 출시+main 합치기+푸시, U1-9 대체 연쇄 도우미 진행, 추가 A/B 8회, 오목은 rev 31 승인 뒤 새 명령으로 전환(지시 전달함), pwsh 설치 안 함.
 2026-10-30: 1.2.0 main 합치기·푸시, 태그 `v1.2.0`(`62eb541`)·GitHub Release 게시 complete. 2026-10-31: U1-7 개인 설치본 반영, 1.3.0 main·태그 `v1.3.0`(`016a606`)·GitHub Release 게시 complete. U1-9·U1-10까지 개인 설치본 반영.
-다음 작업: U2 3단계(가벼운 FREEZE) 설계 승인 → `draft_freeze.py` 구현·오목 사본 측정. U1-8은 U2-10으로 옮김.
+다음 작업: U2-9 측정 결과에 따른 사용자 결정(B 행동 종류 프로필 / C' 묶음 coverage / 그대로). U1-8은 U2-10으로 옮김.
 
 상태어: not started · in progress · verification pending · complete · deferred
 
@@ -20,7 +20,7 @@
 | U2-6 | 담당자 결정(AGENT) 대체 허용 | complete | 질문과 함께 대체하면 open_revision 통과(이전엔 `unauthorized_agent_decision`). 시험 `test_supersede_records_v020` |
 | U2-7 | DISCOVER 중 요구사항·화면 등록 | complete | native+OPEN에서 Core·UX 행 누락 허용, READY_FOR_REVIEW부터 다시 오류, 이전된(MIGRATED) state는 그대로. 기존 시험 4건은 READY_FOR_REVIEW 기준으로 바꿈. 고정 `authority_binding_v2.py` 해시 갱신 |
 | U2-8 | 추천 근거에 실측·관찰 사실 허용 | complete(일부) | FACTUAL·BEHAVIORAL·CONSTRAINT 근거 허용, INFERRED_INTENT는 여전히 거부. 전달된 사용자 의도용 근거 종류는 보류: 그 근거로 material 질문을 닫을 수 있는지 사용자 결정 필요 |
-| U2-9 | 가벼운 FREEZE | 설계 승인 대기 | [설계](docs/u2-9-light-freeze-design.md): 오목 212칸 중 바인딩 칸 140개, 바인딩의 81%(Core)·90%(UX)가 이미 연결된 레코드 → 초안 생성기 먼저 |
+| U2-9 | 가벼운 FREEZE | 초안 도구 complete·효과 작음, 다음은 사용자 결정 | [설계·측정](docs/u2-9-light-freeze-design.md): `draft_freeze.py`(정확한 칸 목록·그래프로 정해지는 칸·후보)와 패치 `rows`. 오목 rev 37에서 212칸 중 11칸만 확정 가능(11/11 맞음), 185칸은 직접 판단, 후보에 정답 12~22/128. 형제 답 채우기는 절반만 맞아 채우지 않음. 비용은 칸마다의 의미 판단이라 칸 수를 줄이는 계약 변경(B 행동 종류 프로필, C' 묶음 coverage)이 필요. 시험 `tests/test_draft_freeze_v020.py` |
 | U2-10 | 기능 추가 모드(=U1-8) | 보류 | U2-9 측정 뒤 결정 |
 | U2-11 | ASYNC 로컬 실행 프로필 | 보류 | |
 

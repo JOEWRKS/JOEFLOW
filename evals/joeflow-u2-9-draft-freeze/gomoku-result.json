@@ -1,0 +1,32 @@
+{
+ "leave_one_row_out": {
+  "cells": 212,
+  "proposed_DECIDE": 185,
+  "actual_bound": 139,
+  "bound_decide": 128,
+  "bound_decide_actual_in_shortlist": 22,
+  "proposed_COVERED": 11,
+  "bound_proposed": 11,
+  "bound_proposal_exact": 3,
+  "bound_proposal_subset": 11,
+  "actual_N/A": 57,
+  "na_status_right": 0,
+  "na_left_to_decide": 57,
+  "not_drafted": 16
+ },
+ "cold_start": {
+  "cells": 212,
+  "proposed_DECIDE": 185,
+  "actual_bound": 139,
+  "bound_decide": 128,
+  "bound_decide_actual_in_shortlist": 12,
+  "proposed_COVERED": 11,
+  "bound_proposed": 11,
+  "bound_proposal_exact": 3,
+  "bound_proposal_subset": 11,
+  "actual_N/A": 57,
+  "na_status_right": 0,
+  "na_left_to_decide": 57,
+  "not_drafted": 16
+ }
+}

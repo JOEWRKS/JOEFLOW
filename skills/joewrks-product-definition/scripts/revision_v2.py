@@ -25,7 +25,7 @@ from discovery_v2 import build_discovery_baseline
 from state_validation_v2 import GROUP_PREFIXES
 
 
-PATCH_KEYS = {"evidence", "objects", "surfaces", "cells"}
+PATCH_KEYS = {"evidence", "objects", "surfaces", "cells", "rows"}
 LIFECYCLE_STATUSES = {"OPEN", "BLOCKED", "READY_FOR_REVIEW"}
 _CELL_ADDRESS = re.compile(
     r"^(?:coverage\[(?P<feature>[^\]]+)\]\.cells\.(?P<core_axis>\w+)"
@@ -75,19 +75,47 @@ def _binding_field(cell: dict[str, Any]) -> str:
     return "basis_bindings" if cell.get("status") == "N/A" else "authority_bindings"
 
 
+def _built_cell(state: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
+    """An exact coverage cell from {status, bind: [{record_id, pointer}], unknown_refs, rationale}."""
+    cell = {"status": spec.get("status"), "authority_bindings": [], "unknown_refs": list(spec.get("unknown_refs", [])),
+            "basis_bindings": [], "rationale": spec.get("rationale")}
+    cell[_binding_field(cell)] = [make_authority_binding(state, b["record_id"], b["pointer"]) for b in spec.get("bind", [])]
+    return cell
+
+
+_ROW_TABLES = {"coverage": ("feature_id", "cells"), "ux_coverage": ("screen_id", None), "grill_coverage": ("target_ref", "axes")}
+
+
+def _add_row(state: dict[str, Any], spec: dict[str, Any]) -> str:
+    """Append one new coverage row whose cells are given as cell specs."""
+    if not isinstance(spec, dict) or len(spec) != 1 or next(iter(spec)) not in _ROW_TABLES:
+        raise RevisionError("invalid_row", f"a row entry is one of {sorted(_ROW_TABLES)} mapped to the row", "rows")
+    table, row = next(iter(spec.items()))
+    key, cells_field = _ROW_TABLES[table]
+    target = row.get(key)
+    same = [r for r in state[table] if r.get(key) == target and (table != "grill_coverage" or r.get("pack_id") == row.get("pack_id"))]
+    if same:
+        raise RevisionError("row_exists", f"{table} already has a row for {target!r}; edit its cells instead", "rows")
+    built = copy.deepcopy(row)
+    if table == "ux_coverage":
+        built["states"] = {axis: _built_cell(state, cell) for axis, cell in row.get("states", {}).items()}
+        built["actions"] = [{"key": action["key"], "cells": {axis: _built_cell(state, cell) for axis, cell in action["cells"].items()}}
+                            for action in row.get("actions", [])]
+    else:
+        built[cells_field] = {axis: _built_cell(state, cell) for axis, cell in row.get(cells_field, {}).items()}
+    state[table].append(built)
+    return f"{table}[{target}]"
+
+
 def _apply_cell_edit(state: dict[str, Any], edit: dict[str, Any]) -> str:
     address = edit.get("cell")
     if not isinstance(address, str) or set(edit) - {"cell", "add", "remove", "replace"}:
         raise RevisionError("invalid_cell_edit", "a cell edit has 'cell' plus 'add', 'remove' and/or 'replace'", "cells")
     cell = _cell(state, address)
     if "replace" in edit:
-        replacement = dict(edit["replace"])
-        bind = replacement.pop("bind", [])
-        status = replacement.get("status")
+        built = _built_cell(state, edit["replace"])
         cell.clear()
-        cell.update({"status": status, "authority_bindings": [], "unknown_refs": replacement.get("unknown_refs", []),
-                     "basis_bindings": [], "rationale": replacement.get("rationale")})
-        cell[_binding_field(cell)] = [make_authority_binding(state, b["record_id"], b["pointer"]) for b in bind]
+        cell.update(built)
     field = _binding_field(cell)
     removed = set(edit.get("remove", []))
     if removed:
@@ -111,6 +139,8 @@ def apply_patch(state: dict[str, Any], patch: dict[str, Any]) -> dict[str, list[
             report[_upsert(state["objects"].setdefault(group, []), record)].append(record["id"])
     for record in patch.get("surfaces", []):
         report[_upsert(state["surface_manifest"]["records"], record)].append(record["id"])
+    if "rows" in patch:
+        report["rows"] = [_add_row(state, spec) for spec in patch["rows"]]
     for edit in patch.get("cells", []):
         report["cells"].append(_apply_cell_edit(state, edit))
     return report

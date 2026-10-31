@@ -30,7 +30,11 @@ When an error names a field, `explain_state_errors.py state.json` adds the allow
    screens may exist before their coverage rows; when a surface's questions are all
    answered, mark it `IN_SCOPE` with its requirement as authority. Missing rows become
    errors at `READY_FOR_REVIEW`.
-5. FREEZE, APPROVE and HANDOFF as in the workflow. After approval,
+5. FREEZE: `draft_freeze.py state.json --patch PATCH` writes every missing coverage row
+   with its exact axis inventory, fills the cells the record graph decides (a
+   requirement's acceptance criteria, users, goal and flows) and marks the rest
+   `DECIDE` with candidate records. Replace each `DECIDE` with your own choice; the
+   draft cannot be applied until none is left. Then APPROVE and HANDOFF as in the workflow. After approval,
    `update_projection.py` refreshes the identity and source-map blocks of the planning
    documents and lists the rows that name changed records.
 
