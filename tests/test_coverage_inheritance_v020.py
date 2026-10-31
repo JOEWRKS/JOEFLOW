@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT))
 
 from approval_v2 import approval_manifest_digest, compute_approval_manifest, definition_digest  # noqa: E402
 from coverage_inheritance import TAG, compact_coverage, expand_coverage, load_shapes  # noqa: E402
+from revision_v2 import apply_patch  # noqa: E402
 from state_validation_v2 import evaluate_closure_v2, validate_state_v2  # noqa: E402
 from tests.test_semantic_closure_v020 import literal_approved_state, literal_ready_state  # noqa: E402
 
@@ -26,6 +27,12 @@ def codes(state):
 
 def action(state):
     return state["ux_coverage"][0]["actions"][0]
+
+
+def _spec(cell):
+    bindings = cell["authority_bindings"] or cell["basis_bindings"]
+    return {"status": cell["status"], "unknown_refs": cell["unknown_refs"], "rationale": cell["rationale"],
+            "bind": [{"record_id": b["record_id"], "pointer": b["pointer"]} for b in bindings]}
 
 
 class ShapeInheritanceTest(unittest.TestCase):
@@ -42,6 +49,37 @@ class ShapeInheritanceTest(unittest.TestCase):
         self.assertEqual(expanded["cells"]["undo"][TAG], "shape:navigate")
         self.assertEqual(expanded["cells"]["undo"]["status"], "N/A")
         self.assertNotIn(TAG, action(expand_coverage(state, strip=True))["cells"]["undo"])
+
+    def test_a_rows_patch_carries_shape_and_default_authority(self):
+        # The patch route is the only way an author writes a new row; a declaration must survive it.
+        state = literal_ready_state()
+        row = state["ux_coverage"][0]
+        trimmed = copy.deepcopy(state)
+        trimmed["ux_coverage"] = []
+        spec = {"screen_id": row["screen_id"], "states": {a: _spec(c) for a, c in row["states"].items()}, "actions": []}
+        for act in row["actions"]:
+            cells = {a: _spec(c) for a, c in act["cells"].items()}
+            action_spec = {"key": act["key"], "cells": cells}
+            if act is row["actions"][0]:
+                action_spec["shape"] = "navigate"
+                default = _spec(act["cells"]["entry"])["bind"]
+                action_spec["default_authority"] = default
+                for axis in load_shapes()["navigate"]["not_applicable"]:
+                    cells.pop(axis, None)
+                for axis, cell in list(cells.items()):
+                    if cell["status"] == "COVERED" and cell["bind"] == default:
+                        del cells[axis]
+            spec["actions"].append(action_spec)
+        report = apply_patch(trimmed, {"rows": [{"ux_coverage": spec}]})
+        self.assertEqual(report["rows"], [f"ux_coverage[{row['screen_id']}]"])
+        self.assertEqual(codes(trimmed), set())
+        built = trimmed["ux_coverage"][0]["actions"][0]
+        self.assertEqual(built["shape"], "navigate")
+        self.assertTrue(all("value_sha256" in b for b in built["default_authority"]))
+        expanded = expand_coverage(trimmed)["ux_coverage"][0]["actions"][0]
+        self.assertEqual(expanded["cells"]["undo"][TAG], "shape:navigate")
+        self.assertEqual(expanded["cells"]["entry"][TAG], "row")
+        self.assertEqual(set(expanded["cells"]), set(action(state)["cells"]))
 
     def test_unknown_shape_and_unrelated_omission_are_errors(self):
         state = literal_ready_state()

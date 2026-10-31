@@ -71,6 +71,11 @@ class DraftFreezeTest(unittest.TestCase):
         self.assertEqual([b["record_id"] for b in acceptance["bind"]],
                          [a["id"] for a in self.state["objects"]["acceptance_criteria"] if "REQ-001" in a["requirement_refs"]])
 
+    def test_every_drafted_action_asks_for_its_shape(self):
+        for spec in Drafter(self.bare).missing_rows():
+            for action in spec.get("ux_coverage", {}).get("actions", []):
+                self.assertEqual(action["shape"], "DECIDE")
+
     def test_an_unsettled_draft_cannot_be_applied(self):
         rows = Drafter(self.bare).missing_rows()
         candidate, _ = open_revision(self.bare, {"rows": rows}, status="READY_FOR_REVIEW")

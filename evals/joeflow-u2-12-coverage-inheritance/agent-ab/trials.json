@@ -1,0 +1,74 @@
+[
+ {
+  "id": "t1",
+  "arm": "B",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t1",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t2",
+  "arm": "A",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t2",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-A\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t3",
+  "arm": "A",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t3",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-A\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t4",
+  "arm": "B",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t4",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t5",
+  "arm": "B",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t5",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t6",
+  "arm": "A",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t6",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-A\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t7",
+  "arm": "A",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t7",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-A\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t8",
+  "arm": "B",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t8",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t9",
+  "arm": "B2",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t9",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B2\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t10",
+  "arm": "B2",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t10",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B2\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t11",
+  "arm": "B2",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t11",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B2\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t12",
+  "arm": "B2",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\runs\\t12",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-10-31-joeflow-u2-12-ab\\skill-B2\\skills\\joewrks-product-definition"
+ }
+]

@@ -8,7 +8,10 @@ that has no coverage row yet, this writes the exact axis inventory and:
   * marks every other cell DECIDE with up to five candidates (records bound on the same
     axis in sibling rows first, then records linked to the target) and a hint when
     siblings answered the axis with N/A. DECIDE is not a valid status, so the draft
-    cannot be applied until the author settles those cells.
+    cannot be applied until the author settles those cells;
+  * marks every action's `shape` DECIDE. Choose one of the shapes in
+    references/ux-action-shapes-v1.json, then delete the cells it implies, and the cells a
+    row `default_authority` implies (references/coverage-inheritance.md).
 Sibling answers are not prefilled: on AI-Gomoku they were right only about half the
 time, and a wrong binding still passes validation. UX axes inherited from an N/A grill
 profile domain are left out. open_revision.py checks the edited patch like any other.
@@ -153,8 +156,9 @@ class Drafter:
                 continue
             states = {axis: self.propose("ux_coverage", ("ux_state", axis), screen["id"], set(types))
                       for axis, types in ux["state_axis_types"].items() if axis not in skip_states}
-            actions = [{"key": key, "cells": {axis: self.propose("ux_coverage", ("ux_action", axis), screen["id"], set(types))
-                                              for axis, types in ux["action_axis_types"].items() if axis not in skip_actions}}
+            actions = [{"key": key, "shape": "DECIDE",
+                        "cells": {axis: self.propose("ux_coverage", ("ux_action", axis), screen["id"], set(types))
+                                  for axis, types in ux["action_axis_types"].items() if axis not in skip_actions}}
                        for key in screen.get("major_actions", [])]
             rows.append({"ux_coverage": {"screen_id": screen["id"], "states": states, "actions": actions}})
         packs = load_grill_packs()
@@ -202,7 +206,10 @@ def main(argv: list[str] | None = None) -> int:
         "rows": [f"{table}[{row.get('feature_id') or row.get('screen_id') or row.get('pack_id') + '/' + row['target_ref']}]"
                  for spec in rows for table, row in spec.items()],
         "proposed": dict(Counter(cell["status"] for _, cell in cells)),
-        "decide": [address for address, cell in cells if cell["status"] == "DECIDE"],
+        "decide": [address for address, cell in cells if cell["status"] == "DECIDE"]
+                  + [f"ux_coverage[{row['screen_id']}].actions[{action['key']}].shape"
+                     for spec in rows for table, row in spec.items() if table == "ux_coverage"
+                     for action in row["actions"] if action.get("shape") == "DECIDE"],
     }
     if args.patch:
         path = Path(args.patch)

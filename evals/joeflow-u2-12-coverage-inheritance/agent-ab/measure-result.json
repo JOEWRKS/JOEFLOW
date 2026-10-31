@@ -1,0 +1,482 @@
+[
+ {
+  "id": "t1",
+  "arm": "B",
+  "revision": 41,
+  "status": "READY_FOR_REVIEW",
+  "valid": true,
+  "errors": [],
+  "cells_total": 124,
+  "hand": 113,
+  "hand_covered": 87,
+  "hand_na": 26,
+  "inherited": 11,
+  "inherited_by": {
+   "profile": 11
+  },
+  "declarations": {},
+  "top_binding_share": 0.16,
+  "distinct_bindings_per_row": 11.7,
+  "records_cited": 19,
+  "top_records": [
+   [
+    "RULE-046",
+    31
+   ],
+   [
+    "FLOW-005",
+    27
+   ],
+   [
+    "RULE-045",
+    25
+   ],
+   [
+    "RULE-013",
+    18
+   ]
+  ]
+ },
+ {
+  "id": "t2",
+  "arm": "A",
+  "revision": 41,
+  "status": "READY_FOR_REVIEW",
+  "valid": true,
+  "errors": [],
+  "cells_total": 124,
+  "hand": 113,
+  "hand_covered": 79,
+  "hand_na": 34,
+  "inherited": 11,
+  "inherited_by": {
+   "profile": 11
+  },
+  "declarations": {},
+  "top_binding_share": 0.17,
+  "distinct_bindings_per_row": 11.0,
+  "records_cited": 18,
+  "top_records": [
+   [
+    "RULE-046",
+    28
+   ],
+   [
+    "FLOW-005",
+    27
+   ],
+   [
+    "RULE-013",
+    17
+   ],
+   [
+    "RULE-045",
+    16
+   ]
+  ]
+ },
+ {
+  "id": "t3",
+  "arm": "A",
+  "revision": 41,
+  "status": "READY_FOR_REVIEW",
+  "valid": true,
+  "errors": [],
+  "cells_total": 124,
+  "hand": 113,
+  "hand_covered": 89,
+  "hand_na": 24,
+  "inherited": 11,
+  "inherited_by": {
+   "profile": 11
+  },
+  "declarations": {},
+  "top_binding_share": 0.19,
+  "distinct_bindings_per_row": 11.8,
+  "records_cited": 20,
+  "top_records": [
+   [
+    "FLOW-005",
+    24
+   ],
+   [
+    "RULE-046",
+    23
+   ],
+   [
+    "RULE-045",
+    17
+   ],
+   [
+    "RULE-013",
+    17
+   ]
+  ]
+ },
+ {
+  "id": "t4",
+  "arm": "B",
+  "revision": 41,
+  "status": "READY_FOR_REVIEW",
+  "valid": true,
+  "errors": [],
+  "cells_total": 124,
+  "hand": 113,
+  "hand_covered": 86,
+  "hand_na": 27,
+  "inherited": 11,
+  "inherited_by": {
+   "profile": 11
+  },
+  "declarations": {},
+  "top_binding_share": 0.17,
+  "distinct_bindings_per_row": 11.8,
+  "records_cited": 20,
+  "top_records": [
+   [
+    "FLOW-005",
+    26
+   ],
+   [
+    "RULE-046",
+    25
+   ],
+   [
+    "RULE-045",
+    23
+   ],
+   [
+    "RULE-013",
+    16
+   ]
+  ]
+ },
+ {
+  "id": "t5",
+  "arm": "B",
+  "revision": 41,
+  "status": "READY_FOR_REVIEW",
+  "valid": true,
+  "errors": [],
+  "cells_total": 124,
+  "hand": 113,
+  "hand_covered": 87,
+  "hand_na": 26,
+  "inherited": 11,
+  "inherited_by": {
+   "profile": 11
+  },
+  "declarations": {},
+  "top_binding_share": 0.19,
+  "distinct_bindings_per_row": 11.5,
+  "records_cited": 21,
+  "top_records": [
+   [
+    "RULE-046",
+    27
+   ],
+   [
+    "RULE-045",
+    26
+   ],
+   [
+    "FLOW-005",
+    24
+   ],
+   [
+    "RULE-013",
+    13
+   ]
+  ]
+ },
+ {
+  "id": "t6",
+  "arm": "A",
+  "revision": 41,
+  "status": "READY_FOR_REVIEW",
+  "valid": true,
+  "errors": [],
+  "cells_total": 124,
+  "hand": 113,
+  "hand_covered": 86,
+  "hand_na": 27,
+  "inherited": 11,
+  "inherited_by": {
+   "profile": 11
+  },
+  "declarations": {},
+  "top_binding_share": 0.18,
+  "distinct_bindings_per_row": 11.8,
+  "records_cited": 24,
+  "top_records": [
+   [
+    "FLOW-005",
+    22
+   ],
+   [
+    "RULE-046",
+    19
+   ],
+   [
+    "RULE-045",
+    15
+   ],
+   [
+    "RULE-013",
+    15
+   ]
+  ]
+ },
+ {
+  "id": "t7",
+  "arm": "A",
+  "revision": 41,
+  "status": "READY_FOR_REVIEW",
+  "valid": true,
+  "errors": [],
+  "cells_total": 124,
+  "hand": 113,
+  "hand_covered": 88,
+  "hand_na": 25,
+  "inherited": 11,
+  "inherited_by": {
+   "profile": 11
+  },
+  "declarations": {},
+  "top_binding_share": 0.17,
+  "distinct_bindings_per_row": 12.7,
+  "records_cited": 21,
+  "top_records": [
+   [
+    "FLOW-005",
+    30
+   ],
+   [
+    "RULE-046",
+    27
+   ],
+   [
+    "RULE-045",
+    25
+   ],
+   [
+    "RULE-013",
+    13
+   ]
+  ]
+ },
+ {
+  "id": "t8",
+  "arm": "B",
+  "revision": 41,
+  "status": "READY_FOR_REVIEW",
+  "valid": true,
+  "errors": [],
+  "cells_total": 124,
+  "hand": 113,
+  "hand_covered": 87,
+  "hand_na": 26,
+  "inherited": 11,
+  "inherited_by": {
+   "profile": 11
+  },
+  "declarations": {},
+  "top_binding_share": 0.15,
+  "distinct_bindings_per_row": 12.5,
+  "records_cited": 20,
+  "top_records": [
+   [
+    "RULE-046",
+    24
+   ],
+   [
+    "FLOW-005",
+    22
+   ],
+   [
+    "RULE-045",
+    18
+   ],
+   [
+    "RULE-013",
+    18
+   ]
+  ]
+ },
+ {
+  "id": "t9",
+  "arm": "B2",
+  "revision": 41,
+  "status": "READY_FOR_REVIEW",
+  "valid": true,
+  "errors": [],
+  "cells_total": 124,
+  "hand": 108,
+  "hand_covered": 90,
+  "hand_na": 18,
+  "inherited": 16,
+  "inherited_by": {
+   "profile": 10,
+   "shape:navigate": 6
+  },
+  "declarations": {
+   "step-move": "shape=navigate",
+   "jump-to-move": "shape=navigate",
+   "back-to-final": "shape=navigate",
+   "new-game-from-review": "shape=destructive"
+  },
+  "top_binding_share": 0.15,
+  "distinct_bindings_per_row": 12.3,
+  "records_cited": 23,
+  "top_records": [
+   [
+    "FLOW-005",
+    29
+   ],
+   [
+    "RULE-045",
+    27
+   ],
+   [
+    "RULE-046",
+    24
+   ],
+   [
+    "RULE-013",
+    15
+   ]
+  ]
+ },
+ {
+  "id": "t10",
+  "arm": "B2",
+  "revision": 41,
+  "status": "READY_FOR_REVIEW",
+  "valid": true,
+  "errors": [],
+  "cells_total": 124,
+  "hand": 107,
+  "hand_covered": 85,
+  "hand_na": 22,
+  "inherited": 17,
+  "inherited_by": {
+   "profile": 11,
+   "shape:navigate": 6
+  },
+  "declarations": {
+   "step-move": "shape=navigate",
+   "jump-to-move": "shape=navigate",
+   "back-to-final": "shape=navigate",
+   "new-game-from-review": "shape=submit"
+  },
+  "top_binding_share": 0.18,
+  "distinct_bindings_per_row": 12.0,
+  "records_cited": 20,
+  "top_records": [
+   [
+    "FLOW-005",
+    34
+   ],
+   [
+    "RULE-045",
+    25
+   ],
+   [
+    "RULE-046",
+    20
+   ],
+   [
+    "RULE-013",
+    13
+   ]
+  ]
+ },
+ {
+  "id": "t11",
+  "arm": "B2",
+  "revision": 41,
+  "status": "READY_FOR_REVIEW",
+  "valid": true,
+  "errors": [],
+  "cells_total": 124,
+  "hand": 107,
+  "hand_covered": 87,
+  "hand_na": 20,
+  "inherited": 17,
+  "inherited_by": {
+   "profile": 11,
+   "shape:navigate": 6
+  },
+  "declarations": {
+   "step-move": "shape=navigate",
+   "jump-to-move": "shape=navigate",
+   "back-to-final": "shape=navigate",
+   "new-game-from-review": "shape=submit"
+  },
+  "top_binding_share": 0.19,
+  "distinct_bindings_per_row": 11.8,
+  "records_cited": 19,
+  "top_records": [
+   [
+    "FLOW-005",
+    22
+   ],
+   [
+    "RULE-046",
+    22
+   ],
+   [
+    "RULE-045",
+    21
+   ],
+   [
+    "RULE-013",
+    14
+   ]
+  ]
+ },
+ {
+  "id": "t12",
+  "arm": "B2",
+  "revision": 41,
+  "status": "READY_FOR_REVIEW",
+  "valid": true,
+  "errors": [],
+  "cells_total": 124,
+  "hand": 107,
+  "hand_covered": 86,
+  "hand_na": 21,
+  "inherited": 17,
+  "inherited_by": {
+   "profile": 11,
+   "shape:navigate": 6
+  },
+  "declarations": {
+   "step-move": "shape=navigate",
+   "jump-to-move": "shape=navigate",
+   "back-to-final": "shape=navigate",
+   "new-game-from-review": "shape=submit"
+  },
+  "top_binding_share": 0.14,
+  "distinct_bindings_per_row": 13.2,
+  "records_cited": 21,
+  "top_records": [
+   [
+    "RULE-046",
+    26
+   ],
+   [
+    "FLOW-005",
+    25
+   ],
+   [
+    "RULE-045",
+    19
+   ],
+   [
+    "RULE-013",
+    18
+   ]
+  ]
+ }
+]

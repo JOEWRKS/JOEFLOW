@@ -86,6 +86,14 @@ def _built_cell(state: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
 _ROW_TABLES = {"coverage": ("feature_id", "cells"), "ux_coverage": ("screen_id", None), "grill_coverage": ("target_ref", "axes")}
 
 
+def _declared(state: dict[str, Any], spec: dict[str, Any], built: dict[str, Any]) -> None:
+    """Carry a row's `shape` and `default_authority` (coverage-inheritance.md); the default is hashed like a binding."""
+    if "shape" in spec:
+        built["shape"] = spec["shape"]
+    if "default_authority" in spec:
+        built["default_authority"] = [make_authority_binding(state, b["record_id"], b["pointer"]) for b in spec["default_authority"]]
+
+
 def _add_row(state: dict[str, Any], spec: dict[str, Any]) -> str:
     """Append one new coverage row whose cells are given as cell specs."""
     if not isinstance(spec, dict) or len(spec) != 1 or next(iter(spec)) not in _ROW_TABLES:
@@ -99,10 +107,15 @@ def _add_row(state: dict[str, Any], spec: dict[str, Any]) -> str:
     built = copy.deepcopy(row)
     if table == "ux_coverage":
         built["states"] = {axis: _built_cell(state, cell) for axis, cell in row.get("states", {}).items()}
-        built["actions"] = [{"key": action["key"], "cells": {axis: _built_cell(state, cell) for axis, cell in action["cells"].items()}}
-                            for action in row.get("actions", [])]
+        built["actions"] = []
+        for action in row.get("actions", []):
+            built_action = {"key": action["key"], "cells": {axis: _built_cell(state, cell) for axis, cell in action["cells"].items()}}
+            _declared(state, action, built_action)
+            built["actions"].append(built_action)
     else:
         built[cells_field] = {axis: _built_cell(state, cell) for axis, cell in row.get(cells_field, {}).items()}
+    if table != "grill_coverage":
+        _declared(state, row, built)
     state[table].append(built)
     return f"{table}[{target}]"
 

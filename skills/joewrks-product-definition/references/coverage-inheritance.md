@@ -26,8 +26,12 @@ answer from a hand-written one; the digest projection strips the tag and the dec
 
 ## Writing and converting
 
-- New rows: declare first, then write only the cells that differ.
-  `draft_freeze.py` still writes the full inventory; delete what a declaration covers.
+- New rows: declare first, then write only the cells that differ. In a `rows` patch an
+  action carries `"shape": "navigate"` next to its `key`, and a requirement, screen or
+  action row carries `"default_authority": [{"record_id": "FLOW-005", "pointer": "/paths"}]`;
+  `open_revision.py` hashes the default like any binding. `draft_freeze.py` marks every
+  action's `shape` `DECIDE` and still writes the full inventory: choose the shape, then
+  delete the cells it and a default imply.
 - Existing rows: `python <skill-directory>/scripts/compact_coverage.py STATE_JSON --write`
   turns the most reused COVERED binding set of each row into its `default_authority` and
   drops the cells it reproduces. It writes only when the result expands back to the
