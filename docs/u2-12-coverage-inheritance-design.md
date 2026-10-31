@@ -73,7 +73,7 @@ U2-10(기능 추가 모드)은 이 설계와 독립이며 영향받지 않는다
 ## 6. 구현 결과 (2026-10-31)
 
 - **State 0.3.0을 만들지 않았다.** `definition_digest`가 `schema_version`을 포함해, 버전을 올리면 기존 승인이 모두 낡은 것이 된다. 또 다운스트림 2.1 계약이 `state_schema_version = 0.2.0`을 확인한다. 그래서 `shape`·`default_authority`는 **0.2.0 안의 작성 형식**이다. 정식 형식은 펼친 상태이며, 검증·digest·다운스트림은 모두 펼친 보기(`expand_coverage`)를 읽는다. 고정 스키마 파일은 펼친 형식을 그대로 기술하므로 바꾸지 않았다. 설명은 `references/coverage-inheritance.md`.
-- 고정 모듈 변경: `authority_binding_v2.py`(펼친 보기 검증, 행 선언 허용, 상속 칸 규칙, `unknown_action_shape`), `approval_v2.py`(digest 투영을 펼친 보기로). `grill_v2.py`·`binding_diagnostics.py`·downstream_v2 seeds·reentry는 고정이 아니다.
+- 고정 모듈 변경: `authority_binding_v2.py`(펼친 보기 검증, 행 선언 허용, 상속 칸 규칙, `unknown_action_shape`), `approval_v2.py`(digest 투영을 펼친 보기로). `grill_v2.py`·`binding_diagnostics.py`는 고정이 아니다. `downstream_v2`는 **패키지 전체가 고정 트리**라 손대지 않았고, 그 대신 v2.1 감사·컴파일러와 2.0 런타임 검증기가 넘기기 전에 펼친다(3절의 표와 다른 점).
 - **손실 없는 압축 결과**(`compact_coverage.py`, 펼침 바이트 동일·두 digest 동일·검증 동일 확인):
 
   | | 오목 rev 38 | WebAppDev | Portfolio03 |
