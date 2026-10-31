@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "skills" / "joewrks-product-definition" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
+sys.path.insert(0, str(SCRIPTS.parent))  # downstream_v2 package
 sys.path.insert(0, str(ROOT))
 
 from approval_v2 import approval_manifest_digest, compute_approval_manifest, definition_digest  # noqa: E402
@@ -73,6 +74,13 @@ class DefaultAuthorityTest(unittest.TestCase):
                          approval_manifest_digest(compute_approval_manifest(state)))
         self.assertEqual(validate_state_v2(compact), [])
         self.assertTrue(evaluate_closure_v2(compact)["closed"])
+
+    def test_downstream_seeds_are_identical_for_the_compact_twin(self):
+        # downstream_v2 is a frozen tree; v2.1 callers expand the state at the boundary.
+        from downstream_v2.seeds import build_closed_source_seed_inventory
+        state, compact, _ = self.compact_fixture()
+        self.assertEqual(build_closed_source_seed_inventory(expand_coverage(compact, strip=True)),
+                         build_closed_source_seed_inventory(state))
 
     def test_inherited_cell_must_fit_the_axis_allowed_types(self):
         state = literal_ready_state()

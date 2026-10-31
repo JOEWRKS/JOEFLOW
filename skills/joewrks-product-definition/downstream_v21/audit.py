@@ -2,6 +2,7 @@
 
 from authority_binding_v2 import BindingError, canonical_record_index
 from downstream_v2.authority import DownstreamV2Error, sha256_json
+from coverage_inheritance import expand_coverage
 from downstream_v2.reentry import _builder_failure_is_consumed, _state_controls
 from downstream_v2.seeds import (
     build_source_seed_inventory,
@@ -135,7 +136,7 @@ def audit_action_contract_v21_against_state(
         )
 
     try:
-        project, current_bindings = _state_controls(current_state)
+        project, current_bindings = _state_controls(expand_coverage(current_state, strip=True))
         state_index = canonical_record_index(current_state)
     except (
         BindingError,
@@ -208,7 +209,7 @@ def audit_action_contract_v21_against_state(
     drifted = []
     for seed in seeds:
         try:
-            verify_source_seed(current_state, seed)
+            verify_source_seed(expand_coverage(current_state, strip=True), seed)
         except DownstreamV2Error as error:
             drifted.append(seed)
             _record_dependency_gap(
@@ -223,7 +224,7 @@ def audit_action_contract_v21_against_state(
     available = None
     inventory_error = None
     try:
-        available = source_seed_index(build_source_seed_inventory(current_state))
+        available = source_seed_index(build_source_seed_inventory(expand_coverage(current_state, strip=True)))
     except DownstreamV2Error as error:
         inventory_error = error
     if inventory_error is not None and (

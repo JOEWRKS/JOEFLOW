@@ -13,6 +13,7 @@ for _root in (_SKILL_ROOT, _SCRIPTS_ROOT):
     if str(_root) not in sys.path:
         sys.path.insert(0, str(_root))
 
+from coverage_inheritance import expand_coverage  # noqa: E402
 from downstream_v2.authority import canonical_json  # noqa: E402
 from downstream_v2.reentry import audit_contract_against_state  # noqa: E402
 from integration_v2.runtime import (  # noqa: E402
@@ -185,7 +186,7 @@ def main(arguments: list[str] | None = None) -> int:
     contract_object = contract if isinstance(contract, dict) else {}
     state_object = state if isinstance(state, dict) else {}
     try:
-        audit_result = audit_contract_against_state(contract_object, state_object)
+        audit_result = audit_contract_against_state(contract_object, expand_coverage(state_object, strip=True))
     except (KeyError, TypeError, ValueError, AttributeError, RecursionError) as error:
         audit_result = {
             "status": "DEFINITION_NOT_READY",

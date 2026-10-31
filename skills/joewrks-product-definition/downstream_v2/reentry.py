@@ -5,7 +5,6 @@ import re
 
 from approval_v2 import definition_digest, validate_approval
 from authority_binding_v2 import BindingError, canonical_record_index
-from coverage_inheritance import expand_coverage
 from state_validation_v2 import evaluate_closure_v2
 
 from .authority import DownstreamV2Error, REENTRY_VERSION, sha256_json
@@ -194,7 +193,6 @@ def _raw_record_ids(state: dict[str, object]) -> list[str]:
 
 
 def _positive_cells(state: dict[str, object]):
-    state = expand_coverage(state, strip=True)
     coverage = state.get("coverage")
     if not isinstance(coverage, list):
         raise ValueError("INVALID_COVERAGE_STRUCTURE")

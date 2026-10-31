@@ -3,6 +3,8 @@
 import copy
 import re
 
+from coverage_inheritance import expand_coverage
+
 from downstream_v2.authority import (
     DownstreamV2Error,
     require_closed_authority,
@@ -304,7 +306,7 @@ def compile_handoff_definition_v21(
 ) -> dict[str, object]:
     """Compile closed authority or return typed semantic/expressiveness gaps."""
     authority = require_closed_authority(state)
-    available_inventory = build_closed_source_seed_inventory(state)
+    available_inventory = build_closed_source_seed_inventory(expand_coverage(state, strip=True))
     available_seeds = source_seed_index(available_inventory)
     profile = load_responsibility_profile_v21()
     scope_index = _scope_record_index(state)
