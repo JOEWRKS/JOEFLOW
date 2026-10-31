@@ -1,8 +1,8 @@
 {
   "schema_version": "joeflow.personal-install-overlay-receipt/1.0",
-  "recorded_at": "2026-10-31T20:29:28+09:00",
+  "recorded_at": "2026-10-31T23:57:30+09:00",
   "program": "JOEFLOW",
-  "program_version_file": "1.4.0",
+  "program_version_file": "1.5.0",
   "runtime_skill_id": "joewrks-product-definition",
   "installation_path": "C:\\Users\\tjdwo\\.codex\\skills\\joewrks-product-definition",
   "composition": {
@@ -130,6 +130,76 @@
         },
         "not_installed_at_tip": [],
         "installed_on": "2026-10-31"
+      },
+      {
+        "item": "U2-10/U2-11 (1.5.0)",
+        "commit": "b6462ea9cf533640e801e5ef88231bd1f049c170",
+        "base_commit": "ed306847a5134ede09041f0722555fa377f35d83",
+        "files": [
+          "references/coverage-inheritance.md",
+          "references/feature-extension.md",
+          "references/first-plan-guide.md",
+          "references/grill-profile-inheritance-v1.json",
+          "scripts/approval_v2.py",
+          "scripts/authority_binding_v2.py",
+          "scripts/coverage_inheritance.py",
+          "scripts/draft_freeze.py",
+          "scripts/grill_v2.py",
+          "scripts/new_records.py"
+        ],
+        "composed": {
+          "SKILL.md": "patch: all hunks",
+          "references/workflow-v0.2.0.md": "patch: all hunks"
+        },
+        "not_installed_at_tip": [],
+        "installed_on": "2026-10-31",
+        "pycache_drift_before": {
+          "added": [
+            "downstream_v21/__pycache__/runtime_evidence.cpython-314.pyc",
+            "scripts/__pycache__/approval_status.cpython-314.pyc",
+            "scripts/__pycache__/audit_downstream_v2.cpython-314.pyc",
+            "scripts/__pycache__/audit_planning_projections.cpython-314.pyc",
+            "scripts/__pycache__/audit_reviewer_runner.cpython-314.pyc",
+            "scripts/__pycache__/authority_binding_value.cpython-314.pyc",
+            "scripts/__pycache__/binding_diagnostics.cpython-314.pyc",
+            "scripts/__pycache__/build_approval_manifest.cpython-314.pyc",
+            "scripts/__pycache__/build_discovery_baseline.cpython-314.pyc",
+            "scripts/__pycache__/build_semantic_review_v2.cpython-314.pyc",
+            "scripts/__pycache__/candidate_preflight_v2.cpython-314.pyc",
+            "scripts/__pycache__/cli_output.cpython-314.pyc",
+            "scripts/__pycache__/compact_coverage.cpython-314.pyc",
+            "scripts/__pycache__/compile_downstream_v2.cpython-314.pyc",
+            "scripts/__pycache__/coverage_inheritance.cpython-314.pyc",
+            "scripts/__pycache__/draft_freeze.cpython-314.pyc",
+            "scripts/__pycache__/explain_state_errors.cpython-314.pyc",
+            "scripts/__pycache__/migrate_state.cpython-314.pyc",
+            "scripts/__pycache__/migration_v2.cpython-314.pyc",
+            "scripts/__pycache__/new_records.cpython-314.pyc",
+            "scripts/__pycache__/next_product_question.cpython-314.pyc",
+            "scripts/__pycache__/open_revision.cpython-314.pyc",
+            "scripts/__pycache__/preflight_state_candidate.cpython-314.pyc",
+            "scripts/__pycache__/projection_audit_v2.cpython-314.pyc",
+            "scripts/__pycache__/projection_check.cpython-314.pyc",
+            "scripts/__pycache__/record_approval.cpython-314.pyc",
+            "scripts/__pycache__/record_builders.cpython-314.pyc",
+            "scripts/__pycache__/refresh_bindings.cpython-314.pyc",
+            "scripts/__pycache__/revision_v2.cpython-314.pyc",
+            "scripts/__pycache__/supersede_records.cpython-314.pyc",
+            "scripts/__pycache__/update_projection.cpython-314.pyc",
+            "scripts/__pycache__/ux_profile_inheritance.cpython-314.pyc",
+            "scripts/__pycache__/validate_closure.cpython-314.pyc",
+            "scripts/__pycache__/validate_state.cpython-314.pyc",
+            "scripts/__pycache__/verify_runtime_v2.cpython-314.pyc",
+            "scripts/__pycache__/verify_runtime_v21.cpython-314.pyc"
+          ],
+          "changed": [
+            "downstream_v21/__pycache__/audit.cpython-314.pyc",
+            "downstream_v21/__pycache__/compiler.cpython-314.pyc",
+            "scripts/__pycache__/approval_v2.cpython-314.pyc",
+            "scripts/__pycache__/authority_binding_v2.cpython-314.pyc",
+            "scripts/__pycache__/grill_v2.cpython-314.pyc"
+          ]
+        }
       }
     ],
     "not_applied": [
@@ -141,12 +211,12 @@
     ],
     "matches_single_commit": false
   },
-  "tip_compared": "ed306847a5134ede09041f0722555fa377f35d83",
+  "tip_compared": "b6462ea9cf533640e801e5ef88231bd1f049c170",
   "origin_counts": {
-    "branch_tip": 35,
+    "branch_tip": 37,
     "composed_v1.1.0_plus_u1_u2": 3,
     "preserved_local_overlay": 2,
-    "untracked_extra": 37,
+    "untracked_extra": 73,
     "v1.1.0_and_branch_tip": 154,
     "v1.1.0_only": 1
   },
@@ -191,15 +261,20 @@
       "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u2-ed30684-20261031",
       "file_count": 223,
       "manifest_sha256": "dd0275ca03349f3bbe59d5c5c3fc56753f8ef9d31ba16d9239a41b589c4bdcd4"
+    },
+    {
+      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u2-10-11-b6462ea-20261031",
+      "file_count": 268,
+      "manifest_sha256": "b7301e2bf8d199e21151664609b67158a88fac6a75eff8c86531578545871dcf"
     }
   ],
   "manifest_sha256_definition": "sha256 of UTF-8 lines '<sha256>  <posix path>\n' sorted by path",
-  "installed_file_count": 232,
-  "installed_manifest_sha256": "a7d852df0b3b33e331461a54abd0e02016043c733cee8f9a7e2f69f39abaf6f2",
+  "installed_file_count": 270,
+  "installed_manifest_sha256": "a4d156c829dff9d940699ae669d7df2db790566a9d49d9e617f5f2b5cfa876e9",
   "installed_manifest": [
     {
       "path": "SKILL.md",
-      "sha256": "8f0e6bd8ffa4d467e927a54e6b10fa20422e0635aad9da88dfc436b1553ac2e6",
+      "sha256": "1fa2982ac905445016ed0447d5afcfd96490929d8ce81c16e2c4164db1784c84",
       "origin": "composed_v1.1.0_plus_u1_u2"
     },
     {
@@ -534,12 +609,12 @@
     },
     {
       "path": "downstream_v21/__pycache__/audit.cpython-314.pyc",
-      "sha256": "f955afc3dc66d41189cdfe99cd53645f12d2ef64b95dfad746e5caeced3b446c",
+      "sha256": "540c9cb1e305014c40a580652aeb416eda91949b327f9ef5d9769373dc78a26d",
       "origin": "untracked_extra"
     },
     {
       "path": "downstream_v21/__pycache__/compiler.cpython-314.pyc",
-      "sha256": "08d6236fb0221de122c5a7975a34dd3a215c8a05a1f6b1f762242ecea3c94db0",
+      "sha256": "d78ff7d59d0bc161fe6195abc75c958119fea0fbe66bc3269880411e238f7376",
       "origin": "untracked_extra"
     },
     {
@@ -570,6 +645,11 @@
     {
       "path": "downstream_v21/__pycache__/responsibility.cpython-314.pyc",
       "sha256": "15e06fed9a8ace3574c271836c7c098d2f047f78c131cca511858253aaf959dd",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "downstream_v21/__pycache__/runtime_evidence.cpython-314.pyc",
+      "sha256": "3baba937135df9647fe8693fa40d6970b541a406260de3928da1d748efa63cad",
       "origin": "untracked_extra"
     },
     {
@@ -774,7 +854,7 @@
     },
     {
       "path": "references/coverage-inheritance.md",
-      "sha256": "d266430542f5858ebb9c58efebc5269a63a3f7fe3659b63ea9ffce9484e7c3b6",
+      "sha256": "71087e51e1231897d8d161ffa94f5e1536db1e116d4e16b31c45801086406161",
       "origin": "branch_tip"
     },
     {
@@ -798,13 +878,18 @@
       "origin": "v1.1.0_and_branch_tip"
     },
     {
+      "path": "references/feature-extension.md",
+      "sha256": "4ac0f8249988e321a71a6c1ef1a531977a8e41e573ceff24ba61cd7df9efa74c",
+      "origin": "branch_tip"
+    },
+    {
       "path": "references/figma-make-handoff.md",
       "sha256": "1269ef1e462ab86413c1e2d7df13bd4e8325eedf529c167946c60574f65e83e3",
       "origin": "preserved_local_overlay"
     },
     {
       "path": "references/first-plan-guide.md",
-      "sha256": "ffac29769d3bf6b57222d9d6e4d217feb0956e99725871024b8e1b190f8bed42",
+      "sha256": "835335dbfc10876711cebe284b06a25943ae7cb834fef3b95b40871c98f77f16",
       "origin": "branch_tip"
     },
     {
@@ -851,6 +936,11 @@
       "path": "references/grill-packs/permission.json",
       "sha256": "1930f9894cbaab7356dcfea9f9b732dcdc8773ca3556e60096ff0d5ddda183ad",
       "origin": "v1.1.0_and_branch_tip"
+    },
+    {
+      "path": "references/grill-profile-inheritance-v1.json",
+      "sha256": "f79edc16739f81445ba15f934fc1703d00016282507350ffb43ac49c9f22e87c",
+      "origin": "branch_tip"
     },
     {
       "path": "references/implementation-reentry-contract.md",
@@ -934,7 +1024,7 @@
     },
     {
       "path": "references/workflow-v0.2.0.md",
-      "sha256": "7eea6b62848b2217dab645a60bf8d69d264698f8fdc3214c3c9ea90adf779e32",
+      "sha256": "f0ee7d3cc2b00903e2f1a08de3a8da708c57a05ec7620ff6f2bbf09a7a88758d",
       "origin": "composed_v1.1.0_plus_u1_u2"
     },
     {
@@ -998,13 +1088,33 @@
       "origin": "v1.1.0_and_branch_tip"
     },
     {
+      "path": "scripts/__pycache__/approval_status.cpython-314.pyc",
+      "sha256": "46f514ffbff71e373a51c79f44345d0aebc8e6e919126eaea1cee9d8545fa619",
+      "origin": "untracked_extra"
+    },
+    {
       "path": "scripts/__pycache__/approval_v2.cpython-312.pyc",
       "sha256": "aa8f103c1e2b0864dc744a3cb0d23088a2c62bf3d4d618d759e7c09ebc3c9dde",
       "origin": "untracked_extra"
     },
     {
       "path": "scripts/__pycache__/approval_v2.cpython-314.pyc",
-      "sha256": "2c36f15f9408ec01024b5051c3f35da0c765e45d9af1c3c44c2b643c818faaa1",
+      "sha256": "1b4e6bd49418d0ed1699a3a9a208b7c225dcd04f0fa19c74761b658bb061c5ae",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/audit_downstream_v2.cpython-314.pyc",
+      "sha256": "2a60fc0e2fe64d8f1d387ddeb12c8e223e2d3d085bdf13f6edf37c53ecbfcd9a",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/audit_planning_projections.cpython-314.pyc",
+      "sha256": "98e5c65463d2bcd6c235bad720b1c00c1c92ece5bbe6dd4cf1023e07e2766c68",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/audit_reviewer_runner.cpython-314.pyc",
+      "sha256": "3f5d0f48d9ec4cd628b7d2dc548fcb29a075fe0a079e911bd6b25144a06536b7",
       "origin": "untracked_extra"
     },
     {
@@ -1014,7 +1124,57 @@
     },
     {
       "path": "scripts/__pycache__/authority_binding_v2.cpython-314.pyc",
-      "sha256": "baba0400fdea21994705f9695b987555a808e0eb2dec53436e24ddc38c2afb2c",
+      "sha256": "05bd31e407ca8c57e3a1d3ec9cc2d73db167a78722a1719976e15492a63eb315",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/authority_binding_value.cpython-314.pyc",
+      "sha256": "aafc66ca5eb2d7c38688ad2f2b3e9a7e8e5ac80ebcaf44b88c1f6768ee786306",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/binding_diagnostics.cpython-314.pyc",
+      "sha256": "c332287c3f326a7fa595f461ed1b3abf57c91e64aa19a4f5dd63d06f284249f9",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/build_approval_manifest.cpython-314.pyc",
+      "sha256": "5bbb4b705cbe694609ad024f2a81e0c875c10699ca9d38c45b5a8638ce40125a",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/build_discovery_baseline.cpython-314.pyc",
+      "sha256": "89e760a73373d50033e16d65c1270339d1ac00ee16527e55805b5a572911b590",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/build_semantic_review_v2.cpython-314.pyc",
+      "sha256": "5c43b4358573a30e822fb9db03efead3aa37ae0cb0892ec354267ca657c40ea3",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/candidate_preflight_v2.cpython-314.pyc",
+      "sha256": "276d4a24a28a50aa75798c83d33fa53edcf088fb7140627cb25a33fe0c5d75b4",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/cli_output.cpython-314.pyc",
+      "sha256": "a9839f1343068a79141c3733af28230d1890518c6c767bedf92cbaa1d80c2511",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/compact_coverage.cpython-314.pyc",
+      "sha256": "d986027bfd8a8a40527868eb6668f0681037d4867f4294c1c7410364b2a7c348",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/compile_downstream_v2.cpython-314.pyc",
+      "sha256": "aad89a58ce61752387490f25ed68da517d17d5f7d5b5fdeffbdb35d6b712bdce",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/coverage_inheritance.cpython-314.pyc",
+      "sha256": "4af5627d579d93cedbaeed9d107667e9ce1df267fc929d64e66011f6d6ebc40d",
       "origin": "untracked_extra"
     },
     {
@@ -1028,13 +1188,23 @@
       "origin": "untracked_extra"
     },
     {
+      "path": "scripts/__pycache__/draft_freeze.cpython-314.pyc",
+      "sha256": "0c71b88e3dd7cdb3a3fd0e6da88447309a483894cad7c4db0f95b083e0523b86",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/explain_state_errors.cpython-314.pyc",
+      "sha256": "17e5c625616f4c9c5cd34e3e33aa9fd0dfdcd26ad515134358ef5f610dc8d3a4",
+      "origin": "untracked_extra"
+    },
+    {
       "path": "scripts/__pycache__/grill_v2.cpython-312.pyc",
       "sha256": "bf7894fec9f31eee223dec43d622f50deaf31a41f1b0534a465cace07b771848",
       "origin": "untracked_extra"
     },
     {
       "path": "scripts/__pycache__/grill_v2.cpython-314.pyc",
-      "sha256": "f7202c7e23b7672aa279373ce08b77dbc63d28881df38e4c41cac16390c2fe1c",
+      "sha256": "5d204c8b55446c8fd15afc623201ec1ab14dc11548f259976bce7e052e13441f",
       "origin": "untracked_extra"
     },
     {
@@ -1045,6 +1215,66 @@
     {
       "path": "scripts/__pycache__/materiality_v2.cpython-314.pyc",
       "sha256": "16719d06ccd451542a849e7e8d5b00363ffe965d00015302665000de987acccb",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/migrate_state.cpython-314.pyc",
+      "sha256": "f359059a227bc6922378c2a45dc129b4aaec6157957bc4a86f4bbe8192981788",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/migration_v2.cpython-314.pyc",
+      "sha256": "671e757496572d4184a4027e64894878002608ad596d6b260a152b3f4b3963fa",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/new_records.cpython-314.pyc",
+      "sha256": "348eb35d9ece89ff6b29bc51dafadb2735b906b5ac867b2f4426e81b256a1171",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/next_product_question.cpython-314.pyc",
+      "sha256": "820ba48cd11fdadf8b7f9755d918b7c18f42620087d105f838233a152c74464c",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/open_revision.cpython-314.pyc",
+      "sha256": "8f17c0228df8983a01ddb367ab70f9a80d5b13720aabfdadc8cbb897bc67241a",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/preflight_state_candidate.cpython-314.pyc",
+      "sha256": "3a82b868618fb77cb2f0684cc5f425347600a7875df5aaf0416ab8dd1ac221cc",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/projection_audit_v2.cpython-314.pyc",
+      "sha256": "965b190daaa85b00ee2aacdf5faa6b0bf205d4554548ce5b3257bea366d0bcf8",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/projection_check.cpython-314.pyc",
+      "sha256": "397b75d0b4eddfc5653937f1aaa193cf37105768525800752b779e4267334fd6",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/record_approval.cpython-314.pyc",
+      "sha256": "7a37a9ab548b99b3e8d375a61ccb296a43d310d3d4c090f66fb138c2513b5c7f",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/record_builders.cpython-314.pyc",
+      "sha256": "1ebf536ee016d24051a0226255e869406df4d2e41b2c66ebd4c0cf66fe1727d1",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/refresh_bindings.cpython-314.pyc",
+      "sha256": "498d2a17492feeec5e124ec44a39d3a4567d34805fba567db8cfe72ab02fb57f",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/revision_v2.cpython-314.pyc",
+      "sha256": "24dbf2916caf378bee40681a75f9e726680569fc6656cfb5dec6b733f063b1d4",
       "origin": "untracked_extra"
     },
     {
@@ -1078,13 +1308,48 @@
       "origin": "untracked_extra"
     },
     {
+      "path": "scripts/__pycache__/supersede_records.cpython-314.pyc",
+      "sha256": "c494b64a2571b1679677dd2b075a4b5f408cfdf440bdeb5d7d0a227ff4e1ba88",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/update_projection.cpython-314.pyc",
+      "sha256": "38ae03014a7d2be754c0adb6908568ae158931a8751ce50e9ca09b374b08a7ff",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/ux_profile_inheritance.cpython-314.pyc",
+      "sha256": "6c6ec128329b86b788b9b66e4e727834e654d21d6cd44207348150872e9a117b",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/validate_closure.cpython-314.pyc",
+      "sha256": "40fb26d525aca42c3076e59e12b6c096b97596705435f5c7e27d1d81443cddb8",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/validate_state.cpython-314.pyc",
+      "sha256": "64ae366cc2b7d3a2ca5542c89988831f3185937efec620d191e3a02a584053ff",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/verify_runtime_v2.cpython-314.pyc",
+      "sha256": "85baa91fd8bbcb36a6a99ed0948fd83f964f06b7eb44f1a1202108f61b4edd28",
+      "origin": "untracked_extra"
+    },
+    {
+      "path": "scripts/__pycache__/verify_runtime_v21.cpython-314.pyc",
+      "sha256": "7619859d8970801bc8566fa776561b47a9597a85dd74e1c8082d706d7928576a",
+      "origin": "untracked_extra"
+    },
+    {
       "path": "scripts/approval_status.py",
       "sha256": "00029e7eb48c435decff8e74c40847aae7b2919b51e557452a0dd532df71a901",
       "origin": "branch_tip"
     },
     {
       "path": "scripts/approval_v2.py",
-      "sha256": "a2d7577c812078a9658b34a0bbf4816064ec7d8f001057921a85bb84b5ae8dc4",
+      "sha256": "9edc63c11e66ff1f3fa1445ff44e54f1b19664cbfe63fb791daffa4271517fd8",
       "origin": "branch_tip"
     },
     {
@@ -1104,7 +1369,7 @@
     },
     {
       "path": "scripts/authority_binding_v2.py",
-      "sha256": "6c36adba39836216f4ff5c1dc1d823cdcf16213d1c78577000dacb7df5e26326",
+      "sha256": "646d76e0e58b26d5cf65ad045029fe7a0b465c8c17075347bcd22897cde0b948",
       "origin": "branch_tip"
     },
     {
@@ -1154,7 +1419,7 @@
     },
     {
       "path": "scripts/coverage_inheritance.py",
-      "sha256": "b2af949bea77d920598ebd0fcbc4791b8430e3fa32e3c56cab9a2ccc8561d8f1",
+      "sha256": "62224b1c70a19415f039116d9f4d749bde11a365742c04e3dda65755a7251baf",
       "origin": "branch_tip"
     },
     {
@@ -1164,7 +1429,7 @@
     },
     {
       "path": "scripts/draft_freeze.py",
-      "sha256": "a301dbf92b86fdc92fe6df1335acc5c0a91737415b9cb24e16229da9ccb2c0af",
+      "sha256": "ee251e251e84e6308146320c061e4f9a4ddc7e1c0e7170b746d8f49236f776f5",
       "origin": "branch_tip"
     },
     {
@@ -1174,7 +1439,7 @@
     },
     {
       "path": "scripts/grill_v2.py",
-      "sha256": "7fcb70e31860813aff2fe2ef8325cbf00fbad318ed9c779f8c1dd0cb64ce3897",
+      "sha256": "189f98e41eb4503563ad3a74a7478b5da1c6cfc10625dc5ede4b087cb5aa4c34",
       "origin": "branch_tip"
     },
     {
@@ -1194,7 +1459,7 @@
     },
     {
       "path": "scripts/new_records.py",
-      "sha256": "9bb61be002c831a6176dd487d325ef698ebe702f8478ff563e69bd1294321dbb",
+      "sha256": "2abac3d29f5985e8cdd31c6ca8bd4bd84d1eb981092f269247debdf50a2a2882",
       "origin": "branch_tip"
     },
     {
@@ -1357,5 +1622,52 @@
       "sha256": "705871928bbdc046f1f8dbe8f63ce37957d203d13ad7beec4bb38fe99f340024",
       "origin": "v1.1.0_and_branch_tip"
     }
-  ]
+  ],
+  "pycache_drift_before_u2_10_11": {
+    "added": [
+      "downstream_v21/__pycache__/runtime_evidence.cpython-314.pyc",
+      "scripts/__pycache__/approval_status.cpython-314.pyc",
+      "scripts/__pycache__/audit_downstream_v2.cpython-314.pyc",
+      "scripts/__pycache__/audit_planning_projections.cpython-314.pyc",
+      "scripts/__pycache__/audit_reviewer_runner.cpython-314.pyc",
+      "scripts/__pycache__/authority_binding_value.cpython-314.pyc",
+      "scripts/__pycache__/binding_diagnostics.cpython-314.pyc",
+      "scripts/__pycache__/build_approval_manifest.cpython-314.pyc",
+      "scripts/__pycache__/build_discovery_baseline.cpython-314.pyc",
+      "scripts/__pycache__/build_semantic_review_v2.cpython-314.pyc",
+      "scripts/__pycache__/candidate_preflight_v2.cpython-314.pyc",
+      "scripts/__pycache__/cli_output.cpython-314.pyc",
+      "scripts/__pycache__/compact_coverage.cpython-314.pyc",
+      "scripts/__pycache__/compile_downstream_v2.cpython-314.pyc",
+      "scripts/__pycache__/coverage_inheritance.cpython-314.pyc",
+      "scripts/__pycache__/draft_freeze.cpython-314.pyc",
+      "scripts/__pycache__/explain_state_errors.cpython-314.pyc",
+      "scripts/__pycache__/migrate_state.cpython-314.pyc",
+      "scripts/__pycache__/migration_v2.cpython-314.pyc",
+      "scripts/__pycache__/new_records.cpython-314.pyc",
+      "scripts/__pycache__/next_product_question.cpython-314.pyc",
+      "scripts/__pycache__/open_revision.cpython-314.pyc",
+      "scripts/__pycache__/preflight_state_candidate.cpython-314.pyc",
+      "scripts/__pycache__/projection_audit_v2.cpython-314.pyc",
+      "scripts/__pycache__/projection_check.cpython-314.pyc",
+      "scripts/__pycache__/record_approval.cpython-314.pyc",
+      "scripts/__pycache__/record_builders.cpython-314.pyc",
+      "scripts/__pycache__/refresh_bindings.cpython-314.pyc",
+      "scripts/__pycache__/revision_v2.cpython-314.pyc",
+      "scripts/__pycache__/supersede_records.cpython-314.pyc",
+      "scripts/__pycache__/update_projection.cpython-314.pyc",
+      "scripts/__pycache__/ux_profile_inheritance.cpython-314.pyc",
+      "scripts/__pycache__/validate_closure.cpython-314.pyc",
+      "scripts/__pycache__/validate_state.cpython-314.pyc",
+      "scripts/__pycache__/verify_runtime_v2.cpython-314.pyc",
+      "scripts/__pycache__/verify_runtime_v21.cpython-314.pyc"
+    ],
+    "changed": [
+      "downstream_v21/__pycache__/audit.cpython-314.pyc",
+      "downstream_v21/__pycache__/compiler.cpython-314.pyc",
+      "scripts/__pycache__/approval_v2.cpython-314.pyc",
+      "scripts/__pycache__/authority_binding_v2.cpython-314.pyc",
+      "scripts/__pycache__/grill_v2.cpython-314.pyc"
+    ]
+  }
 }
