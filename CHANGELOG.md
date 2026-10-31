@@ -2,9 +2,9 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
-## Unreleased
+## 1.4.0 — 2026-10-31
 
-U2 1·2단계. 계획은 [U2 계획](docs/u2-planning-gaps.md)과 [ROADMAP U2](ROADMAP.md)에 있습니다. 바인딩 계약 identity와 State 0.2.0은 바뀌지 않았습니다.
+U2 1·2·3단계와 U2-12. 계획은 [U2 계획](docs/u2-planning-gaps.md)과 [ROADMAP U2](ROADMAP.md)에 있습니다. 바인딩 계약 identity와 State 0.2.0은 바뀌지 않았습니다.
 
 - U2-1: `update_projection.py`가 기획서·검토 화면의 식별 블록(revision·digest·변경 수·이전 승인)과 출처 블록을 다시 만들고, 바뀐 레코드를 적은 손글 줄을 알려 줍니다. 템플릿에 두 블록 표시를 넣었습니다.
 - U2-2: 검토 화면 다이어그램이 작은 화면에서 글자를 줄이지 않고 가로로 스크롤됩니다.

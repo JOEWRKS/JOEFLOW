@@ -7,7 +7,7 @@
 
 ## 1. Summary
 
-- Program version: **`v1.3.0`**
+- Program version: **`v1.4.0`**
 - Runtime skill/package ID: **`joewrks-product-definition`**
 - Authoritative source: **`product-definition/<project-slug>/state.json`**
 - Mission: **Product planning tool for defining what to build before implementation**
@@ -162,7 +162,7 @@ Integration boundaries:
 - Requested results not observed remain `NOT VERIFIED`
 - Semantic review repeatability remains `NOT_MEASURED` until measured in a valid execution environment
 - Semantic review results cannot approve new product decisions
-- Program version `1.3.0` remains independent from internal state and contract versions
+- Program version `1.4.0` remains independent from internal state and contract versions
 - Frozen historical contract meaning remains unchanged
 
 Detailed references:
@@ -180,7 +180,7 @@ Detailed references:
 <a name="korean"></a>
 **한국어**
 
-- 프로그램 버전: **`v1.3.0`**
+- 프로그램 버전: **`v1.4.0`**
 - 런타임 skill/package ID: **`joewrks-product-definition`**
 - 제품 기준 원본: **`product-definition/<project-slug>/state.json`**
 
@@ -338,7 +338,7 @@ JOENESS로 작업 정리
 - 요청된 결과 미확인 시 `NOT VERIFIED` 유지
 - 의미 검토의 반복 판단 신뢰도: 실제 환경 측정 전 상태인 `NOT_MEASURED`
 - 의미 검토 결과만으로 새 제품 결정 승인 불가
-- 프로그램 버전 `1.3.0`과 내부 상태·계약 버전의 독립 관리
+- 프로그램 버전 `1.4.0`과 내부 상태·계약 버전의 독립 관리
 - 과거 동결 계약의 의미 변경 없음
 
 상세 기준:
