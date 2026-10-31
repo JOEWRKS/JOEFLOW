@@ -16,13 +16,15 @@ Approval Manifest digest.
 | `surface_manifest.grill_profile.AUTH` / `PERMISSION` = `N/A` | the profile (1.3.0) | `N/A` on the account, permission and session UX axes of every screen |
 | `shape` | an action row | `N/A` on the axes listed for that shape in `ux-action-shapes-v2.json`: `navigate` (leave at once), `browse` (change what the screen shows), `local_choice`, `discard` (confirm, throw away, leave), `toggle`, `submit`, `destructive` |
 | `default_authority` | a requirement, screen or action row | `COVERED` with those bindings |
+| `execution` = `LOCAL` or `LOCAL_PURE` | `surface_manifest.grill_profile.ASYNC` (ACTIVE) | `N/A` on the ASYNC pack axes listed in `grill-profile-inheritance-v1.json`: `polling`, `reconciliation` for LOCAL; also `idempotency`, `duplicate_execution` for LOCAL_PURE |
 
 A written cell always wins. An omitted axis that no declaration covers is still an
 inventory error. A `default_authority` record whose type is not allowed on some axis
 fails on that axis with a message naming the default; write that cell yourself or mark it
 `N/A`. An unknown shape is an error. In the expanded view each implied cell carries
-`inherited_from` (`profile`, `shape:<name>` or `row`), so an audit can tell a declared
-answer from a hand-written one; the digest projection strips the tag and the declarations.
+`inherited_from` (`profile`, `profile:ASYNC.LOCAL_PURE`, `shape:<name>` or `row`), so an audit
+can tell a declared answer from a hand-written one; the digest projection strips the tag and
+the declarations.
 
 ## Writing and converting
 

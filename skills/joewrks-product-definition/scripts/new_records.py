@@ -94,7 +94,51 @@ def _parser() -> argparse.ArgumentParser:
     authoring.add_argument("--surface")
     authoring.add_argument("--option", action="append", type=_option, help="override the two default authoring options")
     authoring.add_argument("--address", action="append", default=[], metavar="CELL", help="as for user-decision (repeat)")
+
+    baseline = sub.add_parser("baseline", help="existing behaviour a feature extension must keep (references/feature-extension.md)")
+    baseline.add_argument("--requirement", required=True, help="new REQ ID for the preserved behaviour")
+    baseline.add_argument("--rule", required=True, help="new RULE ID that lists the behaviours")
+    baseline.add_argument("--acceptance", required=True, help="new AC ID")
+    baseline.add_argument("--surface", required=True, help="new SURF ID (FEATURE_AREA, IN_SCOPE) that owns the requirement")
+    baseline.add_argument("--goal", required=True, help="existing GOAL ID the preserved behaviour serves")
+    baseline.add_argument("--evidence", action="append", required=True,
+                          help="observed evidence of the behaviour: OBSERVED_IMPLEMENTATION, OBSERVED_RUNTIME or TEST_ASSERTION (repeat)")
+    baseline.add_argument("--behavior", action="append", required=True, help="one behaviour that must not change (repeat)")
+    baseline.add_argument("--check", required=True, help="the acceptance assertion, e.g. the existing checks that must still pass")
+    baseline.add_argument("--name", default="기존 동작 유지", help="surface name and requirement scope")
+    baseline.add_argument("--task", help="new TASK ID that implements the requirement (the Approval Manifest needs one)")
     return parser
+
+
+def baseline_records(args: argparse.Namespace) -> dict[str, object]:
+    """A preserved-behaviour requirement: records, its surface and a Core row answered by the rule."""
+    behaviours = [item.strip() for item in args.behavior if item.strip()]
+    if not behaviours:
+        raise ValueError("at least one --behavior is required")
+    listed = " ".join(f"({i}) {text}" for i, text in enumerate(behaviours, 1))
+    rule = {"status": "CURRENT", "id": args.rule, "applies_to": [args.requirement],
+            "statement": f"{args.name}: 이번 변경은 다음 기존 동작을 바꾸지 않는다. {listed}"}
+    requirement = {"status": "CURRENT", "id": args.requirement,
+                   "statement": f"{args.name}. 다음 기존 동작은 이번 변경 뒤에도 그대로다: {listed} 근거는 {', '.join(args.evidence)}.",
+                   "scope": args.name, "ui_required": False,
+                   "materiality": build.materiality("HIGH", "MULTI_FLOW", True, "REVERSIBLE")}
+    acceptance = {"status": "CURRENT", "id": args.acceptance, "requirement_refs": [args.requirement], "assertion": args.check}
+    surface = {"id": args.surface, "kind": "FEATURE_AREA", "name": args.name, "status": "IN_SCOPE",
+               "materiality": build.materiality("HIGH", "MULTI_FLOW", True, "REVERSIBLE"),
+               "evidence_refs": list(args.evidence), "authority_refs": [args.requirement], "unknown_refs": [],
+               "decision_refs": [], "contradiction_refs": [],
+               "rationale": "기존 제품의 관찰된 동작을 이번 변경의 회귀 금지 목록으로 둔다.", "intent_classification": None}
+    bind = lambda record_id, pointer: {"record_id": record_id, "pointer": pointer}
+    row = {"coverage": {"feature_id": args.requirement, "default_authority": [bind(args.rule, "/statement")], "cells": {
+        "goal": {"status": "COVERED", "bind": [bind(args.goal, "/statement"), bind(args.requirement, "/statement")]},
+        "happy_path": {"status": "COVERED", "bind": [bind(args.requirement, "/statement")]},
+        "acceptance": {"status": "COVERED", "bind": [bind(args.acceptance, "/assertion")]},
+    }}}
+    built: dict[str, object] = {"requirements": [requirement], "rules": [rule], "acceptance_criteria": [acceptance],
+                                "surfaces": [surface], "rows": [row]}
+    if args.task:
+        built["tasks"] = [{"status": "CURRENT", "id": args.task, "implements": [args.requirement], "acceptance_refs": [args.acceptance]}]
+    return built
 
 
 def address_cells(decision_id: str, cells: list[str]) -> list[dict[str, object]]:
@@ -106,7 +150,9 @@ def address_cells(decision_id: str, cells: list[str]) -> list[dict[str, object]]
     } for cell in cells]
 
 
-def build_records(args: argparse.Namespace) -> dict[str, list[dict[str, object]]]:
+def build_records(args: argparse.Namespace) -> dict[str, object]:
+    if args.kind == "baseline":
+        return baseline_records(args)
     if args.kind == "evidence":
         return {"evidence": [build.evidence(args.id, source_kind=args.source_kind, authority_classes=args.classes,
                                             locator=args.locator, claim=args.claim, confidence=args.confidence)]}
@@ -143,9 +189,11 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"written": False, "error": str(exc)}, ensure_ascii=False))
         return 1
     cells = built.pop("cells", [])
-    existing = {record.get("id") for record in patch.get("evidence", [])}
+    rows = built.pop("rows", [])
+    surfaces = built.pop("surfaces", [])
+    existing = {record.get("id") for record in patch.get("evidence", []) + patch.get("surfaces", [])}
     existing |= {record.get("id") for group in patch.get("objects", {}).values() for record in group}
-    new_ids = [record["id"] for records in built.values() for record in records]
+    new_ids = [record["id"] for records in built.values() for record in records] + [record["id"] for record in surfaces]
     duplicates = sorted(set(new_ids) & existing)
     if duplicates:
         print(json.dumps({"written": False, "error": f"IDs already in the patch: {duplicates}"}, ensure_ascii=False))
@@ -155,9 +203,15 @@ def main(argv: list[str] | None = None) -> int:
         target.extend(records)
     if cells:
         patch.setdefault("cells", []).extend(cells)
+    if surfaces:
+        patch.setdefault("surfaces", []).extend(surfaces)
+    if rows:
+        patch.setdefault("rows", []).extend(rows)
     path.write_text(json.dumps(patch, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps({"written": True, "patch": str(path), "added": new_ids,
-                      "cells": [edit["cell"] for edit in cells]}, ensure_ascii=False, indent=2))
+                      "cells": [edit["cell"] for edit in cells],
+                      "rows": [f"{table}[{row.get('feature_id') or row.get('screen_id')}]" for spec in rows for table, row in spec.items()]},
+                     ensure_ascii=False, indent=2))
     return 0
 
 

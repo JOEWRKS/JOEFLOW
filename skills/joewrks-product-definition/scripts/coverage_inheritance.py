@@ -5,7 +5,9 @@ Three sources, all optional, all inside State 0.2.0 (a state without them is unc
     session axes are N/A (ux_profile_inheritance);
   * an action row's `shape` (ux-action-shapes-v2.json) -> that shape's axes are N/A;
   * a row's `default_authority` (authority bindings)  -> every other omitted axis is COVERED
-    by those bindings.
+    by those bindings;
+  * a grill profile cell's declaration (grill-profile-inheritance-v1.json; today
+    `ASYNC.execution` = LOCAL or LOCAL_PURE) -> the listed axes of that pack's rows are N/A.
 `expand_coverage` returns the canonical explicit state: omitted cells are written out and
 tagged `inherited_from`, so validators, digests and downstream read one shape. With
 `strip=True` the tags and the declarations are removed, so a compact state and its
@@ -23,8 +25,12 @@ from typing import Any
 from ux_profile_inheritance import inheritable_ux_axes
 
 SHAPES_PATH = Path(__file__).resolve().parents[1] / "references" / "ux-action-shapes-v2.json"
+GRILL_PROFILE_PATH = Path(__file__).resolve().parents[1] / "references" / "grill-profile-inheritance-v1.json"
+PACK_DIR = Path(__file__).resolve().parents[1] / "references" / "grill-packs"
 ROW_FIELDS = {"shape", "default_authority"}
+PROFILE_FIELDS = {"execution"}
 TAG = "inherited_from"
+_PACK_AXES: dict[str, tuple[str, ...]] = {}
 _UX_STATE_AXES = (
     "default", "loading", "empty", "partial", "success", "error", "disabled", "permission_denied",
     "unauthenticated", "offline", "timeout", "retrying", "submitting", "completed", "cancelled", "expired",
@@ -47,6 +53,63 @@ def load_shapes() -> dict[str, dict[str, Any]]:
     if contract.get("contract_id") != "joewrks.ux-action-shapes" or contract.get("version") != "2.0":
         raise ValueError("ux_action_shapes_drift")
     return contract["shapes"]
+
+
+def load_grill_profile_inheritance() -> dict[str, dict[str, Any]]:
+    contract = json.loads(GRILL_PROFILE_PATH.read_text(encoding="utf-8"))
+    if contract.get("contract_id") != "joewrks.grill-profile-inheritance" or contract.get("version") != "1.0":
+        raise ValueError("grill_profile_inheritance_drift")
+    return contract["domains"]
+
+
+def _pack_axes(pack_id: str) -> tuple[str, ...]:
+    if not _PACK_AXES:
+        for source in sorted(PACK_DIR.glob("*.json")):
+            if source.name.endswith(".schema.json"):
+                continue
+            pack = json.loads(source.read_text(encoding="utf-8"))
+            _PACK_AXES[pack["pack_id"]] = tuple(axis["id"] for axis in pack["axes"])
+    return _PACK_AXES.get(pack_id, ())
+
+
+def profile_declaration_error(domain: str, cell: dict[str, Any]) -> str | None:
+    """Why a grill profile cell's declaration (e.g. ASYNC.execution) is not acceptable, or None."""
+    declared = {field: cell[field] for field in PROFILE_FIELDS if field in cell}
+    if not declared:
+        return None
+    try:
+        spec = load_grill_profile_inheritance().get(domain)
+    except (OSError, ValueError, KeyError):
+        spec = None
+    if spec is None or set(declared) != {spec["field"]}:
+        return f"{domain} accepts no declaration {sorted(declared)}"
+    value = declared[spec["field"]]
+    if cell.get("status") != "ACTIVE":
+        return f"{domain}.{spec['field']} needs an ACTIVE domain"
+    if not isinstance(value, str) or value not in spec["values"]:
+        return f"{domain}.{spec['field']} must be one of {sorted(spec['values'])}"
+    return None
+
+
+def inheritable_grill_axes(state: dict[str, Any]) -> dict[str, dict[str, str]]:
+    """pack_id -> {axis: source} for the grill axes a declared profile cell implies N/A."""
+    manifest = state.get("surface_manifest") if isinstance(state, dict) else None
+    profile = manifest.get("grill_profile") if isinstance(manifest, dict) else None
+    result: dict[str, dict[str, str]] = {}
+    if not isinstance(profile, dict):
+        return result
+    try:
+        table = load_grill_profile_inheritance()
+    except (OSError, ValueError, KeyError):
+        return result
+    for domain, spec in table.items():
+        cell = profile.get(domain)
+        if not isinstance(cell, dict) or cell.get("status") != "ACTIVE":
+            continue
+        value = cell.get(spec["field"])
+        if isinstance(value, str) and value in spec["values"]:
+            result[spec["pack_id"]] = {axis: f"profile:{domain}.{value}" for axis in spec["values"][value]["not_applicable"]}
+    return result
 
 
 def _na_cell(source: str) -> dict[str, Any]:
@@ -100,6 +163,10 @@ def expand_coverage(state: dict[str, Any], *, strip: bool = False) -> dict[str, 
             if isinstance(shape, str) and shape in shapes:
                 na.update({axis: f"shape:{shape}" for axis in shapes[shape]["not_applicable"]})
             _fill(action["cells"], _UX_ACTION_AXES, na, action.get("default_authority"), "row")
+    grill_na = inheritable_grill_axes(expanded)
+    for row in expanded.get("grill_coverage") or []:
+        if isinstance(row, dict) and row.get("pack_id") in grill_na and isinstance(row.get("axes"), dict):
+            _fill(row["axes"], _pack_axes(row["pack_id"]), grill_na[row["pack_id"]], None, "")
     if strip:
         _strip(expanded)
     return expanded
@@ -128,6 +195,16 @@ def _strip(state: dict[str, Any]) -> None:
                 for field in ROW_FIELDS:
                     action.pop(field, None)
                 cells_of(action.get("cells"))
+    for row in state.get("grill_coverage") or []:
+        if isinstance(row, dict):
+            cells_of(row.get("axes"))
+    manifest = state.get("surface_manifest")
+    profile = manifest.get("grill_profile") if isinstance(manifest, dict) else None
+    if isinstance(profile, dict):
+        for cell in profile.values():
+            if isinstance(cell, dict):
+                for field in PROFILE_FIELDS:
+                    cell.pop(field, None)
 
 
 def declared_rows(state: dict[str, Any]):

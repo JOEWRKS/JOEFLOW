@@ -85,7 +85,7 @@ class SkillPackageTest(unittest.TestCase):
             "scripts/revision_v2.py", "scripts/open_revision.py", "scripts/refresh_bindings.py",
             "scripts/record_builders.py", "scripts/new_records.py", "scripts/supersede_records.py", "scripts/projection_check.py",
             "scripts/ux_profile_inheritance.py", "references/ux-profile-inheritance-v1.json", "scripts/update_projection.py",
-            "scripts/coverage_inheritance.py", "scripts/compact_coverage.py", "references/ux-action-shapes-v2.json", "references/coverage-inheritance.md", "scripts/draft_freeze.py", "references/first-plan-guide.md",
+            "scripts/coverage_inheritance.py", "scripts/compact_coverage.py", "references/ux-action-shapes-v2.json", "references/grill-profile-inheritance-v1.json", "references/feature-extension.md", "references/coverage-inheritance.md", "scripts/draft_freeze.py", "references/first-plan-guide.md",
             "templates/examples/discover-one-question.state.json", "templates/examples/closed-minimal.state.json",
             "scripts/materiality_v2.py", "scripts/grill_v2.py", "scripts/next_product_question.py",
             "scripts/authority_binding_v2.py", "scripts/authority_binding_value.py",

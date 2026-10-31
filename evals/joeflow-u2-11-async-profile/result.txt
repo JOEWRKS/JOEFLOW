@@ -1,0 +1,5 @@
+hand-written N/A ['duplicate_execution', 'idempotency', 'polling', 'reconciliation']
+implied by LOCAL_PURE ['duplicate_execution', 'idempotency', 'polling', 'reconciliation'] equal: True
+declared, cells kept: errors [] | definition digest unchanged: True | manifest digest unchanged: True
+declared, 4 cells dropped (no revision opened): errors ['approval_history_gaps', 'missing_or_stale_approval_manifest', 'semantic_change_without_revision_increment', 'stale_approval']
+expanded tags {'polling': 'profile:ASYNC.LOCAL_PURE', 'idempotency': 'profile:ASYNC.LOCAL_PURE', 'duplicate_execution': 'profile:ASYNC.LOCAL_PURE', 'reconciliation': 'profile:ASYNC.LOCAL_PURE'}

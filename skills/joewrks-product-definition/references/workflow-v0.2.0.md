@@ -12,6 +12,7 @@ This is the installed workflow for native State `0.2.0` projects. The canonical 
 
 - For a new project, copy `templates/state-v0.2.0.example.json`; [first-plan-guide.md](first-plan-guide.md) shows example states at the DISCOVER and CLOSED stages and where each kind of evidence goes. Keep `migration.mode = NATIVE`, `project.definition_status = OPEN`, and `approval.status = UNAPPROVED` until the real workflow establishes otherwise.
 - For an existing State `0.2.0` project, read its canonical state first and resume from its current lifecycle position.
+- For a feature added to a product that already runs without a definition, use `NEW_PRODUCT` scoped to the change and record the behaviour that must stay as a baseline ([feature-extension.md](feature-extension.md)); `EXISTING_PRODUCT_RECONCILIATION` is only for a migrated legacy definition.
 - For an existing State `0.1.2.1` project, validate with the frozen legacy contract. Do not silently migrate. Use `scripts/migrate_state.py --apply` only after the user explicitly asks to adopt V2; the result is an OPEN, UNAPPROVED reconciliation candidate rather than automatic Semantic Closure.
 
 The native template does not assert Product Definition closure, user approval, approval time, downstream authority, or implementation conformance.

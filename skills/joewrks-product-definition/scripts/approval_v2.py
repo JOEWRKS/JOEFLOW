@@ -286,7 +286,8 @@ def semantic_projection(state: dict[str, object]) -> dict[str, object]:
             "records": _sorted_records(
                 manifest.get("records"), current_only=True, drop_operational=True,
             ),
-            "grill_profile": _normalized(manifest.get("grill_profile")),
+            # declarations such as ASYNC.execution are authoring forms; the digest sees the implied cells instead
+            "grill_profile": _normalized(expand_coverage(state, strip=True).get("surface_manifest", {}).get("grill_profile")),
         },
         "contradictions": [
             record for record in _sorted_records(

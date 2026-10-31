@@ -1,0 +1,29 @@
+{
+  "contract_id": "joewrks.grill-profile-inheritance",
+  "version": "1.0",
+  "basis": "AI-Gomoku rev 39 answered four of the ten ASYNC axes N/A for its browser Worker (polling, reconciliation: no external system; idempotency, duplicate_execution: a pure display-only computation). A profile cell may say that once; the row may then leave those axes out.",
+  "domains": {
+    "ASYNC": {
+      "pack_id": "GRILL-ASYNC-1",
+      "field": "execution",
+      "values": {
+        "LOCAL": {
+          "meaning": "The work runs on the user's device with no external system: nothing to poll and no remote outcome to reconcile.",
+          "not_applicable": [
+            "polling",
+            "reconciliation"
+          ]
+        },
+        "LOCAL_PURE": {
+          "meaning": "Local, and the result is only displayed: running it again changes nothing, so there is no idempotency or duplicate execution to guard.",
+          "not_applicable": [
+            "duplicate_execution",
+            "idempotency",
+            "polling",
+            "reconciliation"
+          ]
+        }
+      }
+    }
+  }
+}

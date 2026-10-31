@@ -15,10 +15,12 @@ sys.path.insert(0, str(SCRIPTS.parent))  # downstream_v2 package
 sys.path.insert(0, str(ROOT))
 
 from approval_v2 import approval_manifest_digest, compute_approval_manifest, definition_digest  # noqa: E402
-from coverage_inheritance import TAG, compact_coverage, expand_coverage, load_shapes  # noqa: E402
+from coverage_inheritance import TAG, compact_coverage, expand_coverage, inheritable_grill_axes, load_shapes  # noqa: E402
+from grill_v2 import compile_active_grill_packs, load_grill_packs  # noqa: E402
 from revision_v2 import apply_patch  # noqa: E402
 from state_validation_v2 import evaluate_closure_v2, validate_state_v2  # noqa: E402
 from tests.test_semantic_closure_v020 import literal_approved_state, literal_ready_state  # noqa: E402
+from tests.v020_support import establish_current_baseline  # noqa: E402
 
 
 def codes(state):
@@ -96,6 +98,56 @@ class ShapeInheritanceTest(unittest.TestCase):
         act = action(state)
         act["shape"] = "navigate"
         self.assertEqual(action(expand_coverage(state))["cells"]["validation"], act["cells"]["validation"])
+
+
+def async_ready_state():
+    """literal_ready_state plus an ACTIVE ASYNC domain: SURF-002 (ASYNC_PROCESS) and its fully answered row."""
+    state = literal_ready_state()
+    auth = state["surface_manifest"]["grill_profile"]["AUTH"]
+    surface = copy.deepcopy(state["surface_manifest"]["records"][0])
+    surface.update({"id": "SURF-002", "kind": "ASYNC_PROCESS", "name": "Background scoring"})
+    state["surface_manifest"]["records"].append(surface)
+    state["surface_manifest"]["grill_profile"]["ASYNC"] = {"status": "ACTIVE", "surface_refs": ["SURF-002"], "unknown_refs": [],
+                                                           "basis_refs": list(auth["basis_refs"]), "rationale": None}
+    instance = next(i for i in compile_active_grill_packs(state) if i["pack_id"] == "GRILL-ASYNC-1")
+    axes = [axis["id"] for axis in load_grill_packs()["GRILL-ASYNC-1"]["axes"]]
+    addressed = state["grill_coverage"][0]["axes"]["registration"]
+    state["grill_coverage"].append({"target_ref": "SURF-002", "pack_id": "GRILL-ASYNC-1", "pack_version": instance["version"],
+                                    "pack_digest": instance["digest"], "axes": {axis: copy.deepcopy(addressed) for axis in axes}})
+    return establish_current_baseline(state)
+
+
+class AsyncProfileInheritanceTest(unittest.TestCase):
+    def test_declared_local_pure_execution_implies_four_na_axes(self):
+        state = async_ready_state()
+        self.assertEqual(codes(state), set())
+        profile = state["surface_manifest"]["grill_profile"]["ASYNC"]
+        profile["execution"] = "LOCAL_PURE"
+        row = state["grill_coverage"][1]
+        implied = inheritable_grill_axes(state)["GRILL-ASYNC-1"]
+        self.assertEqual(set(implied), {"polling", "reconciliation", "idempotency", "duplicate_execution"})
+        for axis in implied:
+            del row["axes"][axis]
+        self.assertEqual(codes(state), set())
+        expanded = expand_coverage(state)["grill_coverage"][1]["axes"]
+        self.assertEqual(expanded["polling"]["status"], "N/A")
+        self.assertEqual(expanded["polling"][TAG], "profile:ASYNC.LOCAL_PURE")
+        stripped = expand_coverage(state, strip=True)
+        self.assertNotIn(TAG, stripped["grill_coverage"][1]["axes"]["polling"])
+        self.assertNotIn("execution", stripped["surface_manifest"]["grill_profile"]["ASYNC"])
+        self.assertEqual(definition_digest(stripped), definition_digest(state))
+
+    def test_declaration_needs_an_active_known_value_and_covers_only_its_axes(self):
+        state = async_ready_state()
+        profile = state["surface_manifest"]["grill_profile"]["ASYNC"]
+        profile["execution"] = "REMOTE"
+        self.assertIn("invalid_grill_profile_declaration", codes(state))
+        profile["execution"] = "LOCAL"
+        self.assertEqual(codes(state), set())
+        del state["grill_coverage"][1]["axes"]["idempotency"]
+        self.assertIn("grill_pack_axis_inventory_mismatch", codes(state))
+        state["surface_manifest"]["grill_profile"]["MONEY"]["execution"] = "LOCAL"
+        self.assertIn("invalid_grill_profile_declaration", codes(state))
 
 
 class DefaultAuthorityTest(unittest.TestCase):

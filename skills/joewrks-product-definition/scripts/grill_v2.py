@@ -1295,6 +1295,7 @@ def _profile_analysis(
     index, _, surfaces = _grill_indexes(state)
     manifest = state.get("surface_manifest")
     profile = manifest.get("grill_profile") if isinstance(manifest, dict) else None
+    from coverage_inheritance import PROFILE_FIELDS, profile_declaration_error  # local: it imports nothing from here
     forced_refs: dict[str, set[str]] = {domain: set() for domain in GRILL_PROFILE_DOMAINS}
     for surface_id, surface in surfaces.items():
         if not _surface_is_current(surface):
@@ -1345,7 +1346,9 @@ def _profile_analysis(
         path = f"surface_manifest.grill_profile.{domain}"
         cell = profile[domain]
         cell_valid = True
-        if not isinstance(cell, dict) or set(cell) != GRILL_PROFILE_CELL_KEYS:
+        if isinstance(cell, dict) and (problem := profile_declaration_error(domain, cell)):
+            errors.append(_error("invalid_grill_profile_declaration", problem, path))
+        if not isinstance(cell, dict) or set(cell) - PROFILE_FIELDS != GRILL_PROFILE_CELL_KEYS:
             errors.append(_error(
                 "invalid_grill_profile",
                 "topology profile cells must use the exact M3 shape",
@@ -1519,9 +1522,16 @@ def _coverage_analysis(
     profile_gaps: int,
     valid_active: dict[str, tuple[str, ...]],
 ) -> tuple[list[dict[str, str]], dict[str, int]]:
-    from coverage_inheritance import expand_coverage  # local import: coverage_inheritance has no grill dependency
+    from coverage_inheritance import expand_coverage, inheritable_grill_axes  # local import: coverage_inheritance has no grill dependency
 
-    state = expand_coverage(state, strip=True)  # Core rows may inherit cells from a default_authority
+    implied_axes = inheritable_grill_axes(state)
+    raw_rows = state.get("grill_coverage") if isinstance(state.get("grill_coverage"), list) else []
+    inherited_cells = {
+        (position, axis) for position, row in enumerate(raw_rows)
+        if isinstance(row, dict) and row.get("pack_id") in implied_axes
+        for axis in implied_axes[row["pack_id"]] if axis not in (row.get("axes") if isinstance(row.get("axes"), dict) else {})
+    }
+    state = expand_coverage(state, strip=True)  # Core rows may inherit cells from a default_authority; implied grill axes are written out
     errors: list[dict[str, str]] = []
     active_gaps = profile_gaps
     unresolved_axes = 0
@@ -1710,6 +1720,8 @@ def _coverage_analysis(
                         cell_path,
                     ))
             elif status == "N/A":
+                if (position, axis_id) in inherited_cells:
+                    continue  # implied by the profile declaration (coverage-inheritance.md); no basis of its own
                 if (
                     authority_bindings != []
                     or unknown_refs != []

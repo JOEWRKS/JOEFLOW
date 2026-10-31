@@ -486,7 +486,8 @@ def _product_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, 
         for axis, cell in row["axes"].items():
             cell_path = f"grill_coverage[{row_position}].axes.{axis}"
             invalid_cell = False
-            if not isinstance(cell, dict) or set(cell) != _SPECIALIST_COVERAGE_CELL_KEYS:
+            inherited = cell.get(TAG) if isinstance(cell, dict) else None
+            if not isinstance(cell, dict) or set(cell) - {TAG} != _SPECIALIST_COVERAGE_CELL_KEYS:
                 errors.append(_coverage_error("invalid_specialist_coverage_cell", "specialist coverage cell must use the exact M4 shape", cell_path))
                 metric_cells["specialist_binding_gaps"].add(cell_path)
                 continue
@@ -510,8 +511,8 @@ def _product_binding_analysis(state: dict[str, object]) -> tuple[list[dict[str, 
                 error_code = "open_coverage_without_unknown"
                 message = "OPEN requires current OPEN unknown refs only"
             elif status == "N/A":
-                codes = _verify_bindings(state, basis, allowed_types=basis_types, semantic_roots=basis_roots, basis=True)
-                invalid_cell = bindings != [] or unknowns != [] or not _meaningful_rationale(rationale) or bool(codes)
+                codes = [] if inherited else _verify_bindings(state, basis, allowed_types=basis_types, semantic_roots=basis_roots, basis=True)
+                invalid_cell = bindings != [] or unknowns != [] or (not inherited and not _meaningful_rationale(rationale)) or bool(codes)
                 if invalid_cell:
                     metric_cells["unjustified_na_without_basis"].add(cell_path)
                 _binding_metric_codes(codes, metric_cells, cell_path)

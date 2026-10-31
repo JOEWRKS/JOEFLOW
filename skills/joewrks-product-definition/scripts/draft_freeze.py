@@ -29,7 +29,7 @@ from typing import Any
 
 from authority_binding_v2 import canonical_record_index, load_binding_contracts
 from cli_output import use_utf8_stdio
-from coverage_inheritance import load_shapes
+from coverage_inheritance import inheritable_grill_axes, load_shapes
 from grill_v2 import compile_active_grill_packs, load_grill_packs
 from ux_profile_inheritance import inheritable_ux_axes
 
@@ -175,6 +175,7 @@ class Drafter:
                                           if axis not in skip_actions and axis not in implied}})
             rows.append({"ux_coverage": {"screen_id": screen["id"], "states": states, "actions": actions}})
         packs = load_grill_packs()
+        inherited_grill = inheritable_grill_axes(self.state)
         have_grill = {(row.get("pack_id"), row.get("target_ref")) for row in self.state.get("grill_coverage", [])}
         for instance in compile_active_grill_packs(self.state):
             if instance["pack_id"] == "GRILL-CORE-1":
@@ -184,7 +185,8 @@ class Drafter:
                 if (instance["pack_id"], target) in have_grill:
                     continue
                 axes = {axis["id"]: self.propose("grill_coverage", (f"grill:{instance['pack_id']}", axis["id"]), target, allowed)
-                        for axis in packs[instance["pack_id"]]["axes"]}
+                        for axis in packs[instance["pack_id"]]["axes"]
+                        if axis["id"] not in inherited_grill.get(instance["pack_id"], {})}
                 rows.append({"grill_coverage": {"target_ref": target, "pack_id": instance["pack_id"],
                                                 "pack_version": instance["version"], "pack_digest": instance["digest"], "axes": axes}})
         return rows
