@@ -8,6 +8,8 @@ remain explicit before product meaning can be treated as canonical authority.
 
 ## Evidence authority
 
+A user instruction that another session or person passed on is `RELAYED_USER_INTENT`: with the user's exact words (`confidence` `DIRECT`) it counts like `USER_CONFIRMED_INTENT`; as the relayer's summary it cannot close a material question, back a user decision, or select contradiction authority, and the user answers the question.
+
 Evidence records prove only the authority classes that their `source_kind` is
 allowed to support. A source that proves observed behavior does not therefore
 prove intent, preference, or policy.

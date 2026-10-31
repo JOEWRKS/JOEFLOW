@@ -2,6 +2,10 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
+## Unreleased
+
+- U2-8(마무리): 전달된 사용자 의도의 근거 종류 `RELAYED_USER_INTENT`. `confidence` `DIRECT`(사용자 원문 그대로)만 직접 확인과 같고, 전달자의 요약은 material 질문을 닫거나 사용자 결정을 뒷받침하거나 모순 권위가 될 수 없습니다(`relayed_intent_cannot_close`). `new_records.py relayed --quote|--summary`. 고정 모듈 `state_validation_v2.py`와 스키마 enum 갱신, 기존 기록 영향 없음. 설계는 [U2-8](docs/u2-8-relayed-intent-design.md).
+
 ## 1.5.0 — 2026-10-31
 
 개인 설치본에는 2026-10-31에 U2-10·U2-11을 반영했습니다(experience pass는 여전히 제외, [설치 기록](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)).

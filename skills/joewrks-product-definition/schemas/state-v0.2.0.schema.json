@@ -328,7 +328,7 @@
       "properties": {
         "id": {"type": "string", "pattern": "^EVD-[0-9]{3,}$"},
         "status": {"enum": ["CURRENT", "STALE", "SUPERSEDED", "UNAVAILABLE"]},
-        "source_kind": {"enum": ["USER_CONFIRMED_INTENT", "DOCUMENTED_INTENT", "HISTORICAL_DECISION", "EXTERNAL_CONSTRAINT", "OBSERVED_IMPLEMENTATION", "OBSERVED_RUNTIME", "TEST_ASSERTION", "DESIGN_ARTIFACT", "INFERRED_INTENT"]},
+        "source_kind": {"enum": ["USER_CONFIRMED_INTENT", "RELAYED_USER_INTENT", "DOCUMENTED_INTENT", "HISTORICAL_DECISION", "EXTERNAL_CONSTRAINT", "OBSERVED_IMPLEMENTATION", "OBSERVED_RUNTIME", "TEST_ASSERTION", "DESIGN_ARTIFACT", "INFERRED_INTENT"]},
         "locator": {"$ref": "#/$defs/text"},
         "claim": {"$ref": "#/$defs/text"},
         "confidence": {"enum": ["DIRECT", "CORROBORATED", "INFERRED"]},

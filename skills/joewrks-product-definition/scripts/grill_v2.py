@@ -114,6 +114,7 @@ CANDIDATE_ONLY_SOURCE_KINDS = {"INFERRED_INTENT", "DESIGN_ARTIFACT"}
 RECOMMENDATION_FACT_CLASSES = ("FACTUAL", "BEHAVIORAL", "CONSTRAINT")
 SOURCE_KIND_CAPABILITIES = {
     "USER_CONFIRMED_INTENT": {"INTENT", "PREFERENCE"},
+    "RELAYED_USER_INTENT": {"INTENT", "PREFERENCE"},
     "DOCUMENTED_INTENT": {"INTENT", "PREFERENCE"},
     "HISTORICAL_DECISION": {"INTENT", "PREFERENCE"},
     "EXTERNAL_CONSTRAINT": {"FACTUAL", "CONSTRAINT"},
@@ -340,6 +341,7 @@ def _evidence_can_support(
         and isinstance(authority_class, str)
         and source_kind in SOURCE_KIND_CAPABILITIES
         and source_kind not in CANDIDATE_ONLY_SOURCE_KINDS
+        and not (source_kind == "RELAYED_USER_INTENT" and record.get("confidence") != "DIRECT")
         and (not external_constraint or source_kind == "EXTERNAL_CONSTRAINT")
         and isinstance(authority_classes, list)
         and authority_class in authority_classes
@@ -1278,6 +1280,7 @@ def _basis_ref_is_current(
             record.get("status") == "CURRENT"
             and isinstance(source_kind, str)
             and source_kind not in CANDIDATE_ONLY_SOURCE_KINDS
+            and not (source_kind == "RELAYED_USER_INTENT" and record.get("confidence") != "DIRECT")
         )
     if group == "surfaces":
         return _surface_is_current(record)

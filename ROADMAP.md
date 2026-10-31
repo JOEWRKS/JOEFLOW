@@ -4,7 +4,7 @@
 2026-10-30: 1.2.0 main 합치기·푸시, 태그 `v1.2.0`(`62eb541`)·GitHub Release 게시 complete. 2026-10-31: U1-7 개인 설치본 반영, 1.3.0 main·태그 `v1.3.0`(`016a606`)·GitHub Release 게시 complete. U1-9·U1-10까지 개인 설치본 반영.
 2026-10-31: U2 전체 개인 설치본 반영(`install_u2.py`), 1.4.0 main(`ed30684`) 푸시, 태그 `v1.4.0`(`ed30684`)·GitHub Release 게시 complete.
 2026-10-31: U2-10·U2-11 개인 설치본 반영(`install_u2_10_11.py`), 1.5.0 main(`b6462ea`) 푸시, 태그 `v1.5.0`(`b6462ea`)·GitHub Release 게시 complete.
-다음 작업: U2-8 전달된 의도 근거 종류(사용자 결정). U1-8은 U2-10으로 옮김.
+2026-11-01: U2-8 전달된 의도 근거 종류 구현(미게시). 다음 작업: 1.6.0 게시·설치(사용자 승인). U1-8은 U2-10으로 옮김.
 
 상태어: not started · in progress · verification pending · complete · deferred
 
@@ -21,7 +21,7 @@
 | U2-5 | 질문 종료~FREEZE 사이 중간 상태 | complete | 새 상태값 대신 U2-7로 해결: OPEN이면 표면을 IN_SCOPE+요구사항 근거로 두고 coverage는 나중에. 화면 UX 행도 같은 규칙. 시험 `tests/test_open_authoring_v020.py` |
 | U2-6 | 담당자 결정(AGENT) 대체 허용 | complete | 질문과 함께 대체하면 open_revision 통과(이전엔 `unauthorized_agent_decision`). 시험 `test_supersede_records_v020` |
 | U2-7 | DISCOVER 중 요구사항·화면 등록 | complete | native+OPEN에서 Core·UX 행 누락 허용, READY_FOR_REVIEW부터 다시 오류, 이전된(MIGRATED) state는 그대로. 기존 시험 4건은 READY_FOR_REVIEW 기준으로 바꿈. 고정 `authority_binding_v2.py` 해시 갱신 |
-| U2-8 | 추천 근거에 실측·관찰 사실 허용 | complete(일부) | FACTUAL·BEHAVIORAL·CONSTRAINT 근거 허용, INFERRED_INTENT는 여전히 거부. 전달된 사용자 의도용 근거 종류는 보류: 그 근거로 material 질문을 닫을 수 있는지 사용자 결정 필요 |
+| U2-8 | 추천 근거에 실측·관찰 사실 허용, 전달된 사용자 의도 근거 종류 | complete | FACTUAL·BEHAVIORAL·CONSTRAINT 근거 허용, INFERRED_INTENT는 여전히 거부. 2026-11-01 사용자 결정(강한 안): `RELAYED_USER_INTENT`는 원문 그대로(`DIRECT`)만 닫을 수 있고 요약은 질문을 준비만 함(`relayed_intent_cannot_close`). 오목 rev 41: 전달 근거 1건, 그것만으로 닫힌 결정 0건([설계](docs/u2-8-relayed-intent-design.md)). 시험 `tests/test_relayed_intent_v020.py` |
 | U2-9 | 가벼운 FREEZE | 초안 도구 complete·효과 작음, 다음은 사용자 결정 | [설계·측정](docs/u2-9-light-freeze-design.md): `draft_freeze.py`(정확한 칸 목록·그래프로 정해지는 칸·후보)와 패치 `rows`. 오목 rev 37에서 212칸 중 11칸만 확정 가능(11/11 맞음), 185칸은 직접 판단, 후보에 정답 12~22/128. 형제 답 채우기는 절반만 맞아 채우지 않음. 비용은 칸마다의 의미 판단이라 칸 수를 줄이는 계약 변경(B 행동 종류 프로필, C' 묶음 coverage)이 필요. 시험 `tests/test_draft_freeze_v020.py` |
 | U2-10 | 기능 추가 모드(=U1-8) | complete(관례+도우미) | [설계](docs/u2-10-u2-11-design.md): 새 모드 대신 NEW_PRODUCT 범위 한정 + `new_records.py baseline`(기존 동작 유지 REQ·RULE·AC·SURF·Core 행, 손글 3/20칸). 오목 rev 39 사본: rev 41 유효·Manifest·closure 통과([측정](evals/joeflow-u2-10-feature-extension/README.md)). 시험 `tests/test_feature_extension_v020.py` |
 | U2-11 | ASYNC 로컬 실행 프로필 | complete | `grill_profile.ASYNC.execution` = LOCAL·LOCAL_PURE로 ASYNC 행 2·4축 생략. 오목 손글 N/A 4축과 일치, 승인본 digest 불변([측정](evals/joeflow-u2-11-async-profile/README.md)). 고정 `authority_binding_v2.py`·`approval_v2.py` 해시 갱신. 시험 `tests/test_coverage_inheritance_v020.py` |

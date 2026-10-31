@@ -64,6 +64,7 @@ INTENT_CLASSIFICATIONS = {"AUTHORITATIVE", "OBSERVED_ONLY", "CONFLICTING", "UNEX
 OBSERVED_SOURCE_KINDS = {"OBSERVED_IMPLEMENTATION", "OBSERVED_RUNTIME", "TEST_ASSERTION"}
 SOURCE_KIND_CAPABILITIES = {
     "USER_CONFIRMED_INTENT": {"INTENT", "PREFERENCE"},
+    "RELAYED_USER_INTENT": {"INTENT", "PREFERENCE"},
     "DOCUMENTED_INTENT": {"INTENT", "PREFERENCE"},
     "HISTORICAL_DECISION": {"INTENT", "PREFERENCE"},
     "EXTERNAL_CONSTRAINT": {"FACTUAL", "CONSTRAINT"},
@@ -559,6 +560,11 @@ def _collect_contradictions(state: dict[str, Any]) -> dict[str, dict[str, Any]]:
     }
 
 
+def _relayed_summary(record: dict[str, Any]) -> bool:
+    """A user instruction passed on by another session or person in its own words (not verbatim)."""
+    return record.get("source_kind") == "RELAYED_USER_INTENT" and record.get("confidence") != "DIRECT"
+
+
 def _evidence_is_current_closure_eligible(record: dict[str, Any]) -> bool:
     authority_classes = record.get("authority_classes")
     source_kind = record.get("source_kind")
@@ -566,6 +572,7 @@ def _evidence_is_current_closure_eligible(record: dict[str, Any]) -> bool:
         record.get("status") == "CURRENT"
         and isinstance(source_kind, str)
         and source_kind not in CANDIDATE_ONLY_SOURCE_KINDS
+        and not _relayed_summary(record)
         and isinstance(authority_classes, list)
         and bool(authority_classes)
         and all(isinstance(authority_class, str) for authority_class in authority_classes)
@@ -1143,6 +1150,7 @@ def _validate_materiality(value: Any, path: str) -> list[dict[str, str]]:
 
 def _validate_typed_semantic_minima(state: dict[str, Any]) -> list[dict[str, str]]:
     errors: list[dict[str, str]] = []
+    evidence_index = _collect_evidence(state)
     for group, position, record in _iter_records(state):
         path = f"objects.{group}[{position}]"
         if not isinstance(record, dict):
@@ -1186,6 +1194,19 @@ def _validate_typed_semantic_minima(state: dict[str, Any]) -> list[dict[str, str
             or record["resolution_mode"] not in _RESOLUTION_MODES
         ):
             errors.append(_error("schema_error", "invalid resolution_mode", f"{path}.resolution_mode"))
+        if group == "decisions" and status == "CURRENT" and record.get("resolution_mode") in {"USER_DECISION", "USER_ACCEPTED_RECOMMENDATION"}:
+            refs = record.get("evidence_refs") if isinstance(record.get("evidence_refs"), list) else []
+            cited = [evidence_index[reference] for reference in refs if isinstance(reference, str) and reference in evidence_index]
+            if any(_relayed_summary(item) for item in cited) and not any(
+                _evidence_can_support(item, authority_class, for_closure=True)
+                for item in cited for authority_class in ("INTENT", "PREFERENCE")
+            ):
+                errors.append(_error(
+                    "relayed_intent_cannot_close",
+                    "a user decision needs the user's own words: direct intent evidence or a verbatim relay "
+                    "(RELAYED_USER_INTENT with confidence DIRECT); a relayed summary only prepares the question",
+                    f"{path}.evidence_refs",
+                ))
         if "superseded_by" in record and (
             not _is_stable_id(record["superseded_by"])
         ):

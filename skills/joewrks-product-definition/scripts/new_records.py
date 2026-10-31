@@ -95,6 +95,15 @@ def _parser() -> argparse.ArgumentParser:
     authoring.add_argument("--option", action="append", type=_option, help="override the two default authoring options")
     authoring.add_argument("--address", action="append", default=[], metavar="CELL", help="as for user-decision (repeat)")
 
+    relayed = sub.add_parser("relayed", help="a user instruction passed on by another session or person (RELAYED_USER_INTENT)")
+    relayed.add_argument("--id", required=True)
+    relayed.add_argument("--relayer", required=True, help="who passed it on, e.g. 'parent session (JOEFLOW 보강)'")
+    relayed.add_argument("--when", help="when the user said it, if known")
+    words = relayed.add_mutually_exclusive_group(required=True)
+    words.add_argument("--quote", help="the user's exact words (confidence DIRECT: may close a material question)")
+    words.add_argument("--summary", help="the relayer's own words (confidence INFERRED: prepares the question, cannot close it)")
+    relayed.add_argument("--class", dest="classes", action="append", default=None, help="INTENT (default) or PREFERENCE (repeat)")
+
     baseline = sub.add_parser("baseline", help="existing behaviour a feature extension must keep (references/feature-extension.md)")
     baseline.add_argument("--requirement", required=True, help="new REQ ID for the preserved behaviour")
     baseline.add_argument("--rule", required=True, help="new RULE ID that lists the behaviours")
@@ -153,6 +162,13 @@ def address_cells(decision_id: str, cells: list[str]) -> list[dict[str, object]]
 def build_records(args: argparse.Namespace) -> dict[str, object]:
     if args.kind == "baseline":
         return baseline_records(args)
+    if args.kind == "relayed":
+        locator = f"relayed by {args.relayer}" + (f", said {args.when}" if args.when else "")
+        if args.quote:
+            return {"evidence": [build.evidence(args.id, source_kind="RELAYED_USER_INTENT", authority_classes=args.classes or ["INTENT"],
+                                                locator=locator, claim=f"사용자 원문: \"{args.quote}\"", confidence="DIRECT")]}
+        return {"evidence": [build.evidence(args.id, source_kind="RELAYED_USER_INTENT", authority_classes=args.classes or ["INTENT"],
+                                            locator=locator, claim=f"전달자 요약: {args.summary}", confidence="INFERRED")]}
     if args.kind == "evidence":
         return {"evidence": [build.evidence(args.id, source_kind=args.source_kind, authority_classes=args.classes,
                                             locator=args.locator, claim=args.claim, confidence=args.confidence)]}
