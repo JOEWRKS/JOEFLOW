@@ -2,7 +2,7 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
-## Unreleased
+## 1.5.0 — 2026-10-31
 
 - U2-10: 기존 제품에 기능을 더하는 절차 `references/feature-extension.md`와 `new_records.py baseline`. NEW_PRODUCT를 변경 범위로 한정하고, 유지할 기존 동작을 관찰 근거 + 기준선 요구사항(REQ·RULE·AC·SURF·Core 행, `default_authority`로 손글 3칸) 하나로 둡니다. 새 bootstrap 모드·표면 필드는 없습니다(스키마 버전이 바뀌면 승인이 모두 낡음). 측정은 [오목 rev 39](evals/joeflow-u2-10-feature-extension/README.md).
 - U2-11: `surface_manifest.grill_profile.ASYNC.execution` = `LOCAL`·`LOCAL_PURE`(`references/grill-profile-inheritance-v1.json`)가 ASYNC 행의 polling·reconciliation(·idempotency·duplicate_execution) 축을 N/A로 암시해 생략할 수 있습니다. 오목의 손글 N/A 4축과 정확히 같고 승인본 digest는 그대로입니다([측정](evals/joeflow-u2-11-async-profile/README.md)). 고정 모듈 `authority_binding_v2.py`·`approval_v2.py` 해시 갱신. 설계는 [U2-10·U2-11](docs/u2-10-u2-11-design.md).

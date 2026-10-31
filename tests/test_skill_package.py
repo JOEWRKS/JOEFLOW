@@ -21,7 +21,7 @@ class SkillPackageTest(unittest.TestCase):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         metadata = (SKILL / "agents" / "openai.yaml").read_text(encoding="utf-8")
 
-        self.assertEqual(version, "1.4.0")
+        self.assertEqual(version, "1.5.0")
         self.assertIn(f"v{version}", readme)
         self.assertIn(f"| 프로그램 릴리스 | `v{version}` |", architecture)
         self.assertIn(
@@ -44,7 +44,7 @@ class SkillPackageTest(unittest.TestCase):
         for language_marker in (
             "[English](#english) | [한국어](#korean)",
             '<a name="english"></a>', '<a name="korean"></a>',
-            "Program version: **`v1.4.0`**",
+            "Program version: **`v1.5.0`**",
             "Runtime skill/package ID: **`joewrks-product-definition`**",
             "Authoritative source: **`product-definition/<project-slug>/state.json`**",
             "[Current V2 workflow](skills/joewrks-product-definition/references/workflow-v0.2.0.md)",

@@ -10,7 +10,7 @@
 | 항목 | 값 |
 | --- | --- |
 | 프로그램 이름 | `JOEFLOW` |
-| 프로그램 릴리스 | `v1.4.0` |
+| 프로그램 릴리스 | `v1.5.0` |
 | 저장소 | `JOEWRKS/JOEFLOW` |
 | 런타임 skill/package ID | `joewrks-product-definition` |
 | canonical Product Definition authority | `product-definition/<project-slug>/state.json` |
@@ -34,7 +34,7 @@ SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED
 - 현재 V2 semantic-review 경계: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`
 - 과거 호환성: 상태 `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, v0.4.3 evidence
 - 계약 버전: 상호 독립 관리
-- 이 기준선의 전체 프로그램 릴리스: `v1.4.0`
+- 이 기준선의 전체 프로그램 릴리스: `v1.5.0`
 
 ## 2. 설계 목적
 
@@ -262,6 +262,7 @@ tests/
 - **v1.2.0** — experience pass, UTF-8 CLI 출력, 승인 기록·승인 현황, 오류 허용 값 힌트, 패치 기반 revision 개정·대체 연쇄·레코드 작성 CLI; frozen contract identity 변경 없음
 - **v1.3.0** — 계정 없는 앱의 UX 축 상속(grill profile `AUTH`·`PERMISSION` N/A이면 계정·권한·세션 UX 축 생략 가능); 바인딩 계약 identity·State 0.2.0 변경 없음, 보호된 `authority_binding_v2.py` 고정 해시 갱신
 - **v1.4.0** — U2 기획 보강: 기획서·검토 화면 식별·출처 블록 갱신 도구, OPEN 동안 coverage 행 유예, 담당자 기본값 대체, 관찰 사실 추천 근거, 빠진 coverage 행 초안(`draft_freeze.py --shape`), 행동 `shape`(실측 모양 표 v2)·행 `default_authority`로 확정 칸 상속과 손실 없는 압축(`compact_coverage.py`); State 0.2.0·바인딩 계약 identity 변경 없음, 보호된 `authority_binding_v2.py`·`approval_v2.py` 고정 해시 갱신
+- **v1.5.0** — 기존 제품에 기능 추가(`feature-extension.md`, `new_records.py baseline`: 유지할 기존 동작을 기준선 요구사항으로), ASYNC 로컬 실행 프로필(`grill_profile.ASYNC.execution`으로 ASYNC 행 축 생략); State 0.2.0·바인딩 계약 identity 변경 없음, 보호된 `authority_binding_v2.py`·`approval_v2.py` 고정 해시 갱신
 
 ## 6. 한계
 
