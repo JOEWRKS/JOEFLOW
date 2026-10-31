@@ -1194,7 +1194,8 @@ def _validate_typed_semantic_minima(state: dict[str, Any]) -> list[dict[str, str
             or record["resolution_mode"] not in _RESOLUTION_MODES
         ):
             errors.append(_error("schema_error", "invalid resolution_mode", f"{path}.resolution_mode"))
-        if group == "decisions" and status == "CURRENT" and record.get("resolution_mode") in {"USER_DECISION", "USER_ACCEPTED_RECOMMENDATION"}:
+        mode = record.get("resolution_mode")
+        if group == "decisions" and status == "CURRENT" and isinstance(mode, str) and mode in {"USER_DECISION", "USER_ACCEPTED_RECOMMENDATION"}:
             refs = record.get("evidence_refs") if isinstance(record.get("evidence_refs"), list) else []
             cited = [evidence_index[reference] for reference in refs if isinstance(reference, str) and reference in evidence_index]
             if any(_relayed_summary(item) for item in cited) and not any(
