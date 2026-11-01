@@ -1,0 +1,411 @@
+[
+ {
+  "id": "t17",
+  "arm": "A",
+  "variant": "summary",
+  "revision": 41,
+  "status": "OPEN",
+  "valid": true,
+  "errors": [],
+  "evidence": [
+   [
+    "EVD-041",
+    "USER_CONFIRMED_INTENT",
+    "DIRECT"
+   ]
+  ],
+  "questions": [
+   [
+    "UNK-109",
+    "RESOLVED",
+    "USER_DECISION_REQUIRED",
+    "USER_DECISION"
+   ],
+   [
+    "UNK-110",
+    "RESOLVED",
+    "AGENT_AUTONOMOUS",
+    "AGENT_NON_MATERIAL_DEFAULT"
+   ]
+  ],
+  "decisions": [
+   [
+    "DEC-109",
+    "CURRENT",
+    "USER_DECISION",
+    "USER",
+    [
+     "EVD-041"
+    ]
+   ],
+   [
+    "DEC-110",
+    "CURRENT",
+    "AGENT_NON_MATERIAL_DEFAULT",
+    "AGENT",
+    [
+     "EVD-041"
+    ]
+   ]
+  ],
+  "rules": [
+   "RULE-047"
+  ]
+ },
+ {
+  "id": "t18",
+  "arm": "B",
+  "variant": "quote",
+  "revision": 41,
+  "status": "OPEN",
+  "valid": true,
+  "errors": [],
+  "evidence": [
+   [
+    "EVD-041",
+    "RELAYED_USER_INTENT",
+    "DIRECT"
+   ]
+  ],
+  "questions": [
+   [
+    "UNK-109",
+    "RESOLVED",
+    "USER_DECISION_REQUIRED",
+    "USER_DECISION"
+   ],
+   [
+    "UNK-110",
+    "RESOLVED",
+    "AGENT_AUTONOMOUS",
+    "AGENT_NON_MATERIAL_DEFAULT"
+   ]
+  ],
+  "decisions": [
+   [
+    "DEC-109",
+    "CURRENT",
+    "USER_DECISION",
+    "USER",
+    [
+     "EVD-041"
+    ]
+   ],
+   [
+    "DEC-110",
+    "CURRENT",
+    "AGENT_NON_MATERIAL_DEFAULT",
+    "AGENT",
+    [
+     "EVD-041"
+    ]
+   ]
+  ],
+  "rules": [
+   "RULE-047"
+  ]
+ },
+ {
+  "id": "t19",
+  "arm": "B",
+  "variant": "summary",
+  "revision": 41,
+  "status": "OPEN",
+  "valid": true,
+  "errors": [],
+  "evidence": [
+   [
+    "EVD-041",
+    "RELAYED_USER_INTENT",
+    "INFERRED"
+   ]
+  ],
+  "questions": [
+   [
+    "UNK-109",
+    "RESOLVED",
+    "AGENT_AUTONOMOUS",
+    "AGENT_NON_MATERIAL_DEFAULT"
+   ]
+  ],
+  "decisions": [
+   [
+    "DEC-109",
+    "CURRENT",
+    "AGENT_NON_MATERIAL_DEFAULT",
+    "AGENT",
+    [
+     "EVD-041"
+    ]
+   ]
+  ],
+  "rules": [
+   "RULE-047"
+  ]
+ },
+ {
+  "id": "t20",
+  "arm": "A",
+  "variant": "quote",
+  "revision": 41,
+  "status": "OPEN",
+  "valid": true,
+  "errors": [],
+  "evidence": [
+   [
+    "EVD-041",
+    "USER_CONFIRMED_INTENT",
+    "DIRECT"
+   ]
+  ],
+  "questions": [
+   [
+    "UNK-109",
+    "RESOLVED",
+    "USER_DECISION_REQUIRED",
+    "USER_DECISION"
+   ],
+   [
+    "UNK-110",
+    "RESOLVED",
+    "AGENT_AUTONOMOUS",
+    "AGENT_NON_MATERIAL_DEFAULT"
+   ]
+  ],
+  "decisions": [
+   [
+    "DEC-109",
+    "CURRENT",
+    "USER_DECISION",
+    "USER",
+    [
+     "EVD-041"
+    ]
+   ],
+   [
+    "DEC-110",
+    "CURRENT",
+    "AGENT_NON_MATERIAL_DEFAULT",
+    "AGENT",
+    [
+     "EVD-041"
+    ]
+   ]
+  ],
+  "rules": [
+   "RULE-047"
+  ]
+ },
+ {
+  "id": "t21",
+  "arm": "A",
+  "variant": "summary",
+  "revision": 41,
+  "status": "OPEN",
+  "valid": true,
+  "errors": [],
+  "evidence": [
+   [
+    "EVD-041",
+    "USER_CONFIRMED_INTENT",
+    "DIRECT"
+   ]
+  ],
+  "questions": [
+   [
+    "UNK-109",
+    "RESOLVED",
+    "USER_DECISION_REQUIRED",
+    "USER_DECISION"
+   ],
+   [
+    "UNK-110",
+    "RESOLVED",
+    "AGENT_AUTONOMOUS",
+    "AGENT_NON_MATERIAL_DEFAULT"
+   ]
+  ],
+  "decisions": [
+   [
+    "DEC-109",
+    "CURRENT",
+    "USER_DECISION",
+    "USER",
+    [
+     "EVD-041"
+    ]
+   ],
+   [
+    "DEC-110",
+    "CURRENT",
+    "AGENT_NON_MATERIAL_DEFAULT",
+    "AGENT",
+    [
+     "EVD-041"
+    ]
+   ]
+  ],
+  "rules": [
+   "RULE-047"
+  ]
+ },
+ {
+  "id": "t22",
+  "arm": "B",
+  "variant": "summary",
+  "revision": 41,
+  "status": "OPEN",
+  "valid": true,
+  "errors": [],
+  "evidence": [
+   [
+    "EVD-041",
+    "RELAYED_USER_INTENT",
+    "INFERRED"
+   ]
+  ],
+  "questions": [
+   [
+    "UNK-109",
+    "RESOLVED",
+    "AGENT_AUTONOMOUS",
+    "AGENT_NON_MATERIAL_DEFAULT"
+   ]
+  ],
+  "decisions": [
+   [
+    "DEC-109",
+    "CURRENT",
+    "AGENT_NON_MATERIAL_DEFAULT",
+    "AGENT",
+    [
+     "EVD-041"
+    ]
+   ]
+  ],
+  "rules": [
+   "RULE-047"
+  ]
+ },
+ {
+  "id": "t23",
+  "arm": "A",
+  "variant": "quote",
+  "revision": 41,
+  "status": "OPEN",
+  "valid": true,
+  "errors": [],
+  "evidence": [
+   [
+    "EVD-041",
+    "USER_CONFIRMED_INTENT",
+    "DIRECT"
+   ]
+  ],
+  "questions": [
+   [
+    "UNK-109",
+    "RESOLVED",
+    "USER_DECISION_REQUIRED",
+    "USER_DECISION"
+   ],
+   [
+    "UNK-110",
+    "RESOLVED",
+    "AGENT_AUTONOMOUS",
+    "AGENT_NON_MATERIAL_DEFAULT"
+   ]
+  ],
+  "decisions": [
+   [
+    "DEC-109",
+    "CURRENT",
+    "USER_DECISION",
+    "USER",
+    [
+     "EVD-041"
+    ]
+   ],
+   [
+    "DEC-110",
+    "CURRENT",
+    "AGENT_NON_MATERIAL_DEFAULT",
+    "AGENT",
+    [
+     "EVD-041"
+    ]
+   ]
+  ],
+  "rules": [
+   "RULE-047"
+  ]
+ },
+ {
+  "id": "t24",
+  "arm": "B",
+  "variant": "quote",
+  "revision": 41,
+  "status": "OPEN",
+  "valid": true,
+  "errors": [],
+  "evidence": [
+   [
+    "EVD-041",
+    "RELAYED_USER_INTENT",
+    "DIRECT"
+   ]
+  ],
+  "questions": [
+   [
+    "UNK-109",
+    "RESOLVED",
+    "USER_DECISION_REQUIRED",
+    "USER_DECISION"
+   ],
+   [
+    "UNK-110",
+    "RESOLVED",
+    "AGENT_AUTONOMOUS",
+    "AGENT_NON_MATERIAL_DEFAULT"
+   ],
+   [
+    "UNK-111",
+    "RESOLVED",
+    "AGENT_AUTONOMOUS",
+    "AGENT_NON_MATERIAL_DEFAULT"
+   ]
+  ],
+  "decisions": [
+   [
+    "DEC-109",
+    "CURRENT",
+    "USER_DECISION",
+    "USER",
+    [
+     "EVD-041"
+    ]
+   ],
+   [
+    "DEC-110",
+    "CURRENT",
+    "AGENT_NON_MATERIAL_DEFAULT",
+    "AGENT",
+    [
+     "EVD-041"
+    ]
+   ],
+   [
+    "DEC-111",
+    "CURRENT",
+    "AGENT_NON_MATERIAL_DEFAULT",
+    "AGENT",
+    [
+     "EVD-041"
+    ]
+   ]
+  ],
+  "rules": [
+   "RULE-047"
+  ]
+ }
+]

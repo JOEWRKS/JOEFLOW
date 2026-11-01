@@ -1,0 +1,58 @@
+[
+ {
+  "id": "t17",
+  "arm": "A",
+  "variant": "summary",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\runs\\t17",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\skill-A\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t18",
+  "arm": "B",
+  "variant": "quote",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\runs\\t18",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\skill-B\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t19",
+  "arm": "B",
+  "variant": "summary",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\runs\\t19",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\skill-B\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t20",
+  "arm": "A",
+  "variant": "quote",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\runs\\t20",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\skill-A\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t21",
+  "arm": "A",
+  "variant": "summary",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\runs\\t21",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\skill-A\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t22",
+  "arm": "B",
+  "variant": "summary",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\runs\\t22",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\skill-B\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t23",
+  "arm": "A",
+  "variant": "quote",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\runs\\t23",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\skill-A\\skills\\joewrks-product-definition"
+ },
+ {
+  "id": "t24",
+  "arm": "B",
+  "variant": "quote",
+  "root": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\runs\\t24",
+  "skill": "D:\\JOEWRKS\\.claude-worktrees\\_data\\2026-11-01-joeflow-u2-8-ab\\skill-B\\skills\\joewrks-product-definition"
+ }
+]
