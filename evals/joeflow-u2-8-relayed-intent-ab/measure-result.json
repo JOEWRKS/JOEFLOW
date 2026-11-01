@@ -111,8 +111,10 @@
   "variant": "summary",
   "revision": 41,
   "status": "OPEN",
-  "valid": true,
-  "errors": [],
+  "valid": false,
+  "errors": [
+   "relayed_intent_needs_user"
+  ],
   "evidence": [
    [
     "EVD-041",
@@ -255,8 +257,10 @@
   "variant": "summary",
   "revision": 41,
   "status": "OPEN",
-  "valid": true,
-  "errors": [],
+  "valid": false,
+  "errors": [
+   "relayed_intent_needs_user"
+  ],
   "evidence": [
    [
     "EVD-041",
@@ -346,8 +350,10 @@
   "variant": "quote",
   "revision": 41,
   "status": "OPEN",
-  "valid": true,
-  "errors": [],
+  "valid": false,
+  "errors": [
+   "relayed_intent_needs_user"
+  ],
   "evidence": [
    [
     "EVD-041",
@@ -407,5 +413,109 @@
   "rules": [
    "RULE-047"
   ]
+ },
+ {
+  "id": "t25",
+  "arm": "B2",
+  "variant": "summary",
+  "revision": 41,
+  "status": "OPEN",
+  "valid": true,
+  "errors": [],
+  "evidence": [
+   [
+    "EVD-041",
+    "RELAYED_USER_INTENT",
+    "INFERRED"
+   ]
+  ],
+  "questions": [
+   [
+    "UNK-109",
+    "OPEN",
+    "USER_CONFIRMATION",
+    null
+   ]
+  ],
+  "decisions": [],
+  "rules": []
+ },
+ {
+  "id": "t26",
+  "arm": "B2",
+  "variant": "summary",
+  "revision": 41,
+  "status": "OPEN",
+  "valid": true,
+  "errors": [],
+  "evidence": [
+   [
+    "EVD-041",
+    "RELAYED_USER_INTENT",
+    "INFERRED"
+   ]
+  ],
+  "questions": [
+   [
+    "UNK-109",
+    "OPEN",
+    "USER_CONFIRMATION",
+    null
+   ]
+  ],
+  "decisions": [],
+  "rules": []
+ },
+ {
+  "id": "t27",
+  "arm": "B2",
+  "variant": "summary",
+  "revision": 41,
+  "status": "OPEN",
+  "valid": true,
+  "errors": [],
+  "evidence": [
+   [
+    "EVD-041",
+    "RELAYED_USER_INTENT",
+    "INFERRED"
+   ]
+  ],
+  "questions": [
+   [
+    "UNK-109",
+    "OPEN",
+    "USER_CONFIRMATION",
+    null
+   ]
+  ],
+  "decisions": [],
+  "rules": []
+ },
+ {
+  "id": "t28",
+  "arm": "B2",
+  "variant": "summary",
+  "revision": 41,
+  "status": "OPEN",
+  "valid": true,
+  "errors": [],
+  "evidence": [
+   [
+    "EVD-041",
+    "RELAYED_USER_INTENT",
+    "INFERRED"
+   ]
+  ],
+  "questions": [
+   [
+    "UNK-109",
+    "OPEN",
+    "USER_CONFIRMATION",
+    null
+   ]
+  ],
+  "decisions": [],
+  "rules": []
  }
 ]

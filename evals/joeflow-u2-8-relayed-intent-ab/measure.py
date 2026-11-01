@@ -2,7 +2,7 @@
 import json, subprocess, sys
 from pathlib import Path
 ROOT = Path(sys.argv[1]).resolve()
-SKILL = ROOT / "skill-B/skills/joewrks-product-definition"
+SKILL = ROOT / "skill-B2/skills/joewrks-product-definition"
 FX = json.load(open("D:/JOEWRKS/.claude-worktrees/_data/2026-10-31-joeflow-u2-12-ab/fixture/product-definition/ai-coach/state.json", encoding="utf-8"))
 known_evd = {e["id"] for e in FX["evidence"]}
 known = {x["id"] for g in FX["objects"].values() for x in g}

@@ -20,5 +20,13 @@
 - **A는 요약을 사용자 결정으로 적었다(2/2).** 규칙이 없으면 locator에 "전달됨"만 남고 결정은 사용자 것이 된다.
 - **B는 4/4가 새 종류를 올바른 confidence로 골랐고, 요약으로 사용자 결정을 적은 실행은 0.** 그러나 요약 2/2 모두 같은 질문을 **NON_MATERIAL로 분류해 담당자 기본값으로 닫았다**. 같은 질문을 A의 4회는 MATERIAL(MEDIUM)로 분류했다. 즉 규칙이 "사용자가 정했다"는 거짓 기록은 없앴지만, 닫는 경로가 물질성 낮추기로 옮겨 갔다. 기록은 정직하다(AGENT 결정으로 보이고 대체 가능) — 다만 사용자에게 묻는 대신 닫는 행동은 그대로다.
 
-## 남은 구멍과 후속
-전달된 의도가 붙은 질문은 사용자가 의견을 낸 사안이므로 담당자 기본값으로 닫을 일이 아니다. 후속 규칙 후보: 질문의 `evidence_refs`에 `RELAYED_USER_INTENT`가 있으면 `decision_authority`는 AGENT_AUTONOMOUS일 수 없다(`relayed_intent_needs_user`). 그 뒤 B·요약 변형을 다시 재서 질문이 OPEN으로 남는지 본다.
+## 후속 규칙과 재측정 (B′ = B + `relayed_intent_needs_user`, 요약 변형 ×4: t25~t28)
+전달 근거를 인용한 AGENT_NON_MATERIAL_DEFAULT 결정을 거부하는 규칙을 넣고(커밋 `fd6eeac`) 요약 변형만 4회 더 돌렸다.
+
+| | 근거 | 질문 | 결정 |
+|---|---|---|---|
+| B′·요약 ×4 | RELAYED_USER_INTENT / INFERRED (4/4) | **OPEN**, USER_CONFIRMATION, MATERIAL (4/4) | **없음** (4/4) |
+
+- 4/4가 질문을 사용자 답 대기로 남기고 추천(A/B/C)을 붙였으며, 결정·규칙을 만들지 않았다. 검증 통과 4/4, 도구 호출 9~16회, 3~7분(1차보다 짧음).
+- 3/4가 보고에서 두 규칙(`relayed_intent_cannot_close`, `relayed_intent_needs_user`)을 그 이유로 들었다. 2/4는 INFERRED 전달 근거를 추천의 `reasoning_refs`에 넣었다가 검증에 막혀 뺐다(의도된 동작: 추천 근거는 RULE·REQ).
+- 결론: 강한 안 + 기본값 금지로 "요약 전달 → 닫힘" 경로가 사라졌다(1차 B 2/2 → B′ 0/4). 남은 비용은 사용자가 질문에 답해야 한다는 것뿐이며, 원문 전달이면 바로 닫힌다(B·원문 2/2).
