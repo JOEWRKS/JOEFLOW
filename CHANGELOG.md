@@ -4,6 +4,8 @@
 
 ## 1.6.0 — 2026-11-01
 
+개인 설치본에는 2026-11-01에 U2-8을 반영했습니다(experience pass는 여전히 제외, [설치 기록](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)).
+
 - U2-8(마무리): 전달된 사용자 의도의 근거 종류 `RELAYED_USER_INTENT`. `confidence` `DIRECT`(사용자 원문 그대로)만 직접 확인과 같고, 전달자의 요약은 material 질문을 닫거나 사용자 결정을 뒷받침하거나 모순 권위가 될 수 없습니다(`relayed_intent_cannot_close`). `new_records.py relayed --quote|--summary`. 전달 근거를 인용한 질문은 담당자 기본값으로도 닫을 수 없습니다(`relayed_intent_needs_user`). 고정 모듈 `state_validation_v2.py`와 스키마 enum 갱신, 기존 기록 영향 없음. 에이전트 A/B 12회: 규칙 없이는 요약을 사용자 결정으로 닫았고(2/2), 두 규칙 뒤에는 4/4가 질문을 사용자 답 대기로 남겼습니다([결과](evals/joeflow-u2-8-relayed-intent-ab/README.md)). 설계는 [U2-8](docs/u2-8-relayed-intent-design.md).
 
 ## 1.5.0 — 2026-10-31

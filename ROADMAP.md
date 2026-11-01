@@ -4,7 +4,8 @@
 2026-10-30: 1.2.0 main 합치기·푸시, 태그 `v1.2.0`(`62eb541`)·GitHub Release 게시 complete. 2026-10-31: U1-7 개인 설치본 반영, 1.3.0 main·태그 `v1.3.0`(`016a606`)·GitHub Release 게시 complete. U1-9·U1-10까지 개인 설치본 반영.
 2026-10-31: U2 전체 개인 설치본 반영(`install_u2.py`), 1.4.0 main(`ed30684`) 푸시, 태그 `v1.4.0`(`ed30684`)·GitHub Release 게시 complete.
 2026-10-31: U2-10·U2-11 개인 설치본 반영(`install_u2_10_11.py`), 1.5.0 main(`b6462ea`) 푸시, 태그 `v1.5.0`(`b6462ea`)·GitHub Release 게시 complete.
-2026-11-01: U2-8 전달된 의도 근거 종류 구현(미게시). 다음 작업: 1.6.0 게시·설치(사용자 승인). U1-8은 U2-10으로 옮김.
+2026-11-01: U2-8 개인 설치본 반영(`install_u2_8.py`), 1.6.0 main(`946c2b3`) 푸시; 태그 `v1.6.0`·GitHub Release는 사용자 실행 대기.
+다음 작업: 없음(U2 계획 완료). U1-8은 U2-10으로 옮김.
 
 상태어: not started · in progress · verification pending · complete · deferred
 
