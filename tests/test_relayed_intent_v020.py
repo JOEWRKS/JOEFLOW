@@ -49,6 +49,14 @@ class RelayedIntentTest(unittest.TestCase):
         decision["evidence_refs"] = ["EVD-050", "EVD-051"]
         self.assertNotIn("relayed_intent_cannot_close", codes(state))
 
+    def test_an_agent_default_may_not_cite_relayed_intent(self):
+        for confidence in ("INFERRED", "DIRECT"):
+            state, decision = self.user_decision_backed_only_by(relayed(confidence))
+            decision.update({"resolution_mode": "AGENT_NON_MATERIAL_DEFAULT", "decision_authority": "AGENT_AUTONOMOUS", "decided_by": "AGENT"})
+            self.assertIn("relayed_intent_needs_user", codes(state), confidence)
+            decision["decision_type"] = "AUTHORING"
+            self.assertNotIn("relayed_intent_needs_user", codes(state), confidence)
+
     def test_a_relayed_summary_cannot_be_selected_contradiction_authority(self):
         state = literal_ready_state()
         state["evidence"].append(relayed("INFERRED"))

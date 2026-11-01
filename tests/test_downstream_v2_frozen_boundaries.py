@@ -11,7 +11,7 @@ FROZEN_TREES = {
 PROTECTED_CORE_BLOBS = {
     "skills/joewrks-product-definition/scripts/authority_binding_v2.py": "746b0231800c536a0550fcdb0963ca1c20d9ee83",
     "skills/joewrks-product-definition/scripts/approval_v2.py": "ca5dd441c8c6197e7659979896912f7fe6716c01",
-    "skills/joewrks-product-definition/scripts/state_validation_v2.py": "ed3231178dc3d923b7f0d98acd6799e5c1817dbd",
+    "skills/joewrks-product-definition/scripts/state_validation_v2.py": "9b3c88cb37c6244741cb9e028c7003ed04487522",
     "skills/joewrks-product-definition/schemas/state-v0.2.0.schema.json": "9322db3257d288a6ee89b1ed511b190b96d1488f",
     "skills/joewrks-product-definition/references/semantic-freeze-contract-v0.2.0.md": "d4abccaa93377bce8f5eb6181fb80186eff14550",
 }

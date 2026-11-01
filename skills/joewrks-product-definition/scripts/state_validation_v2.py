@@ -1208,6 +1208,16 @@ def _validate_typed_semantic_minima(state: dict[str, Any]) -> list[dict[str, str
                     "(RELAYED_USER_INTENT with confidence DIRECT); a relayed summary only prepares the question",
                     f"{path}.evidence_refs",
                 ))
+        if group == "decisions" and status == "CURRENT" and mode == "AGENT_NON_MATERIAL_DEFAULT" and record.get("decision_type") != "AUTHORING":
+            refs = record.get("evidence_refs") if isinstance(record.get("evidence_refs"), list) else []
+            if any(evidence_index[reference].get("source_kind") == "RELAYED_USER_INTENT"
+                   for reference in refs if isinstance(reference, str) and reference in evidence_index):
+                errors.append(_error(
+                    "relayed_intent_needs_user",
+                    "a question the user spoke to (relayed intent attached) is not the agent's to default: "
+                    "leave it OPEN for the user, or record the user's own words",
+                    f"{path}.evidence_refs",
+                ))
         if "superseded_by" in record and (
             not _is_stable_id(record["superseded_by"])
         ):

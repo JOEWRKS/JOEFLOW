@@ -15,6 +15,7 @@
 ## 3. 구현 (0.2.0 안, enum 확장)
 - 근거 종류 `RELAYED_USER_INTENT`(INTENT·PREFERENCE). `confidence`가 그 뜻을 나른다: `DIRECT` = 사용자 원문 그대로(닫을 수 있음), 그 밖(`INFERRED`·`CORROBORATED`) = 전달자의 말(닫을 수 없음, 후보 전용 근거처럼 취급).
 - 못 하는 것(요약일 때): EVIDENCE_RESOLVABLE로 질문 닫기, AUTHORITATIVE·OUT_OF_SCOPE 표면 근거, 모순의 선택 권위, Grill 축의 근거. 그리고 **사용자 결정(USER_DECISION·USER_ACCEPTED_RECOMMENDATION)이 요약 전달 근거만 인용하면 오류 `relayed_intent_cannot_close`** — 사용자 원문 근거(직접 또는 원문 전달)가 하나라도 있어야 한다.
+- A/B 1차(8회, [결과](../evals/joeflow-u2-8-relayed-intent-ab/README.md)) 뒤 추가: 전달 근거(원문·요약 모두)를 인용한 질문을 **담당자 기본값으로 닫을 수 없다**(`relayed_intent_needs_user`, AUTHORING 결정은 예외). B·요약 실행 2/2가 질문을 비물질로 낮춰 AGENT 기본값으로 닫았기 때문이다.
 - `new_records.py relayed --relayer WHO --quote "..."` / `--summary "..."`가 두 형식을 만든다(locator `relayed by WHO, said WHEN`).
 - 고정 모듈 `state_validation_v2.py`와 스키마 `state-v0.2.0.schema.json`(source_kind enum)·해시 갱신. `grill_v2.py`의 표는 같은 규칙을 거울처럼 따른다. 기존 기록은 영향 없음(새 종류를 쓰기 전까지).
 - 한계: "원문 그대로"는 작성자의 선언이다(검증기가 원문 여부를 알 수는 없다). 규칙의 값은 요약을 원문으로 적는 거짓을 **의식적인 행위**로 만드는 데 있다.
