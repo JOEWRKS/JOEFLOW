@@ -1,0 +1,25 @@
+{
+  "added": [
+    "UNK-900"
+  ],
+  "cells": [],
+  "changed": [],
+  "from_revision": 43,
+  "refreshed": [],
+  "status": "READY_FOR_REVIEW",
+  "to_revision": 44,
+  "unresolved": [],
+  "validation_errors": [
+    {
+      "code": "invalid_unknown_contract",
+      "message": "invalid unknown semantic shape: options must match response_mode (each option needs id, meaningful statement and non-empty consequences)",
+      "path": "objects.unknowns[122]"
+    },
+    {
+      "code": "invalid_decision_authority_derivation",
+      "message": "decision_authority must equal deterministic derivation EVIDENCE_RESOLVABLE; evidence_refs ['EVD-046'] already support 'INTENT', so evidence answers this question and it will not be asked. To ask the user, keep only evidence that does not support 'INTENT' in evidence_refs and cite the intent in recommendation.reasoning_refs, or resolve the unknown from that evidence",
+      "path": "objects.unknowns[122].decision_authority"
+    }
+  ],
+  "written": false
+}

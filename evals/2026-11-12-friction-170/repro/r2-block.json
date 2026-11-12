@@ -1,0 +1,32 @@
+{
+  "added": [
+    "EVD-901",
+    "EVD-902",
+    "UNK-002",
+    "DEC-002",
+    "RULE-002",
+    "AC-002",
+    "TASK-002"
+  ],
+  "cells": [
+    "coverage[REQ-001].cells.acceptance"
+  ],
+  "changed": [],
+  "from_revision": 1,
+  "readiness_findings": [
+    {
+      "cause": "RULE-002 cannot reach an eligible semantic sink through the current typed authority graph",
+      "code": "orphan_material_authority",
+      "next_action": "CONNECT_EXISTING_MEANING_TO_AN_ALLOWED_SEMANTIC_SINK_THEN_RERUN",
+      "object_id": "RULE-002"
+    }
+  ],
+  "readiness_message": "READY_FOR_REVIEW needs semantic readiness, or build_approval_manifest.py cannot build the Manifest: fix the named records in the patch (for an orphan rule or decision, bind it in a coverage cell or point it at a record that is), or write with --status OPEN to keep discovering",
+  "refreshed": [],
+  "status": "READY_FOR_REVIEW",
+  "to_revision": 2,
+  "unresolved": [],
+  "validation_errors": [],
+  "version_notice": "this project does not record which JOEFLOW version it uses; running 1.6.0. Record it once with joeflow_version.py STATE_JSON --pin (writes joeflow-project.json next to state.json) and use the scripts of that version",
+  "written": false
+}

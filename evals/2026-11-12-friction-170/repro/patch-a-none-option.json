@@ -1,0 +1,68 @@
+{
+  "objects": {
+    "unknowns": [
+      {
+        "id": "UNK-900",
+        "status": "OPEN",
+        "question": "복기 화면에 엔진 평가를 보일까?",
+        "why_it_matters": "두 사람 대국 공정성",
+        "required_authority_class": "INTENT",
+        "question_category": "CORE_FLOW",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "REQ-005"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "MANUAL",
+          "surface_ref": null,
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "SHOW",
+            "statement": "보인다",
+            "consequences": [
+              "평가 노출"
+            ]
+          },
+          {
+            "id": "NONE",
+            "statement": "보이지 않는다",
+            "consequences": [
+              "평가 없음"
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [
+          "EVD-046"
+        ],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      }
+    ]
+  }
+}

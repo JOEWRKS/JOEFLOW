@@ -298,6 +298,14 @@ def _readiness_findings(state: dict[str, Any], metrics: dict[str, int]) -> list[
     return findings
 
 
+def readiness_summary(state: dict[str, Any], metrics: dict[str, int]) -> list[dict[str, object]]:
+    """Compact readiness findings (metric, record, cause, next action) for CLI messages."""
+    return [
+        {key: finding[key] for key in ("code", "object_id", "cause", "next_action")}
+        for finding in _readiness_findings(state, metrics)
+    ]
+
+
 def preflight_state(candidate_path: Path | str, canonical_path: Path | str | None = None) -> dict[str, object]:
     candidate = Path(candidate_path).resolve()
     canonical = Path(canonical_path).resolve() if canonical_path is not None else None

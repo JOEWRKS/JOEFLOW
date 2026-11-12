@@ -35,7 +35,7 @@ TYPE_LABELS = {  # objects key -> (prefix, Korean label, English label)
     "unknowns": ("UNK", "질문", "Unknowns"),
 }
 BLOCK = "<!-- JOEFLOW:{name}:BEGIN -->\n{body}\n<!-- JOEFLOW:{name}:END -->"
-BLOCK_RE = r"<!-- JOEFLOW:{name}:BEGIN -->\n.*?\n<!-- JOEFLOW:{name}:END -->"
+BLOCK_RE = r"<!-- JOEFLOW:{name}:BEGIN -->\r?\n(?:.*?\r?\n)?<!-- JOEFLOW:{name}:END -->"  # an empty block counts
 
 
 def _mentions(text: str, record_id: str) -> bool:

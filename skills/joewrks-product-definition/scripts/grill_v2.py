@@ -300,6 +300,98 @@ def _is_valid_origin(
     return surface_ref is None and pack_id is None and axis_id is None and source_path is None
 
 
+RESERVED_TEXT_HINT = (
+    "reserved non-answer words (case-insensitive, rejected as IDs, statements, consequences and tradeoffs): "
+    + ", ".join(sorted(MEANINGLESS))
+)
+
+
+def _text_problem(label: str, value: Any) -> str | None:
+    """Why `value` is not meaningful text, naming the field and value; None when it is."""
+    if not isinstance(value, str):
+        return f"{label} must be text; got {value!r}"
+    if not value.strip():
+        return f"{label} is empty"
+    if value.strip().lower() in MEANINGLESS:
+        return f"{label} {value!r} is a reserved non-answer word ({', '.join(sorted(MEANINGLESS))}); rename it"
+    return None
+
+
+def options_problems(response_mode: Any, options: Any) -> list[str]:
+    """Each reason `_is_valid_options` rejects the options, naming the option index, field and value."""
+    if not isinstance(response_mode, str) or response_mode not in {"MUTUALLY_EXCLUSIVE", "OPEN_RESPONSE_REQUIRED"}:
+        return [f"response_mode must be MUTUALLY_EXCLUSIVE or OPEN_RESPONSE_REQUIRED; got {response_mode!r}"]
+    if not isinstance(options, list):
+        return [f"options must be a list; got {type(options).__name__}"]
+    if response_mode == "OPEN_RESPONSE_REQUIRED":
+        return [] if options == [] else [f"OPEN_RESPONSE_REQUIRED needs options []; got {len(options)} option(s)"]
+    problems: list[str] = []
+    if len(options) < 2:
+        problems.append(f"MUTUALLY_EXCLUSIVE needs at least 2 options; got {len(options)}")
+    seen: dict[str, int] = {}
+    for index, option in enumerate(options):
+        where = f"options[{index}]"
+        if not isinstance(option, dict):
+            problems.append(f"{where} must be an object with id, statement, consequences")
+            continue
+        if set(option) != {"id", "statement", "consequences"}:
+            missing = sorted({"id", "statement", "consequences"} - set(option))
+            extra = sorted(set(option) - {"id", "statement", "consequences"})
+            problems.append(f"{where} fields must be exactly id, statement, consequences; missing {missing}, unexpected {extra}")
+            continue
+        option_id = option.get("id")
+        for problem in (_text_problem(f"{where}.id", option_id), _text_problem(f"{where}.statement", option.get("statement"))):
+            if problem:
+                problems.append(problem)
+        consequences = option.get("consequences")
+        if not isinstance(consequences, list) or not consequences:
+            problems.append(f"{where}.consequences must be a non-empty list")
+        else:
+            problems.extend(
+                problem for i, item in enumerate(consequences)
+                if (problem := _text_problem(f"{where}.consequences[{i}]", item))
+            )
+        if isinstance(option_id, str):
+            if option_id in seen:
+                problems.append(f"{where}.id {option_id!r} repeats options[{seen[option_id]}].id; option IDs must be unique")
+            else:
+                seen[option_id] = index
+    return problems
+
+
+def recommendation_problems(value: Any, options: Any) -> list[str]:
+    """Each reason `_recommendation_shape_is_valid` rejects a recommendation, naming the field."""
+    if not isinstance(value, dict):
+        return ["recommendation must be an object"]
+    expected = {"recommended_option", "reasoning_refs", "tradeoffs", "confidence"}
+    if set(value) != expected:
+        return [f"recommendation fields must be exactly {sorted(expected)}; missing {sorted(expected - set(value))}, "
+                f"unexpected {sorted(set(value) - expected)}"]
+    if not isinstance(options, list):
+        return ["options must be a list for a recommendation to name one"]
+    problems: list[str] = []
+    option_ids = [option.get("id") for option in options if isinstance(option, dict)]
+    recommended = value.get("recommended_option")
+    problem = _text_problem("recommended_option", recommended)
+    if problem:
+        problems.append(problem)
+    elif recommended not in [item for item in option_ids if isinstance(item, str)]:
+        problems.append(f"recommended_option {recommended!r} is not an option ID {option_ids}")
+    reasoning_refs = value.get("reasoning_refs")
+    if not _unique_strings(reasoning_refs, nonempty=True):
+        problems.append(f"reasoning_refs must be a non-empty list of unique IDs; got {reasoning_refs!r} "
+                        "(new_records.py: pass --reason EVD-... at least once)")
+    tradeoffs = value.get("tradeoffs")
+    if not isinstance(tradeoffs, list) or not tradeoffs:
+        problems.append(f"tradeoffs must be a non-empty list of text; got {tradeoffs!r} "
+                        "(new_records.py: pass --tradeoff '...' at least once)")
+    else:
+        problems.extend(p for i, item in enumerate(tradeoffs) if (p := _text_problem(f"tradeoffs[{i}]", item)))
+    if not isinstance(value.get("confidence"), str) or value.get("confidence") not in {"LOW", "MEDIUM", "HIGH"}:
+        problems.append(f"confidence must be LOW, MEDIUM or HIGH; got {value.get('confidence')!r}")
+    return problems
+
+
 def _is_valid_options(response_mode: Any, options: Any) -> bool:
     if (
         not isinstance(response_mode, str)
@@ -646,7 +738,8 @@ def _validate_unknown_shape(
          not isinstance(unknown.get("decision_authority"), str)
          or unknown.get("decision_authority") not in DECISION_AUTHORITIES),
         ("origin must be a valid origin object with canonical refs", not _is_valid_origin(unknown.get("origin"), id_index)),
-        ("options must match response_mode (each option needs id, meaningful statement and non-empty consequences)",
+        ("options must match response_mode (each option needs id, meaningful statement and non-empty consequences): "
+         + "; ".join(options_problems(unknown.get("response_mode"), unknown.get("options"))),
          not _is_valid_options(unknown.get("response_mode"), unknown.get("options"))),
         ("affects must be unique strings", not _unique_strings(unknown.get("affects"))),
         ("blocks_unknown_refs must be unique strings", not _unique_strings(unknown.get("blocks_unknown_refs"))),
@@ -663,7 +756,8 @@ def _validate_unknown_shape(
         if not _recommendation_shape_is_valid(recommendation, unknown.get("options")):
             errors.append(_error(
                 "invalid_unknown_contract",
-                "recommendation must match the canonical M3 structure",
+                "recommendation must match the canonical M3 structure: "
+                + "; ".join(recommendation_problems(recommendation, unknown.get("options"))),
                 f"{path}.recommendation",
             ))
         else:

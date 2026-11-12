@@ -8,6 +8,7 @@ import sys
 
 from approval_v2 import compute_approval_manifest
 from cli_output import use_utf8_stdio
+from project_pin import read_project, version_report
 from state_validation import load_state
 
 
@@ -91,7 +92,16 @@ def main(argv: list[str]) -> int:
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         _write({"error": str(exc)})
         return 2
-    _write(approval_status(state))
+    report = approval_status(state)
+    report["joeflow_version"] = version_report(argv[1], state)
+    project = read_project(argv[1])
+    approvals = project.get("approvals") if isinstance(project, dict) else None
+    if isinstance(approvals, list):
+        report["approval_provenance"] = [
+            entry for entry in approvals
+            if isinstance(entry, dict) and entry.get("revision") == report["approved_revision"]
+        ]
+    _write(report)
     return 0
 
 

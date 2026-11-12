@@ -82,8 +82,10 @@ def main(argv: list[str]) -> int:
         )
     blockers = {name: count for name, count in semantic_readiness_metrics(state).items() if count}
     if blockers:
+        from candidate_preflight_v2 import readiness_summary  # imports this module; load on the failure path only
         return _finish(
-            {"valid": False, "semantic_readiness_metrics": blockers},
+            {"valid": False, "semantic_readiness_metrics": blockers,
+             "findings": readiness_summary(state, blockers)},
             stream=sys.stdout,
             return_code=1,
         )

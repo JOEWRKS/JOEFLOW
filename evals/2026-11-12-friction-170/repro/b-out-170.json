@@ -1,0 +1,26 @@
+{
+  "added": [
+    "UNK-901",
+    "DEC-901"
+  ],
+  "cells": [],
+  "changed": [],
+  "from_revision": 43,
+  "refreshed": [],
+  "status": "READY_FOR_REVIEW",
+  "to_revision": 44,
+  "unresolved": [],
+  "validation_errors": [
+    {
+      "code": "invalid_unknown_contract",
+      "message": "recommendation must match the canonical M3 structure: reasoning_refs must be a non-empty list of unique IDs; got [] (new_records.py: pass --reason EVD-... at least once); tradeoffs must be a non-empty list of text; got [] (new_records.py: pass --tradeoff '...' at least once)",
+      "path": "objects.unknowns[122].recommendation"
+    },
+    {
+      "code": "invalid_recommendation_acceptance",
+      "message": "accepted recommendation must reproduce the presented option provenance; expected from UNK-901: recommended_option 'HIDE', alternatives_presented ['SHOW', 'HIDE'] (every option ID in order, including the recommended one), tradeoffs_presented equal to recommendation.tradeoffs, accepted_by 'user', accepted_at null or text",
+      "path": "objects.decisions[122]"
+    }
+  ],
+  "written": false
+}

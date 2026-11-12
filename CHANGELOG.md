@@ -2,6 +2,16 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
+## 1.7.0 — 후보 (게시 전, 버전 파일 그대로)
+
+오목 실사용 마찰(2026-11-11)과 세 도구 통합 시험. 재현·확인은 [보고서](evals/2026-11-12-friction-170/report.md). State 0.2.0, 고정 검증 모듈, 바인딩 계약은 바뀌지 않았습니다.
+
+- 선택지·추천 검증 오류가 칸·값·이유를 말합니다(예: `options[1].id 'NONE' is a reserved non-answer word`). 예약어(`none, false, n/a, na, later, tbd`)는 `new_records.py`가 만들 때 거절하고 도움말·workflow에 적었습니다.
+- `new_records.py`: `--recommend`는 `--reason`·`--tradeoff`가 필수, `--accepted`는 `--recommend`가 필수. `relayed --asked|--asked-summary`로 답한 질문을 남깁니다.
+- 승인: 읽기 전용 `check_approval.py`. `record_approval.py --quote`·`--relayed-from`이 원문·전달 경로를 `joeflow-project.json`(state.json 옆)에 남기고 `approval_status.py`가 보여 줍니다. 전달 승인은 원문을 받은 세션이 기록하는 절차를 SKILL·workflow에 적었습니다.
+- 판 고정: `joeflow_version.py [--pin]`, 새 `skills/joewrks-product-definition/VERSION`. 고정이 없거나 다르면 주요 명령이 `version_notice`로 알립니다. 스키마 거절 메시지가 찾은 판과 할 일을 말합니다.
+- 통합 시험에서 찾은 것: `open_revision.py`가 READY_FOR_REVIEW에서 semantic readiness 실패 시 쓰지 않고 레코드를 이름으로 알립니다. `build_approval_manifest.py` 실패 출력에 `findings`. `update_projection.py`가 빈 블록·CRLF 블록을 알아봅니다. JOENESS·JOEDESIGN과 ID로 인계하는 문장을 더했습니다.
+
 ## 1.6.0 — 2026-11-01
 
 개인 설치본에는 2026-11-01에 U2-8을 반영했습니다(experience pass는 여전히 제외, [설치 기록](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)).

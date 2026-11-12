@@ -1,0 +1,208 @@
+{
+  "evidence": [
+    {
+      "id": "EVD-901",
+      "status": "CURRENT",
+      "source_kind": "RELAYED_USER_INTENT",
+      "locator": "relayed by 시험 상위 세션(모의), said 2026-11-12",
+      "claim": "사용자 원문: \"요청 내용 칸에 글자 수 보여줘\" — 답한 질문 원문: \"요청 폼에 더하고 싶은 것이 있나요?\"",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    },
+    {
+      "id": "EVD-902",
+      "status": "CURRENT",
+      "source_kind": "OBSERVED_IMPLEMENTATION",
+      "locator": "src/index.html(2026-11-12)",
+      "claim": "요청 내용 칸은 textarea 하나이고 최대 200자(maxlength=200)다.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "FACTUAL"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    }
+  ],
+  "objects": {
+    "unknowns": [
+      {
+        "id": "UNK-002",
+        "status": "RESOLVED",
+        "question": "글자 수를 어디에 어떻게 보이나?",
+        "why_it_matters": "입력 중 남은 글자를 알아야 200자에서 잘리지 않는다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_CONFIRMATION",
+        "affects": [
+          "REQ-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "MANUAL",
+          "surface_ref": null,
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "BELOW",
+            "statement": "칸 아래 오른쪽에 '현재 / 200'",
+            "consequences": [
+              "입력 중 항상 보임"
+            ]
+          },
+          {
+            "id": "NEAR_LIMIT",
+            "statement": "180자부터만 보임",
+            "consequences": [
+              "평소엔 안 보임"
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "BELOW",
+          "reasoning_refs": [
+            "EVD-901",
+            "EVD-902"
+          ],
+          "tradeoffs": [
+            "칸 아래 한 줄이 늘어난다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [
+          "EVD-902"
+        ],
+        "resolved_by": [
+          "DEC-002"
+        ],
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+        "resolution_summary": "추천(BELOW) 수락: \"요청 내용 칸에 글자 수 보여줘\"",
+        "deferral": null,
+        "blocked_reason": null
+      }
+    ],
+    "decisions": [
+      {
+        "id": "DEC-002",
+        "status": "CURRENT",
+        "statement": "요청 내용 칸 아래 오른쪽에 '현재 글자 수 / 200'을 입력할 때마다 바로 보인다.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+        "decision_authority": "USER_CONFIRMATION",
+        "source_unknown_refs": [
+          "UNK-002"
+        ],
+        "evidence_refs": [
+          "EVD-902"
+        ],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": {
+          "recommended_option": "BELOW",
+          "alternatives_presented": [
+            "BELOW",
+            "NEAR_LIMIT"
+          ],
+          "tradeoffs_presented": [
+            "칸 아래 한 줄이 늘어난다."
+          ],
+          "accepted_by": "user",
+          "accepted_at": null
+        }
+      }
+    ],
+    "rules": [
+      {
+        "id": "RULE-002",
+        "status": "CURRENT",
+        "statement": "요청 내용 칸 아래 오른쪽에 '현재 글자 수 / 200'을 보이고, 글자를 넣거나 지울 때마다 바로 바꾼다.",
+        "applies_to": [
+          "REQ-001"
+        ]
+      }
+    ],
+    "acceptance_criteria": [
+      {
+        "id": "AC-002",
+        "status": "CURRENT",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "assertion": "요청 내용에 글자를 넣거나 지우면 칸 아래 오른쪽 표시가 즉시 '현재 글자 수 / 200'으로 바뀐다(빈 칸은 '0 / 200')."
+      }
+    ],
+    "tasks": [
+      {
+        "id": "TASK-002",
+        "status": "CURRENT",
+        "implements": [
+          "REQ-001"
+        ],
+        "acceptance_refs": [
+          "AC-002"
+        ]
+      }
+    ]
+  },
+  "cells": [
+    {
+      "cell": "coverage[REQ-001].cells.acceptance",
+      "add": [
+        {
+          "record_id": "AC-002",
+          "pointer": "/assertion"
+        }
+      ]
+    },
+    {
+      "cell": "coverage[REQ-001].cells.boundary",
+      "add": [
+        {
+          "record_id": "RULE-002",
+          "pointer": "/statement"
+        }
+      ]
+    }
+  ]
+}

@@ -10,9 +10,12 @@ import sys
 from pathlib import Path
 
 from approval_status import approval_status
+from candidate_preflight_v2 import readiness_summary
 from cli_output import use_utf8_stdio
 from explain_state_errors import explain
+from project_pin import schema_message, version_report
 from revision_v2 import LIFECYCLE_STATUSES, RevisionError, open_revision
+from state_validation_v2 import semantic_readiness_metrics
 
 
 def _write(payload: dict[str, object]) -> None:
@@ -46,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
         _write({"written": False, "errors": [{"code": "read_error", "message": str(exc), "path": ""}]})
         return 2
     if not isinstance(state, dict) or state.get("schema_version") != "0.2.0":
-        _write({"written": False, "errors": [{"code": "unsupported_schema_version", "message": "open_revision.py supports schema_version 0.2.0 only", "path": "schema_version"}]})
+        _write({"written": False, "errors": [{"code": "unsupported_schema_version", "message": schema_message("open_revision.py", state), "path": "schema_version"}]})
         return 1
 
     before = approval_status(state)
@@ -62,8 +65,22 @@ def main(argv: list[str] | None = None) -> int:
         )
     validation = explain(candidate)
     report["validation_errors"] = validation["errors"]
+    notice = version_report(path, state)["notice"]
+    if notice:
+        report["version_notice"] = notice
+    ready = True
+    if validation["valid"] and args.status == "READY_FOR_REVIEW":
+        blockers = {name: count for name, count in semantic_readiness_metrics(candidate).items() if count}
+        if blockers:
+            ready = False
+            report["readiness_findings"] = readiness_summary(candidate, blockers)
+            report["readiness_message"] = (
+                "READY_FOR_REVIEW needs semantic readiness, or build_approval_manifest.py cannot build the Manifest: "
+                "fix the named records in the patch (for an orphan rule or decision, bind it in a coverage cell or "
+                "point it at a record that is), or write with --status OPEN to keep discovering"
+            )
     written = False
-    if args.write and validation["valid"] and not report["unresolved"]:
+    if args.write and validation["valid"] and not report["unresolved"] and ready:
         if path.read_bytes() != original:
             _write({"written": False, "errors": [{"code": "state_changed", "message": "state file changed during the run; rerun", "path": str(path)}]})
             return 2
@@ -72,7 +89,7 @@ def main(argv: list[str] | None = None) -> int:
         os.replace(temporary, path)
         written = True
     _write({"written": written, **report})
-    return 0 if validation["valid"] and not report["unresolved"] else 1
+    return 0 if validation["valid"] and not report["unresolved"] and ready else 1
 
 
 if __name__ == "__main__":
