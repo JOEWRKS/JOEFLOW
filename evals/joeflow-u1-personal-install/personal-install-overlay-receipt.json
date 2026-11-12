@@ -1,8 +1,8 @@
 {
   "schema_version": "joeflow.personal-install-overlay-receipt/1.0",
-  "recorded_at": "2026-11-01T18:40:23+09:00",
+  "recorded_at": "2026-11-12T18:52:34+09:00",
   "program": "JOEFLOW",
-  "program_version_file": "1.6.0",
+  "program_version_file": "1.7.0",
   "runtime_skill_id": "joewrks-product-definition",
   "installation_path": "C:\\Users\\tjdwo\\.codex\\skills\\joewrks-product-definition",
   "composition": {
@@ -222,6 +222,33 @@
           "added": [],
           "changed": []
         }
+      },
+      {
+        "item": "1.7.0 (friction A-D, trial fixes)",
+        "commit": "ba15afe06c9338f2d240eb7d64a34a46925e91ad",
+        "base_commit": "946c2b3af3a38fc9ecd9185f99e92e7ea9f3f839",
+        "files": [
+          "VERSION",
+          "references/first-plan-guide.md",
+          "scripts/approval_status.py",
+          "scripts/build_approval_manifest.py",
+          "scripts/candidate_preflight_v2.py",
+          "scripts/check_approval.py",
+          "scripts/grill_v2.py",
+          "scripts/joeflow_version.py",
+          "scripts/new_records.py",
+          "scripts/open_revision.py",
+          "scripts/project_pin.py",
+          "scripts/record_approval.py",
+          "scripts/update_projection.py"
+        ],
+        "composed": {
+          "SKILL.md": "patch: all hunks",
+          "references/workflow-v0.2.0.md": "patch: all hunks"
+        },
+        "not_installed_at_tip": [],
+        "installed_on": "2026-11-12",
+        "pycache_drift_before": {}
       }
     ],
     "not_applied": [
@@ -233,13 +260,13 @@
     ],
     "matches_single_commit": false
   },
-  "tip_compared": "946c2b3af3a38fc9ecd9185f99e92e7ea9f3f839",
+  "tip_compared": "ba15afe06c9338f2d240eb7d64a34a46925e91ad",
   "origin_counts": {
-    "branch_tip": 40,
+    "branch_tip": 46,
     "composed_v1.1.0_plus_u1_u2": 3,
     "preserved_local_overlay": 2,
     "untracked_extra": 73,
-    "v1.1.0_and_branch_tip": 151,
+    "v1.1.0_and_branch_tip": 149,
     "v1.1.0_only": 1
   },
   "tip_tracked_files_missing_from_install": [],
@@ -293,16 +320,26 @@
       "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u2-8-946c2b3-20261101",
       "file_count": 270,
       "manifest_sha256": "a4d156c829dff9d940699ae669d7df2db790566a9d49d9e617f5f2b5cfa876e9"
+    },
+    {
+      "path": "~/.codex/skills-backups/joewrks-product-definition-before-1-7-0-ba15afe-20261112",
+      "file_count": 270,
+      "manifest_sha256": "41d396b27c18506df7e78067de2323b0be834ab4c8c3378f54f8a8a7383a349e"
     }
   ],
   "manifest_sha256_definition": "sha256 of UTF-8 lines '<sha256>  <posix path>\n' sorted by path",
-  "installed_file_count": 270,
-  "installed_manifest_sha256": "41d396b27c18506df7e78067de2323b0be834ab4c8c3378f54f8a8a7383a349e",
+  "installed_file_count": 274,
+  "installed_manifest_sha256": "92c586826ba0f3ff8c2a21b4e8f7e3f5ed1da1839c7b5e2b7dadcbfbe0381411",
   "installed_manifest": [
     {
       "path": "SKILL.md",
-      "sha256": "24383626bdc96ee06214bec0f400380781ba1fd58771828b5f830da3d5ceb365",
+      "sha256": "14dd8b0d33c3c8a49d276ff8083339d60430bcf1568b247554b669f76ee81d98",
       "origin": "composed_v1.1.0_plus_u1_u2"
+    },
+    {
+      "path": "VERSION",
+      "sha256": "bb7320d831e7a151aa901c35e7326c752fa2ef5024f30768c42319b8bed171ed",
+      "origin": "branch_tip"
     },
     {
       "path": "agents/openai.yaml",
@@ -916,7 +953,7 @@
     },
     {
       "path": "references/first-plan-guide.md",
-      "sha256": "41e1ac59a0f7e82271cb88215c4fcdaf04b7ac8e2d3de4ed34d1a0aa2bec347d",
+      "sha256": "78fe53811b6a734388686976681a3e1ce7c0c444a02a3ae0504f90471c5885de",
       "origin": "branch_tip"
     },
     {
@@ -1051,7 +1088,7 @@
     },
     {
       "path": "references/workflow-v0.2.0.md",
-      "sha256": "f0ee7d3cc2b00903e2f1a08de3a8da708c57a05ec7620ff6f2bbf09a7a88758d",
+      "sha256": "2e662b60aa2676a3f2b7eaec5115347bb1b9a0219d65f67349c614116c25e0f7",
       "origin": "composed_v1.1.0_plus_u1_u2"
     },
     {
@@ -1371,7 +1408,7 @@
     },
     {
       "path": "scripts/approval_status.py",
-      "sha256": "00029e7eb48c435decff8e74c40847aae7b2919b51e557452a0dd532df71a901",
+      "sha256": "b1f55cda25bce8164da499b49aa90683b010fe85671ade3497e9242f02e50469",
       "origin": "branch_tip"
     },
     {
@@ -1411,8 +1448,8 @@
     },
     {
       "path": "scripts/build_approval_manifest.py",
-      "sha256": "33297139d6d5a49ea744bdd16368cc5715934e94a8a74cd95eb7e023a77151b7",
-      "origin": "v1.1.0_and_branch_tip"
+      "sha256": "f8b7564539c4d8d630ff049a8b8bf8ce0b48de3e1bac5581ec91fe229ed12d78",
+      "origin": "branch_tip"
     },
     {
       "path": "scripts/build_discovery_baseline.py",
@@ -1426,8 +1463,13 @@
     },
     {
       "path": "scripts/candidate_preflight_v2.py",
-      "sha256": "0acb8258138254fe4f96e649ac30d30a485e293d036f6450ae9c278b323dbb80",
-      "origin": "v1.1.0_and_branch_tip"
+      "sha256": "90e2ef7c2bed6f0da333e1861373a7e2eba0bfc27b924d1e87e8972ae262dfb9",
+      "origin": "branch_tip"
+    },
+    {
+      "path": "scripts/check_approval.py",
+      "sha256": "f34069ae1e2f825c9b9aed7bf26bd691db5eb2fe17afa163f730c97b2c489d7f",
+      "origin": "branch_tip"
     },
     {
       "path": "scripts/cli_output.py",
@@ -1466,7 +1508,12 @@
     },
     {
       "path": "scripts/grill_v2.py",
-      "sha256": "af15f8cf17b658e13244ce338a4601fb83ad857c938adfe196a8d728fc1d3d1d",
+      "sha256": "1841d5469fd5228de650f13698ce1153de549c2bf7e440675d0d75376ed0fa1f",
+      "origin": "branch_tip"
+    },
+    {
+      "path": "scripts/joeflow_version.py",
+      "sha256": "69d6b033a6b201cf2712846f62c4fa95dc129b06ee23c3af2e4a912af3d48224",
       "origin": "branch_tip"
     },
     {
@@ -1486,7 +1533,7 @@
     },
     {
       "path": "scripts/new_records.py",
-      "sha256": "d5f0954b86588123ea82541ea776f28cda343aa9795e2c5e48967985a427bb98",
+      "sha256": "02097be794362237c95a667840f86df85f3f2977a5abe4f794559a690d47554e",
       "origin": "branch_tip"
     },
     {
@@ -1496,13 +1543,18 @@
     },
     {
       "path": "scripts/open_revision.py",
-      "sha256": "cb03771217ab9cfb90214ac0609377643a1881984d324027a18d062fbf04062b",
+      "sha256": "a9afe199bb355caa041889f6d725c1f82e8499c2611914f5f5cf48d76275e1fc",
       "origin": "branch_tip"
     },
     {
       "path": "scripts/preflight_state_candidate.py",
       "sha256": "712087016a64abde86c226b1d8627a862c2d7a0f659b71698eb93722278d760a",
       "origin": "v1.1.0_and_branch_tip"
+    },
+    {
+      "path": "scripts/project_pin.py",
+      "sha256": "c7228c0884d4c2c534b175d0d212dfc7f98dc6d883113c4e914b3800e6d2935f",
+      "origin": "branch_tip"
     },
     {
       "path": "scripts/projection_audit_v2.py",
@@ -1516,7 +1568,7 @@
     },
     {
       "path": "scripts/record_approval.py",
-      "sha256": "263c21973e2c9bcbf9773ffe3b294eeaf1efedded34bebac078223ee32ff2823",
+      "sha256": "3dac57a33d8a9ce35d17a3c5a81e3eb8210b92b25ec7496b18c110fb0f29e815",
       "origin": "branch_tip"
     },
     {
@@ -1556,7 +1608,7 @@
     },
     {
       "path": "scripts/update_projection.py",
-      "sha256": "7a84d98e65ca81248b055144f734a8fe97baa9e0b8c409ae4dc0174de9a5fdeb",
+      "sha256": "6e6425224a44e2d804cf7bfbdd2f8460cc02f96fd543c7db1040b9a81e1dda29",
       "origin": "branch_tip"
     },
     {
@@ -1700,5 +1752,6 @@
   "pycache_drift_before_u2_8": {
     "added": [],
     "changed": []
-  }
+  },
+  "pycache_drift_before_1_7_0": {}
 }

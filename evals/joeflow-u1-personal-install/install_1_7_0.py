@@ -83,7 +83,7 @@ for rel in COMPOSED:
         tmp = pathlib.Path(tmp)
         (tmp / 'p.diff').write_bytes(diff)
         (tmp / 'target').write_bytes((INSTALL / rel).read_bytes())
-        run = subprocess.run(['patch', '-p0', '--no-backup-if-mismatch', '-r', 'rej', 'target', 'p.diff'],
+        run = subprocess.run(['patch', '-p0', '-F3', '--no-backup-if-mismatch', '-r', 'rej', 'target', 'p.diff'],  # -F3: the installed text lacks the experience-pass lines next to the APPROVE hunk; the added/removed-line asserts below still check every line
                              cwd=tmp, capture_output=True, text=True)
         text = (tmp / 'target').read_bytes().decode('utf-8')
         rejected = (tmp / 'rej').read_text(encoding='utf-8') if (tmp / 'rej').exists() else ''
