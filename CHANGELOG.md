@@ -4,7 +4,7 @@
 
 ## 1.7.0 — 2026-11-12
 
-게시: 태그 `v1.7.0`(커밋 `ba15afe06c9338f2d240eb7d64a34a46925e91ad`)과 [GitHub Release](https://github.com/JOEWRKS/JOEFLOW/releases/tag/v1.7.0)를 2026-11-12에 만들었습니다(Latest). 이후 커밋은 문서 기록뿐이며 태그 대상은 그대로 둡니다. 개인 설치본은 아직 1.6.0입니다: 설치 스크립트 `evals/joeflow-u1-personal-install/install_1_7_0.py`(실행 안 함)가 자동 권한 분류기에 막혔습니다.
+게시: 태그 `v1.7.0`(커밋 `ba15afe06c9338f2d240eb7d64a34a46925e91ad`)과 [GitHub Release](https://github.com/JOEWRKS/JOEFLOW/releases/tag/v1.7.0)를 2026-11-12에 만들었습니다(Latest). 이후 커밋은 문서 기록뿐이며 태그 대상은 그대로 둡니다. 개인 설치본에는 2026-11-12에 1.7.0을 반영했습니다(experience pass는 여전히 제외, `install_1_7_0.py`, [설치 기록](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)).
 
 오목 실사용 마찰(2026-11-11)과 세 도구 통합 시험. 재현·확인은 [보고서](evals/2026-11-12-friction-170/report.md). State 0.2.0, 고정 검증 모듈, 바인딩 계약은 바뀌지 않았습니다.
 
