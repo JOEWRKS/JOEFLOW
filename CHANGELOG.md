@@ -2,9 +2,9 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
-## 1.7.1 — 미게시 후보
+## 1.7.1 — 2026-11-15
 
-미게시: VERSION은 1.7.0 그대로이며 태그·Release·개인 설치는 하지 않았습니다. 재현·검출 범위는 [보고서](evals/2026-11-13-stale-title-171/report.md).
+게시: 사용자 승인("게시", 2026-11-15)으로 태그 `v1.7.1`과 GitHub Release를 만듭니다(커밋·설치 기록은 게시 뒤 문서 커밋에서 채움). 재현·검출 범위는 [보고서](evals/2026-11-13-stale-title-171/report.md), 릴리스 노트는 [release-notes-v1.7.1.md](evals/2026-11-13-stale-title-171/release-notes-v1.7.1.md).
 
 - `projection_check.py`: 투영 문서의 제목·머리 영역(HTML `<title>`와 첫 섹션 앞 header, Markdown 첫 `## ` 앞)에 적힌 revision(`revision N`, `rev N`, `Rev. N`, `개정 N`, `리비전 N` 등)이 `definition_revision`과 다르면 `stale_review_title_revision`·`stale_spec_title_revision`(줄·기대값·실제값·다음 행동)을 내고 ok false. 식별 블록이 현재여도 손제목의 낡은 "revision 0"이 통과하던 1.7.0 결함을 고쳤습니다. 본문 변경 이력, 주석, `rev 1→2` 범위, "이전 승인 rev N"은 읽지 않습니다. 기존 키는 그대로이고 `stale_title_revision` 목록만 더했습니다.
 
