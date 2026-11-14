@@ -1,0 +1,22 @@
+cat skill/SKILL.md; ls -R skill | head -80; ls -la project/product-definition/request-form/ | exit 0
+ls skill/scripts skill/references; cd request-form; cat MASTER_PLANNING_SPEC.md planning-review-core.html; ls -la r3 r3/project | exit 0
+sed -n 60,150p skill/references/workflow-v0.2.0.md | exit 0
+cat > r3/../r3_log.sh (mistake: blocked on stdin, created empty file outside r3; task stopped) ; projection_check not reached | killed
+ls -la r3/.. r3; cat r3/commands.log | exit 1
+rm -f r3/../r3_log.sh (removed own accidental empty file) | exit 0
+PYTHONIOENCODING=utf-8 python skill/scripts/projection_check.py state.json --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html | exit 0
+cat VERSION; python - (dump state.json summary) | exit 1
+PYTHONIOENCODING=utf-8 python - (dump state.json objects) | exit 0
+PYTHONIOENCODING=utf-8 python skill/scripts/build_approval_manifest.py state.json > r3/manifest.json | exit 0
+PYTHONIOENCODING=utf-8 python skill/scripts/update_projection.py state.json --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html (dry run) | exit 0
+PYTHONIOENCODING=utf-8 python - (dump unknowns, ux_coverage) | exit 0
+cp MASTER_PLANNING_SPEC.md planning-review-core.html -> r3/*.orig (backup) | exit 0
+python -m http.server 8763 --bind 127.0.0.1 --directory project/product-definition/request-form (background, for render check) | started
+(stopped background http.server 8763) | killed
+PYTHONIOENCODING=utf-8 python skill/scripts/projection_check.py state.json --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html | exit 0
+PYTHONIOENCODING=utf-8 python skill/scripts/validate_state.py state.json | exit 0
+PYTHONIOENCODING=utf-8 python skill/scripts/preflight_state_candidate.py state.json | exit 0
+PYTHONIOENCODING=utf-8 python skill/scripts/check_approval.py state.json --revision 2 --manifest-digest 6b50eb339312a3ad65d6b1645a8769694e07db131843f962189b8d3115bf2906 | exit 0
+PYTHONIOENCODING=utf-8 python skill/scripts/approval_status.py state.json | exit 0
+cat commands.log; ls request-form | exit 0
+PYTHONIOENCODING=utf-8 python skill/scripts/update_projection.py state.json --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html (dry run after edits; ok=true, changed_lines 0) | exit 0 (logged late: missed by piped subshell)

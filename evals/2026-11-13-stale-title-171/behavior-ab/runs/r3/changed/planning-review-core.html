@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>요청 폼 · 기획 검토 화면 revision 2</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f6f4;color:#22332f;font:16px/1.7 system-ui,sans-serif}
+main{max-width:1120px;margin:auto;padding:36px 22px 80px}nav{position:sticky;top:0;background:#f5f6f4;padding:12px 0;border-bottom:1px solid #d9dfdb}
+nav a{margin-right:14px;color:inherit}section{background:white;border:1px solid #d9dfdb;border-radius:14px;padding:26px;margin:22px 0}
+h1,h2,h3{line-height:1.3}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.card{border:1px solid #e0e5e1;border-radius:10px;padding:16px}.note{font-size:14px;color:#62716c}
+.new{display:inline-block;font-size:12px;background:#e6f0ea;border-radius:6px;padding:0 6px;margin-left:6px}
+code{overflow-wrap:anywhere}svg{max-width:100%;height:auto}
+.diagram{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:720px){.diagram svg{max-width:none;min-width:640px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<p class="note">JOEFLOW HUMAN REVIEW VIEW · UNAPPROVED (rev 2 승인 대기)</p>
+<h1>요청 폼 기획 검토 (revision 2)</h1>
+<p>로그인한 요청자가 요청 내용을 입력하고, 검증을 통과한 요청만 제출·저장되는 요청 폼. rev 2에서 요청 내용 칸의 글자 수 표시를 더했습니다.</p>
+<p class="note">이 문서는 승인 대상 기획의 축약 시각본입니다. 제품 UI 시안이나 visual-design authority가 아닙니다. 정본은 <code>state.json</code>입니다.</p>
+</header>
+
+<nav>
+<a href="#scope">범위</a><a href="#ia">IA</a><a href="#flows">흐름</a>
+<a href="#screens">화면</a><a href="#policies">정책</a><a href="#status">상태</a>
+</nav>
+
+<section id="scope"><h2>제품과 범위</h2>
+<ul>
+<li>목표 GOAL-001: 요청자가 유효한 요청 제출을 끝낸다.</li>
+<li>사용자 USR-001: 로그인한 요청자(역할 하나).</li>
+<li>요구사항 REQ-001: 유효한 요청을 제출할 수 있다.</li>
+<li>연동 INT-001 Request API: 수락된 요청 저장.</li>
+<li>rev 2 추가<span class="new">NEW</span>: 요청 내용 칸 글자 수 표시 (DEC-002, RULE-002, AC-002, TASK-002).</li>
+<li>해당 없음(EVD-900): 결제, 파일 업로드, 비동기, 권한 구분, 파괴적 동작.</li>
+</ul>
+</section>
+
+<section id="ia">
+<h2>IA와 이동 관계</h2>
+<p class="note">정보 계층과 실제 화면 이동을 구분해 표시합니다. 화면은 SCR-001 하나입니다.</p>
+<div class="diagram">
+<svg viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="진입에서 요청 화면, 제출 수락으로 이어지는 이동">
+<g font-family="system-ui,sans-serif" font-size="14" fill="#22332f">
+<rect x="10" y="35" width="150" height="50" rx="8" fill="#fff" stroke="#8aa198"/><text x="85" y="58" text-anchor="middle">진입: 요청 폼 열기</text><text x="85" y="76" text-anchor="middle" font-size="12">로그인 전제</text>
+<rect x="240" y="35" width="160" height="50" rx="8" fill="#e6f0ea" stroke="#5b7f72"/><text x="320" y="58" text-anchor="middle">SCR-001 요청 화면</text><text x="320" y="76" text-anchor="middle" font-size="12">입력 · 글자 수 · submit</text>
+<rect x="480" y="35" width="150" height="50" rx="8" fill="#fff" stroke="#8aa198"/><text x="555" y="58" text-anchor="middle">요청 수락</text><text x="555" y="76" text-anchor="middle" font-size="12">흐름 종료</text>
+<path d="M160 60H236M400 60H476" stroke="#5b7f72" stroke-width="2" fill="none" marker-end="url(#a)"/>
+</g>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5b7f72"/></marker></defs>
+</svg>
+</div>
+<p class="note">수락 뒤 이동할 화면·돌아가기는 정의되어 있지 않습니다.</p>
+</section>
+
+<section id="flows">
+<h2>핵심 User Flows</h2>
+<p class="note">주요 정상·실패 분기를 표시합니다. 상세 조건은 Master의 stable ID로 연결합니다.</p>
+<div class="diagram">
+<svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FLOW-001: 입력 후 검증, 유효하면 수락, 유효하지 않으면 제출 안 됨">
+<g font-family="system-ui,sans-serif" font-size="13" fill="#22332f">
+<rect x="10" y="70" width="150" height="56" rx="8" fill="#fff" stroke="#8aa198"/><text x="85" y="94" text-anchor="middle">내용 입력</text><text x="85" y="112" text-anchor="middle" font-size="11">'현재 / 200' 즉시 갱신</text>
+<polygon points="300,60 370,98 300,136 230,98" fill="#fff" stroke="#5b7f72"/><text x="300" y="95" text-anchor="middle">유효한가?</text><text x="300" y="111" text-anchor="middle" font-size="11">RULE-001</text>
+<rect x="450" y="20" width="180" height="50" rx="8" fill="#e6f0ea" stroke="#5b7f72"/><text x="540" y="42" text-anchor="middle">예: 제출 → 수락·저장</text><text x="540" y="60" text-anchor="middle" font-size="11">AC-001 · INT-001</text>
+<rect x="450" y="130" width="180" height="50" rx="8" fill="#fbeeee" stroke="#a46b6b"/><text x="540" y="152" text-anchor="middle">아니오: 제출 안 됨</text><text x="540" y="170" text-anchor="middle" font-size="11">RULE-001 · DEC-001</text>
+<path d="M160 98H226M352 88L446 48M352 108L446 152" stroke="#5b7f72" stroke-width="2" fill="none" marker-end="url(#b)"/>
+</g>
+<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5b7f72"/></marker></defs>
+</svg>
+</div>
+<p class="note">거절 뒤 복구·재시도와 거절 문구는 정의되어 있지 않습니다. 상세: <a href="MASTER_PLANNING_SPEC.md">Master §5–6</a>.</p>
+</section>
+
+<section id="screens"><h2>화면 요약</h2><div class="grid">
+<div class="card"><h3>SCR-001 요청 화면</h3>
+<p>목적: 요청 제출. 주요 동작: submit.</p>
+<p>제출 가능: REQUEST_READY(필수 입력 유효, STATE-001).</p>
+<p>글자 수<span class="new">NEW</span>: 요청 내용 칸 아래 오른쪽 '현재 글자 수 / 200', 넣거나 지울 때마다 즉시 갱신, 빈 칸은 '0 / 200' (RULE-002, AC-002).</p>
+</div>
+</div></section>
+
+<section id="policies"><h2>중요 정책과 제한</h2>
+<ul>
+<li>RULE-001 / DEC-001: 유효한 요청만 제출할 수 있다(제출 전 검증).</li>
+<li>RULE-002 / DEC-002<span class="new">NEW</span>: 글자 수는 입력 중 항상 보인다(180자부터만 보이는 안은 채택 안 함). 대가: 칸 아래 한 줄 증가.</li>
+<li>제한: 요청 내용 textarea 최대 200자(EVD-902, 관찰된 구현).</li>
+<li>열린 제품 질문 없음(UNK-001, UNK-002 RESOLVED).</li>
+</ul>
+</section>
+
+<section id="status">
+<h2>검토·승인 상태</h2>
+<ul>
+<!-- JOEFLOW:IDENTITY:BEGIN -->
+<li>Revision: <code>2</code> · READY_FOR_REVIEW · 승인 대기</li>
+<li>Definition digest: <code>70067b7e163e82909c491a095696086fa648da5caedaf9f035ae72813ca55182</code></li>
+<li>Approval Manifest digest: <code>6b50eb339312a3ad65d6b1645a8769694e07db131843f962189b8d3115bf2906</code> (rev 1→2: 추가 7 · 변경 0 · 대체 0 · 폐기 0)</li>
+<li>이전 승인: rev 1 <code>dd1e837b…</code></li>
+<!-- JOEFLOW:IDENTITY:END -->
+<li>Master: <a href="MASTER_PLANNING_SPEC.md">MASTER_PLANNING_SPEC.md</a></li>
+<li>Render verification: <code>NOT_VERIFIED</code></li>
+</ul>
+</section>
+</main>
+</body>
+</html>

@@ -1,0 +1,13 @@
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r8/skill/joewrks-product-definition/scripts/validate_state.py <SCRATCH>/runs/r8/project/product-definition/request-form/state.json | exit=0
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r8/skill/joewrks-product-definition/scripts/projection_check.py <SCRATCH>/runs/r8/project/product-definition/request-form/state.json --spec <SCRATCH>/runs/r8/project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review <SCRATCH>/runs/r8/project/product-definition/request-form/planning-review-core.html | exit=1
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r8/skill/joewrks-product-definition/scripts/approval_status.py <SCRATCH>/runs/r8/project/product-definition/request-form/state.json | exit=0
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r8/skill/joewrks-product-definition/scripts/build_approval_manifest.py <SCRATCH>/runs/r8/project/product-definition/request-form/state.json | exit=0
+PYTHONIOENCODING=utf-8 python -c "import json;s=json.load(open(r'<SCRATCH>/runs/r8/project/product-definition/request-form/state.json',encoding='utf-8'));o=s['objects'];[print(k,r.get('id'),{kk:vv for kk,vv in r.items() if kk in ('text','title','summary','name','purpose','statement','question','status','assertion','expected','description','steps','resolution','chosen_option')}) for k,v in o.items() if isinstance(v,list) for r in v]" | exit=1
+PYTHONIOENCODING=utf-8 python -c "import json;s=json.load(open('state.json',encoding='utf-8'));o=s['objects'];[print(k,'|',json.dumps(r,ensure_ascii=False)[:600]) for k,v in o.items() if isinstance(v,list) for r in v if k not in ('coverage','ux_coverage')]" | exit=0
+cp originals to r8 backups | exit=0
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r8/skill/joewrks-product-definition/scripts/update_projection.py state.json --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html | exit=0
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r8/skill/joewrks-product-definition/scripts/projection_check.py state.json --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html | exit=0
+python -m http.server 8765 --bind 127.0.0.1 (background, project/product-definition/request-form) | exit=started
+http.server stopped via TaskStop | exit=n/a
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r8/skill/joewrks-product-definition/scripts/check_approval.py state.json --revision 2 --manifest-digest 6b50eb339312a3ad65d6b1645a8769694e07db131843f962189b8d3115bf2906 | exit=0
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r8/skill/joewrks-product-definition/scripts/validate_state.py state.json | exit=0

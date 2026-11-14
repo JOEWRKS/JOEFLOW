@@ -1,0 +1,14 @@
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r1/skill/joewrks-product-definition/scripts/validate_state.py state.json ; exit=0
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r1/skill/joewrks-product-definition/scripts/approval_status.py state.json ; exit=0
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r1/skill/joewrks-product-definition/scripts/projection_check.py state.json --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html ; exit=0
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r1/skill/joewrks-product-definition/scripts/build_approval_manifest.py state.json ; exit=0
+PYTHONIOENCODING=utf-8 python - (inline state.json read-only dump) ; exit=0
+PYTHONIOENCODING=utf-8 python - (inline state.json coverage read-only dump) ; exit=0
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r1/skill/joewrks-product-definition/scripts/update_projection.py state.json --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html ; exit=0
+python -m http.server 8765 --bind 127.0.0.1 (background, from request-form dir) ; exit=started
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r1/skill/joewrks-product-definition/scripts/update_projection.py state.json --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html ; exit=0
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r1/skill/joewrks-product-definition/scripts/projection_check.py state.json --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html ; exit=0
+grep placeholders/stale revision in projections ; exit=1
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r1/skill/joewrks-product-definition/scripts/validate_closure.py state.json ; exit=1
+PYTHONIOENCODING=utf-8 python <SCRATCH>/runs/r1/skill/joewrks-product-definition/scripts/check_approval.py state.json --revision 2 --manifest-digest 6b50eb339312a3ad65d6b1645a8769694e07db131843f962189b8d3115bf2906 ; exit=0
+(stopped) python -m http.server 8765 background task ; exit=stopped by TaskStop

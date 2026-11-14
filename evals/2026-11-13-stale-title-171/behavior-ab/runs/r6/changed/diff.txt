@@ -1,0 +1,323 @@
+### MASTER_PLANNING_SPEC.md: 177 diff lines
+--- original/MASTER_PLANNING_SPEC.md
++++ after/MASTER_PLANNING_SPEC.md
+@@ -1,7 +1,10 @@
+ # MASTER PLANNING SPEC — 요청 폼
+ 
+-> Complete human-readable projection of the approved Product Definition.
+-> Canonical authority remains `{{CANONICAL_STATE_PATH}}`.
++> Human-readable projection of the Product Definition at revision 2.
++> Canonical authority remains `product-definition/request-form/state.json`
++> (같은 폴더의 `state.json`). 이 문서와 state.json이 다르면 state.json이 맞다.
++> Revision 2는 **아직 승인되지 않았다**(READY_FOR_REVIEW · UNAPPROVED).
++> 마지막으로 승인된 것은 revision 1이다.
+ 
+ ## Approved identity
+ 
+@@ -18,42 +21,64 @@
+ 
+ ## 1. Product, users, goals, scope
+ 
+-Describe the user outcome, actors, goals, included scope, explicit exclusions,
+-external dependencies, and important product boundaries.
++- **목표 (GOAL-001):** 요청자가 유효한 요청을 끝까지 제출한다.
++- **사용자 (USR-001):** 로그인한 요청자(REQUESTER) 한 종류.
++- **요구사항 (REQ-001):** 요청자는 유효한 요청을 제출할 수 있다. 범위는 기본 요청 워크플로이며 UI가 필요하다.
++- **범위 안 (SURF-001):** 요청 제출 기능 영역.
++- **범위 밖:** 결제(MONEY), 파일 업로드(FILE_UPLOAD), 비동기 처리(ASYNC), 역할별 권한(PERMISSION), 파괴적 동작(DESTRUCTIVE_ACTION)은 이 제품에 해당하지 않는다고 사용자가 확인했다(EVD-900). 로그인(AUTH) 축만 적용된다.
++- **외부 의존:** 요청 API(INT-001)가 접수된 요청을 저장한다.
++- **rev 2에서 더한 것:** 요청 내용 칸의 글자 수 표시(DEC-002, RULE-002, AC-002, TASK-002).
+ 
+ ## 2. IA, navigation, and return relationships
+ 
+-Describe information hierarchy separately from screen-to-screen movement.
+-For every screen, include stable ID, purpose, entry, exit, and return behavior.
++- 화면은 하나다: **SCR-001 요청 폼** — 목적: 요청 제출.
++- 진입: 요청 폼을 연다(FLOW-001 entry). 전제: 요청자가 로그인해 있다.
++- 나감: 유효한 요청을 제출하면 요청이 접수된다(FLOW-001 outcome).
++- 다른 화면으로의 이동·돌아오기 관계는 승인 대상 state에 정의돼 있지 않다. 제출 후 어느 화면으로 가는지는 이 문서에서 정하지 않는다.
+ 
+ ## 3. Shared behavior, data, and state contracts
+ 
+-Define shared rules once and link exact stable IDs/source pointers. A shared
+-clause may reduce duplication but must not erase when or where it applies.
++- **RULE-001 (DEC-001 근거):** 유효한 요청만 제출할 수 있다. 제출 전에 요청을 검증한다.
++- **RULE-002 (DEC-002 근거, rev 2 추가):** 요청 내용 칸 아래 오른쪽에 `현재 글자 수 / 200`을 보이고, 글자를 넣거나 지울 때마다 바로 바꾼다.
++- **DATA-001 Request:** 요청 입력을 담는다. 소유자는 요청자.
++- **STATE-001 REQUEST_READY (SCR-001):** 필수 입력이 유효한 상태.
++- 사실 근거 **EVD-902** (구현 관찰, 2026-11-12 `src/index.html`): 요청 내용 칸은 textarea 하나이고 최대 200자(`maxlength=200`)다. 200이라는 상한은 이 관찰에서 온 사실이며, 새 제품 정책이 아니다.
+ 
+ ## 4. Screen specifications
+ 
+-For each screen: purpose, information priority, major actions, applicable
+-states, inputs, reads/writes, persistence, failures/recovery, responsive and
+-accessibility requirements, and related acceptance IDs.
+-Also state interaction mechanics per major action (input per device, preview/
+-confirm, cancel/undo) and the information budget for the smallest supported
+-viewport (visible at once, behind disclosure, dropped).
++### SCR-001 요청 폼
++
++- **목적:** 요청 제출. 상호작용 화면(INTERACTIVE).
++- **주요 동작:** submit (제출).
++- **상태:** REQUEST_READY(STATE-001) — 필수 입력이 유효하면 제출할 수 있다. 유효하지 않으면 제출할 수 없다(RULE-001).
++- **입력:** 요청 내용 textarea(최대 200자, EVD-902).
++- **글자 수 표시 (RULE-002 / AC-002, rev 2):**
++  - 위치: 요청 내용 칸 바로 아래, 오른쪽.
++  - 형식: `현재 글자 수 / 200`. 빈 칸이면 `0 / 200`.
++  - 시점: 글자를 넣거나 지울 때마다 즉시 바뀐다. 입력 중 항상 보인다(가까워질 때만 보이는 방식은 고르지 않았다 — UNK-002의 NEAR_LIMIT 대안).
++  - 대가: 칸 아래 한 줄이 늘어난다(DEC-002에 제시된 tradeoff).
++- **쓰기/저장:** 접수된 요청은 요청 API(INT-001)가 저장한다(AC-001).
++- **승인 state에 없는 것(정하지 않음):** 검증 실패 시 보이는 문구와 위치, 200자에 닿았을 때 표시 색 변화 여부, 작은 화면에서의 배치 변경, 보조기기 낭독 방식. 이것들은 구현에서 새로 정하지 말고 필요하면 Product Definition으로 되돌린다.
+ 
+ ## 5. User flows
+ 
+-For every material flow: entry, preconditions, actor action, system decision,
+-happy path, alternatives, failures, recovery/retry, exit, postcondition, and
+-acceptance IDs.
+-Start with a user walkthrough for each primary user, written from their side:
+-first use, main task, likely mistakes and recovery, return visit.
++### FLOW-001 요청 제출 (목표 GOAL-001)
++
++- **요청자 시점 걸음:** 로그인한 요청자가 요청 폼을 연다 → 요청 내용을 적는다. 적는 동안 칸 아래 오른쪽 숫자(`n / 200`)로 남은 여유를 본다(RULE-002) → 제출한다.
++- **진입:** 요청 폼을 연다. **전제:** 로그인 상태.
++- **시스템 판단:** 제출 전에 검증한다(DEC-001 / RULE-001).
++- **정상:** 유효하면 요청이 접수되고 저장된다(AC-001, INT-001).
++- **거부:** 유효하지 않으면 제출되지 않는다(RULE-001). 거부를 화면에 어떻게 알리는지와 복구 안내는 승인 state에 정의돼 있지 않다.
++- **사후 상태:** 요청이 접수된다.
+ 
+ ## 6. Action contracts
+ 
+-For every major action: actor, target, input, preconditions, execution,
+-conditional success outcomes, rejection/failure, recovery, cancellation,
+-concurrency/idempotency where applicable, visible result, data effect, and
+-source binding.
++| 동작 | 행위자 | 전제 | 실행 | 결과 | 근거 |
++|---|---|---|---|---|---|
++| submit (SCR-001) | 요청자(USR-001) | 로그인, 필수 입력 유효(STATE-001) | 제출 전 검증 | 유효 → 접수·저장(AC-001). 무효 → 제출 안 됨(RULE-001) | REQ-001, DEC-001, RULE-001, INT-001 |
++| 요청 내용 입력/삭제 | 요청자(USR-001) | 요청 폼이 열려 있음 | 글자 추가·삭제 | 칸 아래 오른쪽 `현재 글자 수 / 200`이 즉시 갱신, 빈 칸은 `0 / 200`(AC-002) | REQ-001, DEC-002, RULE-002 |
++
++글자 수 표시는 제출 가능 여부를 바꾸지 않는다. 표시 규칙(RULE-002)과 제출 규칙(RULE-001)은 서로 다른 규칙이다.
+ 
+ ### Projection-fidelity rule
+ 
+@@ -67,17 +92,21 @@
+ 
+ ## 7. Acceptance criteria
+ 
+-Include the full assertion/expected-result meaning and requirement references.
+-Do not reduce acceptance to an ID list.
++- **AC-001 (REQ-001, TASK-001):** 유효한 요청은 접수되고 저장된다.
++- **AC-002 (REQ-001, TASK-002, rev 2 추가):** 요청 내용에 글자를 넣거나 지우면 칸 아래 오른쪽 표시가 즉시 `현재 글자 수 / 200`으로 바뀐다. 빈 칸은 `0 / 200`.
+ 
+ ## 8. Responsive, accessibility, and downstream choice boundaries
+ 
+-Separate approved product requirements from later visual/technical choices.
++- 승인 대상 요구: 위 RULE-001, RULE-002와 AC-001, AC-002.
++- 이후 시각·기술 선택(글꼴, 색, 간격, 숫자 계산 방식 등)은 구현 쪽 선택이다. 단, 표시 위치(칸 아래 오른쪽), 형식(`n / 200`), 즉시 갱신은 바꿀 수 없다.
++- 작은 화면 배치와 접근성 요구는 승인 state에 따로 정해져 있지 않다.
+ 
+ ## 9. Remaining unknowns, external verification, and approval state
+ 
+-List only real unresolved items. Distinguish product ambiguity from runtime,
+-provider, visual, or integration verification that has simply not run.
++- 열린 제품 질문: 없음(UNK-001, UNK-002 모두 RESOLVED).
++- **승인 전에 확인할 점 — UNK-002 / DEC-002의 근거:** UNK-002(글자 수를 어디에 어떻게 보이나)는 "추천 수락(USER_ACCEPTED_RECOMMENDATION)"으로 닫혀 있다. 그런데 근거로 남은 사용자 말(EVD-901, 다른 세션이 전한 말)은 "요청 내용 칸에 글자 수 보여줘"이고, 이 말은 "요청 폼에 더하고 싶은 것이 있나요?"에 대한 답이다. 위치·시점 선택지(BELOW / NEAR_LIMIT)를 보고 고른 말로는 기록돼 있지 않다(`accepted_at`도 비어 있다). rev 2를 승인하면 이 배치(칸 아래 오른쪽, 항상 표시)를 사용자가 확정하는 것이 되므로, 승인 전에 이 점을 직접 확인해야 한다. 다른 배치를 원하면 승인하지 말고 UNK-002를 다시 연다.
++- 아직 돌리지 않은 확인: 실제 구현 동작, 요청 API 연동, 브라우저 렌더링 — 제품 모호함이 아니라 실행하지 않은 검증이다.
++- 승인 상태: revision 2 UNAPPROVED. revision 1만 승인됨.
+ 
+ ## 10. Source map
+ 
+@@ -105,26 +134,28 @@
+ 
+ ## 레코드
+ 
+-| GOAL-001 | text |
+-| USR-001 | text |
+-| REQ-001 | text |
+-| UNK-001 | text |
+-| UNK-002 | text |
+-| DEC-001 | text |
+-| DEC-002 | text |
+-| RULE-001 | text |
+-| RULE-002 | text |
+-| FLOW-001 | text |
+-| SCR-001 | text |
+-| STATE-001 | text |
+-| DATA-001 | text |
+-| INT-001 | text |
+-| AC-001 | text |
+-| AC-002 | text |
+-| TASK-001 | text |
+-| TASK-002 | text |
++| ID | 내용 (state.json 기준 요약) |
++|---|---|
++| GOAL-001 | 요청자가 유효한 요청을 끝까지 제출한다. |
++| USR-001 | 로그인한 요청자. |
++| REQ-001 | 요청자는 유효한 요청을 제출할 수 있다(기본 요청 워크플로). |
++| UNK-001 | 어떤 제출 정책을 쓸까? → RESOLVED, 사용자 결정(DEC-001). |
++| UNK-002 | 글자 수를 어디에 어떻게 보이나? → RESOLVED, 추천(BELOW) 수락으로 기록(DEC-002). 9장의 확인 사항 참고. |
++| DEC-001 | 제출 전에 요청을 검증한다. |
++| DEC-002 | 요청 내용 칸 아래 오른쪽에 '현재 글자 수 / 200'을 입력할 때마다 바로 보인다. |
++| RULE-001 | 유효한 요청만 제출할 수 있다. |
++| RULE-002 | 요청 내용 칸 아래 오른쪽에 '현재 글자 수 / 200'을 보이고, 글자를 넣거나 지울 때마다 바로 바꾼다. |
++| FLOW-001 | 요청 폼 열기(로그인 전제) → 검증 후 제출 → 요청 접수. |
++| SCR-001 | 요청 제출 화면. 주요 동작 submit. |
++| STATE-001 | REQUEST_READY: 필수 입력이 유효하다. |
++| DATA-001 | Request: 요청 입력을 담는다. 소유자 요청자. |
++| INT-001 | Request API: 접수된 요청을 저장한다. |
++| AC-001 | 유효한 요청은 접수되고 저장된다. |
++| AC-002 | 글자를 넣거나 지우면 칸 아래 오른쪽 표시가 즉시 '현재 글자 수 / 200'으로 바뀐다(빈 칸 '0 / 200'). |
++| TASK-001 | REQ-001 구현, AC-001 확인. |
++| TASK-002 | REQ-001 구현, AC-002 확인. |
+ 
+ ## 변경 이력
+ 
+-- rev 1: 첫 승인
+-- revision 1에서 rev 2로: 글자 수 표시
++- rev 1: 첫 승인(요청 제출과 제출 전 검증).
++- rev 2 (승인 대기): 요청 내용 칸 글자 수 표시 추가 — UNK-002, DEC-002, RULE-002, AC-002, TASK-002, 근거 EVD-901·EVD-902. 기존 레코드 변경·대체·폐기 없음.
+
+### planning-review-core.html: 141 diff lines
+--- original/planning-review-core.html
++++ after/planning-review-core.html
+@@ -3,13 +3,15 @@
+ <head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+-<title>요청 폼 · 기획 검토 화면 revision 0</title>
++<title>요청 폼 · 기획 검토 화면 revision 2</title>
+ <style>
+ *{box-sizing:border-box}body{margin:0;background:#f5f6f4;color:#22332f;font:16px/1.7 system-ui,sans-serif}
+ main{max-width:1120px;margin:auto;padding:36px 22px 80px}nav{position:sticky;top:0;background:#f5f6f4;padding:12px 0;border-bottom:1px solid #d9dfdb}
+ nav a{margin-right:14px;color:inherit}section{background:white;border:1px solid #d9dfdb;border-radius:14px;padding:26px;margin:22px 0}
+ h1,h2,h3{line-height:1.3}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+ .card{border:1px solid #e0e5e1;border-radius:10px;padding:16px}.note{font-size:14px;color:#62716c}
++.new{display:inline-block;font-size:12px;font-weight:600;color:#1d5c46;background:#e3f2ea;border-radius:6px;padding:0 6px;margin-left:6px}
++.check{border-left:4px solid #b7791f;background:#fdf6e7;padding:12px 16px;border-radius:8px}
+ code{overflow-wrap:anywhere}svg{max-width:100%;height:auto}
+ .diagram{overflow-x:auto;-webkit-overflow-scrolling:touch}
+ @media (max-width:720px){.diagram svg{max-width:none;min-width:640px}}
+@@ -18,10 +20,10 @@
+ <body>
+ <main>
+ <header>
+-<p class="note">JOEFLOW HUMAN REVIEW VIEW · {{APPROVAL_STATUS}}</p>
+-<h1>요청 폼 기획 검토 (revision 0)</h1>
+-<p>{{ONE_LINE_PRODUCT_DESCRIPTION}}</p>
+-<p class="note">이 문서는 승인된 기획의 축약 시각본입니다. 제품 UI 시안이나 visual-design authority가 아닙니다.</p>
++<p class="note">JOEFLOW HUMAN REVIEW VIEW · revision 2 · READY_FOR_REVIEW · 승인 대기(UNAPPROVED)</p>
++<h1>요청 폼 기획 검토 (revision 2)</h1>
++<p>로그인한 요청자가 요청 내용을 적고, 검증을 통과한 요청만 제출하는 폼. rev 2는 요청 내용 칸에 글자 수 표시를 더한다.</p>
++<p class="note">이 문서는 state.json의 축약 시각본입니다. 제품 UI 시안이나 visual-design authority가 아닙니다. 다르면 state.json이 맞습니다.</p>
+ </header>
+ 
+ <nav>
+@@ -29,23 +31,90 @@
+ <a href="#screens">화면</a><a href="#policies">정책</a><a href="#status">상태</a>
+ </nav>
+ 
+-<section id="scope"><h2>제품과 범위</h2>{{PRODUCT_SCOPE_SUMMARY}}</section>
++<section id="scope"><h2>제품과 범위</h2>
++<ul>
++<li><b>목표</b> GOAL-001: 요청자가 유효한 요청을 끝까지 제출한다.</li>
++<li><b>사용자</b> USR-001: 로그인한 요청자.</li>
++<li><b>요구사항</b> REQ-001: 유효한 요청을 제출할 수 있다.</li>
++<li><b>rev 2 추가</b><span class="new">NEW</span>: 요청 내용 칸 아래 오른쪽에 <code>현재 글자 수 / 200</code> 표시 (DEC-002 · RULE-002 · AC-002 · TASK-002).</li>
++<li><b>범위 밖</b>(EVD-900): 결제, 파일 업로드, 비동기 처리, 역할별 권한, 파괴적 동작.</li>
++</ul>
++</section>
+ 
+ <section id="ia">
+ <h2>IA와 이동 관계</h2>
+ <p class="note">정보 계층과 실제 화면 이동을 구분해 표시합니다.</p>
+-<div class="diagram">{{IA_AND_NAVIGATION_DIAGRAMS}}</div>
++<div class="diagram">
++<svg viewBox="0 0 640 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="요청 폼 화면 구성">
++<rect x="20" y="20" width="260" height="110" rx="10" fill="#fff" stroke="#22332f"/>
++<text x="36" y="46" font-size="15" fill="#22332f">SCR-001 요청 폼</text>
++<rect x="36" y="58" width="228" height="34" rx="4" fill="#f5f6f4" stroke="#9aa8a3"/>
++<text x="44" y="80" font-size="13" fill="#62716c">요청 내용 (최대 200자)</text>
++<text x="264" y="112" font-size="13" fill="#1d5c46" text-anchor="end">n / 200</text>
++<line x1="280" y1="75" x2="380" y2="75" stroke="#22332f" marker-end="url(#a)"/>
++<text x="330" y="66" font-size="12" fill="#62716c" text-anchor="middle">submit</text>
++<rect x="380" y="45" width="240" height="60" rx="10" fill="#fff" stroke="#22332f"/>
++<text x="500" y="72" font-size="14" fill="#22332f" text-anchor="middle">요청 접수 · 저장</text>
++<text x="500" y="92" font-size="12" fill="#62716c" text-anchor="middle">INT-001 Request API</text>
++<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#22332f"/></marker></defs>
++</svg>
++</div>
++<p class="note">화면은 SCR-001 하나입니다. 제출 후 이동할 화면은 승인 대상 state에 정해져 있지 않습니다.</p>
+ </section>
+ 
+ <section id="flows">
+ <h2>핵심 User Flows</h2>
+ <p class="note">주요 정상·실패·복구 분기를 표시합니다. 상세 조건은 Master의 stable ID로 연결합니다.</p>
+-<div class="diagram">{{MAJOR_FLOW_DIAGRAMS_AND_LINKS}}</div>
++<div class="diagram">
++<svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FLOW-001 요청 제출 흐름">
++<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#22332f"/></marker></defs>
++<rect x="10" y="70" width="120" height="50" rx="8" fill="#fff" stroke="#22332f"/>
++<text x="70" y="92" font-size="13" text-anchor="middle" fill="#22332f">폼 열기</text>
++<text x="70" y="110" font-size="11" text-anchor="middle" fill="#62716c">로그인 전제</text>
++<line x1="130" y1="95" x2="170" y2="95" stroke="#22332f" marker-end="url(#b)"/>
++<rect x="170" y="70" width="130" height="50" rx="8" fill="#fff" stroke="#22332f"/>
++<text x="235" y="92" font-size="13" text-anchor="middle" fill="#22332f">내용 입력</text>
++<text x="235" y="110" font-size="11" text-anchor="middle" fill="#1d5c46">n / 200 즉시 갱신</text>
++<line x1="300" y1="95" x2="340" y2="95" stroke="#22332f" marker-end="url(#b)"/>
++<polygon points="400,60 460,95 400,130 340,95" fill="#fff" stroke="#22332f"/>
++<text x="400" y="99" font-size="12" text-anchor="middle" fill="#22332f">검증</text>
++<line x1="460" y1="95" x2="500" y2="50" stroke="#22332f" marker-end="url(#b)"/>
++<rect x="500" y="22" width="130" height="50" rx="8" fill="#fff" stroke="#22332f"/>
++<text x="565" y="44" font-size="12" text-anchor="middle" fill="#22332f">유효 → 접수·저장</text>
++<text x="565" y="62" font-size="11" text-anchor="middle" fill="#62716c">AC-001</text>
++<line x1="460" y1="95" x2="500" y2="145" stroke="#22332f" marker-end="url(#b)"/>
++<rect x="500" y="122" width="130" height="50" rx="8" fill="#fff" stroke="#22332f"/>
++<text x="565" y="144" font-size="12" text-anchor="middle" fill="#22332f">무효 → 제출 안 됨</text>
++<text x="565" y="162" font-size="11" text-anchor="middle" fill="#62716c">RULE-001</text>
++</svg>
++</div>
++<p class="note">FLOW-001 · DEC-001/RULE-001. 무효일 때의 안내 문구와 복구 방법은 승인 대상 state에 정해져 있지 않습니다.</p>
+ </section>
+ 
+-<section id="screens"><h2>화면 요약</h2><div class="grid">{{SCREEN_PURPOSE_CARDS}}</div></section>
++<section id="screens"><h2>화면 요약</h2><div class="grid">
++<div class="card"><h3>SCR-001 요청 폼</h3>
++<p>목적: 요청 제출. 주요 동작: submit.</p>
++<p>상태 STATE-001 REQUEST_READY: 필수 입력이 유효할 때.</p>
++<p><span class="new">rev 2</span> 요청 내용 칸 아래 오른쪽에 <code>현재 글자 수 / 200</code>, 입력·삭제마다 즉시 갱신, 빈 칸은 <code>0 / 200</code> (AC-002).</p>
++</div>
++</div></section>
+ 
+-<section id="policies"><h2>중요 정책과 제한</h2>{{IMPORTANT_POLICIES_AND_CONSTRAINTS}}</section>
++<section id="policies"><h2>중요 정책과 제한</h2>
++<ul>
++<li>RULE-001: 유효한 요청만 제출할 수 있다(DEC-001, 사용자 결정).</li>
++<li>RULE-002<span class="new">NEW</span>: 요청 내용 칸 아래 오른쪽에 <code>현재 글자 수 / 200</code>을 보이고, 글자를 넣거나 지울 때마다 바로 바꾼다(DEC-002).</li>
++<li>상한 200자는 현재 구현에서 관찰한 사실이다(EVD-902, <code>maxlength=200</code>).</li>
++</ul>
++<div class="check">
++<p><b>승인 전에 확인해 주세요 — 글자 수 배치(UNK-002 / DEC-002)</b></p>
++<p>이 배치는 "추천 수락"으로 기록돼 있지만, 남아 있는 사용자 말(EVD-901, 다른 세션이 전한 말)은 "요청 내용 칸에 글자 수 보여줘"뿐입니다. 아래 두 안을 보고 고른 기록은 없습니다.</p>
++<ul>
++<li><b>BELOW (기록된 안)</b>: 칸 아래 오른쪽에 항상 <code>n / 200</code>. 대가: 칸 아래 한 줄이 늘어남.</li>
++<li><b>NEAR_LIMIT</b>: 180자부터만 표시. 평소엔 안 보임.</li>
++</ul>
++<p>rev 2를 승인하면 BELOW로 확정됩니다. 다른 안을 원하면 승인하지 말고 다시 열어 주세요.</p>
++</div>
++</section>
+ 
+ <section id="status">
+ <h2>검토·승인 상태</h2>
+@@ -56,8 +125,9 @@
+ <li>Approval Manifest digest: <code>6b50eb339312a3ad65d6b1645a8769694e07db131843f962189b8d3115bf2906</code> (rev 1→2: 추가 7 · 변경 0 · 대체 0 · 폐기 0)</li>
+ <li>이전 승인: rev 1 <code>dd1e837b…</code></li>
+ <!-- JOEFLOW:IDENTITY:END -->
++<li>rev 1→2 추가 레코드: UNK-002, DEC-002, RULE-002, AC-002, TASK-002, EVD-901, EVD-902</li>
+ <li>Master: <a href="MASTER_PLANNING_SPEC.md">MASTER_PLANNING_SPEC.md</a></li>
+-<li>Render verification: <code>{{VERIFIED_OR_NOT_VERIFIED}}</code></li>
++<li>Render verification: <code>NOT_VERIFIED</code></li>
+ </ul>
+ </section>
+ </main>
+
+### state.json: unchanged
