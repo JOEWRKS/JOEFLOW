@@ -1,0 +1,46 @@
+{
+  "identity": {
+    "revision": 2,
+    "definition_status": "READY_FOR_REVIEW",
+    "approval_status": "UNAPPROVED",
+    "approved_at": null,
+    "definition_digest": "70067b7e163e82909c491a095696086fa648da5caedaf9f035ae72813ca55182",
+    "manifest_digest": null,
+    "approved_revisions": [
+      1
+    ],
+    "revisions_without_own_approval": []
+  },
+  "compared_with_revision": 1,
+  "spec": {
+    "stale_identity": [],
+    "missing_added_records": [],
+    "changed_records_to_reread": [],
+    "retired_or_superseded_still_named": [],
+    "stale_title_revision": []
+  },
+  "review": {
+    "stale_identity": [],
+    "stale_title_revision": [
+      {
+        "code": "stale_review_title_revision",
+        "line": 6,
+        "where": "<title>",
+        "text": "요청 폼 · 기획 검토 화면 revision 0",
+        "expected": 2,
+        "actual": 0,
+        "next_action": "line 6: change revision 0 to 2 by hand; update_projection.py rewrites only the identity block and the 'REVIEW VIEW … revision N' form"
+      },
+      {
+        "code": "stale_review_title_revision",
+        "line": 22,
+        "where": "header",
+        "text": "요청 폼 기획 검토 (revision 0)",
+        "expected": 2,
+        "actual": 0,
+        "next_action": "line 22: change revision 0 to 2 by hand; update_projection.py rewrites only the identity block and the 'REVIEW VIEW … revision N' form"
+      }
+    ]
+  },
+  "ok": false
+}

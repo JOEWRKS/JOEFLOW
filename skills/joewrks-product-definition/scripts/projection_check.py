@@ -4,7 +4,10 @@
 For MASTER_PLANNING_SPEC.md and planning-review-core.html this reports whether
 the current revision, definition digest and Approval Manifest digest appear,
 which records this revision added that the spec never names, and which changed
-or retired records the author should re-read. --draft prints the identity lines
+or retired records the author should re-read, and any revision number in the title or
+header area (<title>, the HTML header before the first section, the Markdown lines
+before the first `## `) that differs from definition_revision
+(stale_spec_title_revision / stale_review_title_revision). --draft prints the identity lines
 and the current text of every added or changed record for the author to condense.
 """
 
@@ -56,6 +59,70 @@ def _identity_findings(text: str, identity: dict[str, object]) -> list[str]:
     return findings
 
 
+# A revision named in the title or header area: "revision 0", "Rev. 2", "rev <code>2</code>", "개정 2", "리비전 2".
+# A range "rev 1→2" counts as its last number. Body text (change history, earlier approvals) is not read.
+HEAD_REVISION = re.compile(
+    r"(?i)(?<![\w-])(?:revision|rev\.?|리비전|개정판?)\s*(?:[:#]\s*)?(?:<code>|`)?\s*(\d+)(?!\d)"
+    r"(?:\s*(?:</code>|`))?(?:\s*(?:→|->|–|~)\s*(?:rev(?:ision)?\.?\s*)?(\d+)(?!\d))?")
+EARLIER = re.compile(r"(?i)(?:이전|직전|previous|prior|since|from)(?:\s*승인|\s+approvals?|\s+approved)?\W{0,3}$")
+COMMENT_OR_BLOCK = re.compile(r"<!-- JOEFLOW:([A-Z-]+):BEGIN -->.*?<!-- JOEFLOW:\1:END -->|<!--.*?-->", re.S)
+
+
+def _blank(match: re.Match) -> str:
+    return re.sub(r"[^\n]", " ", match.group(0))  # keep offsets and line numbers
+
+
+def _head_spans(text: str, html: bool) -> list[tuple[str, int, int]]:
+    """Where a reader sees the document's name: <title> and the body up to the first section, or the
+    Markdown lines before the first `## ` heading."""
+    if not html:
+        second = re.search(r"^##\s", text, re.M)
+        if second:
+            return [("heading", 0, second.start())]
+        first = re.search(r"^#\s.*$", text, re.M)
+        return [("heading", first.start(), first.end())] if first else []
+    spans = []
+    title = re.search(r"<title[^>]*>(.*?)</title>", text, re.S | re.I)
+    if title:
+        spans.append(("<title>", title.start(1), title.end(1)))
+    body = re.search(r"<body\b[^>]*>", text, re.I)
+    start = body.end() if body else (title.end() if title else 0)
+    ends = [m.start() for m in (re.compile(p, re.I).search(text, start)
+                                for p in (r"</header>", r"<nav\b", r"<section\b", r"<h2\b")) if m]
+    if not ends:
+        h1 = re.search(r"</h1>", text[start:], re.I)
+        ends = [start + h1.end()] if h1 else [start]
+    spans.append(("header", start, min(ends)))
+    return spans
+
+
+def _title_findings(text: str, revision: int, html: bool, code: str) -> list[dict[str, object]]:
+    """Revision numbers in the title/header area that differ from the state's definition_revision."""
+    visible = COMMENT_OR_BLOCK.sub(_blank, text)
+    findings = []
+    for where, start, end in _head_spans(visible, html):
+        for match in HEAD_REVISION.finditer(visible, start, end):
+            if EARLIER.search(visible[max(0, match.start() - 20):match.start()]):
+                continue
+            found = int(match.group(2) or match.group(1))
+            if found == revision:
+                continue
+            line_no = visible.count("\n", 0, match.start()) + 1
+            line = text.split("\n")[line_no - 1]
+            shown = re.sub(r"<[^>]+>", "", line).strip()
+            findings.append({
+                "code": code,
+                "line": line_no,
+                "where": where,
+                "text": shown[:160],
+                "expected": revision,
+                "actual": found,
+                "next_action": (f"line {line_no}: change revision {found} to {revision} by hand; update_projection.py "
+                                "rewrites only the identity block and the 'REVIEW VIEW … revision N' form"),
+            })
+    return findings
+
+
 def check(state: dict[str, object], spec_text: str, review_text: str | None,
           required_types: set[str]) -> dict[str, object]:
     identity = _identity(state)
@@ -71,13 +138,19 @@ def check(state: dict[str, object], spec_text: str, review_text: str | None,
             "retired_or_superseded_still_named": [
                 row["id"] for row in manifest["superseded"] + manifest["retired"] if _mentions(spec_text, row["id"])
             ],
+            "stale_title_revision": _title_findings(spec_text, identity["revision"], False, "stale_spec_title_revision"),
         },
     }
     if review_text is not None:
-        report["review"] = {"stale_identity": _identity_findings(review_text, identity)}
+        report["review"] = {
+            "stale_identity": _identity_findings(review_text, identity),
+            "stale_title_revision": _title_findings(review_text, identity["revision"], True,
+                                                    "stale_review_title_revision"),
+        }
     report["ok"] = not (
         report["spec"]["stale_identity"] or report["spec"]["missing_added_records"]
-        or (review_text is not None and report["review"]["stale_identity"])
+        or report["spec"]["stale_title_revision"]
+        or (review_text is not None and (report["review"]["stale_identity"] or report["review"]["stale_title_revision"]))
     )
     return report
 

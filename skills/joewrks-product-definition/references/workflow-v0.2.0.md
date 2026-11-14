@@ -144,7 +144,7 @@ It regenerates the `<!-- JOEFLOW:IDENTITY -->` and `<!-- JOEFLOW:SOURCE-MAP -->`
 python <skill-directory>/scripts/projection_check.py STATE_JSON --spec MASTER_PLANNING_SPEC.md --review planning-review-core.html
 ```
 
-It reports whether each projection names the current revision, definition digest and Approval Manifest digest, which records this revision added (`REQ`, `RULE`, `FLOW`, `SCR`, `STATE`, `DATA`, `INT`, `AC`, `TASK` by default) that the spec never names, which changed records the spec names and must be re-read, and which superseded or retired records the spec still names. `--draft` prints the identity lines and the current text of every added or changed record; condense it into the projection rather than pasting it. It does not replace the full audit above and does not judge meaning.
+It reports whether each projection names the current revision, definition digest and Approval Manifest digest, which records this revision added (`REQ`, `RULE`, `FLOW`, `SCR`, `STATE`, `DATA`, `INT`, `AC`, `TASK` by default) that the spec never names, which changed records the spec names and must be re-read, and which superseded or retired records the spec still names, and any revision number in a document's title or header area (`<title>`, the HTML header before the first section, the Markdown lines before the first `## `) that differs from the current one (`stale_review_title_revision` / `stale_spec_title_revision`; fix those by hand). `--draft` prints the identity lines and the current text of every added or changed record; condense it into the projection rather than pasting it. It does not replace the full audit above and does not judge meaning.
 
 Compile only from a valid approved V2 state and a `joewrks.handoff-definition/2.1` handoff definition:
 
