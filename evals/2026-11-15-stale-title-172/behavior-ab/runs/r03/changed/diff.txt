@@ -1,0 +1,12 @@
+--- orig/planning-review-core.html
++++ after/planning-review-core.html
+@@ -5,3 +5,3 @@
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+-<title>요청 폼 · 기획 검토 화면 revision 0</title>
++<title>요청 폼 · 기획 검토 화면 revision 2</title>
+ <style>
+@@ -22,3 +22,3 @@
+ <p class="note">JOEFLOW HUMAN REVIEW VIEW · revision 2 · READY_FOR_REVIEW · UNAPPROVED (승인 대기)</p>
+-<h1>요청 폼 기획 검토 (revision 0)</h1>
++<h1>요청 폼 기획 검토 (revision 2)</h1>
+ <p>로그인한 요청자가 유효한 요청을 제출하는 요청 폼. revision 2는 요청 내용 칸의 글자 수 표시를 더한다.</p>

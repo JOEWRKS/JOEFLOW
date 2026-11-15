@@ -1,0 +1,13 @@
+<SCRATCH>/r04
+pwd, exit 0
+python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 1
+python tools/joeflow/scripts/approval_status.py project/product-definition/request-form/state.json, exit 0
+python tools/joeflow/scripts/build_approval_manifest.py project/product-definition/request-form/state.json, exit 0
+python inspect state records (inline), exit 0
+python inspect flows/screens in state (inline), exit 0
+sed fix review title/h1 revision 0->2, exit 0
+python update_projection.py (dry-run), exit 0
+python projection_check.py, exit 0
+python validate_state.py, exit 0
+python check_approval.py --revision 2 --manifest-digest 6b50eb33..., exit 0
+git status --short, exit 128

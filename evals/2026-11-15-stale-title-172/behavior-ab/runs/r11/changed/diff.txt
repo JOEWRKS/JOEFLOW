@@ -1,0 +1,32 @@
+--- orig/MASTER_PLANNING_SPEC.md
++++ after/MASTER_PLANNING_SPEC.md
+@@ -4,3 +4,3 @@
+ > Canonical authority remains `product-definition/request-form/state.json`.
+-> 승인 revision 1 기준으로 작성됨 (현재 rev 2 검토 중)
++> revision 2 기준으로 작성됨 (승인 대기; 이전 승인은 아래 identity 블록)
+ 
+@@ -46,3 +46,3 @@
+ - 요청 내용 칸: textarea 하나, 최대 200자(maxlength=200) — 현재 구현 관찰 사실 `EVD-902`.
+-- 글자 수 표시 (rev 2): 칸 아래 오른쪽, '현재 글자 수 / 200', 입력 중 항상 보이며 넣거나 지울 때마다 즉시 갱신, 빈 칸은 '0 / 200' (`RULE-002`, `DEC-002`, `AC-002`). 이 표시로 칸 아래 한 줄이 늘어난다(제시된 tradeoff).
++- 글자 수 표시 (rev 2): 칸 아래 오른쪽, '현재 글자 수 / 200', 입력 중 항상 보이며 넣거나 지울 때마다 즉시 갱신, 빈 칸은 '0 / 200' (`RULE-002`, `DEC-002`, `AC-002`). 이 표시로 칸 아래 한 줄이 늘어난다(추천안 BELOW의 tradeoff).
+ - 상태: `STATE-001` REQUEST_READY (필수 입력 유효).
+@@ -99,3 +99,3 @@
+ - 열린 제품 질문: 없음(`UNK-001`, `UNK-002` 모두 RESOLVED).
+-- 확인 권장: `DEC-002`는 다른 세션이 전달한 사용자 원문 "요청 내용 칸에 글자 수 보여줘"(`EVD-901`, RELAYED_USER_INTENT)를 추천안 BELOW(항상 표시) 수락으로 기록했다. 원문이 위치·표시 시점을 직접 고르지 않았으므로 승인 때 사용자가 '항상 표시'를 확인해야 한다. 대안: NEAR_LIMIT(180자부터만 표시).
++- 확인 권장: `DEC-002`는 다른 세션이 전달한 사용자 원문 "요청 내용 칸에 글자 수 보여줘"(`EVD-901`, RELAYED_USER_INTENT)를 추천안 BELOW(항상 표시) 수락으로 기록했다. 원문이 위치·표시 시점을 직접 고르지 않았고 선택지가 사용자에게 직접 제시된 기록도 없으므로(`accepted_at` 없음), 승인 때 사용자가 '항상 표시'를 확인해야 한다. revision 2를 승인하면 BELOW(항상 표시)를 고른 것이 된다. 대안 NEAR_LIMIT(180자부터만 표시)을 고르면 revision 3에서 `DEC-002`·`RULE-002`·`AC-002`를 바꿔야 한다.
+ - 승인 상태: revision 2 READY_FOR_REVIEW / UNAPPROVED. 마지막 승인 revision 1.
+--- orig/planning-review-core.html
++++ after/planning-review-core.html
+@@ -14,2 +14,3 @@
+ .diagram{overflow-x:auto;-webkit-overflow-scrolling:touch}
++section{scroll-margin-top:64px}
+ .new{display:inline-block;font-size:12px;border:1px solid #2f7a5f;color:#2f7a5f;border-radius:6px;padding:0 6px;margin-left:6px}
+@@ -92,2 +93,3 @@
+ <li><code>DEC-002</code>는 전달받은 사용자 원문 "요청 내용 칸에 글자 수 보여줘"(<code>EVD-901</code>, 다른 세션 전달)를 추천안 BELOW(항상 표시) 수락으로 기록했습니다. 원문은 위치·표시 시점(항상 vs 180자부터)을 직접 고르지 않았으므로, 이 화면에서 '항상 표시'가 의도와 맞는지 확인해 주세요. 다른 선택지: 180자부터만 표시(NEAR_LIMIT).</li>
++<li>revision 2를 승인하면 '항상 표시'(BELOW)를 고른 것이 됩니다. 180자부터만 표시를 원하면 승인하지 말고 알려 주세요 — revision 3에서 <code>DEC-002</code>·<code>RULE-002</code>·<code>AC-002</code>를 바꿉니다.</li>
+ </ul>
+@@ -112,3 +114,3 @@
+ <li>Master: <a href="MASTER_PLANNING_SPEC.md">MASTER_PLANNING_SPEC.md</a></li>
+-<li>Render verification: <code>NOT_VERIFIED</code> (브라우저 렌더·클릭을 관찰하지 못함; 정적 구조 점검만 수행)</li>
++<li>Render verification: 2026-11-15 로컬 브라우저(127.0.0.1)에서 관찰 — 폭 1024px·375px에서 글자 읽힘, 페이지 가로 넘침 없음(IA 도식은 칸 안 가로 스크롤), 상단 내비 링크 7개 모두 해당 절로 이동. 검토자 본인 환경의 렌더는 <code>NOT_VERIFIED</code>.</li>
+ </ul>

@@ -1,0 +1,7 @@
+--- orig/MASTER_PLANNING_SPEC.md
++++ after/MASTER_PLANNING_SPEC.md
+@@ -4,3 +4,3 @@
+ > Canonical authority remains `product-definition/request-form/state.json`.
+-> 승인 revision 1 기준으로 작성됨 (현재 rev 2 검토 중)
++> 이 문서는 승인 대기 중인 revision 2의 내용을 담는다. 마지막 승인은 revision 1이다.
+ 

@@ -1,0 +1,19 @@
+<SCRATCH>/r07
+pwd, 0
+grep -n workflow-v0.2.0.md projection/approve, 0
+sed -n 66,148p workflow-v0.2.0.md, 0
+cat MASTER_PLANNING_SPEC.md, 0
+cat planning-review-core.html, 0
+python -c dump state.json sections, 1
+PYTHONIOENCODING=utf-8 python -c dump state.json sections, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/validate_state.py project/product-definition/request-form/state.json, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/build_approval_manifest.py project/product-definition/request-form/state.json, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec ... --review ..., 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/update_projection.py project/product-definition/request-form/state.json --spec ... --review ... (dry-run), 0
+PYTHONIOENCODING=utf-8 python -c dump remaining state objects, 0
+grep -n 'revision 0' projections, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec ... --review ... (after fix), 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/approval_status.py project/product-definition/request-form/state.json, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/check_approval.py project/product-definition/request-form/state.json --revision 2 --manifest-digest 6b50eb33..., 0
+git status --short, 128
+awk dedupe duplicated log line in commands.log, 0

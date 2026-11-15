@@ -1,0 +1,12 @@
+--- orig/MASTER_PLANNING_SPEC.md
++++ after/MASTER_PLANNING_SPEC.md
+@@ -4,3 +4,3 @@
+ > Canonical authority remains `product-definition/request-form/state.json`.
+-> 승인 revision 1 기준으로 작성됨 (현재 rev 2 검토 중)
++> revision 2 기준으로 작성됨 (승인 대기; 이전 승인 이력은 아래 Approved identity 참조)
+ 
+@@ -46,3 +46,3 @@
+ - 요청 내용 칸: textarea 하나, 최대 200자(maxlength=200) — 현재 구현 관찰 사실 `EVD-902`.
+-- 글자 수 표시 (rev 2): 칸 아래 오른쪽, '현재 글자 수 / 200', 입력 중 항상 보이며 넣거나 지울 때마다 즉시 갱신, 빈 칸은 '0 / 200' (`RULE-002`, `DEC-002`, `AC-002`). 이 표시로 칸 아래 한 줄이 늘어난다(제시된 tradeoff).
++- 글자 수 표시 (rev 2): 칸 아래 오른쪽, '현재 글자 수 / 200', 입력 중 항상 보이며 넣거나 지울 때마다 즉시 갱신, 빈 칸은 '0 / 200' (`RULE-002`, `DEC-002`, `AC-002`). 이 표시로 칸 아래 한 줄이 늘어난다(추천안 BELOW의 tradeoff, `UNK-002`).
+ - 상태: `STATE-001` REQUEST_READY (필수 입력 유효).

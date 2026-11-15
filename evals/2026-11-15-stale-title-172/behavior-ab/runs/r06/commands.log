@@ -1,0 +1,20 @@
+<SCRATCH>/r06
+pwd, exit 0
+ls tools/joeflow tools/joeflow/scripts project/product-definition/request-form, exit 0
+cat tools/joeflow/SKILL.md, exit 0
+grep workflow-v0.2.0.md sections, exit 0
+cat MASTER_PLANNING_SPEC.md, exit 0
+cat planning-review-core.html, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec .../MASTER_PLANNING_SPEC.md --review .../planning-review-core.html, exit 1
+sed -i fix revision 0->2 in <title> and <h1> of planning-review-core.html, exit 0
+grep revision lines in planning-review-core.html, exit 0
+python inline: print state.json records EVD-901/902 UNK-002 DEC-002 RULE-002 AC-002, exit 1
+python inline (cp949 encode error), exit 1
+PYTHONIOENCODING=utf-8 python inline: print rev2 records from state.json, exit 0
+PYTHONIOENCODING=utf-8 python inline: print other objects and approval_history, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py (rerun after fix), exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/validate_state.py project/product-definition/request-form/state.json, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/build_approval_manifest.py --help, exit 2
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/build_approval_manifest.py project/product-definition/request-form/state.json > scratchpad/manifest.json, exit 0
+python -c print manifest keys, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/check_approval.py project/product-definition/request-form/state.json --revision 2 --manifest-digest 6b50eb33...2906, exit 0

@@ -1,0 +1,14 @@
+<SCRATCH>/r14
+pwd, 0
+ls tools/joeflow/scripts project/product-definition/request-form, 0
+grep projection/approve tools/joeflow/references/workflow-v0.2.0.md, 0
+sed -n 66,148p tools/joeflow/references/workflow-v0.2.0.md, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/approval_status.py project/product-definition/request-form/state.json, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec .../MASTER_PLANNING_SPEC.md --review .../planning-review-core.html, 1
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/build_approval_manifest.py project/product-definition/request-form/state.json, 0
+cat -n MASTER_PLANNING_SPEC.md planning-review-core.html, 0
+python -c (dump UNK-002/DEC-002/EVD-901/EVD-902/RULE-002/AC-002 from state.json), 0
+python -c (dump other objects from state.json), 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/update_projection.py .../state.json --spec .../MASTER_PLANNING_SPEC.md --review .../planning-review-core.html (dry-run), 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py .../state.json --spec .../MASTER_PLANNING_SPEC.md --review .../planning-review-core.html, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/check_approval.py .../state.json --revision 2 --manifest-digest 6b50eb33...2906, 0

@@ -1,0 +1,37 @@
+{
+  "identity": {
+    "revision": 2,
+    "definition_status": "READY_FOR_REVIEW",
+    "approval_status": "UNAPPROVED",
+    "approved_at": null,
+    "definition_digest": "70067b7e163e82909c491a095696086fa648da5caedaf9f035ae72813ca55182",
+    "manifest_digest": null,
+    "approved_revisions": [
+      1
+    ],
+    "revisions_without_own_approval": []
+  },
+  "compared_with_revision": 1,
+  "spec": {
+    "stale_identity": [],
+    "missing_added_records": [],
+    "changed_records_to_reread": [],
+    "retired_or_superseded_still_named": [],
+    "stale_title_revision": [
+      {
+        "code": "stale_spec_title_revision",
+        "line": 5,
+        "where": "heading",
+        "text": "> 승인 revision 1 기준으로 작성됨 (현재 rev 2 검토 중)",
+        "expected": 2,
+        "actual": 1,
+        "next_action": "line 5: if this line names the document's own revision (title, header), change revision 1 to 2 by hand; update_projection.py rewrites only the identity block and the 'REVIEW VIEW … revision N' form. If it truthfully states another revision (an earlier or the last approval), leave it and report a checker false positive"
+      }
+    ]
+  },
+  "review": {
+    "stale_identity": [],
+    "stale_title_revision": []
+  },
+  "ok": false
+}

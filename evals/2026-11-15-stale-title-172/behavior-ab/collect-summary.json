@@ -1,0 +1,500 @@
+{
+ "r01": {
+  "scene": 1,
+  "arm": "B",
+  "own_version": "1.7.2",
+  "versions_mentioned": [
+   "1.7.2"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/r01",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    0,
+    0
+   ],
+   "planning-review-core.html": [
+    2,
+    2
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r02": {
+  "scene": 1,
+  "arm": "A",
+  "own_version": "1.7.0",
+  "versions_mentioned": [
+   "1.7.0"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/r02",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    0,
+    0
+   ],
+   "planning-review-core.html": [
+    4,
+    4
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r03": {
+  "scene": 1,
+  "arm": "A",
+  "own_version": "1.7.0",
+  "versions_mentioned": [
+   "1.7.0"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/r03",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    0,
+    0
+   ],
+   "planning-review-core.html": [
+    2,
+    2
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r04": {
+  "scene": 1,
+  "arm": "B",
+  "own_version": "1.7.2",
+  "versions_mentioned": [
+   "1.7.2"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/r04",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    0,
+    0
+   ],
+   "planning-review-core.html": [
+    2,
+    2
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r05": {
+  "scene": 1,
+  "arm": "A",
+  "own_version": "1.7.0",
+  "versions_mentioned": [
+   "1.7.0"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "pwd -> <SCRATCH>/r05 (exit 0)",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    0,
+    0
+   ],
+   "planning-review-core.html": [
+    2,
+    2
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r06": {
+  "scene": 1,
+  "arm": "B",
+  "own_version": "1.7.2",
+  "versions_mentioned": [
+   "1.7.2"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/r06",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    0,
+    0
+   ],
+   "planning-review-core.html": [
+    2,
+    2
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r07": {
+  "scene": 1,
+  "arm": "A",
+  "own_version": "1.7.0",
+  "versions_mentioned": [
+   "1.7.0"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/r07",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    0,
+    0
+   ],
+   "planning-review-core.html": [
+    2,
+    2
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r08": {
+  "scene": 1,
+  "arm": "B",
+  "own_version": "1.7.2",
+  "versions_mentioned": [
+   "1.7.2"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [
+   "git log"
+  ],
+  "first_log_line": "<SCRATCH>/r08",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    0,
+    0
+   ],
+   "planning-review-core.html": [
+    2,
+    2
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r09": {
+  "scene": 2,
+  "arm": "B",
+  "own_version": "1.7.2",
+  "versions_mentioned": [
+   "1.7.2"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "pwd: <SCRATCH>/r09",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    1,
+    1
+   ],
+   "planning-review-core.html": [
+    0,
+    0
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> revision 2(승인 대기) 기준으로 작성됨. 마지막 승인은 revision 1.",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r10": {
+  "scene": 2,
+  "arm": "A",
+  "own_version": "1.7.1",
+  "versions_mentioned": [
+   "1.7.1"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/r10",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    2,
+    2
+   ],
+   "planning-review-core.html": [
+    0,
+    0
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> revision 2 기준으로 작성됨 (승인 대기; 이전 승인 이력은 아래 Approved identity 참조)",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r11": {
+  "scene": 2,
+  "arm": "A",
+  "own_version": "1.7.1",
+  "versions_mentioned": [
+   "1.7.1"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "pwd: <SCRATCH>/r11",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    3,
+    3
+   ],
+   "planning-review-core.html": [
+    3,
+    1
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> revision 2 기준으로 작성됨 (승인 대기; 이전 승인은 아래 identity 블록)",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r12": {
+  "scene": 2,
+  "arm": "A",
+  "own_version": "1.7.1",
+  "versions_mentioned": [
+   "1.7.1"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/r12",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    1,
+    1
+   ],
+   "planning-review-core.html": [
+    1,
+    1
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> 승인 대기 중인 revision 2 기준으로 작성됨 (마지막 승인 이력은 §9).",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r13": {
+  "scene": 2,
+  "arm": "B",
+  "own_version": "1.7.2",
+  "versions_mentioned": [
+   "1.7.2"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "pwd -> <SCRATCH>/r13 (exit 0)",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    1,
+    1
+   ],
+   "planning-review-core.html": [
+    0,
+    0
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> 이 문서는 승인 대기 중인 revision 2의 내용을 담는다. 마지막 승인은 revision 1이다.",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r14": {
+  "scene": 2,
+  "arm": "B",
+  "own_version": "1.7.2",
+  "versions_mentioned": [
+   "1.7.2"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/r14",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    1,
+    1
+   ],
+   "planning-review-core.html": [
+    0,
+    0
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> revision 2 기준으로 작성됨 (승인 대기 중이며, 마지막 승인은 revision 1)",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r15": {
+  "scene": 2,
+  "arm": "A",
+  "own_version": "1.7.1",
+  "versions_mentioned": [
+   "1.7.1"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/r15",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    1,
+    1
+   ],
+   "planning-review-core.html": [
+    0,
+    0
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> revision 2 기준으로 작성됨 (승인 대기 · 이전 승인은 아래 Approved identity 참고)",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ },
+ "r16": {
+  "scene": 2,
+  "arm": "B",
+  "own_version": "1.7.2",
+  "versions_mentioned": [
+   "1.7.2"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/r16",
+  "post_ok": true,
+  "post_title_findings": 0,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    1,
+    1
+   ],
+   "planning-review-core.html": [
+    0,
+    0
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> revision 2(승인 대기) 기준으로 작성됨. 마지막 승인은 revision 1.",
+  "title": "요청 폼 · 기획 검토 화면 revision 2",
+  "h1": "요청 폼 기획 검토 (revision 2)"
+ }
+}

@@ -1,0 +1,33 @@
+pwd: <SCRATCH>/r11
+ls tools/joeflow tools/joeflow/scripts project/product-definition/request-form, exit 0
+cat tools/joeflow/SKILL.md, exit 0
+grep projection/approve tools/joeflow/references/workflow-v0.2.0.md, exit 0
+sed -n 66,148p workflow-v0.2.0.md, exit 0
+wc/cat MASTER_PLANNING_SPEC.md planning-review-core.html, exit 0
+python inspect state.json records, exit 0
+python print evidence and approval_history, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/validate_state.py project/product-definition/request-form/state.json, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 1
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/update_projection.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/build_approval_manifest.py project/product-definition/request-form/state.json, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/approval_status.py project/product-definition/request-form/state.json, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/joeflow_version.py project/product-definition/request-form/state.json, exit 0
+python print goals/flows/screens/tasks from state.json, exit 0
+grep headings templates/master-planning-spec.md, exit 0
+python edit MASTER_PLANNING_SPEC.md and planning-review-core.html, exit 0
+python -m http.server 8765 --bind 127.0.0.1 --directory project/product-definition/request-form (background), exit pending
+curl -s http://127.0.0.1:8765/planning-review-core.html, exit 0
+python -m http.server 8766 (background, killed after render check), exit 0 (stopped)
+python add section scroll-margin-top to planning-review-core.html, exit 0
+python update render-verification line in planning-review-core.html, exit 0
+python -m http.server 8765 (background) stopped via TaskStop; curl returned 404 (wrong port/dir)
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 1
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/update_projection.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/validate_state.py project/product-definition/request-form/state.json, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/check_approval.py project/product-definition/request-form/state.json --revision 2 --manifest-digest 6b50eb339312a3ad65d6b1645a8769694e07db131843f962189b8d3115bf2906, exit 0
+sed fix header line 5 MASTER_PLANNING_SPEC.md, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec ... --review ..., exit 0
+git status/diff --stat, exit 0
+correction: previous 'git status/diff --stat' actually exit 128/129 (not a git repository)
+rm -f /tmp/o.txt (temp output file written outside r11 by mistake), exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/check_approval.py project/product-definition/request-form/state.json --revision 2 --manifest-digest 6b50eb33...2906, exit 0

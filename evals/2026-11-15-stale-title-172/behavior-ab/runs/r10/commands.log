@@ -1,0 +1,25 @@
+<SCRATCH>/r10
+pwd, 0
+grep workflow projection/approve refs, 0
+sed workflow lines 66-146, 0
+cat MASTER_PLANNING_SPEC.md, 0
+cat planning-review-core.html, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/validate_state.py project/product-definition/request-form/state.json, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/approval_status.py project/product-definition/request-form/state.json, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/joeflow_version.py project/product-definition/request-form/state.json, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, 1
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/build_approval_manifest.py project/product-definition/request-form/state.json, 0
+python inline: dump rev2 records from state.json, 0
+grep relayed in references, 0
+python inline: dump flows/screens/tasks from state.json, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/update_projection.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, 1
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/preflight_state_candidate.py project/product-definition/request-form/state.json, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/validate_closure.py project/product-definition/request-form/state.json, 1
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py (rerun after first edit), 1
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/preflight_state_candidate.py project/product-definition/request-form/state.json, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, 0
+cat commands.log, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/validate_closure.py project/product-definition/request-form/state.json, 1
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/check_approval.py project/product-definition/request-form/state.json --revision 2 --manifest-digest 6b50eb339312a3ad65d6b1645a8769694e07db131843f962189b8d3115bf2906, 0
+git status --short, 128
