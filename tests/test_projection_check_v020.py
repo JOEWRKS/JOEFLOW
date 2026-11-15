@@ -180,5 +180,70 @@ class StaleTitleRevisionTest(unittest.TestCase):
                          "stale_review_title_revision")
 
 
+class LastApprovedSentenceTest(unittest.TestCase):
+    """1.7.2: a header sentence that truthfully names the last approved revision is not a stale title."""
+
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        _, approved = _approved_rev1(self.directory.name)
+        self.state = copy.deepcopy(approved)  # revision 2 awaiting approval; revision 1 is the last approved
+        self.state["project"]["definition_revision"] = 2
+        self.state["approval"]["status"] = "UNAPPROVED"
+        self.spec_body = "\n## 승인 식별\n\n" + _spec_for(self.state)
+
+    def _spec_findings(self, head):
+        return check(self.state, head + "\n" + self.spec_body, None, TYPES)["spec"]["stale_title_revision"]
+
+    def _review_findings(self, head, title="요청 폼 · Planning Review"):
+        return check(self.state, self.spec_body, _review(head, title=title), TYPES)["review"]["stale_title_revision"]
+
+    def test_korean_last_approved_sentences_from_the_behavior_runs_pass(self):
+        for line in ("> 현재 revision 2는 **승인 대기(READY_FOR_REVIEW / UNAPPROVED)** 입니다. 마지막 승인은 revision 1입니다.",
+                     "> Revision 2는 **아직 승인되지 않았다**(READY_FOR_REVIEW · UNAPPROVED).\n> 마지막으로 승인된 것은 revision 1이다.",
+                     "- 승인 상태: revision 2 READY_FOR_REVIEW / UNAPPROVED. 마지막 승인 revision 1.",
+                     "- 승인 상태: revision 2 UNAPPROVED. revision 1만 승인됨.",
+                     "- 승인: rev 2는 UNAPPROVED. rev 1까지 승인됨. 최근 승인된 판은 rev 1, 현재 승인 revision `1`."):
+            with self.subTest(line=line):
+                self.assertEqual(self._spec_findings("# MASTER PLANNING SPEC — 요청 폼\n\n" + line), [])
+                self.assertEqual(self._review_findings(f"<h1>요청 폼</h1>\n<p>{line}</p>"), [])
+
+    def test_english_last_approved_sentences_pass(self):
+        for line in ("Revision 2 awaits approval; last approved: revision 1.", "The latest approval was rev 1.",
+                     "Currently approved revision 1 stays in force.", "Most recent approval: Rev. 1",
+                     "Revision 1 is the last approved one.", "rev <code>1</code> (last approved)"):
+            with self.subTest(line=line):
+                self.assertEqual(self._review_findings(f"<h1>Request form</h1>\n<p>{line}</p>"), [])
+
+    def test_stale_hand_written_titles_naming_the_last_approved_number_are_still_reported(self):
+        for title, head in (("요청 폼 · 기획 검토 화면 revision 1", "<h1>요청 폼</h1>"),
+                            ("요청 폼", "<h1>승인 검토 revision 1</h1>"),
+                            ("요청 폼", "<h1>승인된 revision 1 기획서</h1>"),
+                            ("요청 폼", "<p>Approved: rev 1</p>"),
+                            ("요청 폼", "<h1>Spec revision 1 (approved)</h1>"),
+                            ("요청 폼", "<h1>검토 revision 1 승인 대기</h1>")):
+            with self.subTest(title=title, head=head):
+                findings = self._review_findings(head, title=title)
+                self.assertEqual([(x["expected"], x["actual"]) for x in findings], [(2, 1)])
+        self.assertEqual([x["actual"] for x in self._spec_findings("# MASTER PLANNING SPEC — 요청 폼 revision 1")], [1])
+
+    def test_approval_sentence_with_a_number_that_was_never_last_approved_is_reported(self):
+        findings = self._spec_findings("# MASTER PLANNING SPEC\n\n> 마지막 승인은 revision 0입니다.")
+        self.assertEqual([(x["line"], x["actual"]) for x in findings], [(3, 0)])
+        self.assertIn("change revision 0 to 2 by hand", findings[0]["next_action"])
+        self.assertIn("leave it and report a checker false positive", findings[0]["next_action"])
+
+    def test_templates_refreshed_for_revision_2_pass(self):
+        from update_projection import facts, refresh
+        f = facts(self.state)
+        review_template = (TEMPLATES / "planning-review-core.html").read_text(encoding="utf-8")
+        review, _ = refresh(review_template.replace("REVIEW VIEW · {{APPROVAL_STATUS}}",
+                                                    "REVIEW VIEW · {{APPROVAL_STATUS}} · revision 1"),
+                            f, self.state, html=True)
+        spec, _ = refresh((TEMPLATES / "master-planning-spec.md").read_text(encoding="utf-8"), f, self.state, html=False)
+        report = check(self.state, spec, review, TYPES)
+        self.assertEqual((report["review"]["stale_title_revision"], report["spec"]["stale_title_revision"]), ([], []))
+
+
 if __name__ == "__main__":
     unittest.main()

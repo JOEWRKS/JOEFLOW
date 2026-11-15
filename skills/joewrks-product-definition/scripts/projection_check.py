@@ -65,6 +65,17 @@ HEAD_REVISION = re.compile(
     r"(?i)(?<![\w-])(?:revision|rev\.?|리비전|개정판?)\s*(?:[:#]\s*)?(?:<code>|`)?\s*(\d+)(?!\d)"
     r"(?:\s*(?:</code>|`))?(?:\s*(?:→|->|–|~)\s*(?:rev(?:ision)?\.?\s*)?(\d+)(?!\d))?")
 EARLIER = re.compile(r"(?i)(?:이전|직전|previous|prior|since|from)(?:\s*승인|\s+approvals?|\s+approved)?\W{0,3}$")
+# 1.7.2: a sentence stating which revision was last approved ("마지막 승인은 revision 1", "마지막으로 승인된 것은
+# revision 1", "revision 1만 승인됨", "last approved: rev 1") is a fact, not the document's name. It is skipped only
+# when it names the state's last approved revision; a bare "승인 revision 1" / "Approved: rev 1" / "revision 1
+# (approved)" can be a stale title and is still read.
+LAST_APPROVED_BEFORE = re.compile(
+    r"(?i)(?:(?:마지막|최근|최종|현재)(?:으로|에)?\s*승인(?:된|됨|한|받은)?(?:\s*(?:것|판|버전))?(?:은|는|이|가)?"
+    r"|승인(?:된|받은)\s*(?:것|판|버전)(?:은|는|이|가)?"
+    r"|(?:last|latest|most\s+recent(?:ly)?|currently)\s+(?:approved|approval)(?:\s+(?:is|was|at|in))?)\W{0,3}$")
+LAST_APPROVED_AFTER = re.compile(
+    r"(?i)^\s*(?:</code>|`)?\s*(?:(?:만|까지)\s*승인|(?:이|가)\s*(?:마지막|최근|최종)(?:으로)?\s*승인"
+    r"|\W{0,3}(?:is|was)\s+(?:the\s+)?(?:last|latest|most\s+recent(?:ly)?)\s+approv|\W{0,3}\(\s*(?:last|latest)\s+approv)")
 COMMENT_OR_BLOCK = re.compile(r"<!-- JOEFLOW:([A-Z-]+):BEGIN -->.*?<!-- JOEFLOW:\1:END -->|<!--.*?-->", re.S)
 
 
@@ -96,7 +107,8 @@ def _head_spans(text: str, html: bool) -> list[tuple[str, int, int]]:
     return spans
 
 
-def _title_findings(text: str, revision: int, html: bool, code: str) -> list[dict[str, object]]:
+def _title_findings(text: str, revision: int, html: bool, code: str,
+                    last_approved: int | None = None) -> list[dict[str, object]]:
     """Revision numbers in the title/header area that differ from the state's definition_revision."""
     visible = COMMENT_OR_BLOCK.sub(_blank, text)
     findings = []
@@ -106,6 +118,10 @@ def _title_findings(text: str, revision: int, html: bool, code: str) -> list[dic
                 continue
             found = int(match.group(2) or match.group(1))
             if found == revision:
+                continue
+            if found == last_approved and (
+                    LAST_APPROVED_BEFORE.search(visible[max(0, match.start() - 30):match.start()])
+                    or LAST_APPROVED_AFTER.search(visible[match.end():match.end() + 30])):
                 continue
             line_no = visible.count("\n", 0, match.start()) + 1
             line = text.split("\n")[line_no - 1]
@@ -117,8 +133,10 @@ def _title_findings(text: str, revision: int, html: bool, code: str) -> list[dic
                 "text": shown[:160],
                 "expected": revision,
                 "actual": found,
-                "next_action": (f"line {line_no}: change revision {found} to {revision} by hand; update_projection.py "
-                                "rewrites only the identity block and the 'REVIEW VIEW … revision N' form"),
+                "next_action": (f"line {line_no}: if this line names the document's own revision (title, header), "
+                                f"change revision {found} to {revision} by hand; update_projection.py rewrites only the "
+                                "identity block and the 'REVIEW VIEW … revision N' form. If it truthfully states another "
+                                "revision (an earlier or the last approval), leave it and report a checker false positive"),
             })
     return findings
 
@@ -126,6 +144,7 @@ def _title_findings(text: str, revision: int, html: bool, code: str) -> list[dic
 def check(state: dict[str, object], spec_text: str, review_text: str | None,
           required_types: set[str]) -> dict[str, object]:
     identity = _identity(state)
+    last_approved = approval_status(state)["last_approved_revision"]
     manifest = compute_approval_manifest(state)
     added = [row for row in manifest["added"] if row["type"] in required_types]
     report: dict[str, object] = {
@@ -138,14 +157,15 @@ def check(state: dict[str, object], spec_text: str, review_text: str | None,
             "retired_or_superseded_still_named": [
                 row["id"] for row in manifest["superseded"] + manifest["retired"] if _mentions(spec_text, row["id"])
             ],
-            "stale_title_revision": _title_findings(spec_text, identity["revision"], False, "stale_spec_title_revision"),
+            "stale_title_revision": _title_findings(spec_text, identity["revision"], False, "stale_spec_title_revision",
+                                                    last_approved),
         },
     }
     if review_text is not None:
         report["review"] = {
             "stale_identity": _identity_findings(review_text, identity),
             "stale_title_revision": _title_findings(review_text, identity["revision"], True,
-                                                    "stale_review_title_revision"),
+                                                    "stale_review_title_revision", last_approved),
         }
     report["ok"] = not (
         report["spec"]["stale_identity"] or report["spec"]["missing_added_records"]
