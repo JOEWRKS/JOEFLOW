@@ -2,9 +2,9 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
-## 1.7.2 — 후보 (미게시)
+## 1.7.2 — 2026-11-15
 
-게시 전 후보입니다. VERSION은 1.7.1 그대로이고 태그·Release·개인 설치는 하지 않았습니다. 재현·범위·한계는 [보고서](evals/2026-11-15-stale-title-172/report.md).
+게시: 사용자 승인("게시", 2026-11-15)으로 태그 `v1.7.2`와 GitHub Release를 만듭니다(커밋·설치 기록은 게시 뒤 문서 커밋에서 채움). 재현·범위·한계는 [보고서](evals/2026-11-15-stale-title-172/report.md), 릴리스 노트는 [release-notes-v1.7.2.md](evals/2026-11-15-stale-title-172/release-notes-v1.7.2.md).
 
 - `projection_check.py`: 머리 영역에서 마지막 승인 revision을 사실대로 적은 문장("마지막 승인은 revision 1입니다", "마지막으로 승인된 것은 revision 1이다", "revision 1만 승인됨", "last approved: rev 1" 등)을 더는 `stale_*_title_revision`으로 잡지 않습니다. 숫자가 state의 마지막 승인 revision과 같을 때만 건너뛰고, 꾸밈말 없는 "승인 revision 1"·"Approved: rev 1"·"revision 1 (approved)"는 낡은 제목일 수 있어 그대로 검출합니다. 1.7.1 행동 시험의 오탐 2건(r1·r6)이 사라졌습니다.
 - finding의 `next_action`에 "그 줄이 다른 revision(이전·마지막 승인)을 사실대로 적은 문장이면 고치지 말고 검사기 오탐으로 보고하라"는 문장을 더했습니다. 기존 "change revision X to Y by hand"는 그대로 있습니다.
