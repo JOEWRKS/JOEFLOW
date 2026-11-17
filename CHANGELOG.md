@@ -9,6 +9,7 @@
 - `projection_check.py`: 머리 영역에서 마지막 승인 revision을 사실대로 적은 문장("마지막 승인은 revision 1입니다", "마지막으로 승인된 것은 revision 1이다", "revision 1만 승인됨", "last approved: rev 1" 등)을 더는 `stale_*_title_revision`으로 잡지 않습니다. 숫자가 state의 마지막 승인 revision과 같을 때만 건너뛰고, 꾸밈말 없는 "승인 revision 1"·"Approved: rev 1"·"revision 1 (approved)"는 낡은 제목일 수 있어 그대로 검출합니다. 1.7.1 행동 시험의 오탐 2건(r1·r6)이 사라졌습니다.
 - finding의 `next_action`에 "그 줄이 다른 revision(이전·마지막 승인)을 사실대로 적은 문장이면 고치지 말고 검사기 오탐으로 보고하라"는 문장을 더했습니다. 기존 "change revision X to Y by hand"는 그대로 있습니다.
 - 행동 시험(2026-11-15, Opus 16회 + 블라인드 채점 2회, 저장소 밖 작업 폴더, 버전 누출 0/16, [보고서](evals/2026-11-15-stale-title-172/behavior-ab/report.md)): 낡은 손제목은 1.7.0 4/4(스스로)와 1.7.2 4/4(finding대로)가 고쳤습니다. 머리말 "승인 revision 1 기준…"을 숫자만 2로 바꿔 틀리게 만든 run은 1.7.1·1.7.2 모두 0/4였습니다. 1.7.2는 4/4가 "마지막 승인은 revision 1" 사실을 남겼고, 1.7.1은 4/4가 그 사실을 뺐습니다(3/4은 남겼다가 다시 걸린 뒤). 8/8이 그 문장을 낡은 문장으로 읽어 next_action 안전 문장은 시험되지 않았습니다(추가 필요).
+- 안전 문장 행동 시험(2026-11-17, Opus 8회 + 블라인드 채점 1회, 버전 누출 0/8, [보고서](evals/2026-11-17-safety-sentence-172/behavior-ab/report.md)): 두 판 모두 지적하는 사실 머리말 `> 승인: revision 1 (dd1e837b…)`을 그대로 두고 오탐으로 보고한 run은 1.7.2 1/4, 1.7.1 0/4로 사전 기준상 "차이 없음"입니다. 숫자를 2로 바꾼 run은 0/8입니다. 1.7.2 3/4는 "마지막 승인은 revision 1"로 다시 써 사실을 남겼고, 1.7.1 4/4는 사실을 빼고 identity 블록 참조로 돌렸습니다. next_action과 workflow 설명이 함께 바뀌어 있어 둘의 몫은 나누지 못했습니다.
 
 ## 1.7.1 — 2026-11-15
 
