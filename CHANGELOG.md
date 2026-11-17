@@ -2,6 +2,12 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
+## 1.7.3 — 후보 (미게시)
+
+게시 전 후보입니다. VERSION은 1.7.2 그대로이고 태그·Release·개인 설치는 하지 않았습니다. 변경·재검사·한계는 [보고서](evals/2026-11-17-safety-sentence-172/report-173.md), 설치 스크립트는 [install_1_7_3.py](evals/2026-11-17-safety-sentence-172/install_1_7_3.py)(실행 전).
+
+- `projection_check.py`: 머리 영역의 꾸밈말 없는 승인 표기(`` > 승인: revision 1 (`dd1e837b…`) ``)를, 숫자가 state의 마지막 승인 revision과 같고 같은 줄(HTML은 같은 블록 요소)에 그 승인의 `approval_history[].manifest_digest` 앞 8자 이상이 함께 적혀 있을 때 더는 `stale_*_title_revision`으로 잡지 않습니다. digest가 없거나 다른 것이거나 7자 이하이면, 숫자가 마지막 승인과 다르면, 같은 줄에 현재 revision도 적혀 있으면 지금처럼 검출합니다. 2026-11-17 안전 문장 시험 고정물의 5행 오탐이 사라지고 다른 결과는 같습니다. `next_action` 문구는 그대로입니다. 행동 효과는 시험하지 않았습니다.
+
 ## 1.7.2 — 2026-11-15
 
 게시: 사용자 승인("게시", 2026-11-15)으로 태그 `v1.7.2`(커밋 `6a74446a4e55d265cb385b4a25b6e617c13eadce`)과 [GitHub Release](https://github.com/JOEWRKS/JOEFLOW/releases/tag/v1.7.2)를 만들었습니다(Latest). 이후 커밋은 문서 기록뿐이며 태그 대상은 그대로 둡니다. 개인 설치본에는 같은 날 1.7.2를 반영했습니다(experience pass는 여전히 제외, `install_1_7_2.py`, [설치 기록](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)); Claude Code용 클론도 같은 커밋으로 올렸습니다. 재현·범위·한계는 [보고서](evals/2026-11-15-stale-title-172/report.md), 릴리스 노트는 [release-notes-v1.7.2.md](evals/2026-11-15-stale-title-172/release-notes-v1.7.2.md).

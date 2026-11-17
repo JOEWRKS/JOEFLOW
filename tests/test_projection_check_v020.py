@@ -245,5 +245,77 @@ class LastApprovedSentenceTest(unittest.TestCase):
         self.assertEqual((report["review"]["stale_title_revision"], report["spec"]["stale_title_revision"]), ([], []))
 
 
+class LastApprovedDigestLineTest(unittest.TestCase):
+    """1.7.3: a bare approval line that also carries the last approval's manifest digest is a fact, not a stale title."""
+
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        _, approved = _approved_rev1(self.directory.name)
+        self.state = copy.deepcopy(approved)  # revision 2 awaiting approval; revision 1 is the last approved
+        self.state["project"]["definition_revision"] = 2
+        self.state["approval"]["status"] = "UNAPPROVED"
+        self.digest = self.state["approval_history"][-1]["manifest_digest"]
+        self.spec_body = "\n## 승인 식별\n\n" + _spec_for(self.state)
+
+    def _spec_findings(self, head, state=None):
+        return check(state or self.state, head + "\n" + self.spec_body, None, TYPES)["spec"]["stale_title_revision"]
+
+    def _review_findings(self, head, title="요청 폼 · Planning Review", state=None):
+        return check(state or self.state, self.spec_body, _review(head, title=title), TYPES)["review"]["stale_title_revision"]
+
+    def test_spec_quote_line_with_the_last_approval_digest_passes(self):
+        # The line every 2026-11-17 behavior run was shown, plus a full-length and an upper-case spelling.
+        for line in (f"> 승인: revision 1 (`{self.digest[:8]}…`)", f"> Approved: rev 1 · {self.digest}",
+                     f"> 승인 revision 1 ({self.digest[:12].upper()})"):
+            with self.subTest(line=line):
+                spec = f"# MASTER PLANNING SPEC — 요청 폼\n\n> revision 2 (READY_FOR_REVIEW)\n{line}"
+                self.assertEqual(self._spec_findings(spec), [])
+
+    def test_review_header_element_with_the_last_approval_digest_passes(self):
+        head = (f"<h1>요청 폼 기획 검토 (revision 2)</h1>\n"
+                f"<p class=\"note\">승인: revision 1\n(<code>{self.digest[:8]}</code>…)</p>")
+        self.assertEqual(self._review_findings(head), [])
+
+    def test_approval_line_without_a_digest_is_reported(self):
+        findings = self._spec_findings("# MASTER PLANNING SPEC — 요청 폼\n\n> 승인: revision 1")
+        self.assertEqual([(x["line"], x["expected"], x["actual"]) for x in findings], [(3, 2, 1)])
+
+    def test_approval_line_with_a_digest_of_another_revision_is_reported(self):
+        other = definition_digest(self.state)  # revision 2's definition digest, not revision 1's manifest digest
+        self.assertFalse(self.digest.startswith(other[:8]))
+        findings = self._spec_findings(f"# MASTER PLANNING SPEC — 요청 폼\n\n> 승인: revision 1 (`{other[:8]}…`)")
+        self.assertEqual([x["actual"] for x in findings], [1])
+        # A 7-character prefix is too short to count.
+        findings = self._spec_findings(f"# MASTER PLANNING SPEC — 요청 폼\n\n> 승인: revision 1 (`{self.digest[:7]}…`)")
+        self.assertEqual([x["actual"] for x in findings], [1])
+
+    def test_digest_line_naming_a_number_other_than_the_last_approval_is_reported(self):
+        findings = self._spec_findings(f"# MASTER PLANNING SPEC — 요청 폼\n\n> 승인: revision 0 (`{self.digest[:8]}…`)")
+        self.assertEqual([x["actual"] for x in findings], [0])
+        # No approval history: no digest to compare with, nothing is excused.
+        state = copy.deepcopy(self.state)
+        state["approval_history"] = []
+        findings = self._spec_findings(f"# MASTER PLANNING SPEC — 요청 폼\n\n> 승인: revision 1 (`{self.digest[:8]}…`)", state)
+        self.assertEqual([x["actual"] for x in findings], [1])
+
+    def test_stale_title_next_to_a_digest_line_is_still_reported(self):
+        head = f"<h1>요청 폼 기획 검토</h1>\n<p>승인: revision 1 (<code>{self.digest[:8]}</code>)</p>"
+        findings = self._review_findings(head, title="요청 폼 · 기획 검토 화면 revision 1")
+        self.assertEqual([(x["where"], x["actual"]) for x in findings], [("<title>", 1)])
+        # The digest sits in another element than the stale header number.
+        head = f"<h1>요청 폼 기획 검토 revision 1</h1>\n<p>manifest <code>{self.digest[:8]}</code></p>"
+        self.assertEqual([(x["where"], x["actual"]) for x in self._review_findings(head)], [("header", 1)])
+
+    def test_digest_line_that_also_names_the_current_revision_is_reported(self):
+        # Either number could be the document's name; the plain sentence form ("마지막 승인은 …") still passes (1.7.2).
+        findings = self._spec_findings(
+            f"# MASTER PLANNING SPEC — 요청 폼\n\n> revision 2 초안 · 승인 revision 1 (`{self.digest[:8]}…`)")
+        self.assertEqual([x["actual"] for x in findings], [1])
+        self.assertEqual(self._spec_findings(
+            f"# MASTER PLANNING SPEC — 요청 폼\n\n> 마지막 승인은 revision 1 (`{self.digest[:8]}…`)이고, "
+            "이 문서의 revision 2는 아직 승인되지 않았다."), [])
+
+
 if __name__ == "__main__":
     unittest.main()

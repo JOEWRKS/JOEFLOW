@@ -67,8 +67,11 @@ HEAD_REVISION = re.compile(
 EARLIER = re.compile(r"(?i)(?:이전|직전|previous|prior|since|from)(?:\s*승인|\s+approvals?|\s+approved)?\W{0,3}$")
 # 1.7.2: a sentence stating which revision was last approved ("마지막 승인은 revision 1", "마지막으로 승인된 것은
 # revision 1", "revision 1만 승인됨", "last approved: rev 1") is a fact, not the document's name. It is skipped only
-# when it names the state's last approved revision; a bare "승인 revision 1" / "Approved: rev 1" / "revision 1
-# (approved)" can be a stale title and is still read.
+# when it names the state's last approved revision. A bare "승인 revision 1" / "Approved: rev 1" / "revision 1
+# (approved)" can be a stale title and is still read, unless (1.7.3) the same line (HTML: the same block element's
+# text) also carries the first 8+ hex characters of that approval's manifest_digest from approval_history, as in
+# "> 승인: revision 1 (`dd1e837b…`)". A digest of another revision, no digest, or the current revision named on the
+# same line (then either number could be the document's name) keeps the finding.
 LAST_APPROVED_BEFORE = re.compile(
     r"(?i)(?:(?:마지막|최근|최종|현재)(?:으로|에)?\s*승인(?:된|됨|한|받은)?(?:\s*(?:것|판|버전))?(?:은|는|이|가)?"
     r"|승인(?:된|받은)\s*(?:것|판|버전)(?:은|는|이|가)?"
@@ -76,6 +79,8 @@ LAST_APPROVED_BEFORE = re.compile(
 LAST_APPROVED_AFTER = re.compile(
     r"(?i)^\s*(?:</code>|`)?\s*(?:(?:만|까지)\s*승인|(?:이|가)\s*(?:마지막|최근|최종)(?:으로)?\s*승인"
     r"|\W{0,3}(?:is|was)\s+(?:the\s+)?(?:last|latest|most\s+recent(?:ly)?)\s+approv|\W{0,3}\(\s*(?:last|latest)\s+approv)")
+HEX_RUN = re.compile(r"(?i)(?<![0-9a-f])[0-9a-f]{%d,64}(?![0-9a-f])" % SHORT)
+BLOCK_TAG = re.compile(r"(?i)</?(?:p|li|h[1-6]|div|td|th|dd|dt|blockquote|figcaption|caption|header|section|nav|ul|ol|main|body|tr|table)\b[^>]*>")
 COMMENT_OR_BLOCK = re.compile(r"<!-- JOEFLOW:([A-Z-]+):BEGIN -->.*?<!-- JOEFLOW:\1:END -->|<!--.*?-->", re.S)
 
 
@@ -107,8 +112,37 @@ def _head_spans(text: str, html: bool) -> list[tuple[str, int, int]]:
     return spans
 
 
+def _same_line(visible: str, match: re.Match, start: int, end: int, html: bool) -> tuple[int, int]:
+    """The text a reader takes together with the match: its Markdown line, or in HTML the run between the nearest
+    block-level tags around it (inline <code>, <span> stay inside), never beyond the head span."""
+    if not html:
+        left = visible.rfind("\n", start, match.start())
+        right = visible.find("\n", match.end(), end)
+        return (left + 1 if left != -1 else start), (right if right != -1 else end)
+    left = start
+    for tag in BLOCK_TAG.finditer(visible, start, match.start()):
+        left = tag.end()
+    after = BLOCK_TAG.search(visible, match.end(), end)
+    return left, (after.start() if after else end)
+
+
+def _carries_approval_digest(visible: str, match: re.Match, start: int, end: int, html: bool,
+                             revision: int, digest: str | None) -> bool:
+    """1.7.3: the line names the last approved revision together with that approval's manifest digest
+    (8+ leading hex characters, any case, `…` or <code> around it), and does not also name the current revision."""
+    if not digest:
+        return False
+    left, right = _same_line(visible, match, start, end, html)
+    segment = visible[left:right]
+    if any(int(other.group(2) or other.group(1)) == revision for other in HEAD_REVISION.finditer(segment)):
+        return False
+    plain = re.sub(r"<[^>]+>", " ", segment) if html else segment
+    return any(digest.lower().startswith(run.group(0).lower()) for run in HEX_RUN.finditer(plain))
+
+
 def _title_findings(text: str, revision: int, html: bool, code: str,
-                    last_approved: int | None = None) -> list[dict[str, object]]:
+                    last_approved: int | None = None,
+                    last_approved_digest: str | None = None) -> list[dict[str, object]]:
     """Revision numbers in the title/header area that differ from the state's definition_revision."""
     visible = COMMENT_OR_BLOCK.sub(_blank, text)
     findings = []
@@ -121,7 +155,8 @@ def _title_findings(text: str, revision: int, html: bool, code: str,
                 continue
             if found == last_approved and (
                     LAST_APPROVED_BEFORE.search(visible[max(0, match.start() - 30):match.start()])
-                    or LAST_APPROVED_AFTER.search(visible[match.end():match.end() + 30])):
+                    or LAST_APPROVED_AFTER.search(visible[match.end():match.end() + 30])
+                    or _carries_approval_digest(visible, match, start, end, html, revision, last_approved_digest)):
                 continue
             line_no = visible.count("\n", 0, match.start()) + 1
             line = text.split("\n")[line_no - 1]
@@ -141,10 +176,20 @@ def _title_findings(text: str, revision: int, html: bool, code: str,
     return findings
 
 
+def _approval_digest(state: dict[str, object], revision: int | None) -> str | None:
+    """manifest_digest of the approval_history entry for that revision (the last one if repeated), else None."""
+    history = state.get("approval_history") if isinstance(state.get("approval_history"), list) else []
+    digests = [entry.get("manifest_digest") for entry in history
+               if isinstance(entry, dict) and revision is not None and entry.get("revision") == revision]
+    digest = digests[-1] if digests else None
+    return digest if isinstance(digest, str) and len(digest) >= SHORT else None
+
+
 def check(state: dict[str, object], spec_text: str, review_text: str | None,
           required_types: set[str]) -> dict[str, object]:
     identity = _identity(state)
     last_approved = approval_status(state)["last_approved_revision"]
+    last_approved_digest = _approval_digest(state, last_approved)
     manifest = compute_approval_manifest(state)
     added = [row for row in manifest["added"] if row["type"] in required_types]
     report: dict[str, object] = {
@@ -158,14 +203,15 @@ def check(state: dict[str, object], spec_text: str, review_text: str | None,
                 row["id"] for row in manifest["superseded"] + manifest["retired"] if _mentions(spec_text, row["id"])
             ],
             "stale_title_revision": _title_findings(spec_text, identity["revision"], False, "stale_spec_title_revision",
-                                                    last_approved),
+                                                    last_approved, last_approved_digest),
         },
     }
     if review_text is not None:
         report["review"] = {
             "stale_identity": _identity_findings(review_text, identity),
             "stale_title_revision": _title_findings(review_text, identity["revision"], True,
-                                                    "stale_review_title_revision", last_approved),
+                                                    "stale_review_title_revision", last_approved,
+                                                    last_approved_digest),
         }
     report["ok"] = not (
         report["spec"]["stale_identity"] or report["spec"]["missing_added_records"]
