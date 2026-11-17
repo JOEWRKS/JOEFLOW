@@ -1,0 +1,14 @@
+--- orig/MASTER_PLANNING_SPEC.md
++++ after/MASTER_PLANNING_SPEC.md
+@@ -4,3 +4,3 @@
+ > Canonical authority remains `product-definition/request-form/state.json`.
+-> 승인: revision 1 (`dd1e837b…`)
++> 이 revision은 아직 승인되지 않았다. 이전 승인 이력은 아래 Approved identity 블록의 '이전 승인' 줄을 따른다.
+ 
+--- orig/planning-review-core.html
++++ after/planning-review-core.html
+@@ -112,3 +112,3 @@
+ <li>Master: <a href="MASTER_PLANNING_SPEC.md">MASTER_PLANNING_SPEC.md</a></li>
+-<li>Render verification: <code>NOT_VERIFIED</code> (브라우저 렌더·클릭을 관찰하지 못함; 정적 구조 점검만 수행)</li>
++<li>Render verification: 데스크톱 폭(약 800px) 정적 렌더 관찰 — 본문 텍스트·IA 도식 읽힘, 잘림·가로 넘침 없음. 내부 이동 링크 클릭과 좁은 화면(모바일) 렌더는 <code>NOT_VERIFIED</code> (미리보기가 정적 스냅숏이라 링크 이동을 관찰하지 못함)</li>
+ </ul>

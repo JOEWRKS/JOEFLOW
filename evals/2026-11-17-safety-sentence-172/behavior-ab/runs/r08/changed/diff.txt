@@ -1,0 +1,16 @@
+--- orig/MASTER_PLANNING_SPEC.md
++++ after/MASTER_PLANNING_SPEC.md
+@@ -4,3 +4,3 @@
+ > Canonical authority remains `product-definition/request-form/state.json`.
+-> 승인: revision 1 (`dd1e837b…`)
++> 승인 상태: revision 2 승인 대기 (UNAPPROVED). 이전 승인 기록은 아래 identity 블록에 있다.
+ 
+--- orig/planning-review-core.html
++++ after/planning-review-core.html
+@@ -111,4 +111,5 @@
+ <!-- JOEFLOW:IDENTITY:END -->
++<li>승인 시 확인 필요: <code>DEC-002</code> 글자 수 '항상 표시'(BELOW)가 의도와 맞는지 — 전달받은 원문은 위치·표시 시점을 고르지 않았습니다(<a href="#policies">정책과 제한</a> 참고).</li>
+ <li>Master: <a href="MASTER_PLANNING_SPEC.md">MASTER_PLANNING_SPEC.md</a></li>
+-<li>Render verification: <code>NOT_VERIFIED</code> (브라우저 렌더·클릭을 관찰하지 못함; 정적 구조 점검만 수행)</li>
++<li>Render verification: 렌더 관찰됨 (2026-11-17, 데스크톱 폭과 375px 모바일 폭: 본문 판독 가능, 페이지 가로 넘침 없음, IA 다이어그램은 칸 안에서 가로 스크롤). 내부 링크 클릭 이동은 <code>NOT_VERIFIED</code> (링크 대상 존재만 확인).</li>
+ </ul>

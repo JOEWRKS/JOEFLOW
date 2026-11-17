@@ -1,0 +1,242 @@
+{
+ "r01": {
+  "arm": "A",
+  "own_version": "1.7.1",
+  "versions_mentioned": [
+   "1.7.1"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "pwd: <SCRATCH>/runs/r01",
+  "post_ok": true,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    1,
+    1
+   ],
+   "planning-review-core.html": [
+    1,
+    1
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> 이 revision은 아직 승인되지 않았다. 이전 승인 이력은 아래 Approved identity 블록의 '이전 승인' 줄을 따른다.",
+  "s2a_machine": "e_deleted",
+  "fp_word_in_message": false,
+  "ready_digest_reported": true
+ },
+ "r02": {
+  "arm": "B",
+  "own_version": "1.7.2",
+  "versions_mentioned": [
+   "1.7.2"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/runs/r02",
+  "post_ok": true,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    3,
+    3
+   ],
+   "planning-review-core.html": [
+    2,
+    1
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> 마지막 승인은 revision 1 (`dd1e837b…`)이고, 이 문서의 revision 2는 아직 승인되지 않았다.",
+  "s2a_machine": "d_rewritten_keeps_1",
+  "fp_word_in_message": false,
+  "ready_digest_reported": true
+ },
+ "r03": {
+  "arm": "A",
+  "own_version": "1.7.1",
+  "versions_mentioned": [
+   "1.7.1"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "pwd => <SCRATCH>/runs/r03",
+  "post_ok": true,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    2,
+    2
+   ],
+   "planning-review-core.html": [
+    3,
+    2
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> 승인 상태: 현재 revision은 승인 대기. 이전 승인 기록은 아래 identity 블록에 있다.",
+  "s2a_machine": "e_deleted",
+  "fp_word_in_message": false,
+  "ready_digest_reported": true
+ },
+ "r04": {
+  "arm": "B",
+  "own_version": "1.7.2",
+  "versions_mentioned": [
+   "1.7.2"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/runs/r04",
+  "post_ok": true,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    2,
+    2
+   ],
+   "planning-review-core.html": [
+    2,
+    1
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> 마지막 승인은 revision 1 (`dd1e837b…`). revision 2는 아직 승인되지 않았다.",
+  "s2a_machine": "d_rewritten_keeps_1",
+  "fp_word_in_message": false,
+  "ready_digest_reported": true
+ },
+ "r05": {
+  "arm": "A",
+  "own_version": "1.7.1",
+  "versions_mentioned": [
+   "1.7.1"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/runs/r05",
+  "post_ok": true,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    1,
+    1
+   ],
+   "planning-review-core.html": [
+    1,
+    1
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> 승인 상태: revision 2 승인 대기 (이전 승인 기록은 아래 Approved identity 블록 참조)",
+  "s2a_machine": "e_deleted",
+  "fp_word_in_message": false,
+  "ready_digest_reported": true
+ },
+ "r06": {
+  "arm": "B",
+  "own_version": "1.7.2",
+  "versions_mentioned": [
+   "1.7.2"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/runs/r06",
+  "post_ok": false,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    0,
+    0
+   ],
+   "planning-review-core.html": [
+    1,
+    1
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> 승인: revision 1 (`dd1e837b…`)",
+  "s2a_machine": "b_kept_reported_fp",
+  "fp_word_in_message": true,
+  "ready_digest_reported": true
+ },
+ "r07": {
+  "arm": "B",
+  "own_version": "1.7.2",
+  "versions_mentioned": [
+   "1.7.2"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/runs/r07",
+  "post_ok": true,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    1,
+    1
+   ],
+   "planning-review-core.html": [
+    1,
+    1
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> 마지막 승인은 revision 1 (`dd1e837b…`)이며, 이 문서의 revision 2는 아직 승인되지 않았다.",
+  "s2a_machine": "d_rewritten_keeps_1",
+  "fp_word_in_message": false,
+  "ready_digest_reported": true
+ },
+ "r08": {
+  "arm": "A",
+  "own_version": "1.7.1",
+  "versions_mentioned": [
+   "1.7.1"
+  ],
+  "foreign_versions": [],
+  "repo_traces": [],
+  "first_log_line": "<SCRATCH>/runs/r08",
+  "post_ok": true,
+  "diff_stat": {
+   "state.json": [
+    0,
+    0
+   ],
+   "MASTER_PLANNING_SPEC.md": [
+    1,
+    1
+   ],
+   "planning-review-core.html": [
+    2,
+    1
+   ]
+  },
+  "extra_files": [],
+  "spec_line5": "> 승인 상태: revision 2 승인 대기 (UNAPPROVED). 이전 승인 기록은 아래 identity 블록에 있다.",
+  "s2a_machine": "e_deleted",
+  "fp_word_in_message": false,
+  "ready_digest_reported": true
+ }
+}

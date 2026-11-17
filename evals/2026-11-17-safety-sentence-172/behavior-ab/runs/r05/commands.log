@@ -1,0 +1,15 @@
+<SCRATCH>/runs/r05
+pwd, 0
+ls -R project tools | head -80, 0
+grep projection workflow-v0.2.0.md, 0
+ls tools/joeflow/scripts, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec .../MASTER_PLANNING_SPEC.md --review .../planning-review-core.html, 1
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/build_approval_manifest.py --help, 2
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/check_approval.py --help, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/build_approval_manifest.py project/product-definition/request-form/state.json | grep digest, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec .../MASTER_PLANNING_SPEC.md --review .../planning-review-core.html (rerun), 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/update_projection.py project/product-definition/request-form/state.json --spec ... --review ... (dry run, no --write), 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec ... --review ... (after review edit), 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/check_approval.py project/product-definition/request-form/state.json --revision 2 --manifest-digest 6b50eb339312a3ad65d6b1645a8769694e07db131843f962189b8d3115bf2906, 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/approval_status.py project/product-definition/request-form/state.json, 0
+cat commands.log, 0

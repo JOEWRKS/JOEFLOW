@@ -1,0 +1,18 @@
+<SCRATCH>/runs/r08
+pwd, exit 0
+python inspect state.json, exit 0
+python tools/joeflow/scripts/validate_state.py project/product-definition/request-form/state.json, exit 0
+python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 1
+python tools/joeflow/scripts/update_projection.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 0
+python tools/joeflow/scripts/approval_status.py project/product-definition/request-form/state.json, exit 0
+python inspect remaining state objects, exit 0
+python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 0
+python tools/joeflow/scripts/build_approval_manifest.py --help, exit 0
+python tools/joeflow/scripts/preflight_state_candidate.py project/product-definition/request-form/state.json, exit 0
+python tools/joeflow/scripts/build_approval_manifest.py project/product-definition/request-form/state.json | python -c (digest extract), exit 0
+python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 0
+python tools/joeflow/scripts/check_approval.py project/product-definition/request-form/state.json --revision 2 --manifest-digest 6b50eb339312a3ad65d6b1645a8769694e07db131843f962189b8d3115bf2906, exit 0
+# correction: earlier unlogged command — python -c (print state.json top-level, no PYTHONIOENCODING), exit 1 (cp949 UnicodeEncodeError)
+# correction: 'build_approval_manifest.py --help' line above shows the pipe's exit 0; the script itself printed an error (no such file '--help')
+# note: one attempt to write build_approval_manifest output to a scratchpad file outside r08 was denied by the permission system and did not run
+append corrections to commands.log, exit 0

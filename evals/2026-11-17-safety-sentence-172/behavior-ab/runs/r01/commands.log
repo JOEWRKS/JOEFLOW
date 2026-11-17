@@ -1,0 +1,19 @@
+pwd: <SCRATCH>/runs/r01
+pwd, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/validate_state.py project/product-definition/request-form/state.json, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/validate_closure.py project/product-definition/request-form/state.json, exit 1
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 1
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/update_projection.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/build_approval_manifest.py project/product-definition/request-form/state.json, exit 0
+PYTHONIOENCODING=utf-8 python -c <print goals/users/requirements/flows/states/data/integrations/surface_manifest from state.json>, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/update_projection.py project/product-definition/request-form/state.json --spec project/product-definition/request-form/MASTER_PLANNING_SPEC.md --review project/product-definition/request-form/planning-review-core.html, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/check_approval.py project/product-definition/request-form/state.json --revision 2 --manifest-digest 6b50eb339312a3ad65d6b1645a8769694e07db131843f962189b8d3115bf2906, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/approval_status.py project/product-definition/request-form/state.json, exit 0
+# (아래는 앞서 기록하지 못한 읽기 전용 명령을 사후에 덧붙임)
+ls -R tools/joeflow project | head -80, exit 0
+grep -n -i "projection\|APPROVE" tools/joeflow/references/workflow-v0.2.0.md | head -80, exit 0
+wc -c * ; cat MASTER_PLANNING_SPEC.md (request-form), exit 0
+cat planning-review-core.html (request-form), exit 0
+python -c <print project/approval/unknowns/decisions/rules from state.json>, exit 0
+PYTHONIOENCODING=utf-8 python -c <print evidence/approval_history/AC/SCR/TASK from state.json>, exit 0

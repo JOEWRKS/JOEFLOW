@@ -1,0 +1,7 @@
+--- orig/planning-review-core.html
++++ after/planning-review-core.html
+@@ -112,3 +112,3 @@
+ <li>Master: <a href="MASTER_PLANNING_SPEC.md">MASTER_PLANNING_SPEC.md</a></li>
+-<li>Render verification: <code>NOT_VERIFIED</code> (브라우저 렌더·클릭을 관찰하지 못함; 정적 구조 점검만 수행)</li>
++<li>Render verification: 렌더 관찰함 (2026-11-17, 미리보기 창 정적 스냅샷, 데스크톱 폭과 375px 폭: 글자·IA 도식 판독 가능, 잘림·페이지 가로 넘침 없음, 좁은 폭에서 도식은 상자 안 가로 스크롤). 내부 링크 클릭 이동: <code>NOT_VERIFIED</code> (정적 스냅샷에서 앵커 이동이 관찰되지 않음)</li>
+ </ul>

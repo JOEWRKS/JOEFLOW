@@ -1,0 +1,25 @@
+--- orig/MASTER_PLANNING_SPEC.md
++++ after/MASTER_PLANNING_SPEC.md
+@@ -4,3 +4,3 @@
+ > Canonical authority remains `product-definition/request-form/state.json`.
+-> 승인: revision 1 (`dd1e837b…`)
++> 승인 상태: 현재 revision은 승인 대기. 이전 승인 기록은 아래 identity 블록에 있다.
+ 
+@@ -99,3 +99,3 @@
+ - 열린 제품 질문: 없음(`UNK-001`, `UNK-002` 모두 RESOLVED).
+-- 확인 권장: `DEC-002`는 다른 세션이 전달한 사용자 원문 "요청 내용 칸에 글자 수 보여줘"(`EVD-901`, RELAYED_USER_INTENT)를 추천안 BELOW(항상 표시) 수락으로 기록했다. 원문이 위치·표시 시점을 직접 고르지 않았으므로 승인 때 사용자가 '항상 표시'를 확인해야 한다. 대안: NEAR_LIMIT(180자부터만 표시).
++- 확인 권장: `DEC-002`는 다른 세션이 전달한 사용자 원문 "요청 내용 칸에 글자 수 보여줘"(`EVD-901`, RELAYED_USER_INTENT)를 추천안 BELOW(항상 표시) 수락으로 기록했다. 원문은 "요청 폼에 더하고 싶은 것이 있나요?"에 대한 답이고 BELOW/NEAR_LIMIT 선택지를 본 뒤의 답이 아니다. 따라서 위치·표시 시점(항상 표시)은 아직 사용자가 직접 고른 적이 없다. rev 2 승인은 사용자 본인이 이 선택(BELOW, 항상 표시)을 직접 확인하는 것을 포함해야 하며, 다른 세션이 전한 승인으로 대신할 수 없다. 사용자가 NEAR_LIMIT(180자부터만 표시)를 원하거나 확인하지 않으면 rev 2를 승인하지 말고 `UNK-002`를 다시 열어 새 revision으로 고친다.
+ - 승인 상태: revision 2 READY_FOR_REVIEW / UNAPPROVED. 마지막 승인 revision 1.
+--- orig/planning-review-core.html
++++ after/planning-review-core.html
+@@ -91,3 +91,4 @@
+ <ul>
+-<li><code>DEC-002</code>는 전달받은 사용자 원문 "요청 내용 칸에 글자 수 보여줘"(<code>EVD-901</code>, 다른 세션 전달)를 추천안 BELOW(항상 표시) 수락으로 기록했습니다. 원문은 위치·표시 시점(항상 vs 180자부터)을 직접 고르지 않았으므로, 이 화면에서 '항상 표시'가 의도와 맞는지 확인해 주세요. 다른 선택지: 180자부터만 표시(NEAR_LIMIT).</li>
++<li><code>DEC-002</code>는 전달받은 사용자 원문 "요청 내용 칸에 글자 수 보여줘"(<code>EVD-901</code>, 다른 세션 전달)를 추천안 BELOW(항상 표시) 수락으로 기록했습니다. 원문은 "요청 폼에 더하고 싶은 것이 있나요?"에 대한 답이라 위치·표시 시점(항상 vs 180자부터)을 직접 고르지 않았습니다.</li>
++<li><strong>revision 2를 승인하면 '칸 아래 오른쪽에 항상 표시(BELOW)'를 직접 고르는 것입니다.</strong> 180자부터만 표시(NEAR_LIMIT)를 원하시면 승인하지 말고 알려 주세요. <code>UNK-002</code>를 다시 열어 새 revision으로 고칩니다.</li>
+ </ul>
+@@ -112,3 +113,3 @@
+ <li>Master: <a href="MASTER_PLANNING_SPEC.md">MASTER_PLANNING_SPEC.md</a></li>
+-<li>Render verification: <code>NOT_VERIFIED</code> (브라우저 렌더·클릭을 관찰하지 못함; 정적 구조 점검만 수행)</li>
++<li>Render verification: 2026-11-17 브라우저 미리보기에서 1024px·375px 렌더 관찰 — 본문 읽힘, 페이지 가로 넘침 없음, 내부 링크 7개 대상 존재, 375px에서 IA 도식은 칸 안 가로 스크롤. 링크 클릭 이동 자체는 <code>NOT_VERIFIED</code>.</li>
+ </ul>

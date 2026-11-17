@@ -1,0 +1,13 @@
+<SCRATCH>/runs/r07
+pwd, exit 0
+grep workflow, exit 0
+cat projections, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec .../MASTER_PLANNING_SPEC.md --review .../planning-review-core.html, exit 1
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/build_approval_manifest.py --help, exit 2
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/check_approval.py --help, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/build_approval_manifest.py project/product-definition/request-form/state.json | head -c 3000, exit 0
+sed -i line 5 of MASTER_PLANNING_SPEC.md (승인: revision 1 -> 마지막 승인은 revision 1 ...), exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py (re-run) ..., exit 0
+sed -i Render verification line in planning-review-core.html, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py (re-run 2) ..., exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/check_approval.py project/product-definition/request-form/state.json --revision 2 --manifest-digest 6b50eb33..., exit 0
