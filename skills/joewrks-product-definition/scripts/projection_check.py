@@ -71,7 +71,8 @@ EARLIER = re.compile(r"(?i)(?:이전|직전|previous|prior|since|from)(?:\s*승�
 # (approved)" can be a stale title and is still read, unless (1.7.3) the same line (HTML: the same block element's
 # text) also carries the first 8+ hex characters of that approval's manifest_digest from approval_history, as in
 # "> 승인: revision 1 (`dd1e837b…`)". A digest of another revision, no digest, or the current revision named on the
-# same line (then either number could be the document's name) keeps the finding.
+# same line (then either number could be the document's name) keeps the finding. So does a digest inside the
+# document's name itself (<title>, <h1>, a Markdown `# ` line): a name line is read as a name, never as a fact.
 LAST_APPROVED_BEFORE = re.compile(
     r"(?i)(?:(?:마지막|최근|최종|현재)(?:으로|에)?\s*승인(?:된|됨|한|받은)?(?:\s*(?:것|판|버전))?(?:은|는|이|가)?"
     r"|승인(?:된|받은)\s*(?:것|판|버전)(?:은|는|이|가)?"
@@ -126,14 +127,25 @@ def _same_line(visible: str, match: re.Match, start: int, end: int, html: bool) 
     return left, (after.start() if after else end)
 
 
+def _is_name_line(visible: str, left: int, start: int, match: re.Match, html: bool) -> bool:
+    """A Markdown `# ` heading, or in HTML a run whose nearest enclosing block tag is <h1>: the document's name."""
+    if not html:
+        return bool(re.match(r"\s*#\s", visible[left:match.start()]))
+    tags = list(BLOCK_TAG.finditer(visible, start, match.start()))
+    return bool(tags) and tags[-1].group(0).lower().startswith("<h1")
+
+
 def _carries_approval_digest(visible: str, match: re.Match, start: int, end: int, html: bool,
-                             revision: int, digest: str | None) -> bool:
+                             revision: int, digest: str | None, where: str = "") -> bool:
     """1.7.3: the line names the last approved revision together with that approval's manifest digest
-    (8+ leading hex characters, any case, `…` or <code> around it), and does not also name the current revision."""
-    if not digest:
+    (8+ leading hex characters, any case, `…` or <code> around it), does not also name the current revision, and is
+    not the document's name line (<title>, <h1>, Markdown `# `)."""
+    if not digest or where == "<title>":
         return False
     left, right = _same_line(visible, match, start, end, html)
     segment = visible[left:right]
+    if _is_name_line(visible, left, start, match, html):
+        return False
     if any(int(other.group(2) or other.group(1)) == revision for other in HEAD_REVISION.finditer(segment)):
         return False
     plain = re.sub(r"<[^>]+>", " ", segment) if html else segment
@@ -156,7 +168,7 @@ def _title_findings(text: str, revision: int, html: bool, code: str,
             if found == last_approved and (
                     LAST_APPROVED_BEFORE.search(visible[max(0, match.start() - 30):match.start()])
                     or LAST_APPROVED_AFTER.search(visible[match.end():match.end() + 30])
-                    or _carries_approval_digest(visible, match, start, end, html, revision, last_approved_digest)):
+                    or _carries_approval_digest(visible, match, start, end, html, revision, last_approved_digest, where)):
                 continue
             line_no = visible.count("\n", 0, match.start()) + 1
             line = text.split("\n")[line_no - 1]

@@ -10,7 +10,7 @@
 | 항목 | 값 |
 | --- | --- |
 | 프로그램 이름 | `JOEFLOW` |
-| 프로그램 릴리스 | `v1.7.2` |
+| 프로그램 릴리스 | `v1.7.3` |
 | 저장소 | `JOEWRKS/JOEFLOW` |
 | 런타임 skill/package ID | `joewrks-product-definition` |
 | canonical Product Definition authority | `product-definition/<project-slug>/state.json` |
@@ -34,7 +34,7 @@ SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED
 - 현재 V2 semantic-review 경계: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`
 - 과거 호환성: 상태 `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, v0.4.3 evidence
 - 계약 버전: 상호 독립 관리
-- 이 기준선의 전체 프로그램 릴리스: `v1.7.2`
+- 이 기준선의 전체 프로그램 릴리스: `v1.7.3`
 
 ## 2. 설계 목적
 
@@ -266,6 +266,7 @@ tests/
 - **v1.7.0** — 오목 실사용 마찰 보강: 선택지·추천 오류가 칸·값을 말하고 예약어·추천 근거 누락을 `new_records.py`가 미리 거절, 읽기 전용 `check_approval.py`, 승인 원문·전달 경로와 판 고정을 state 밖 `joeflow-project.json`에 기록(`record_approval.py --quote|--relayed-from`, `joeflow_version.py`), READY_FOR_REVIEW 쓰기 전 semantic readiness 확인; State 0.2.0·고정 모듈·바인딩 계약 변경 없음
 - **v1.7.1** — `projection_check.py`가 투영 문서(검토 화면·기획서)의 제목·머리 영역에 적힌 낡은 revision을 `stale_review_title_revision`·`stale_spec_title_revision`으로 검출(본문 변경 이력·범위 표기·"이전 승인" 언급은 제외); State 0.2.0·고정 모듈·바인딩 계약 변경 없음
 - **v1.7.2** — `projection_check.py` 제목 검사의 오탐 수정: 머리 영역에서 마지막 승인 revision을 사실대로 적은 문장(마지막/최근/현재 승인된 revision N, last/latest approved N)은 숫자가 state의 마지막 승인 revision과 같을 때 건너뛰고, finding의 next_action에 사실 문장은 고치지 말고 오탐으로 보고하라는 안전 문장 추가; State 0.2.0·고정 모듈·바인딩 계약 변경 없음
+- **v1.7.3** — `projection_check.py` 제목 검사의 오탐 수정 2: 머리 영역의 꾸밈말 없는 승인 표기(`승인: revision N (digest)`)가 마지막 승인 revision과 그 승인의 `manifest_digest` 앞 8자 이상을 같은 줄(HTML은 같은 블록 요소)에 적고 현재 revision을 함께 적지 않으면 사실로 보아 건너뜀. `<title>`·`<h1>`·Markdown `# ` 이름 줄은 digest가 있어도 이름으로 읽어 지적 유지; `next_action`·출력 모양 변경 없음
 - **v1.6.0** — 전달된 사용자 의도 근거 종류 `RELAYED_USER_INTENT`: 사용자 원문 그대로(`DIRECT`)만 직접 확인과 같고, 전달자의 요약은 material 질문을 닫거나 담당자 기본값의 근거가 될 수 없음(`relayed_intent_cannot_close`·`relayed_intent_needs_user`), `new_records.py relayed`; State 0.2.0·바인딩 계약 identity 변경 없음, 보호된 `state_validation_v2.py`·스키마 enum 고정 해시 갱신
 
 ## 6. 한계

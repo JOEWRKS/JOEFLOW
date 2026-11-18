@@ -307,6 +307,16 @@ class LastApprovedDigestLineTest(unittest.TestCase):
         head = f"<h1>요청 폼 기획 검토 revision 1</h1>\n<p>manifest <code>{self.digest[:8]}</code></p>"
         self.assertEqual([(x["where"], x["actual"]) for x in self._review_findings(head)], [("header", 1)])
 
+    def test_digest_inside_the_name_line_is_still_reported(self):
+        # The document's name is read as a name even with the last approval digest beside it (1.7.3 name-line rule).
+        findings = self._spec_findings(f"# MASTER PLANNING SPEC — 요청 폼 revision 1 (`{self.digest[:8]}…`)")
+        self.assertEqual([(x["where"], x["actual"]) for x in findings], [("heading", 1)])
+        head = f"<h1>요청 폼 기획 검토 revision 1 (<code>{self.digest[:8]}</code>)</h1>"
+        self.assertEqual([(x["where"], x["actual"]) for x in self._review_findings(head)], [("header", 1)])
+        head = "<h1>요청 폼 기획 검토 (revision 2)</h1>"
+        findings = self._review_findings(head, title=f"요청 폼 · 기획 검토 화면 revision 1 ({self.digest[:8]})")
+        self.assertEqual([(x["where"], x["actual"]) for x in findings], [("<title>", 1)])
+
     def test_digest_line_that_also_names_the_current_revision_is_reported(self):
         # Either number could be the document's name; the plain sentence form ("마지막 승인은 …") still passes (1.7.2).
         findings = self._spec_findings(
