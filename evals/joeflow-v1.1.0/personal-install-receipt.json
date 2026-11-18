@@ -13,12 +13,12 @@
     "manifest_sha256": "b663ac3c95b17e4206a36134b0ff5b7dbd48d59aa428284ae8962ae3a38dbe6c"
   },
   "installation": {
-    "path": "C:\\Users\\tjdwo\\.codex\\skills\\joewrks-product-definition",
+    "path": "~\\.codex\\skills\\joewrks-product-definition",
     "version_file_present": false,
     "version_confirmation": "source commit and VERSION plus exact tracked source blob comparison, with two declared preserved local overlays"
   },
   "backup": {
-    "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-v1.1.0-t040-20261013T221648-KST",
+    "path": "~\\.codex\\skills-backups\\joewrks-product-definition-before-v1.1.0-t040-20261013T221648-KST",
     "file_count": 201,
     "manifest_sha256": "2f1656a793c79e22c610ebe23ef80d4f4b17dce3ca614f17aeeb4d087473ab5c",
     "exact_old_manifest_match": true

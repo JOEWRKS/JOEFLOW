@@ -8,8 +8,8 @@ Date: 2026-10-13 (Asia/Seoul)
 - Source tree: `29f7b4207ccec790581630a763c59441cad86be1`
 - Program version: `1.1.0`
 - Runtime skill ID: `joewrks-product-definition`
-- Personal install: `C:/Users/tjdwo/.codex/skills/joewrks-product-definition`
-- Backup: `C:/Users/tjdwo/.codex/skills-backups/joewrks-product-definition-before-v1.1.0-t040-20261013T221648-KST`
+- Personal install: `~/.codex/skills/joewrks-product-definition`
+- Backup: `~/.codex/skills-backups/joewrks-product-definition-before-v1.1.0-t040-20261013T221648-KST`
 
 The installed skill directory intentionally has no root `VERSION` file. Its version is confirmed by the exact source commit and root `VERSION`, the tracked source blob manifest, the declared preserved overlays, and the installation receipt.
 

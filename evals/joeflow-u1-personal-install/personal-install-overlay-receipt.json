@@ -4,7 +4,7 @@
   "program": "JOEFLOW",
   "program_version_file": "1.7.3",
   "runtime_skill_id": "joewrks-product-definition",
-  "installation_path": "C:\\Users\\tjdwo\\.codex\\skills\\joewrks-product-definition",
+  "installation_path": "~\\.codex\\skills\\joewrks-product-definition",
   "composition": {
     "base": {
       "commit": "e3be5d11fe0e8f5b79c42e35a0bcb157f5bdda4a",
@@ -329,52 +329,52 @@
   "tip_tracked_files_missing_from_install": [],
   "backups": [
     {
-      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u1-1-d49cd5c-20261026",
+      "path": "~\\.codex\\skills-backups\\joewrks-product-definition-before-u1-1-d49cd5c-20261026",
       "file_count": 209,
       "manifest_sha256": "30118c8f7881676f15ce38f87dde0897e385d0e2f5b88ab3260a7f5398a3ec51"
     },
     {
-      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u1-2-3-9b7bf3c-20261026",
+      "path": "~\\.codex\\skills-backups\\joewrks-product-definition-before-u1-2-3-9b7bf3c-20261026",
       "file_count": 210,
       "manifest_sha256": "d2cb8c9f37a2340038127ed912a3ec68961ecc906f03627f6dd8f1ac42b6622f"
     },
     {
-      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u1-4-6-29e9bdb-20261028",
+      "path": "~\\.codex\\skills-backups\\joewrks-product-definition-before-u1-4-6-29e9bdb-20261028",
       "file_count": 212,
       "manifest_sha256": "23ff302a0e3a04db36dbc6a5fbcbb24019e3e5739a93100365ef74d314df6ad8"
     },
     {
-      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u1-9-b0a3c4b-20261028",
+      "path": "~\\.codex\\skills-backups\\joewrks-product-definition-before-u1-9-b0a3c4b-20261028",
       "file_count": 219,
       "manifest_sha256": "0b5628bcfdfc6e7c871689918bbecacf801d6c88c430074fe1b2046ae1171def"
     },
     {
-      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-approval-wording-3eeca61-20261029",
+      "path": "~\\.codex\\skills-backups\\joewrks-product-definition-before-approval-wording-3eeca61-20261029",
       "file_count": 220,
       "manifest_sha256": "a79773759237f05d2b2ddd4e9c6a43fee6ae0ce4d17a05ee52ad2e893b28959b"
     },
     {
-      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u1-10-83fcdfe-20261029",
+      "path": "~\\.codex\\skills-backups\\joewrks-product-definition-before-u1-10-83fcdfe-20261029",
       "file_count": 220,
       "manifest_sha256": "208855001883666a5f05b384ab56b284e956c3b9b342613578271054280688fc"
     },
     {
-      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u1-7-c32d149-20261031",
+      "path": "~\\.codex\\skills-backups\\joewrks-product-definition-before-u1-7-c32d149-20261031",
       "file_count": 221,
       "manifest_sha256": "bfe3bc33385ad61cc70cc4b16788f506b8e8bf42be477a18a11aa9267c0013e7"
     },
     {
-      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u2-ed30684-20261031",
+      "path": "~\\.codex\\skills-backups\\joewrks-product-definition-before-u2-ed30684-20261031",
       "file_count": 223,
       "manifest_sha256": "dd0275ca03349f3bbe59d5c5c3fc56753f8ef9d31ba16d9239a41b589c4bdcd4"
     },
     {
-      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u2-10-11-b6462ea-20261031",
+      "path": "~\\.codex\\skills-backups\\joewrks-product-definition-before-u2-10-11-b6462ea-20261031",
       "file_count": 268,
       "manifest_sha256": "b7301e2bf8d199e21151664609b67158a88fac6a75eff8c86531578545871dcf"
     },
     {
-      "path": "C:\\Users\\tjdwo\\.codex\\skills-backups\\joewrks-product-definition-before-u2-8-946c2b3-20261101",
+      "path": "~\\.codex\\skills-backups\\joewrks-product-definition-before-u2-8-946c2b3-20261101",
       "file_count": 270,
       "manifest_sha256": "a4d156c829dff9d940699ae669d7df2db790566a9d49d9e617f5f2b5cfa876e9"
     },

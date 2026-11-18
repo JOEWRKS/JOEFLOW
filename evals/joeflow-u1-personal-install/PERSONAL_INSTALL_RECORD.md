@@ -4,7 +4,7 @@ Date: 2026-10-26, updated 2026-10-28 twice, 2026-10-29 twice, 2026-10-31 three t
 
 ## Installed identity
 
-- Personal install: `C:/Users/tjdwo/.codex/skills/joewrks-product-definition`
+- Personal install: `~/.codex/skills/joewrks-product-definition`
 - Base: v1.1.0 install, source commit `e3be5d11fe0e8f5b79c42e35a0bcb157f5bdda4a` ([v1.1.0 record](../joeflow-v1.1.0/PERSONAL_INSTALL_VERIFICATION.md))
 - Applied on top: ROADMAP U1-1 (commit `08d376fc4177decd3b18fe57c68fd69cdda65049`), U1-2/U1-3 (commit `9b7bf3cf0244001638c579e8c4eb4aa697c45252`, installed 2026-10-26), and U1-4/U1-5/U1-6 (commits `aae47aa05a6a239e97ae736707b7c27b5e331fbd`, `2fa087e7da5e143643accb1f30afba6573ab8343`, `29e9bdb9d42be34cf2102b4d539e3a708a6e3fe3`, installed 2026-10-28), and U1-9 (commit `b0a3c4b448c7bda4601b87f6232334c95bd63649`, installed 2026-10-28), and the approval wording change (commit `3eeca61844f8443b5ca2262c877677557d9607ea`, installed 2026-10-29), and U1-10 (commit `83fcdfe8bc9289e6d556c852984d325db1fa7ade`, installed 2026-10-29), and U1-7 (commit `c32d149`, installed 2026-10-31 by `install_u1_7.py`), and U2 / 1.4.0 (commit `ed30684`, installed 2026-10-31 by `install_u2.py`: 21 files copied from the tip where the install equalled the U1-7 base, 3 documents composed), and U2-10/U2-11 / 1.5.0 (commit `b6462ea`, installed 2026-10-31 by `install_u2_10_11.py`: 10 files copied where the install equalled the 1.4.0 base, `SKILL.md` and `workflow-v0.2.0.md` composed by patch, every hunk applied), and U2-8 / 1.6.0 (commit `946c2b3`, installed 2026-11-01 by `install_u2_8.py`: 6 files copied where the install equalled the 1.5.0 base, `SKILL.md` composed by patch, every hunk applied), and 1.7.0 (commit `ba15afe`, installed 2026-11-12 by `install_1_7_0.py`: 13 files copied where the install equalled the 1.6.0 base, `SKILL.md` and `references/workflow-v0.2.0.md` composed by patch, every hunk applied)
 - Not applied: commit `9891dc34141b04d3bfc5595d34433ae73a486d9d` (experience pass docs), by user choice on 2026-10-26
@@ -30,7 +30,7 @@ Compared byte for byte with the branch tip `946c2b3` (1.6.0) and v1.1.0 `e3be5d1
 
 ## Backups
 
-| Before | Path under `C:/Users/tjdwo/.codex/skills-backups/` | Files | Manifest SHA-256 |
+| Before | Path under `~/.codex/skills-backups/` | Files | Manifest SHA-256 |
 |---|---|---:|---|
 | U1-1 | `joewrks-product-definition-before-u1-1-d49cd5c-20261026` | 209 | `30118c8f7881676f15ce38f87dde0897e385d0e2f5b88ab3260a7f5398a3ec51` |
 | U1-2/U1-3 | `joewrks-product-definition-before-u1-2-3-9b7bf3c-20261026` | 210 | `d2cb8c9f37a2340038127ed912a3ec68961ecc906f03627f6dd8f1ac42b6622f` |
