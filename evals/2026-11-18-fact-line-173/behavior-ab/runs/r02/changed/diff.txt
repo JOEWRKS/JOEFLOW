@@ -1,0 +1,17 @@
+--- orig/planning-review-core.html
++++ after/planning-review-core.html
+@@ -44,3 +44,3 @@
+ <h2>IA와 이동 관계</h2>
+-<p class="note">정보 계층과 실제 화면 이동을 구분해 표시합니다.</p>
++<p class="note">진입(요청 폼 열기) → 화면 <code>SCR-001</code> → 결과(요청 수락)를 표시합니다. 양 끝 상자는 화면이 아니라 진입 동작과 결과입니다.</p>
+ <div class="diagram">
+@@ -64,3 +64,3 @@
+ <h2>핵심 User Flows</h2>
+-<p class="note">주요 정상·실패·복구 분기를 표시합니다. 상세 조건은 Master의 stable ID로 연결합니다.</p>
++<p class="note">정본에 있는 정상·실패 분기를 표시합니다(복구 분기는 정의되어 있지 않음). 상세 조건은 Master의 stable ID로 연결합니다.</p>
+ <div class="diagram">
+@@ -112,3 +112,3 @@
+ <li>Master: <a href="MASTER_PLANNING_SPEC.md">MASTER_PLANNING_SPEC.md</a></li>
+-<li>Render verification: <code>NOT_VERIFIED</code> (브라우저 렌더·클릭을 관찰하지 못함; 정적 구조 점검만 수행)</li>
++<li>Render verification (2026-11-18, 브라우저 미리보기 창): 데스크톱 폭과 375px 폭에서 글자·도표가 읽히고 페이지 가로 넘침이 없음을 관찰(375px에서는 도표만 칸 안에서 가로 스크롤). 상단 목차 7개 앵커의 대상 섹션이 모두 있음. Master 링크 클릭 이동은 <code>NOT_VERIFIED</code>(미리보기가 data: 주소라 상대 링크를 열 수 없음).</li>
+ </ul>

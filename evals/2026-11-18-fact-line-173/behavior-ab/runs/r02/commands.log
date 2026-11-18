@@ -1,0 +1,17 @@
+pwd: <SCRATCH>/runs/r02
+pwd, exit 0
+grep -n projection/approve tools/joeflow/references/workflow-v0.2.0.md, exit 0
+sed -n 66,148p tools/joeflow/references/workflow-v0.2.0.md, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec .../MASTER_PLANNING_SPEC.md --review .../planning-review-core.html, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/approval_status.py project/product-definition/request-form/state.json, exit 0
+cat MASTER_PLANNING_SPEC.md planning-review-core.html, exit 0
+cat state.json, exit 0
+python -c (dump state.json objects/unknowns/approval), exit 0
+PYTHONIOENCODING=utf-8 python -c (print rev2 Korean records), exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/build_approval_manifest.py project/product-definition/request-form/state.json > scratchpad/manifest.json, exit 0
+PYTHONIOENCODING=utf-8 python -c (summarize manifest digests), exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/validate_state.py project/product-definition/request-form/state.json, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/preflight_state_candidate.py project/product-definition/request-form/state.json, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/update_projection.py project/product-definition/request-form/state.json --spec .../MASTER_PLANNING_SPEC.md --review .../planning-review-core.html (dry run, no --write), exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/projection_check.py project/product-definition/request-form/state.json --spec .../MASTER_PLANNING_SPEC.md --review .../planning-review-core.html, exit 0
+PYTHONIOENCODING=utf-8 python tools/joeflow/scripts/check_approval.py project/product-definition/request-form/state.json --revision 2 --manifest-digest 6b50eb339312a3ad65d6b1645a8769694e07db131843f962189b8d3115bf2906, exit 0

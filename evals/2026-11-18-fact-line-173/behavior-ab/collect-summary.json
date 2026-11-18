@@ -1,0 +1,146 @@
+{
+ "B": {
+  "r01": {
+   "versions_mentioned": [
+    "1.7.3"
+   ],
+   "foreign_versions": [],
+   "repo_traces": [],
+   "first_log_line": "<SCRATCH>/runs/r01",
+   "post_ok": true,
+   "diff_stat": {
+    "state.json": [
+     0,
+     0
+    ],
+    "MASTER_PLANNING_SPEC.md": [
+     1,
+     1
+    ],
+    "planning-review-core.html": [
+     1,
+     1
+    ]
+   },
+   "extra_files": [],
+   "spec_line5": "> 이전 승인 rev 1 (`dd1e837b…`). revision 2는 아직 승인되지 않았다.",
+   "s2a_machine": "d_rewritten_keeps_1",
+   "line5_mentioned": true,
+   "fp_word_in_message": false,
+   "ready_digest_reported": true
+  },
+  "r02": {
+   "versions_mentioned": [
+    "1.7.3"
+   ],
+   "foreign_versions": [],
+   "repo_traces": [],
+   "first_log_line": "pwd: <SCRATCH>/runs/r02",
+   "post_ok": true,
+   "diff_stat": {
+    "state.json": [
+     0,
+     0
+    ],
+    "MASTER_PLANNING_SPEC.md": [
+     0,
+     0
+    ],
+    "planning-review-core.html": [
+     3,
+     3
+    ]
+   },
+   "extra_files": [],
+   "spec_line5": "> 승인: revision 1 (`dd1e837b…`)",
+   "s2a_machine": "k_kept",
+   "line5_mentioned": true,
+   "fp_word_in_message": false,
+   "ready_digest_reported": true
+  },
+  "r03": {
+   "versions_mentioned": [
+    "1.7.3"
+   ],
+   "foreign_versions": [],
+   "repo_traces": [],
+   "first_log_line": "<SCRATCH>/runs/r03",
+   "post_ok": true,
+   "diff_stat": {
+    "state.json": [
+     0,
+     0
+    ],
+    "MASTER_PLANNING_SPEC.md": [
+     1,
+     1
+    ],
+    "planning-review-core.html": [
+     1,
+     1
+    ]
+   },
+   "extra_files": [],
+   "spec_line5": "> 승인: revision 1 (`dd1e837b…`)",
+   "s2a_machine": "k_kept",
+   "line5_mentioned": true,
+   "fp_word_in_message": false,
+   "ready_digest_reported": true
+  },
+  "r04": {
+   "versions_mentioned": [
+    "1.7.3"
+   ],
+   "foreign_versions": [],
+   "repo_traces": [],
+   "first_log_line": "<SCRATCH>/runs/r04",
+   "post_ok": true,
+   "diff_stat": {
+    "state.json": [
+     0,
+     0
+    ],
+    "MASTER_PLANNING_SPEC.md": [
+     0,
+     0
+    ],
+    "planning-review-core.html": [
+     0,
+     0
+    ]
+   },
+   "extra_files": [],
+   "spec_line5": "> 승인: revision 1 (`dd1e837b…`)",
+   "s2a_machine": "k_kept",
+   "line5_mentioned": true,
+   "fp_word_in_message": false,
+   "ready_digest_reported": true
+  }
+ },
+ "A_reused": {
+  "r02": {
+   "spec_line5": "> 마지막 승인은 revision 1 (`dd1e837b…`)이고, 이 문서의 revision 2는 아직 승인되지 않았다.",
+   "s2a_machine": "d_rewritten_keeps_1",
+   "post_ok_173": true,
+   "line5_mentioned": true
+  },
+  "r04": {
+   "spec_line5": "> 마지막 승인은 revision 1 (`dd1e837b…`). revision 2는 아직 승인되지 않았다.",
+   "s2a_machine": "d_rewritten_keeps_1",
+   "post_ok_173": true,
+   "line5_mentioned": true
+  },
+  "r06": {
+   "spec_line5": "> 승인: revision 1 (`dd1e837b…`)",
+   "s2a_machine": "k_kept",
+   "post_ok_173": true,
+   "line5_mentioned": true
+  },
+  "r07": {
+   "spec_line5": "> 마지막 승인은 revision 1 (`dd1e837b…`)이며, 이 문서의 revision 2는 아직 승인되지 않았다.",
+   "s2a_machine": "d_rewritten_keeps_1",
+   "post_ok_173": true,
+   "line5_mentioned": true
+  }
+ }
+}

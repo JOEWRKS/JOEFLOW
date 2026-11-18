@@ -1,0 +1,14 @@
+--- orig/MASTER_PLANNING_SPEC.md
++++ after/MASTER_PLANNING_SPEC.md
+@@ -74,3 +74,3 @@
+ 
+-- 글자를 넣거나 지울 때마다 '현재 글자 수 / 200' 표시가 즉시 바뀐다(`RULE-002`, `AC-002`). 데이터 변경 없음(표시만).
++- 글자를 넣거나 지울 때마다 '현재 글자 수 / 200' 표시가 즉시 바뀐다(`RULE-002`, `AC-002`). 이 표시 자체의 데이터 효과는 정본에 정의되어 있지 않다.
+ 
+--- orig/planning-review-core.html
++++ after/planning-review-core.html
+@@ -112,3 +112,3 @@
+ <li>Master: <a href="MASTER_PLANNING_SPEC.md">MASTER_PLANNING_SPEC.md</a></li>
+-<li>Render verification: <code>NOT_VERIFIED</code> (브라우저 렌더·클릭을 관찰하지 못함; 정적 구조 점검만 수행)</li>
++<li>Render verification: 렌더 관찰함(2026-11-18, 미리보기 창의 정적 스냅샷, 폭 800px·375px — 글자·IA 도식·섹션이 잘림 없이 읽힘, 375px에서 페이지 가로 스크롤 없음, IA 도식은 상자 안에서 가로 스크롤). 내비게이션 링크 클릭 이동: <code>NOT_VERIFIED</code> (정적 스냅샷에서 앵커 이동이 일어나지 않아 관찰하지 못함)</li>
+ </ul>
