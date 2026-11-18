@@ -6,7 +6,8 @@
 
 게시: 사용자 승인("게시(보정 포함)", 2026-11-18, 부모 세션이 직접 받음) 뒤 VERSION 1.7.3, 태그 v1.7.3, GitHub Release, 개인 설치 overlay 갱신([install_1_7_3.py](evals/2026-11-17-safety-sentence-172/install_1_7_3.py), 기록 [PERSONAL_INSTALL_RECORD.md](PERSONAL_INSTALL_RECORD.md)). 변경·재검사·한계는 [보고서](evals/2026-11-17-safety-sentence-172/report-173.md), 릴리스 노트 [release-notes-v1.7.3.md](evals/2026-11-17-safety-sentence-172/release-notes-v1.7.3.md).
 
-- `projection_check.py`: 머리 영역의 꾸밈말 없는 승인 표기(`` > 승인: revision 1 (`dd1e837b…`) ``)를, 숫자가 state의 마지막 승인 revision과 같고 같은 줄(HTML은 같은 블록 요소)에 그 승인의 `approval_history[].manifest_digest` 앞 8자 이상이 함께 적혀 있을 때 더는 `stale_*_title_revision`으로 잡지 않습니다. digest가 없거나 다른 것이거나 7자 이하이면, 숫자가 마지막 승인과 다르면, 같은 줄에 현재 revision도 적혀 있으면 지금처럼 검출합니다. 보정(게시 전, 부모 세션): `<title>`·`<h1>`·Markdown `# ` 이름 줄은 digest가 있어도 문서 이름으로 읽어 지적을 유지합니다(흉내 위험 축소, 테스트 3건). 2026-11-17 안전 문장 시험 고정물의 5행 오탐이 사라지고 다른 결과는 같습니다. `next_action` 문구는 그대로입니다. 행동 효과는 시험하지 않았습니다.
+- `projection_check.py`: 머리 영역의 꾸밈말 없는 승인 표기(`` > 승인: revision 1 (`dd1e837b…`) ``)를, 숫자가 state의 마지막 승인 revision과 같고 같은 줄(HTML은 같은 블록 요소)에 그 승인의 `approval_history[].manifest_digest` 앞 8자 이상이 함께 적혀 있을 때 더는 `stale_*_title_revision`으로 잡지 않습니다. digest가 없거나 다른 것이거나 7자 이하이면, 숫자가 마지막 승인과 다르면, 같은 줄에 현재 revision도 적혀 있으면 지금처럼 검출합니다. 보정(게시 전, 부모 세션): `<title>`·`<h1>`·Markdown `# ` 이름 줄은 digest가 있어도 문서 이름으로 읽어 지적을 유지합니다(흉내 위험 축소, 테스트 3건). 2026-11-17 안전 문장 시험 고정물의 5행 오탐이 사라지고 다른 결과는 같습니다. `next_action` 문구는 그대로입니다. 행동 효과는 아래 시험에서 따로 봤습니다.
+- 사실 줄 보존 행동 시험(2026-11-18, Opus 4회 + 블라인드 채점 1회, 버전 누출 0/4, [보고서](evals/2026-11-18-fact-line-173/behavior-ab/report.md)): 지적이 사라진 1.7.3에서 5행 `` > 승인: revision 1 (`dd1e837b…`) ``을 원문 그대로 둔 run은 3/4입니다. 대조군인 11-17의 1.7.2 4회(재사용, 재실행 없음)는 1/4였습니다. 사전 기준상 "효과 있음"입니다. 2로 고친 run과 삭제한 run은 0/8입니다. 1/4는 지적이 없는데도 사실을 남긴 채 다시 썼습니다. 한계: 대조군이 다른 날 실행한 기록입니다. workflow 설명 변경과 검사 결과 변경의 몫을 나누지 못했습니다.
 
 ## 1.7.2 — 2026-11-15
 
