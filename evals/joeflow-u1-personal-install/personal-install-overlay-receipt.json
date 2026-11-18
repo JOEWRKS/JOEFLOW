@@ -1,8 +1,8 @@
 {
   "schema_version": "joeflow.personal-install-overlay-receipt/1.0",
-  "recorded_at": "2026-11-15T18:31:10+09:00",
+  "recorded_at": "2026-11-18T18:18:52+09:00",
   "program": "JOEFLOW",
-  "program_version_file": "1.7.2",
+  "program_version_file": "1.7.3",
   "runtime_skill_id": "joewrks-product-definition",
   "installation_path": "C:\\Users\\tjdwo\\.codex\\skills\\joewrks-product-definition",
   "composition": {
@@ -287,6 +287,25 @@
           "added": [],
           "changed": []
         }
+      },
+      {
+        "item": "1.7.3 (approval line with the last approval digest is not a stale title)",
+        "commit": "ddf5c7e2ec054ecf4a7a299ef12a464cfae0631b",
+        "base_commit": "6a74446a4e55d265cb385b4a25b6e617c13eadce",
+        "files": [
+          "VERSION",
+          "scripts/projection_check.py"
+        ],
+        "composed": {
+          "SKILL.md": "unchanged since base",
+          "references/workflow-v0.2.0.md": "patch: all hunks"
+        },
+        "not_installed_at_tip": [],
+        "installed_on": "2026-11-18",
+        "pycache_drift_before": {
+          "added": [],
+          "changed": []
+        }
       }
     ],
     "not_applied": [
@@ -298,7 +317,7 @@
     ],
     "matches_single_commit": false
   },
-  "tip_compared": "6a74446a4e55d265cb385b4a25b6e617c13eadce",
+  "tip_compared": "ddf5c7e2ec054ecf4a7a299ef12a464cfae0631b",
   "origin_counts": {
     "branch_tip": 46,
     "composed_v1.1.0_plus_u1_u2": 3,
@@ -373,11 +392,16 @@
       "path": "~/.codex/skills-backups/joewrks-product-definition-before-1-7-2-6a74446-20261115",
       "file_count": 274,
       "manifest_sha256": "5eb462d523dc63b674cb6f53dd90cbe94f4bf70fbe3055321f9c7b8fd792bafa"
+    },
+    {
+      "path": "~/.codex/skills-backups/joewrks-product-definition-before-1-7-3-ddf5c7e-20261118",
+      "file_count": 274,
+      "manifest_sha256": "b03a7a58c0351ad210bea916a9535cc45677449a791278fe49a4f5d7f069843d"
     }
   ],
   "manifest_sha256_definition": "sha256 of UTF-8 lines '<sha256>  <posix path>\n' sorted by path",
   "installed_file_count": 274,
-  "installed_manifest_sha256": "b03a7a58c0351ad210bea916a9535cc45677449a791278fe49a4f5d7f069843d",
+  "installed_manifest_sha256": "c4acf5fbbad0be481c4e81324da1b8ff31d15f8ce6ea376993da5c12eb064f4c",
   "installed_manifest": [
     {
       "path": "SKILL.md",
@@ -386,7 +410,7 @@
     },
     {
       "path": "VERSION",
-      "sha256": "e6b7255e251fae180891178dc54e93117e0e522c67cd10145600f71c36216ee9",
+      "sha256": "b60eb1aee608b0e18ce0ee958536003246bf2618862ab401797f7e001a1b5604",
       "origin": "branch_tip"
     },
     {
@@ -1136,7 +1160,7 @@
     },
     {
       "path": "references/workflow-v0.2.0.md",
-      "sha256": "09e2e65bf2456c912127a80069e4e11c1624aae5a9b03958d7aa5a3041c480e5",
+      "sha256": "df8e054f5b0ad8333baa7e04ab98874e42f9d1588302120bc7b11bb49fa6fd0d",
       "origin": "composed_v1.1.0_plus_u1_u2"
     },
     {
@@ -1611,7 +1635,7 @@
     },
     {
       "path": "scripts/projection_check.py",
-      "sha256": "5df867dd700ed47b2274619d167d30431578eaf78f1fa26f557bd2a741a7ee1d",
+      "sha256": "a0ba20eb9674b980ef5681902c7178f7154ad6ccff8a01ff83bc491e00659c5e",
       "origin": "branch_tip"
     },
     {
@@ -1807,6 +1831,10 @@
     "changed": []
   },
   "pycache_drift_before_1_7_2": {
+    "added": [],
+    "changed": []
+  },
+  "pycache_drift_before_1_7_3": {
     "added": [],
     "changed": []
   }
