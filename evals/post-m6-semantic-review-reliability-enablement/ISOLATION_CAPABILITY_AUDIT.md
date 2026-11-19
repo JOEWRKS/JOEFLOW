@@ -94,7 +94,7 @@ evals/semantic-review-v0.4.3/evidence/calibration-disposition/
 ```
 
 The historical ephemeral Codex capability probe ran from
-`C:\Users\tjdwo\AppData\Local\Temp` in declared `read-only` mode. It could
+`~\AppData\Local\Temp` in declared `read-only` mode. It could
 enumerate the forbidden Run-01 path:
 
 ```text

@@ -6,7 +6,7 @@
 - Evidence read:
   - The exact user request above.
   - Workspace/session instructions supplied with the run.
-  - `C:\Users\tjdwo\.codex\plugins\cache\openai-curated-remote\superpowers\6.3.0\skills\brainstorming\SKILL.md`, because the request is creative product-building work and the available skill requires clarification/design approval before implementation.
+  - `~\.codex\plugins\cache\openai-curated-remote\superpowers\6.3.0\skills\brainstorming\SKILL.md`, because the request is creative product-building work and the available skill requires clarification/design approval before implementation.
   - No repository product source, evaluator rubric, scenario answer key, validator, schema, fixture, report, or `joewrks-product-definition` Skill was read.
 - Complete first user-facing response:
 

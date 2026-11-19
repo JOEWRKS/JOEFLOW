@@ -46,8 +46,8 @@ There is no invitation table or token contract yet.
 
 Process instructions read (not treated as project evidence):
 
-- `C:\Users\tjdwo\.codex\plugins\cache\openai-curated-remote\superpowers\6.3.0\skills\using-superpowers\SKILL.md`
-- `C:\Users\tjdwo\.codex\plugins\cache\openai-curated-remote\superpowers\6.3.0\skills\brainstorming\SKILL.md`
+- `~\.codex\plugins\cache\openai-curated-remote\superpowers\6.3.0\skills\using-superpowers\SKILL.md`
+- `~\.codex\plugins\cache\openai-curated-remote\superpowers\6.3.0\skills\brainstorming\SKILL.md`
 
 The prohibited `joewrks-product-definition` Skill and evaluator materials were not read or used.
 

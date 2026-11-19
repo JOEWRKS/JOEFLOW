@@ -8,7 +8,7 @@
 
 **Tech Stack:** Markdown evidence, Python validators/unittest/py_compile, Git.
 
-**Spec:** `C:/Users/tjdwo/.codex/attachments/3ecd815c-d0ee-45ef-a632-2ad1ccb0ca61/pasted-text.txt`
+**Spec:** `~/.codex/attachments/3ecd815c-d0ee-45ef-a632-2ad1ccb0ca61/pasted-text.txt`
 
 ## Global Constraints
 

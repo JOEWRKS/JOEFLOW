@@ -8,8 +8,8 @@
 
 1. The exact user prompt above.
 2. The provided workspace `AGENTS.md` instructions (JOENESS Core).
-3. `C:\Users\tjdwo\.codex\plugins\cache\openai-curated-remote\superpowers\6.3.0\skills\brainstorming\SKILL.md`.
-4. `C:\Users\tjdwo\.agents\skills\design\SKILL.md`.
+3. `~\.codex\plugins\cache\openai-curated-remote\superpowers\6.3.0\skills\brainstorming\SKILL.md`.
+4. `~\.agents\skills\design\SKILL.md`.
 5. Confirmed that the target transcript directory exists and that this transcript file did not already exist.
 
 No product-definition file, evaluator rubric, scenario answer key, product source file, or existing upload-flow implementation was read.

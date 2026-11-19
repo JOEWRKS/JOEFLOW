@@ -8,7 +8,7 @@
 
 **Tech Stack:** JOEWRKS Product Definition Skill, JSON canonical state, Markdown projections/audits, Python validators, Figma native tools when available, GitHub tree/commit API.
 
-**Spec:** `C:/Users/tjdwo/.codex/attachments/e14f30b7-be20-4db8-8bb2-a4e47d03bb1f/pasted-text.txt`
+**Spec:** `~/.codex/attachments/e14f30b7-be20-4db8-8bb2-a4e47d03bb1f/pasted-text.txt`
 
 ## Global Constraints
 

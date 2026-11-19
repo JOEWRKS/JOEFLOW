@@ -8,7 +8,7 @@
 
 **Tech Stack:** Markdown evidence, JSON fixtures, Codex fresh subagents, standard-library Python validators, GitHub blob/tree/commit API.
 
-**Spec:** `C:/Users/tjdwo/.codex/attachments/a8757122-88e2-4898-b092-3670bdb26e63/pasted-text.txt`
+**Spec:** `~/.codex/attachments/a8757122-88e2-4898-b092-3670bdb26e63/pasted-text.txt`
 
 ## Global Constraints
 
