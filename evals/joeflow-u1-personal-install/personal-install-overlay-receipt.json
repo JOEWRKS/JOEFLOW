@@ -1,8 +1,8 @@
 {
   "schema_version": "joeflow.personal-install-overlay-receipt/1.0",
-  "recorded_at": "2026-11-18T18:18:52+09:00",
+  "recorded_at": "2026-11-19T21:41:25+09:00",
   "program": "JOEFLOW",
-  "program_version_file": "1.7.3",
+  "program_version_file": "2.0.0",
   "runtime_skill_id": "joewrks-product-definition",
   "installation_path": "~\\.codex\\skills\\joewrks-product-definition",
   "composition": {
@@ -306,6 +306,24 @@
           "added": [],
           "changed": []
         }
+      },
+      {
+        "item": "2.0.0 (skill VERSION only; skill files otherwise byte-identical to 1.7.3)",
+        "commit": "89cb012138ebb5bef10963230b7a728490ec0584",
+        "base_commit": "ddf5c7e2ec054ecf4a7a299ef12a464cfae0631b",
+        "files": [
+          "VERSION"
+        ],
+        "composed": {
+          "SKILL.md": "unchanged since base",
+          "references/workflow-v0.2.0.md": "unchanged since base"
+        },
+        "not_installed_at_tip": [],
+        "installed_on": "2026-11-19",
+        "pycache_drift_before": {
+          "added": [],
+          "changed": []
+        }
       }
     ],
     "not_applied": [
@@ -317,7 +335,7 @@
     ],
     "matches_single_commit": false
   },
-  "tip_compared": "ddf5c7e2ec054ecf4a7a299ef12a464cfae0631b",
+  "tip_compared": "89cb012138ebb5bef10963230b7a728490ec0584",
   "origin_counts": {
     "branch_tip": 46,
     "composed_v1.1.0_plus_u1_u2": 3,
@@ -397,11 +415,16 @@
       "path": "~/.codex/skills-backups/joewrks-product-definition-before-1-7-3-ddf5c7e-20261118",
       "file_count": 274,
       "manifest_sha256": "b03a7a58c0351ad210bea916a9535cc45677449a791278fe49a4f5d7f069843d"
+    },
+    {
+      "path": "~/.codex/skills-backups/joewrks-product-definition-before-2-0-0-89cb012-20261119",
+      "file_count": 274,
+      "manifest_sha256": "c4acf5fbbad0be481c4e81324da1b8ff31d15f8ce6ea376993da5c12eb064f4c"
     }
   ],
   "manifest_sha256_definition": "sha256 of UTF-8 lines '<sha256>  <posix path>\n' sorted by path",
   "installed_file_count": 274,
-  "installed_manifest_sha256": "c4acf5fbbad0be481c4e81324da1b8ff31d15f8ce6ea376993da5c12eb064f4c",
+  "installed_manifest_sha256": "3d3f6d900eabdf937f6afabe6d79dc05cd65932dc95f038db05ca5d234f27923",
   "installed_manifest": [
     {
       "path": "SKILL.md",
@@ -410,7 +433,7 @@
     },
     {
       "path": "VERSION",
-      "sha256": "b60eb1aee608b0e18ce0ee958536003246bf2618862ab401797f7e001a1b5604",
+      "sha256": "c28fcca53637bc88e124af1725df13cb98c69dedefd62fb3cdbe1cdb6b760624",
       "origin": "branch_tip"
     },
     {
@@ -1835,6 +1858,10 @@
     "changed": []
   },
   "pycache_drift_before_1_7_3": {
+    "added": [],
+    "changed": []
+  },
+  "pycache_drift_before_2_0_0": {
     "added": [],
     "changed": []
   }
