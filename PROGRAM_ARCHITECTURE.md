@@ -10,7 +10,7 @@
 | 항목 | 값 |
 | --- | --- |
 | 프로그램 이름 | `JOEFLOW` |
-| 프로그램 릴리스 | `v1.7.3` |
+| 프로그램 릴리스 | `v2.0.0` |
 | 저장소 | `JOEWRKS/JOEFLOW` |
 | 런타임 skill/package ID | `joewrks-product-definition` |
 | canonical Product Definition authority | `product-definition/<project-slug>/state.json` |
@@ -34,7 +34,7 @@ SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED
 - 현재 V2 semantic-review 경계: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`
 - 과거 호환성: 상태 `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, v0.4.3 evidence
 - 계약 버전: 상호 독립 관리
-- 이 기준선의 전체 프로그램 릴리스: `v1.7.3`
+- 이 기준선의 전체 프로그램 릴리스: `v2.0.0`
 
 ## 2. 설계 목적
 
@@ -214,30 +214,28 @@ re-entry for affected authority gaps or ambiguity
 ### Repository mapping
 
 ```text
-skills/joewrks-product-definition/
+skills/joewrks-product-definition/   # the only folder agents read at run time
 ├─ SKILL.md                         # Product Definition entrypoint
+├─ VERSION                          # program version (equals the root VERSION)
+├─ agents/                          # agent metadata (openai.yaml)
 ├─ references/                      # authority and workflow rules
 ├─ schemas/                         # canonical schemas
 ├─ templates/                       # generated projection templates
-├─ scripts/                         # validators + installed V2 wrappers
+├─ scripts/                         # validators, record/revision/approval CLIs, projection tools
+├─ downstream_v21/                  # current handoff-definition/2.1 and semantic-review/2.1 authority
 ├─ downstream_v2/                   # frozen action-conformance/2.0 authority
-├─ downstream_v21/                  # frozen current 2.1 semantic/package authority
 ├─ integration_v2/                  # M6 runtime verifier/report outside frozen packages
-└─ downstream/                      # historical v1 compatibility
-   ├─ contracts.py                  # downstream contract compilation
-   ├─ provenance.py                 # source binding
-   ├─ verifier.py / invariants.py   # runtime conformance
-   ├─ protocol.py                   # execution protocol
-   ├─ adapters/                     # runtime adapters
-   └─ semantic_review/              # v0.4.3 semantic-review core
+├─ reviewer_runner/                 # isolated semantic-review runner and evidence
+└─ downstream/                      # historical v1 compatibility, adapters, v0.4.3 semantic_review core
 
-evals/
-├─ behavioral-v0.2/                 # behavioral evaluation
-├─ downstream-conformance-v0.4*/    # downstream experiments/evidence
-└─ semantic-review-v0.4.3/          # semantic-review spec/calibration/evidence
-
-tests/
-└─ fixtures/semantic-review-v1/     # frozen golden packages/oracle fixtures
+product-definition/                 # dogfood authority (frozen path)
+docs/                               # QUICKSTART, regression environment, design specs/plans
+evals/                              # run records; dated folders per release, archive/ for unreferenced records
+├─ semantic-review-v0.4.3/          # frozen (tree hash test, audit FROZEN_PATHS)
+├─ core-semantic-closure-v2-m6/     # frozen (audit FROZEN_PATHS)
+├─ joeflow-u1-personal-install/     # personal Codex overlay receipt
+└─ v2-release-20261119/             # 2.0.0 record and personal overlay installer
+tests/                              # unittest suite and fixtures
 ```
 
 ## 5. 도구 간 연결
@@ -267,6 +265,7 @@ tests/
 - **v1.7.1** — `projection_check.py`가 투영 문서(검토 화면·기획서)의 제목·머리 영역에 적힌 낡은 revision을 `stale_review_title_revision`·`stale_spec_title_revision`으로 검출(본문 변경 이력·범위 표기·"이전 승인" 언급은 제외); State 0.2.0·고정 모듈·바인딩 계약 변경 없음
 - **v1.7.2** — `projection_check.py` 제목 검사의 오탐 수정: 머리 영역에서 마지막 승인 revision을 사실대로 적은 문장(마지막/최근/현재 승인된 revision N, last/latest approved N)은 숫자가 state의 마지막 승인 revision과 같을 때 건너뛰고, finding의 next_action에 사실 문장은 고치지 말고 오탐으로 보고하라는 안전 문장 추가; State 0.2.0·고정 모듈·바인딩 계약 변경 없음
 - **v1.7.3** — `projection_check.py` 제목 검사의 오탐 수정 2: 머리 영역의 꾸밈말 없는 승인 표기(`승인: revision N (digest)`)가 마지막 승인 revision과 그 승인의 `manifest_digest` 앞 8자 이상을 같은 줄(HTML은 같은 블록 요소)에 적고 현재 revision을 함께 적지 않으면 사실로 보아 건너뜀. `<title>`·`<h1>`·Markdown `# ` 이름 줄은 digest가 있어도 이름으로 읽어 지적 유지; `next_action`·출력 모양 변경 없음
+- **v2.0.0** — 저장소 정리(무참조 기록 16개 보관 이동, 1개 삭제, 홈 경로 가림), `SECURITY.md`, `docs/QUICKSTART.md`, README 축약; 스킬 폴더는 `VERSION` 한 파일 외에 1.7.3과 바이트 동일, State 0.2.0·고정 모듈·바인딩 계약 변경 없음
 - **v1.6.0** — 전달된 사용자 의도 근거 종류 `RELAYED_USER_INTENT`: 사용자 원문 그대로(`DIRECT`)만 직접 확인과 같고, 전달자의 요약은 material 질문을 닫거나 담당자 기본값의 근거가 될 수 없음(`relayed_intent_cannot_close`·`relayed_intent_needs_user`), `new_records.py relayed`; State 0.2.0·바인딩 계약 identity 변경 없음, 보호된 `state_validation_v2.py`·스키마 enum 고정 해시 갱신
 
 ## 6. 한계

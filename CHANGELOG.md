@@ -2,6 +2,16 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
+## 2.0.0 — 후보 (미게시)
+
+태그·GitHub Release·push·개인 설치는 하지 않았습니다(사용자 승인 대기). 스킬 폴더는 `skills/joewrks-product-definition/VERSION` 한 파일만 1.7.3과 다르고 나머지 200개 파일은 바이트가 같습니다. 행동을 바꾸는 문장 변경이 없으므로 행동 시험은 하지 않았습니다. 기록은 [보고서](evals/v2-release-20261119/report.md)에 있습니다.
+
+- (A) 저장소 정리: 참조 0건인 `.superpowers/…/continuation-task-a-report.md` 1개 삭제. 참조 0건인 `docs/superpowers/plans/*` 13개와 `evals/v0.1.*-results.md` 3개를 `evals/archive/2026-11-19-unreferenced/`로 이동(상대 경로 유지). 테스트가 고정하지 않은 7개 파일에서 홈 경로 9곳을 `~`로 가림. 테스트·`.gitattributes`가 바이트를 고정한 3개 파일의 4곳은 그대로 둠.
+- (B) [`SECURITY.md`](SECURITY.md): 점검 항목과 수치, 남은 식별자(고정 파일, 이력, 커밋 메타데이터), 스크립트 신뢰 경계, 의존성, 보고 방법.
+- (C) [`docs/QUICKSTART.md`](docs/QUICKSTART.md): Codex 일반 복사, 개인용 오버레이 설치기, Claude Code(clone + junction), 첫 실행, 검증, 투영 갱신·검사, 버전 고정, 설치 경로별 업그레이드, 제거. README를 350줄에서 147줄로 줄이고 "전용 설치기 없음" 문장을 고침. `PROGRAM_ARCHITECTURE.md`의 Repository mapping을 지금 트리에 맞춤.
+- 개인 오버레이 설치기 [`install_2_0_0.py`](evals/v2-release-20261119/install_2_0_0.py)(BASE `ddf5c7e`, 실행하지 않음).
+- 게이트: 스킬 폴더 diff는 `VERSION` 1개 파일입니다. 전체 테스트는 1,264개 중 실패 3·오류 5·건너뜀 1이고, `v1.7.3` 태그를 다시 돌린 결과와 목록이 줄 단위로 같습니다(환경 원인 8건). `test_skill_package`·`test_friction_170`은 통과합니다.
+
 ## 1.7.3 — 2026-11-18
 
 게시: 사용자 승인("게시(보정 포함)", 2026-11-18, 부모 세션이 직접 받음) 뒤 VERSION 1.7.3, 태그 v1.7.3, GitHub Release, 개인 설치 overlay 갱신([install_1_7_3.py](evals/2026-11-17-safety-sentence-172/install_1_7_3.py), 기록 [PERSONAL_INSTALL_RECORD.md](PERSONAL_INSTALL_RECORD.md)). 변경·재검사·한계는 [보고서](evals/2026-11-17-safety-sentence-172/report-173.md), 릴리스 노트 [release-notes-v1.7.3.md](evals/2026-11-17-safety-sentence-172/release-notes-v1.7.3.md).
