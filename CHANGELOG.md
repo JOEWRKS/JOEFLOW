@@ -2,7 +2,9 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
-## 2.0.1 — 후보 (미게시)
+## 2.0.1 — 2026-11-20
+
+게시: 사용자 승인("세 도구 게시", 2026-11-20, 부모 세션이 직접 받음) 뒤 태그 v2.0.1, GitHub Release, 개인 설치 overlay 갱신([install_2_0_1.py](evals/v2-tests-20261119/install_2_0_1.py), 기록 [PERSONAL_INSTALL_RECORD.md](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)). 릴리스 노트 [release-notes-v2.0.1.md](evals/v2-tests-20261119/release-notes-v2.0.1.md).
 
 2026-11-19 2.0.0 시험 두 건(QUICKSTART 실행 시험 [보고서](evals/v2-tests-20261119/report-docs-joeflow.md), 세 도구 연동 시험 [보고서](evals/v2-tests-20261119/report-integration.md))에서 나온 JOEFLOW 결함을 고친 후보입니다. 태그·Release·개인 설치는 아직 없습니다. 준비 기록은 [report-201.md](evals/v2-tests-20261119/report-201.md)입니다.
 
@@ -13,7 +15,7 @@
 - `references/first-plan-guide.md`: baseline이 언제 세워지는지, 의도 근거를 어느 플래그에 넣는지.
 - `docs/QUICKSTART.md`·README 설치 블록: 문서 결함 D1~D8. README 블록은 태그 `v2.0.1`을 `./JOEFLOW`로 받고, 블록 전체를 `& { … }`로 감싸 clone이 실패하면 아무것도 복사하지 않고 멈춥니다.
 - 테스트 환경 정리(스킬 변경 없음, 2026-11-20 부모 세션 추가 요청): `pwsh`가 없으면 `test_discovery_baseline_v020`·`test_reverse_bootstrap_v020`의 스키마 서브테스트 4건을 skip. `test_migration_v020_apply`의 스키마 테스트는 `Test-Json`이 없으면(Windows PowerShell 5.1) skip. `.gitattributes`에 `/evals/joeflow-f03-f04/fixtures/** text eol=lf`(index는 이미 LF라 커밋 바이트는 그대로, CRLF 체크아웃만 막음). M6 재생 테스트는 원래 계획이 "조용히 건너뛰지 말라"고 정했으므로 바꾸지 않았습니다. `docs/regression-environment.md`의 방법(로컬 커밋 `d38b0ca`의 detached clone을 `JOEWRKS_M6_PHASE_B_WORKTREE`로 지정)으로 증거를 주면 통과합니다. 그 설정으로 전체 1,267개: 실패 0·오류 0·건너뜀 6.
-- 버전 2.0.1, 개인 오버레이 설치기 [`install_2_0_1.py`](evals/v2-tests-20261119/install_2_0_1.py)(BASE `89cb012`, 실행하지 않음).
+- 버전 2.0.1, 개인 오버레이 설치기 [`install_2_0_1.py`](evals/v2-tests-20261119/install_2_0_1.py)(BASE `89cb012`; 게시 커밋을 TIP으로 실행).
 
 **확인된 것**
 
