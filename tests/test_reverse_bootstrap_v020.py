@@ -1,6 +1,7 @@
 import copy
 import base64
 import json
+import shutil
 import subprocess
 import sys
 import unittest
@@ -104,6 +105,8 @@ class ReverseBootstrapV020Test(unittest.TestCase):
         return {error["code"] for error in validate_state_v2(state)}
 
     def schema_valid(self, state):
+        if shutil.which("pwsh") is None:
+            self.skipTest("pwsh (PowerShell 7 Test-Json) not installed")
         encoded_state = base64.b64encode(json.dumps(state).encode("utf-8")).decode("ascii")
         command = (
             "$json = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String("
@@ -111,7 +114,7 @@ class ReverseBootstrapV020Test(unittest.TestCase):
             f"Test-Json -Json $json -SchemaFile '{SCHEMA}'"
         )
         result = subprocess.run(
-            ["pwsh.exe", "-NoProfile", "-Command", command],
+            [shutil.which("pwsh"), "-NoProfile", "-Command", command],
             capture_output=True,
             text=True,
         )

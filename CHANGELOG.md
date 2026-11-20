@@ -12,6 +12,7 @@
 - `new_records.py question`·`user-decision`: `--evidence`가 선택이 됐습니다. 사용자 의도만 근거인 질문을 `--reason`으로만 기록할 수 있습니다. 전에는 `--evidence`가 필수여서 의도 근거를 넣으면 질문이 `EVIDENCE_RESOLVABLE`이 되어 검증에 걸렸습니다(연동 D10, 재현함).
 - `references/first-plan-guide.md`: baseline이 언제 세워지는지, 의도 근거를 어느 플래그에 넣는지.
 - `docs/QUICKSTART.md`·README 설치 블록: 문서 결함 D1~D8. README 블록은 태그 `v2.0.1`을 `./JOEFLOW`로 받고, 블록 전체를 `& { … }`로 감싸 clone이 실패하면 아무것도 복사하지 않고 멈춥니다.
+- 테스트 환경 정리(스킬 변경 없음, 2026-11-20 부모 세션 추가 요청): `pwsh`가 없으면 `test_discovery_baseline_v020`·`test_reverse_bootstrap_v020`의 스키마 서브테스트 4건을 skip. `test_migration_v020_apply`의 스키마 테스트는 `Test-Json`이 없으면(Windows PowerShell 5.1) skip. `.gitattributes`에 `/evals/joeflow-f03-f04/fixtures/** text eol=lf`(index는 이미 LF라 커밋 바이트는 그대로, CRLF 체크아웃만 막음). M6 재생 테스트는 원래 계획이 "조용히 건너뛰지 말라"고 정했으므로 바꾸지 않았습니다. `docs/regression-environment.md`의 방법(로컬 커밋 `d38b0ca`의 detached clone을 `JOEWRKS_M6_PHASE_B_WORKTREE`로 지정)으로 증거를 주면 통과합니다. 그 설정으로 전체 1,267개: 실패 0·오류 0·건너뜀 6.
 - 버전 2.0.1, 개인 오버레이 설치기 [`install_2_0_1.py`](evals/v2-tests-20261119/install_2_0_1.py)(BASE `89cb012`, 실행하지 않음).
 
 **확인된 것**

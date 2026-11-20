@@ -1273,6 +1273,13 @@ class MigrationApplyTest(unittest.TestCase):
         powershell = shutil.which("pwsh") or shutil.which("powershell")
         if powershell is None:
             self.skipTest("PowerShell Test-Json is unavailable")
+        probe = subprocess.run(
+            [powershell, "-NoProfile", "-NonInteractive", "-Command",
+             "if (Get-Command Test-Json -ErrorAction SilentlyContinue) { exit 0 }; exit 1"],
+            capture_output=True, check=False,
+        )
+        if probe.returncode != 0:
+            self.skipTest("PowerShell Test-Json is unavailable (Windows PowerShell 5.1 has none)")
         fixtures = (closed_state(), self.explicit_semantics_state())
         for position, state in enumerate(fixtures):
             with self.subTest(position=position):

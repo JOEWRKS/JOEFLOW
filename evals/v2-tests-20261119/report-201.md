@@ -42,6 +42,19 @@ README 4절 블록을 고정한 테스트는 없었습니다(grep: `test_skill_p
 - 전체 `python -B -m unittest discover -s tests`: 1,267개(2.0.0의 1,264 + 새 3) 중 실패 3·오류 5·건너뜀 1. 실패·오류 8건 목록을 2.0.0 릴리스 보고서의 목록과 정렬 후 `diff`하면 **같다**(테스트 이름 기준). 8건: `test_digest_syntax_…`(A, Z)·`test_schema_and_runtime_reject_bootstrap_mode_…`(2건) pwsh 없음 4, `test_migrated_candidate_satisfies_the_json_structural_schema`(position 0, 1) PowerShell 5.1 `Test-Json` 없음 2, `test_f04_checked_in_pass_and_partial_inputs_are_executable` f04 픽스처 CRLF 1, `test_preserved_phase_b_replays_read_only_through_21` M6 재생 증거 미설정 1. 소요 797초.
 - 스테이징 diff에 사용자 이름·메일·`C:\Users` 0건(커밋마다 grep).
 
+## 테스트 환경 정리(스킬 변경 없음)
+
+2026-11-20 부모 세션의 추가 요청("전부 고친 다음에 게시")으로 환경 원인 실패·오류 8건을 테스트 쪽에서 정리했습니다. 스킬 폴더 변경은 0입니다.
+
+| 항목 | 원인 | 처리 | 이 기계 결과 |
+|---|---|---|---|
+| `test_discovery_baseline_v020` 서브테스트 2, `test_reverse_bootstrap_v020` 서브테스트 2 | `pwsh.exe`를 바로 부름(PowerShell 7 없음) | `schema_valid`에서 `shutil.which("pwsh")`가 없으면 `skipTest`. 있으면 그 경로로 실행 | skip 4 |
+| `test_migration_v020_apply.test_migrated_candidate_satisfies_the_json_structural_schema`(서브테스트 2) | `pwsh`가 없으면 `powershell`(5.1)로 대체하는데 5.1에는 `Test-Json`이 없음 | 대체 셸에서 `Get-Command Test-Json`을 먼저 확인, 없으면 `skipTest` | skip 1(테스트 단위) |
+| `test_candidate_preflight_projection_audit` f04 | `evals/joeflow-f03-f04/fixtures/**`가 `core.autocrlf=true`에서 CRLF로 체크아웃돼 해시가 어긋남(index는 LF, `git ls-files --eol`로 확인) | `.gitattributes`에 `/evals/joeflow-f03-f04/fixtures/** text eol=lf` 한 줄. `.gitattributes`를 고정한 테스트·스크립트는 grep으로 0건, 이 경로는 FROZEN_PATHS 밖. 로더에서 정규화하려면 스킬의 `projection_audit_v2.py`를 바꿔야 해서 택하지 않음. 커밋 바이트는 그대로이고 체크아웃만 바뀜. 이 작업 사본은 그 폴더를 지우고 다시 checkout해 LF로 맞춤 | 통과 |
+| `test_downstream_v21_dogfood_replay` M6 재생 | `JOEWRKS_M6_PHASE_B_WORKTREE` 미설정 | **바꾸지 않음.** M5.1 계획(`docs/superpowers/plans/2026-08-30-core-semantic-closure-v2-m5-1-executability-remediation.md:1047`)이 "Do not silently skip the replay"라고 정한 의도된 실패입니다. 대신 `docs/regression-environment.md` 4절의 방법으로 증거를 만들었습니다: 이 저장소의 로컬 커밋 `d38b0ca`(tree `40749d9…`)를 scratch 폴더에 `--no-checkout --no-hardlinks` clone, `core.autocrlf=false`로 detached checkout | 변수 설정 시 통과(2개). 미설정이면 전처럼 실패 |
+
+전체 `JOEWRKS_M6_PHASE_B_WORKTREE=<snapshot> python -B -m unittest discover -s tests -v`: **1,267개, 실패 0·오류 0·건너뜀 6**(780초). 건너뜀 6 = pwsh 없음 4, Test-Json 없음 1, 기존 `JOEWRKS_FROZEN_A_ROOT`·`JOEWRKS_FROZEN_B_WORKTREE` 미설정 1. 실행 뒤 snapshot은 HEAD `d38b0ca`, `git status` 0줄. 이 변수 없이 돌리면 M6 재생 1건이 실패로 남습니다(의도).
+
 ## 버전·기록
 
 - `VERSION`·스킬 `VERSION` 2.0.1, `tests/test_skill_package.py` 2곳, README 4곳, `PROGRAM_ARCHITECTURE.md` 표·기준선·이력·트리, `CHANGELOG.md` `## 2.0.1 — 후보 (미게시)`.
@@ -58,6 +71,7 @@ README 4절 블록을 고정한 테스트는 없었습니다(grep: `test_skill_p
 
 - `3c81a47` fix: first plan reaches READY_FOR_REVIEW from the empty template (코드+테스트+guide)
 - `db1f877` docs: QUICKSTART and README install fixes (문서)
-- 이 보고를 담은 커밋: release-prep 2.0.1 candidate (버전·기록)
+- `9f3680e` release-prep 2.0.1 candidate (버전·기록)
+- 이 절을 담은 커밋: test: environment-dependent tests skip or pass on this machine (테스트 환경 정리)
 
 `git diff --stat v2.0.0 HEAD -- skills/joewrks-product-definition`: `VERSION`, `references/first-plan-guide.md`, `scripts/new_records.py`, `scripts/revision_v2.py` 4개 파일, 17줄 추가·4줄 삭제.
