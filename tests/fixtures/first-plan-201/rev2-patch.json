@@ -1,0 +1,444 @@
+{
+  "evidence": [
+    {
+      "id": "EVD-001",
+      "status": "CURRENT",
+      "source_kind": "USER_CONFIRMED_INTENT",
+      "locator": "owner brief 2026-11-19 (test-run task text)",
+      "claim": "The owner wants a one-page personal reading-list web page built as static HTML/CSS with no framework.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    }
+  ],
+  "objects": {
+    "unknowns": [
+      {
+        "id": "UNK-001",
+        "status": "RESOLVED",
+        "question": "How is the book list maintained?",
+        "why_it_matters": "It decides whether the page needs in-browser editing and storage or stays a static document.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_CONFIRMATION",
+        "affects": [
+          "RULE-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "PRODUCT_SURFACE",
+          "surface_ref": "SURF-001",
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "The owner edits entries directly in the HTML file",
+            "consequences": [
+              "No in-page editing; the page is read-only"
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "The page lets the owner add and remove entries in the browser",
+            "consequences": [
+              "Needs local storage, forms and deletion handling"
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "Updating the list means editing a file instead of using the page"
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [
+          "EVD-001"
+        ],
+        "resolved_by": [
+          "DEC-001"
+        ],
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+        "resolution_summary": "Owner accepted the recommendation OPT-A (self-approved in test run).",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-002",
+        "status": "RESOLVED",
+        "question": "What does each book entry show?",
+        "why_it_matters": "It sets the information every entry must display on the smallest screen.",
+        "required_authority_class": "INTENT",
+        "question_category": "CORE_FLOW",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_CONFIRMATION",
+        "affects": [
+          "RULE-002"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "PRODUCT_SURFACE",
+          "surface_ref": "SURF-001",
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "Title, author and one reading status (reading, finished, to read)",
+            "consequences": [
+              "Three fields per entry"
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "Title and author only",
+            "consequences": [
+              "No status grouping"
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "A status label adds one more line per entry"
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [
+          "EVD-001"
+        ],
+        "resolved_by": [
+          "DEC-002"
+        ],
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+        "resolution_summary": "Owner accepted the recommendation OPT-A (self-approved in test run).",
+        "deferral": null,
+        "blocked_reason": null
+      }
+    ],
+    "decisions": [
+      {
+        "id": "DEC-001",
+        "status": "CURRENT",
+        "statement": "Entries are written in the HTML file; the page itself is read-only.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+        "decision_authority": "USER_CONFIRMATION",
+        "source_unknown_refs": [
+          "UNK-001"
+        ],
+        "evidence_refs": [
+          "EVD-001"
+        ],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": {
+          "recommended_option": "OPT-A",
+          "alternatives_presented": [
+            "OPT-A",
+            "OPT-B"
+          ],
+          "tradeoffs_presented": [
+            "Updating the list means editing a file instead of using the page"
+          ],
+          "accepted_by": "user",
+          "accepted_at": null
+        }
+      },
+      {
+        "id": "DEC-002",
+        "status": "CURRENT",
+        "statement": "Each entry shows title, author and exactly one status: reading, finished or to read.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+        "decision_authority": "USER_CONFIRMATION",
+        "source_unknown_refs": [
+          "UNK-002"
+        ],
+        "evidence_refs": [
+          "EVD-001"
+        ],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": {
+          "recommended_option": "OPT-A",
+          "alternatives_presented": [
+            "OPT-A",
+            "OPT-B"
+          ],
+          "tradeoffs_presented": [
+            "A status label adds one more line per entry"
+          ],
+          "accepted_by": "user",
+          "accepted_at": null
+        }
+      }
+    ],
+    "goals": [
+      {
+        "id": "GOAL-001",
+        "status": "CURRENT",
+        "statement": "The owner sees their reading list at a glance on one page."
+      }
+    ],
+    "users": [
+      {
+        "id": "USR-001",
+        "status": "CURRENT",
+        "description": "The page owner, reading their own list; no sign-in.",
+        "actor_kind": "OWNER"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "REQ-001",
+        "status": "CURRENT",
+        "statement": "One static page lists the owner's books, each with title, author and one reading status.",
+        "scope": "The whole product: a single read-only page.",
+        "ui_required": true,
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        }
+      }
+    ],
+    "rules": [
+      {
+        "id": "RULE-001",
+        "status": "CURRENT",
+        "statement": "Entries are authored in the HTML file; the page offers no editing, storage or deletion.",
+        "applies_to": [
+          "REQ-001"
+        ]
+      },
+      {
+        "id": "RULE-002",
+        "status": "CURRENT",
+        "statement": "Each entry shows title, author and exactly one status: reading, finished or to read.",
+        "applies_to": [
+          "REQ-001"
+        ]
+      }
+    ],
+    "flows": [
+      {
+        "id": "FLOW-001",
+        "status": "CURRENT",
+        "goal_refs": [
+          "GOAL-001"
+        ],
+        "entry": "Open the page file or URL.",
+        "preconditions": [
+          "The HTML file contains zero or more entries."
+        ],
+        "paths": [
+          "Scan the list of entries."
+        ],
+        "outcomes": [
+          "The owner sees every entry with its title, author and status."
+        ]
+      }
+    ],
+    "screens": [
+      {
+        "id": "SCR-001",
+        "status": "CURRENT",
+        "purpose": "Show the reading list.",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "interaction_mode": "READ_ONLY",
+        "major_actions": []
+      }
+    ],
+    "states": [
+      {
+        "id": "STATE-001",
+        "status": "CURRENT",
+        "owner_refs": [
+          "SCR-001"
+        ],
+        "state_name": "LIST_SHOWN",
+        "conditions": [
+          "The file holds one or more entries."
+        ]
+      }
+    ],
+    "data": [
+      {
+        "id": "DATA-001",
+        "status": "CURRENT",
+        "name": "Book entry",
+        "purpose": "Title, author and status of one book.",
+        "ownership": "OWNER"
+      }
+    ],
+    "acceptance_criteria": [
+      {
+        "id": "AC-001",
+        "status": "CURRENT",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "assertion": "Every entry in the file appears on the page with its title, author and one of the three statuses."
+      },
+      {
+        "id": "AC-002",
+        "status": "CURRENT",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "assertion": "The page works as a static HTML/CSS file with no framework and no in-page editing."
+      }
+    ],
+    "tasks": [
+      {
+        "id": "TASK-001",
+        "status": "CURRENT",
+        "implements": [
+          "REQ-001"
+        ],
+        "acceptance_refs": [
+          "AC-001",
+          "AC-002"
+        ]
+      }
+    ]
+  },
+  "surfaces": [
+    {
+      "id": "SURF-001",
+      "kind": "FEATURE_AREA",
+      "name": "Reading list page",
+      "status": "IN_SCOPE",
+      "materiality": {
+        "outcome_divergence": "MEDIUM",
+        "fan_out": "MULTI_OBJECT",
+        "user_visible": true,
+        "reversibility": "REVERSIBLE",
+        "risk_flags": {
+          "security": false,
+          "privacy": false,
+          "money": false,
+          "legal_or_policy": false,
+          "destructive": false,
+          "data_loss": false,
+          "external_commitment": false
+        },
+        "classification": "MATERIAL"
+      },
+      "evidence_refs": [
+        "EVD-001"
+      ],
+      "authority_refs": [
+        "REQ-001"
+      ],
+      "unknown_refs": [
+        "UNK-001",
+        "UNK-002"
+      ],
+      "decision_refs": [
+        "DEC-001",
+        "DEC-002"
+      ],
+      "contradiction_refs": [],
+      "rationale": null,
+      "intent_classification": null
+    }
+  ]
+}

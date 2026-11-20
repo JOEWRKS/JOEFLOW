@@ -65,7 +65,9 @@ def _common_question(parser: argparse.ArgumentParser) -> None:
                         choices=["CORE_FLOW", "SCOPE_BOUNDARY", "STATE_RECOVERY", "SECONDARY_BEHAVIOR", "PREFERENCE", "COSMETIC"])
     parser.add_argument("--option", action="append", type=_option, required=True, help="ID=statement|consequence (repeat)")
     parser.add_argument("--affects", action="append", required=True, help="affected ID (repeat)")
-    parser.add_argument("--evidence", action="append", required=True, help="EVD ID behind the question (repeat)")
+    parser.add_argument("--evidence", action="append", default=[],
+                        help="EVD ID of a fact that frames the question (repeat; optional). The user's intent goes "
+                             "in --reason: intent here answers an INTENT question and it is never asked")
     parser.add_argument("--surface", help="SURF ID the question came from (origin PRODUCT_SURFACE)")
     parser.add_argument("--materiality", type=_materiality, help="default HIGH,MULTI_FLOW,true,REVERSIBLE")
     parser.add_argument("--recommend", help="recommended option ID; needs --reason and --tradeoff")

@@ -29,7 +29,11 @@ When an error names a field, `explain_state_errors.py state.json` adds the allow
    Each applied patch is one revision. While the status is `OPEN`, requirements and
    screens may exist before their coverage rows; when a surface's questions are all
    answered, mark it `IN_SCOPE` with its requirement as authority. Missing rows become
-   errors at `READY_FOR_REVIEW`.
+   errors at `READY_FOR_REVIEW`. The first `--status READY_FOR_REVIEW` revision also
+   establishes the discovery baseline (`discovery_baseline` goes from `NOT_ESTABLISHED` to
+   `CURRENT`, the report says `"discovery_baseline": "ESTABLISHED"`): asking for review is the
+   claim that discovery is complete. Do not edit `state.json` for it; `build_discovery_baseline.py
+   state.json` only prints the same object for inspection.
 5. FREEZE: `draft_freeze.py state.json --patch PATCH` writes every missing coverage row
    with its exact axis inventory, fills the cells the record graph decides (a
    requirement's acceptance criteria, users, goal and flows) and marks the rest
@@ -46,7 +50,7 @@ When an error names a field, `explain_state_errors.py state.json` adds the allow
 
 | You have | Put it in | Not in | Why |
 |---|---|---|---|
-| What the user said they want | the question's `recommendation.reasoning_refs` | the question's `evidence_refs` | intent evidence that supports the question's `required_authority_class` *answers* it: the question becomes `EVIDENCE_RESOLVABLE` and is never asked |
+| What the user said they want | the question's `recommendation.reasoning_refs` (`new_records.py --reason`) | the question's `evidence_refs` (`--evidence`, which may be left out) | intent evidence that supports the question's `required_authority_class` *answers* it: the question becomes `EVIDENCE_RESOLVABLE` and is never asked |
 | Facts about the current product or code (observed implementation, runtime, a measurement) | the question's `evidence_refs` to frame it, and `reasoning_refs` when they justify the recommendation | — | facts never answer an `INTENT` question, so they cannot hide it; inferred intent and design artifacts are not accepted as reasons |
 | A requirement, rule, flow, data or integration record behind a recommendation | `reasoning_refs` | — | `DEC` records are not allowed there; cite the rule or requirement the decision produced |
 | Why a coverage cell does not apply | the cell's `basis_bindings` plus a `rationale` | `authority_bindings` | `N/A` needs both a basis and a meaningful rationale |

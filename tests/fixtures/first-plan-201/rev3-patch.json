@@ -1,0 +1,626 @@
+{
+  "rows": [
+    {
+      "coverage": {
+        "feature_id": "REQ-001",
+        "cells": {
+          "actor": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "USR-001",
+                "pointer": "/description"
+              }
+            ]
+          },
+          "goal": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "REQ-001",
+                "pointer": "/statement"
+              }
+            ]
+          },
+          "entry_point": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "FLOW-001",
+                "pointer": "/entry"
+              }
+            ]
+          },
+          "precondition": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "FLOW-001",
+                "pointer": "/preconditions"
+              }
+            ]
+          },
+          "happy_path": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "REQ-001",
+                "pointer": "/statement"
+              }
+            ]
+          },
+          "alternative_path": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "RULE-003",
+                "pointer": "/statement"
+              }
+            ]
+          },
+          "error": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "Static read-only page (RULE-001): nothing runs, submits or fails at runtime."
+          },
+          "recovery": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "Static read-only page (RULE-001): nothing runs, submits or fails at runtime."
+          },
+          "permission": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "EVD-900",
+                "pointer": "/claim"
+              }
+            ],
+            "rationale": "Single owner, no accounts or roles."
+          },
+          "state": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "RULE-003",
+                "pointer": "/statement"
+              }
+            ]
+          },
+          "data": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "DATA-001",
+                "pointer": "/purpose"
+              }
+            ]
+          },
+          "side_effect": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "Static read-only page (RULE-001): nothing runs, submits or fails at runtime."
+          },
+          "notification": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "The page sends no notifications."
+          },
+          "validation": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "RULE-002",
+                "pointer": "/statement"
+              }
+            ]
+          },
+          "boundary": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ]
+          },
+          "persistence": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ]
+          },
+          "security": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "EVD-900",
+                "pointer": "/claim"
+              }
+            ],
+            "rationale": "No accounts, input or server side."
+          },
+          "privacy": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "EVD-001",
+                "pointer": "/claim"
+              }
+            ],
+            "rationale": "The page only shows book entries the owner writes; it collects nothing."
+          },
+          "analytics": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "EVD-001",
+                "pointer": "/claim"
+              }
+            ],
+            "rationale": "Static HTML/CSS page with no scripts or tracking."
+          },
+          "acceptance": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "AC-001",
+                "pointer": "/assertion"
+              },
+              {
+                "record_id": "AC-002",
+                "pointer": "/assertion"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "ux_coverage": {
+        "screen_id": "SCR-001",
+        "states": {
+          "default": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "SCR-001",
+                "pointer": "/purpose"
+              },
+              {
+                "record_id": "RULE-004",
+                "pointer": "/statement"
+              }
+            ]
+          },
+          "loading": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "Static read-only page (RULE-001): nothing runs, submits or fails at runtime."
+          },
+          "empty": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "RULE-003",
+                "pointer": "/statement"
+              },
+              {
+                "record_id": "STATE-002",
+                "pointer": "/conditions"
+              }
+            ]
+          },
+          "partial": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "Static read-only page (RULE-001): nothing runs, submits or fails at runtime."
+          },
+          "success": {
+            "status": "COVERED",
+            "bind": [
+              {
+                "record_id": "AC-001",
+                "pointer": "/assertion"
+              },
+              {
+                "record_id": "STATE-001",
+                "pointer": "/conditions"
+              }
+            ]
+          },
+          "error": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "Static read-only page (RULE-001): nothing runs, submits or fails at runtime."
+          },
+          "disabled": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "No controls to disable."
+          },
+          "offline": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "A local static file needs no network."
+          },
+          "timeout": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "Static read-only page (RULE-001): nothing runs, submits or fails at runtime."
+          },
+          "retrying": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "Static read-only page (RULE-001): nothing runs, submits or fails at runtime."
+          },
+          "submitting": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "Nothing is submitted."
+          },
+          "completed": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "Static read-only page (RULE-001): nothing runs, submits or fails at runtime."
+          },
+          "cancelled": {
+            "status": "N/A",
+            "bind": [
+              {
+                "record_id": "RULE-001",
+                "pointer": "/statement"
+              }
+            ],
+            "rationale": "Static read-only page (RULE-001): nothing runs, submits or fails at runtime."
+          }
+        },
+        "actions": []
+      }
+    }
+  ],
+  "objects": {
+    "unknowns": [
+      {
+        "id": "UNK-003",
+        "status": "RESOLVED",
+        "question": "On the smallest screen (360px wide), what must be visible for each entry?",
+        "why_it_matters": "It is the information budget for the only screen.",
+        "required_authority_class": "INTENT",
+        "question_category": "CORE_FLOW",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_CONFIRMATION",
+        "affects": [
+          "RULE-004"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "PRODUCT_SURFACE",
+          "surface_ref": "SURF-001",
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "Title, author and status all visible per entry, list scrolls vertically, nothing behind disclosure",
+            "consequences": [
+              "Longer page on phones"
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "Title only, author and status behind a tap",
+            "consequences": [
+              "Needs an interaction on a read-only page"
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001",
+            "RULE-002"
+          ],
+          "tradeoffs": [
+            "Long lists need more vertical scrolling on phones"
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [
+          "EVD-001"
+        ],
+        "resolved_by": [
+          "DEC-003"
+        ],
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+        "resolution_summary": "Owner accepted the recommendation OPT-A (self-approved in test run).",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-004",
+        "status": "RESOLVED",
+        "question": "What does the page show when the file has no entries?",
+        "why_it_matters": "First contact before any book is added.",
+        "required_authority_class": "INTENT",
+        "question_category": "STATE_RECOVERY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_CONFIRMATION",
+        "affects": [
+          "RULE-003"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "PRODUCT_SURFACE",
+          "surface_ref": "SURF-001",
+          "pack_id": null,
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "A short message that no books are listed yet",
+            "consequences": [
+              "One extra state to build"
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "An empty list area with only the page title",
+            "consequences": [
+              "Looks broken on first contact"
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "One more state to keep in the HTML"
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [
+          "EVD-001"
+        ],
+        "resolved_by": [
+          "DEC-004"
+        ],
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+        "resolution_summary": "Owner accepted the recommendation OPT-A (self-approved in test run).",
+        "deferral": null,
+        "blocked_reason": null
+      }
+    ],
+    "decisions": [
+      {
+        "id": "DEC-003",
+        "status": "CURRENT",
+        "statement": "At 360px width every entry shows title, author and status without horizontal scrolling; the list scrolls vertically; nothing is hidden behind disclosure.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+        "decision_authority": "USER_CONFIRMATION",
+        "source_unknown_refs": [
+          "UNK-003"
+        ],
+        "evidence_refs": [
+          "EVD-001"
+        ],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": {
+          "recommended_option": "OPT-A",
+          "alternatives_presented": [
+            "OPT-A",
+            "OPT-B"
+          ],
+          "tradeoffs_presented": [
+            "Long lists need more vertical scrolling on phones"
+          ],
+          "accepted_by": "user",
+          "accepted_at": null
+        }
+      },
+      {
+        "id": "DEC-004",
+        "status": "CURRENT",
+        "statement": "With no entries the page shows a short message that no books are listed yet.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_ACCEPTED_RECOMMENDATION",
+        "decision_authority": "USER_CONFIRMATION",
+        "source_unknown_refs": [
+          "UNK-004"
+        ],
+        "evidence_refs": [
+          "EVD-001"
+        ],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "REQ-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": {
+          "recommended_option": "OPT-A",
+          "alternatives_presented": [
+            "OPT-A",
+            "OPT-B"
+          ],
+          "tradeoffs_presented": [
+            "One more state to keep in the HTML"
+          ],
+          "accepted_by": "user",
+          "accepted_at": null
+        }
+      }
+    ],
+    "rules": [
+      {
+        "id": "RULE-003",
+        "status": "CURRENT",
+        "statement": "With no entries the page shows a short message that no books are listed yet.",
+        "applies_to": [
+          "REQ-001"
+        ]
+      },
+      {
+        "id": "RULE-004",
+        "status": "CURRENT",
+        "statement": "At 360px width every entry shows title, author and status without horizontal scrolling; the list scrolls vertically; nothing is hidden behind disclosure.",
+        "applies_to": [
+          "REQ-001"
+        ]
+      }
+    ],
+    "states": [
+      {
+        "id": "STATE-002",
+        "status": "CURRENT",
+        "owner_refs": [
+          "SCR-001"
+        ],
+        "state_name": "LIST_EMPTY",
+        "conditions": [
+          "The file holds no entries."
+        ]
+      }
+    ]
+  }
+}

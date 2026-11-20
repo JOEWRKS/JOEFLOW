@@ -209,4 +209,11 @@ def open_revision(
             procedure_complete=baseline.get("procedure_complete") is True,
             applicable_surface_classes_complete=baseline.get("applicable_surface_classes_complete") is True,
         )
+    elif status == "READY_FOR_REVIEW":
+        # Asking for review is the author's claim that discovery is done; establish the baseline
+        # here (as build_discovery_baseline.py does) instead of leaving state.json to be hand-edited.
+        candidate["discovery_baseline"] = build_discovery_baseline(
+            candidate, procedure_complete=True, applicable_surface_classes_complete=True,
+        )
+        report["discovery_baseline"] = "ESTABLISHED"
     return candidate, report
