@@ -36,21 +36,23 @@ The Markdown and HTML files are projections; `state.json` stays authoritative. H
 
 Use it for a new product, a change to an existing product, or a mismatch between approved meaning and implementation. Requires Git and Python 3 (examples use Windows PowerShell). Install the entire `skills/joewrks-product-definition/` directory; never copy only `SKILL.md` or overwrite an existing install without inspection.
 
-Codex plain copy (stops if an install already exists):
+Codex plain copy of release `v2.0.1`. Run it in an empty folder; it stops without copying if the clone fails (for example, a `JOEFLOW` folder is already there) or an install already exists:
 
 ```powershell
-git clone https://github.com/JOEWRKS/JOEFLOW.git
-Set-Location JOEFLOW
+& {
+  git clone --branch v2.0.1 https://github.com/JOEWRKS/JOEFLOW.git JOEFLOW
+  if ($LASTEXITCODE -ne 0) { throw "git clone이 실패했습니다. 빈 폴더에서 다시 실행하세요(이미 JOEFLOW 폴더가 있으면 clone하지 않습니다)." }
 
-$joeflowSource = (Resolve-Path '.\skills\joewrks-product-definition').Path
-$joeflowCodexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME '.codex' }
-$joeflowTarget = Join-Path $joeflowCodexHome 'skills\joewrks-product-definition'
+  $joeflowSource = (Resolve-Path '.\JOEFLOW\skills\joewrks-product-definition').Path
+  $joeflowCodexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME '.codex' }
+  $joeflowTarget = Join-Path $joeflowCodexHome 'skills\joewrks-product-definition'
 
-if (Test-Path -LiteralPath $joeflowTarget) {
-  throw "기존 설치를 덮어쓰지 마세요. 먼저 백업하고 변경 내용을 확인하세요: $joeflowTarget"
+  if (Test-Path -LiteralPath $joeflowTarget) {
+    throw "기존 설치를 덮어쓰지 마세요. 먼저 백업하고 변경 내용을 확인하세요: $joeflowTarget"
+  }
+  New-Item -ItemType Directory -Force (Split-Path $joeflowTarget) | Out-Null
+  Copy-Item -LiteralPath $joeflowSource -Destination $joeflowTarget -Recurse
 }
-New-Item -ItemType Directory -Force (Split-Path $joeflowTarget) | Out-Null
-Copy-Item -LiteralPath $joeflowSource -Destination $joeflowTarget -Recurse
 ```
 
 There is no package-manager command. Claude Code (clone + junction), the maintainer's personal Codex overlay installer (`evals/<release-folder>/install_<ver>.py`), upgrades, and removal are in the [Quickstart (Korean)](docs/QUICKSTART.md).
