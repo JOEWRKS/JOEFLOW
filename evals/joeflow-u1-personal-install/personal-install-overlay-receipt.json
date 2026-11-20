@@ -1,8 +1,8 @@
 {
   "schema_version": "joeflow.personal-install-overlay-receipt/1.0",
-  "recorded_at": "2026-11-19T21:41:25+09:00",
+  "recorded_at": "2026-11-20T18:29:21+09:00",
   "program": "JOEFLOW",
-  "program_version_file": "2.0.0",
+  "program_version_file": "2.0.1",
   "runtime_skill_id": "joewrks-product-definition",
   "installation_path": "~\\.codex\\skills\\joewrks-product-definition",
   "composition": {
@@ -324,6 +324,27 @@
           "added": [],
           "changed": []
         }
+      },
+      {
+        "item": "2.0.1 (first plan reaches review from the empty template; new_records --evidence optional; first-plan-guide)",
+        "commit": "7ac9f834a6ecabaa7004415f197114639bbc0757",
+        "base_commit": "89cb012138ebb5bef10963230b7a728490ec0584",
+        "files": [
+          "VERSION",
+          "references/first-plan-guide.md",
+          "scripts/new_records.py",
+          "scripts/revision_v2.py"
+        ],
+        "composed": {
+          "SKILL.md": "unchanged since base",
+          "references/workflow-v0.2.0.md": "unchanged since base"
+        },
+        "not_installed_at_tip": [],
+        "installed_on": "2026-11-20",
+        "pycache_drift_before": {
+          "added": [],
+          "changed": []
+        }
       }
     ],
     "not_applied": [
@@ -335,7 +356,7 @@
     ],
     "matches_single_commit": false
   },
-  "tip_compared": "89cb012138ebb5bef10963230b7a728490ec0584",
+  "tip_compared": "7ac9f834a6ecabaa7004415f197114639bbc0757",
   "origin_counts": {
     "branch_tip": 46,
     "composed_v1.1.0_plus_u1_u2": 3,
@@ -420,11 +441,16 @@
       "path": "~/.codex/skills-backups/joewrks-product-definition-before-2-0-0-89cb012-20261119",
       "file_count": 274,
       "manifest_sha256": "c4acf5fbbad0be481c4e81324da1b8ff31d15f8ce6ea376993da5c12eb064f4c"
+    },
+    {
+      "path": "~/.codex/skills-backups/joewrks-product-definition-before-2-0-1-7ac9f83-20261120",
+      "file_count": 274,
+      "manifest_sha256": "3d3f6d900eabdf937f6afabe6d79dc05cd65932dc95f038db05ca5d234f27923"
     }
   ],
   "manifest_sha256_definition": "sha256 of UTF-8 lines '<sha256>  <posix path>\n' sorted by path",
   "installed_file_count": 274,
-  "installed_manifest_sha256": "3d3f6d900eabdf937f6afabe6d79dc05cd65932dc95f038db05ca5d234f27923",
+  "installed_manifest_sha256": "7b89e9eced50732334c16969ad6982fa5fba4301b45dc394dc3ee683d2b191d7",
   "installed_manifest": [
     {
       "path": "SKILL.md",
@@ -433,7 +459,7 @@
     },
     {
       "path": "VERSION",
-      "sha256": "c28fcca53637bc88e124af1725df13cb98c69dedefd62fb3cdbe1cdb6b760624",
+      "sha256": "fe840f52fb5578d3f77eb497115eb02c6036601c3a53e60df7995c7276baa77a",
       "origin": "branch_tip"
     },
     {
@@ -1048,7 +1074,7 @@
     },
     {
       "path": "references/first-plan-guide.md",
-      "sha256": "78fe53811b6a734388686976681a3e1ce7c0c444a02a3ae0504f90471c5885de",
+      "sha256": "9ab3c44acd71051521c6cedf96c5cc92a8e79c070c4c6641a03cf27a53ca4608",
       "origin": "branch_tip"
     },
     {
@@ -1628,7 +1654,7 @@
     },
     {
       "path": "scripts/new_records.py",
-      "sha256": "02097be794362237c95a667840f86df85f3f2977a5abe4f794559a690d47554e",
+      "sha256": "4e3dcdd8a341c8fac5236c33a1abca7f559368b479b0bf8d61a176bca17408d9",
       "origin": "branch_tip"
     },
     {
@@ -1678,7 +1704,7 @@
     },
     {
       "path": "scripts/revision_v2.py",
-      "sha256": "da26d450fdc90567021af47d672439efadea83fb0c183000ec28e6b7cea12d5a",
+      "sha256": "327ef01fff271f37626b20bd1d85508a046395189299ec20e1723248ef5d247a",
       "origin": "branch_tip"
     },
     {
@@ -1862,6 +1888,10 @@
     "changed": []
   },
   "pycache_drift_before_2_0_0": {
+    "added": [],
+    "changed": []
+  },
+  "pycache_drift_before_2_0_1": {
     "added": [],
     "changed": []
   }
