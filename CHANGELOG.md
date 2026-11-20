@@ -2,6 +2,35 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
+## 2.0.1 — 후보 (미게시)
+
+2026-11-19 2.0.0 시험 두 건(QUICKSTART 실행 시험 [보고서](evals/v2-tests-20261119/report-docs-joeflow.md), 세 도구 연동 시험 [보고서](evals/v2-tests-20261119/report-integration.md))에서 나온 JOEFLOW 결함을 고친 후보입니다. 태그·Release·개인 설치는 아직 없습니다. 준비 기록은 [report-201.md](evals/v2-tests-20261119/report-201.md)입니다.
+
+**바뀐 것**
+
+- `open_revision.py`(`revision_v2.py`): `--status READY_FOR_REVIEW` 개정에서 `discovery_baseline`이 `CURRENT`가 아니면 그 자리에서 세웁니다(`build_discovery_baseline.py`가 출력하는 것과 같은 객체, 보고에 `"discovery_baseline": "ESTABLISHED"`). 빈 템플릿에서 시작한 새 프로젝트가 `discovery_baseline_gaps`·`discovery_procedure_gaps`(pointer `null`)에 막혀 state.json을 손으로 고쳐야 하던 문제(연동 D2)를 고칩니다. `OPEN`·`BLOCKED` 개정과 이미 `CURRENT`인 baseline의 동작은 그대로입니다.
+- `new_records.py question`·`user-decision`: `--evidence`가 선택이 됐습니다. 사용자 의도만 근거인 질문을 `--reason`으로만 기록할 수 있습니다. 전에는 `--evidence`가 필수여서 의도 근거를 넣으면 질문이 `EVIDENCE_RESOLVABLE`이 되어 검증에 걸렸습니다(연동 D10, 재현함).
+- `references/first-plan-guide.md`: baseline이 언제 세워지는지, 의도 근거를 어느 플래그에 넣는지.
+- `docs/QUICKSTART.md`·README 설치 블록: 문서 결함 D1~D8. README 블록은 태그 `v2.0.1`을 `./JOEFLOW`로 받고, 블록 전체를 `& { … }`로 감싸 clone이 실패하면 아무것도 복사하지 않고 멈춥니다.
+- 버전 2.0.1, 개인 오버레이 설치기 [`install_2_0_1.py`](evals/v2-tests-20261119/install_2_0_1.py)(BASE `89cb012`, 실행하지 않음).
+
+**확인된 것**
+
+- 새 테스트 `tests/test_first_plan_201.py`(3건)는 고치기 전 2건 실패, 고친 뒤 통과. 빈 템플릿 → rev2 OPEN → rev3 READY_FOR_REVIEW → `validate_state` 통과 → Approval Manifest 생성까지 스크립트만으로 갑니다.
+- README 새 블록을 PowerShell 5.1에서 stdin으로 두 번 실행: 첫 번째 설치, 같은 폴더 두 번째는 clone 실패로 멈추고 설치하지 않음(URL은 로컬 저장소, 태그는 v2.0.0으로 바꿔 시험).
+- `[Console]::OutputEncoding = [Text.Encoding]::UTF8`: 콘솔 인코딩 cp949에서 깨지던 변수 캡처가 정상이 됨(PowerShell 5.1.19041).
+- 전체 테스트 결과는 준비 기록에 있습니다.
+
+**확인되지 않은 것**
+
+- 행동 시험 없음. 바뀐 것은 스크립트 동작과 참조 문서이며 SKILL.md와 `workflow-v0.2.0.md` 본문은 그대로입니다.
+- 대화형 PowerShell 콘솔에 사람이 블록을 붙여 넣는 경우, Codex가 `skills\` 안의 백업 폴더를 중복 스킬로 읽는지, `install_2_0_1.py` 실제 실행.
+
+**세션이 대신 내린 결정**
+
+- D2는 (a) `open_revision`이 baseline을 세우는 방식 + (c) first-plan-guide 안내를 골랐습니다. READY_FOR_REVIEW 요청 자체가 "발견 절차를 마쳤다"는 작성자의 주장이고, 기존 `build_discovery_baseline.py`도 같은 주장(`procedure_complete: true`)을 조건 없이 적기 때문입니다. (b) finding pointer 보강은 (a) 뒤에 이 경로에서 그 finding이 나오지 않으므로 하지 않았습니다.
+- D10은 guide 문장이 아니라 CLI를 고쳤습니다. guide와 예시(`discover-one-question`의 `evidence_refs: []`)가 맞고 필수 플래그가 틀렸기 때문입니다.
+
 ## 2.0.0 — 2026-11-19
 
 게시: 사용자 승인("게시 ㄱㄱ", 2026-11-19, 부모 세션이 직접 받음) 뒤 태그 v2.0.0, GitHub Release, 개인 설치 overlay 갱신([install_2_0_0.py](evals/v2-release-20261119/install_2_0_0.py), 기록 [PERSONAL_INSTALL_RECORD.md](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)). 릴리스 노트 [release-notes-v2.0.0.md](evals/v2-release-20261119/release-notes-v2.0.0.md). 스킬 폴더는 `skills/joewrks-product-definition/VERSION` 한 파일만 1.7.3과 다르고 나머지 200개 파일은 바이트가 같습니다. 행동을 바꾸는 문장 변경이 없으므로 행동 시험은 하지 않았습니다. 기록은 [보고서](evals/v2-release-20261119/report.md)에 있습니다.
