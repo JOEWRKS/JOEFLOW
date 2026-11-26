@@ -1,30 +1,32 @@
 #!/usr/bin/env python3
-"""Build complete V2 evidence, unknown, and decision records from the few fields an author decides."""
+"""Build complete V2 evidence, unknown, and decision records from the few fields an author decides.
+
+Decision authority and Materiality come from decision_policy.py, which calls the
+validator's own derivation, so a built record never disagrees with validation.
+"""
 
 from __future__ import annotations
 
 from typing import Any
 
+import decision_policy as policy
 from materiality_v2 import classify_materiality
 
 
-RISK_FLAGS = ("security", "privacy", "money", "legal_or_policy", "destructive", "data_loss", "external_commitment")
+RISK_FLAGS = policy.RISK_FLAGS
 DEFAULT_MATERIALITY = ("HIGH", "MULTI_FLOW", True, "REVERSIBLE")
 AUTHORING_MATERIALITY = ("LOW", "LOCAL", False, "TRIVIALLY_REVERSIBLE")
 AUTHORING_OPTIONS = (
     ("A", "Agent writes the decided meaning into records as stated", "No new product meaning"),
     ("B", "Do not write the records", "Semantic Closure is not possible"),
 )
+__all__ = ["classify_materiality"]
 
 
 def materiality(divergence: str, fan_out: str, user_visible: bool, reversibility: str,
-                risk_flags: tuple[str, ...] = ()) -> dict[str, Any]:
-    record = {
-        "outcome_divergence": divergence, "fan_out": fan_out, "user_visible": user_visible,
-        "reversibility": reversibility, "risk_flags": {flag: flag in risk_flags for flag in RISK_FLAGS},
-    }
-    record["classification"] = classify_materiality(record)
-    return record
+                risk_flags: tuple[str, ...] = (), *, claimed: str | None = None) -> dict[str, Any]:
+    """A Materiality record with the derived classification (claimed must match it)."""
+    return policy.materiality(divergence, fan_out, user_visible, reversibility, tuple(risk_flags), claimed=claimed)
 
 
 def option(option_id: str, statement: str, *consequences: str) -> dict[str, Any]:
@@ -42,35 +44,53 @@ def evidence(evidence_id: str, *, source_kind: str, authority_classes: list[str]
             "observed_version": None, "content_hash": None}
 
 
+def origin(surface: str | None = None, pack: str | None = None, axis: str | None = None) -> dict[str, Any]:
+    """PRODUCT_SURFACE (surface), GRILL_PACK_AXIS (pack, axis, surface = pack target), GRILL_TOPOLOGY (pack only) or MANUAL."""
+    if pack and axis:
+        return {"kind": "GRILL_PACK_AXIS", "surface_ref": surface, "pack_id": pack, "axis_id": axis, "source_path": None}
+    if pack:
+        return {"kind": "GRILL_TOPOLOGY", "surface_ref": None, "pack_id": pack, "axis_id": None, "source_path": None}
+    return {"kind": "PRODUCT_SURFACE" if surface else "MANUAL", "surface_ref": surface,
+            "pack_id": None, "axis_id": None, "source_path": None}
+
+
 def unknown(unknown_id: str, *, question: str, why: str, category: str, options: list[dict[str, Any]],
             affects: list[str], evidence_refs: list[str], surface: str | None = None,
             rec: dict[str, Any] | None = None, mat: dict[str, Any] | None = None,
-            required_authority_class: str = "INTENT") -> dict[str, Any]:
-    """An OPEN unknown; USER_CONFIRMATION when it carries a HIGH-confidence recommendation."""
-    return {
+            required_authority_class: str = "INTENT", pack: str | None = None, axis: str | None = None,
+            index: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+    """An OPEN unknown whose decision_authority is the validator's derivation.
+
+    `index` is the state's evidence by ID; without it, evidence_refs are assumed not to answer the question.
+    """
+    record = {
         "id": unknown_id, "status": "OPEN", "question": question, "why_it_matters": why,
         "required_authority_class": required_authority_class, "question_category": category,
         "materiality": mat or materiality(*DEFAULT_MATERIALITY),
-        "decision_authority": "USER_CONFIRMATION" if rec and rec["confidence"] == "HIGH" else "USER_DECISION_REQUIRED",
+        "decision_authority": None,
         "affects": list(affects), "blocks_unknown_refs": [],
-        "origin": {"kind": "PRODUCT_SURFACE" if surface else "MANUAL", "surface_ref": surface,
-                   "pack_id": None, "axis_id": None, "source_path": None},
+        "origin": origin(surface, pack, axis),
         "response_mode": "MUTUALLY_EXCLUSIVE", "options": options, "recommendation": rec,
         "evidence_refs": list(evidence_refs), "resolved_by": [], "resolution_mode": None,
         "resolution_summary": None, "deferral": None, "blocked_reason": None,
     }
+    record["decision_authority"] = policy.open_authority(record, index or {})
+    return record
 
 
 def user_decision(record: dict[str, Any], decision_id: str, *, statement: str, summary: str,
-                  decision_type: str = "PRODUCT_BEHAVIOR", accepted: bool = False) -> dict[str, Any]:
+                  decision_type: str = "PRODUCT_BEHAVIOR", accepted: bool = False,
+                  index: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     """Resolve `record` in place from the user's own words and return the CURRENT decision.
 
-    accepted=True records that the user accepted the presented recommendation.
+    accepted=True records that the user accepted the presented recommendation; decision_policy
+    refuses it (PolicyError, a ValueError) when the question derives USER_DECISION_REQUIRED.
     """
-    mode = "USER_ACCEPTED_RECOMMENDATION" if accepted else "USER_DECISION"
-    authority = "USER_CONFIRMATION" if accepted else "USER_DECISION_REQUIRED"
     if accepted and not record.get("recommendation"):
         raise ValueError(f"{record['id']} has no recommendation to accept")
+    chosen = record["recommendation"]["recommended_option"] if accepted else (
+        (record.get("recommendation") or {}).get("recommended_option") or record["options"][0]["id"])
+    mode, authority = policy.user_resolution(record, chosen, index or {}, accepted=True if accepted else False)
     record.update({"status": "RESOLVED", "decision_authority": authority, "resolved_by": [decision_id],
                    "resolution_mode": mode, "resolution_summary": summary})
     acceptance = None

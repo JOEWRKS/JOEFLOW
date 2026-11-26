@@ -25,7 +25,8 @@ def _write(payload: dict[str, object]) -> None:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=__doc__,
-        epilog="Patch JSON keys: evidence, objects (group -> records), surfaces, cells "
+        epilog="Patch JSON keys: evidence, objects (group -> records), surfaces, grill_profile (domain -> profile cell, "
+               "e.g. {\"MONEY\": {\"status\": \"ACTIVE\", ...}}; new_records.py topology-on/-off writes it), cells "
                "(edits like {\"cell\": \"coverage[REQ-001].cells.acceptance\", \"add\": [{\"record_id\": \"AC-009\", \"pointer\": \"/assertion\"}]}), "
                "rows (new coverage rows as draft_freeze.py writes them; an action may carry \"shape\", a row \"default_authority\": "
                "[{\"record_id\": ..., \"pointer\": ...}], and the cells they imply may be left out). "

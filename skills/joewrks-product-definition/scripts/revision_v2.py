@@ -22,10 +22,11 @@ from authority_binding_v2 import (
 )
 from binding_diagnostics import diagnose_cell, iter_coverage_cells
 from discovery_v2 import build_discovery_baseline
+from grill_v2 import GRILL_PROFILE_DOMAINS
 from state_validation_v2 import GROUP_PREFIXES
 
 
-PATCH_KEYS = {"evidence", "objects", "surfaces", "cells", "rows"}
+PATCH_KEYS = {"evidence", "objects", "surfaces", "grill_profile", "cells", "rows"}
 LIFECYCLE_STATUSES = {"OPEN", "BLOCKED", "READY_FOR_REVIEW"}
 _CELL_ADDRESS = re.compile(
     r"^(?:coverage\[(?P<feature>[^\]]+)\]\.cells\.(?P<core_axis>\w+)"
@@ -60,7 +61,8 @@ def _cell(state: dict[str, Any], address: str) -> dict[str, Any]:
             row = next(r for r in state["coverage"] if r.get("feature_id") == groups["feature"])
             return row["cells"][groups["core_axis"]]
         if groups["pack"]:
-            row = next(r for r in state["grill_coverage"] if r.get("pack_id") == groups["pack"])
+            pack, _, target = groups["pack"].partition("/")  # grill_coverage[PACK] or grill_coverage[PACK/TARGET]
+            row = next(r for r in state["grill_coverage"] if r.get("pack_id") == pack and (not target or r.get("target_ref") == target))
             return row["axes"][groups["pack_axis"]]
         row = next(r for r in state["ux_coverage"] if r.get("screen_id") == groups["screen"])
         if groups["state_axis"]:
@@ -152,6 +154,12 @@ def apply_patch(state: dict[str, Any], patch: dict[str, Any]) -> dict[str, list[
             report[_upsert(state["objects"].setdefault(group, []), record)].append(record["id"])
     for record in patch.get("surfaces", []):
         report[_upsert(state["surface_manifest"]["records"], record)].append(record["id"])
+    profile = patch.get("grill_profile", {})
+    if not isinstance(profile, dict) or set(profile) - set(GRILL_PROFILE_DOMAINS):
+        raise RevisionError("invalid_patch", f"grill_profile maps topology domains {list(GRILL_PROFILE_DOMAINS)} to their profile cells", "grill_profile")
+    for domain, cell in profile.items():
+        state["surface_manifest"].setdefault("grill_profile", {})[domain] = cell
+        report.setdefault("grill_profile", []).append(domain)
     if "rows" in patch:
         report["rows"] = [_add_row(state, spec) for spec in patch["rows"]]
     for edit in patch.get("cells", []):

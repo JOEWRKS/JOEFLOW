@@ -535,6 +535,42 @@ def derive_decision_authority(
     return "USER_DECISION_REQUIRED"
 
 
+def derivation_reason(
+    unknown: dict[str, object],
+    *,
+    evidence_index: dict[str, dict[str, object]],
+) -> str:
+    """Why derive_decision_authority returns what it returns, in the order it decides."""
+    required = unknown.get("required_authority_class")
+    if isinstance(required, str):
+        answering = [
+            reference for reference in unknown.get("evidence_refs") or []
+            if isinstance(reference, str) and _has_qualifying_evidence([reference], evidence_index, required)
+        ]
+        if answering:
+            return f"evidence_refs {answering} support required_authority_class {required!r}"
+        if required in {"FACTUAL", "CONSTRAINT", "BEHAVIORAL"}:
+            return f"required_authority_class {required!r} is answered by external authority, not by a person"
+    materiality = unknown.get("materiality")
+    if isinstance(materiality, dict) and classify_materiality(materiality) == "NON_MATERIAL":
+        return "materiality is NON_MATERIAL"
+    if isinstance(materiality, dict) and is_high_risk(materiality):
+        reasons = []
+        if materiality.get("reversibility") in {"COSTLY_TO_REVERSE", "IRREVERSIBLE"}:
+            reasons.append(f"reversibility {materiality.get('reversibility')}")
+        flags = materiality.get("risk_flags")
+        raised = sorted(flag for flag, value in flags.items() if value is True) if isinstance(flags, dict) else []
+        if raised:
+            reasons.append(f"risk flags {raised}")
+        return "high risk: " + " and ".join(reasons)
+    if recommendation_is_confirmation_ready(unknown):
+        return "material, not high-risk, with a HIGH-confidence recommendation"
+    recommendation = unknown.get("recommendation")
+    if not isinstance(recommendation, dict):
+        return "material, not high-risk, no recommendation"
+    return f"material, not high-risk, recommendation confidence {recommendation.get('confidence')!r} (HIGH confirms)"
+
+
 def question_priority_key(unknown: dict[str, object]) -> tuple[object, ...]:
     materiality = unknown["materiality"]
     return (
@@ -609,6 +645,9 @@ def validate_decision_authority_policy(
                     f"support {required!r} in evidence_refs and cite the intent in recommendation.reasoning_refs, "
                     "or resolve the unknown from that evidence"
                 )
+            if not hint:
+                hint = (f" ({derivation_reason(unknown, evidence_index=evidence_index)}; it is "
+                        f"{unknown.get('decision_authority')!r}: new_records.py writes the derived value)")
             errors.append(_error(
                 "invalid_decision_authority_derivation",
                 f"decision_authority must equal deterministic derivation {derived}" + hint,
@@ -794,9 +833,17 @@ def _validate_unknown_shape(
             if field == "blocks_unknown_refs":
                 valid = valid and reference != unknown_id and target_status == "OPEN"
             if not valid:
+                if field == "blocks_unknown_refs":
+                    actual = ("missing" if entry is None else entry[0] if entry[0] != "unknowns"
+                              else "itself" if reference == unknown_id else target_status)
+                    message = (f"blocks_unknown_refs may name only other OPEN unknowns; {reference!r} is {actual}"
+                               " (drop it: new_records.py resolve removes an answered question from every list)")
+                else:
+                    message = f"resolved_by must name CURRENT decisions; {reference!r} is " + (
+                        "missing" if entry is None else entry[0])
                 errors.append(_error(
                     "invalid_unknown_contract",
-                    f"{field} must resolve to the required current record type",
+                    message,
                     f"{path}.{field}",
                 ))
 
@@ -1383,6 +1430,65 @@ def _basis_ref_is_current(
     return not topology_profile and record.get("status") == "CURRENT" and group != "unknowns"
 
 
+def _profile_cell_problems(
+    domain: str,
+    cell: dict[str, object],
+    *,
+    index: dict[str, tuple[str, dict[str, object]]],
+    surfaces: dict[str, dict[str, object]],
+) -> list[str]:
+    """The actual conditions a topology profile cell fails, for the invalid_grill_profile message."""
+    problems: list[str] = []
+    status = cell.get("status")
+    surface_refs, unknown_refs, basis_refs = cell.get("surface_refs"), cell.get("unknown_refs"), cell.get("basis_refs")
+    if not isinstance(status, str) or status not in {"ACTIVE", "N/A", "OPEN"}:
+        return [f"status must be ACTIVE, N/A or OPEN, not {status!r}"]
+    for name, value in (("surface_refs", surface_refs), ("unknown_refs", unknown_refs), ("basis_refs", basis_refs)):
+        if not _unique_strings(value):
+            problems.append(f"{name} must be a list of unique IDs")
+    for reference in surface_refs if isinstance(surface_refs, list) else []:
+        if not isinstance(reference, str) or reference not in surfaces or not _surface_is_current(surfaces[reference]):
+            problems.append(f"surface_refs {reference!r} is not a current surface")
+    for reference in basis_refs if isinstance(basis_refs, list) else []:
+        if not _basis_ref_is_current(reference, index=index, topology_profile=True):
+            problems.append(f"basis_refs {reference!r} is not CURRENT evidence (non-candidate), a current surface or a CURRENT decision")
+    rationale = cell.get("rationale")
+    if status == "ACTIVE":
+        if not surface_refs:
+            problems.append("ACTIVE needs the surfaces the pack covers in surface_refs")
+        if unknown_refs:
+            problems.append(f"ACTIVE needs unknown_refs [], has {unknown_refs}")
+        if rationale is not None:
+            problems.append("ACTIVE needs rationale null")
+    elif status == "N/A":
+        if surface_refs or unknown_refs:
+            problems.append("N/A needs surface_refs [] and unknown_refs []")
+        if not basis_refs:
+            problems.append("N/A needs basis_refs (the decision or evidence that the domain does not apply)")
+        if not _meaningful_text(rationale):
+            problems.append("N/A needs a meaningful rationale")
+    elif not isinstance(domain, str) or domain not in DOMAIN_PACK_IDS:
+        problems.append(f"{domain!r} is not a topology domain")
+    else:
+        pack_id = DOMAIN_PACK_IDS[domain]
+        if rationale is not None:
+            problems.append(f"OPEN needs rationale null, has {rationale!r}")
+        if not unknown_refs:
+            problems.append("OPEN needs unknown_refs naming the domain's OPEN topology question")
+        expected = {"kind": "GRILL_TOPOLOGY", "surface_ref": None, "pack_id": pack_id, "axis_id": None, "source_path": None}
+        for reference in unknown_refs if isinstance(unknown_refs, list) else []:
+            entry = index.get(reference) if isinstance(reference, str) else None
+            if entry is None or entry[0] != "unknowns":
+                problems.append(f"unknown_refs {reference!r} is not an unknown")
+            elif entry[1].get("status") != "OPEN":
+                problems.append(f"unknown_refs {reference!r} is {entry[1].get('status')}, not OPEN (an answered domain is ACTIVE or N/A: "
+                                "new_records.py topology-on / topology-off)")
+            elif entry[1].get("origin") != expected:
+                problems.append(f"unknown_refs {reference!r} has origin {entry[1].get('origin')}; an OPEN {domain} cell needs origin "
+                                f"{expected} (new_records.py question --pack {pack_id})")
+    return problems
+
+
 def _profile_analysis(
     state: dict[str, object],
 ) -> tuple[list[dict[str, str]], int, dict[str, tuple[str, ...]]]:
@@ -1538,10 +1644,12 @@ def _profile_analysis(
             cell_valid = False
 
         if not cell_valid:
+            problems = _profile_cell_problems(domain, cell, index=index, surfaces=surfaces)
             errors.append(_error(
                 "invalid_grill_profile",
                 "topology profile cell does not satisfy its declared status"
-                f" {status!r}; " + GRILL_PROFILE_STATUS_SHAPES,
+                f" {status!r}: " + ("; ".join(problems) + " (shapes: " if problems else "") + GRILL_PROFILE_STATUS_SHAPES
+                + (")" if problems else ""),
                 path,
             ))
             gaps += 1
