@@ -7,7 +7,7 @@
 
 ## 1. Summary
 
-- Program version: **`v2.0.2`** (unreleased; the install blocks below fetch the published `v2.0.1`)
+- Program version: **`v2.0.2`**
 - Runtime skill/package ID: **`joewrks-product-definition`**
 - Authoritative source: **`product-definition/<project-slug>/state.json`**
 - Mission: product planning tool that defines what to build before implementation (websites, apps, games, workflows, redesigns)
@@ -36,11 +36,11 @@ The Markdown and HTML files are projections; `state.json` stays authoritative. H
 
 Use it for a new product, a change to an existing product, or a mismatch between approved meaning and implementation. Requires Git and Python 3 (examples use Windows PowerShell). Install the entire `skills/joewrks-product-definition/` directory; never copy only `SKILL.md` or overwrite an existing install without inspection.
 
-Codex plain copy of release `v2.0.1`. Run it in an empty folder; it stops without copying if the clone fails (for example, a `JOEFLOW` folder is already there) or an install already exists:
+Codex plain copy of release `v2.0.2`. Run it in an empty folder; it stops without copying if the clone fails (for example, a `JOEFLOW` folder is already there) or an install already exists:
 
 ```powershell
 & {
-  git clone --branch v2.0.1 https://github.com/JOEWRKS/JOEFLOW.git JOEFLOW
+  git clone --branch v2.0.2 https://github.com/JOEWRKS/JOEFLOW.git JOEFLOW
   if ($LASTEXITCODE -ne 0) { throw "git clone이 실패했습니다. 빈 폴더에서 다시 실행하세요(이미 JOEFLOW 폴더가 있으면 clone하지 않습니다)." }
 
   $joeflowSource = (Resolve-Path '.\JOEFLOW\skills\joewrks-product-definition').Path
@@ -106,7 +106,7 @@ References: [Program architecture (Korean)](PROGRAM_ARCHITECTURE.md) · [Current
 <a name="korean"></a>
 **한국어**
 
-- 프로그램 버전: **`v2.0.2`** (미게시; 아래 설치 블록은 게시된 `v2.0.1`을 받음)
+- 프로그램 버전: **`v2.0.2`**
 - 런타임 skill/package ID: **`joewrks-product-definition`**
 - 제품 기준 원본: **`product-definition/<project-slug>/state.json`**
 

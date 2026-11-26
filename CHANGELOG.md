@@ -2,9 +2,11 @@
 
 프로그램 릴리스 기록입니다. State, schema, action contract, semantic-review 같은 런타임 identity는 프로그램 버전과 별도로 호환성을 관리합니다.
 
-## 2.0.2 — 미게시 (2026-11-26)
+## 2.0.2 — 2026-11-26
 
-게시 전입니다. 태그·Release·개인 설치는 없습니다(사용자가 게시를 정하면 2.0.1과 같은 절차). 입력은 ATELIER 실사용 23개 리비전의 마찰 기록(JOEFLOW 1~15)과 검토의 묶음 A·B·C·D·G이며, 사용자가 2026-11-26에 범위를 확정했습니다(E 에이전트 기본값 묶음·F 상태–흐름 린트는 2.0.3). 시험 기록은 [evals/v2.0.2-tests-20261126/report.md](evals/v2.0.2-tests-20261126/report.md)입니다.
+게시: 사용자 승인("추천대로 게시", 2026-11-26, 부모 세션이 직접 받음) 뒤 태그 v2.0.2, GitHub Release, 개인 설치 overlay 갱신([install_2_0_2.py](evals/v2.0.2-tests-20261126/install_2_0_2.py), 기록 [PERSONAL_INSTALL_RECORD.md](evals/joeflow-u1-personal-install/PERSONAL_INSTALL_RECORD.md)). 릴리스 노트 [release-notes-v2.0.2.md](evals/v2.0.2-tests-20261126/release-notes-v2.0.2.md). 하위 세션이 대신 내린 결정 6건(아래)은 사용자가 같은 답으로 확정했습니다.
+
+입력은 ATELIER 실사용 23개 리비전의 마찰 기록(JOEFLOW 1~15)과 검토의 묶음 A·B·C·D·G이며, 사용자가 2026-11-26에 범위를 확정했습니다(E 에이전트 기본값 묶음·F 상태–흐름 린트는 2.0.3). 시험 기록은 [evals/v2.0.2-tests-20261126/report.md](evals/v2.0.2-tests-20261126/report.md)입니다.
 
 **바뀐 것**
 
