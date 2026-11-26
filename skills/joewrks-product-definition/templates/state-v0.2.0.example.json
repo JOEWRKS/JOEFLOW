@@ -7,35 +7,79 @@
     "bootstrap_mode": "NEW_PRODUCT",
     "closure_contract": {
       "level": "SEMANTIC_CLOSURE",
-      "product_binding_contract": {"contract_id": "joewrks.product-coverage-binding", "version": "1.0", "digest": "b57459533247de52038aacb158e785c2184edcdd2fa6831f0edc3db713775f3c"},
-      "ux_binding_contract": {"contract_id": "joewrks.ux-coverage-binding", "version": "1.0", "digest": "8fc84057a4a6f0f0ce329a58d11b8e208989800147d703665cea52088de0be0d"}
+      "product_binding_contract": {
+        "contract_id": "joewrks.product-coverage-binding",
+        "version": "1.0",
+        "digest": "b57459533247de52038aacb158e785c2184edcdd2fa6831f0edc3db713775f3c"
+      },
+      "ux_binding_contract": {
+        "contract_id": "joewrks.ux-coverage-binding",
+        "version": "1.0",
+        "digest": "8fc84057a4a6f0f0ce329a58d11b8e208989800147d703665cea52088de0be0d"
+      }
     }
   },
   "migration": {
     "mode": "NATIVE"
   },
-  "evidence": [
-    {
-      "id": "EVD-900",
-      "status": "CURRENT",
-      "source_kind": "USER_CONFIRMED_INTENT",
-      "locator": "product-definition/topology-classification",
-      "claim": "The six specialist topology domains were explicitly classified.",
-      "confidence": "DIRECT",
-      "authority_classes": ["INTENT"],
-      "observed_version": null,
-      "content_hash": null
-    }
-  ],
+  "evidence": [],
   "surface_manifest": {
     "records": [],
     "grill_profile": {
-      "AUTH": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
-      "MONEY": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
-      "FILE_UPLOAD": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
-      "ASYNC": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
-      "PERMISSION": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
-      "DESTRUCTIVE_ACTION": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."}
+      "AUTH": {
+        "status": "OPEN",
+        "surface_refs": [],
+        "unknown_refs": [
+          "UNK-901"
+        ],
+        "basis_refs": [],
+        "rationale": null
+      },
+      "MONEY": {
+        "status": "OPEN",
+        "surface_refs": [],
+        "unknown_refs": [
+          "UNK-902"
+        ],
+        "basis_refs": [],
+        "rationale": null
+      },
+      "FILE_UPLOAD": {
+        "status": "OPEN",
+        "surface_refs": [],
+        "unknown_refs": [
+          "UNK-903"
+        ],
+        "basis_refs": [],
+        "rationale": null
+      },
+      "ASYNC": {
+        "status": "OPEN",
+        "surface_refs": [],
+        "unknown_refs": [
+          "UNK-904"
+        ],
+        "basis_refs": [],
+        "rationale": null
+      },
+      "PERMISSION": {
+        "status": "OPEN",
+        "surface_refs": [],
+        "unknown_refs": [
+          "UNK-905"
+        ],
+        "basis_refs": [],
+        "rationale": null
+      },
+      "DESTRUCTIVE_ACTION": {
+        "status": "OPEN",
+        "surface_refs": [],
+        "unknown_refs": [
+          "UNK-906"
+        ],
+        "basis_refs": [],
+        "rationale": null
+      }
     }
   },
   "contradictions": [],
@@ -43,7 +87,356 @@
     "goals": [],
     "users": [],
     "requirements": [],
-    "unknowns": [],
+    "unknowns": [
+      {
+        "id": "UNK-901",
+        "status": "OPEN",
+        "question": "AUTH topology: Does the product have user accounts (sign-up, sign-in, sessions)?",
+        "why_it_matters": "Accounts bring registration, login, session expiry, recovery and revocation decisions (GRILL-AUTH-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": true,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-AUTH-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-AUTH-ON",
+            "statement": "Yes: the product has AUTH behaviour.",
+            "consequences": [
+              "GRILL-AUTH-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-AUTH-OFF",
+            "statement": "No: the product has no AUTH behaviour.",
+            "consequences": [
+              "AUTH is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-902",
+        "status": "OPEN",
+        "question": "MONEY topology: Does the product take, hold, refund or display money (prices, payments, refunds)?",
+        "why_it_matters": "Money brings currency, price authority, tax, payment failure, refund and settlement decisions (GRILL-MONEY-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-MONEY-ON",
+            "statement": "Yes: the product has MONEY behaviour.",
+            "consequences": [
+              "GRILL-MONEY-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-MONEY-OFF",
+            "statement": "No: the product has no MONEY behaviour.",
+            "consequences": [
+              "MONEY is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-903",
+        "status": "OPEN",
+        "question": "FILE_UPLOAD topology: Can users upload files (images, documents, attachments)?",
+        "why_it_matters": "Uploads bring type, size, quota, malware, retention and ownership decisions (GRILL-FILE-UPLOAD-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-FILE-UPLOAD-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-UPLOAD-ON",
+            "statement": "Yes: the product has FILE_UPLOAD behaviour.",
+            "consequences": [
+              "GRILL-FILE-UPLOAD-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-UPLOAD-OFF",
+            "statement": "No: the product has no FILE_UPLOAD behaviour.",
+            "consequences": [
+              "FILE_UPLOAD is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-904",
+        "status": "OPEN",
+        "question": "ASYNC topology: Does any result arrive later than the request (callbacks, background jobs, polling, queued work)?",
+        "why_it_matters": "Deferred results bring timeout, retry, idempotency, duplicate execution and reconciliation decisions (GRILL-ASYNC-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-ASYNC-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-ASYNC-ON",
+            "statement": "Yes: the product has ASYNC behaviour.",
+            "consequences": [
+              "GRILL-ASYNC-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-ASYNC-OFF",
+            "statement": "No: the product has no ASYNC behaviour.",
+            "consequences": [
+              "ASYNC is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-905",
+        "status": "OPEN",
+        "question": "PERMISSION topology: Do different roles or owners see or do different things?",
+        "why_it_matters": "Roles bring role, resource ownership, delegation and denial decisions (GRILL-PERMISSION-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": true,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-PERMISSION-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-PERM-ON",
+            "statement": "Yes: the product has PERMISSION behaviour.",
+            "consequences": [
+              "GRILL-PERMISSION-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-PERM-OFF",
+            "statement": "No: the product has no PERMISSION behaviour.",
+            "consequences": [
+              "PERMISSION is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-906",
+        "status": "OPEN",
+        "question": "DESTRUCTIVE_ACTION topology: Can a user delete, cancel or overwrite something that is hard to undo?",
+        "why_it_matters": "Destructive actions bring confirmation, undo, cascade and audit decisions (GRILL-DESTRUCTIVE-ACTION-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": true,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-DESTRUCTIVE-ACTION-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-DESTR-ON",
+            "statement": "Yes: the product has DESTRUCTIVE_ACTION behaviour.",
+            "consequences": [
+              "GRILL-DESTRUCTIVE-ACTION-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-DESTR-OFF",
+            "statement": "No: the product has no DESTRUCTIVE_ACTION behaviour.",
+            "consequences": [
+              "DESTRUCTIVE_ACTION is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      }
+    ],
     "decisions": [],
     "rules": [],
     "flows": [],

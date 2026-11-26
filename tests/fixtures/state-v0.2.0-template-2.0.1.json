@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.2.0",
+  "project": {
+    "slug": "v2-foundation",
+    "definition_status": "OPEN",
+    "definition_revision": 1,
+    "bootstrap_mode": "NEW_PRODUCT",
+    "closure_contract": {
+      "level": "SEMANTIC_CLOSURE",
+      "product_binding_contract": {"contract_id": "joewrks.product-coverage-binding", "version": "1.0", "digest": "b57459533247de52038aacb158e785c2184edcdd2fa6831f0edc3db713775f3c"},
+      "ux_binding_contract": {"contract_id": "joewrks.ux-coverage-binding", "version": "1.0", "digest": "8fc84057a4a6f0f0ce329a58d11b8e208989800147d703665cea52088de0be0d"}
+    }
+  },
+  "migration": {
+    "mode": "NATIVE"
+  },
+  "evidence": [
+    {
+      "id": "EVD-900",
+      "status": "CURRENT",
+      "source_kind": "USER_CONFIRMED_INTENT",
+      "locator": "product-definition/topology-classification",
+      "claim": "The six specialist topology domains were explicitly classified.",
+      "confidence": "DIRECT",
+      "authority_classes": ["INTENT"],
+      "observed_version": null,
+      "content_hash": null
+    }
+  ],
+  "surface_manifest": {
+    "records": [],
+    "grill_profile": {
+      "AUTH": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
+      "MONEY": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
+      "FILE_UPLOAD": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
+      "ASYNC": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
+      "PERMISSION": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."},
+      "DESTRUCTIVE_ACTION": {"status": "N/A", "surface_refs": [], "unknown_refs": [], "basis_refs": ["EVD-900"], "rationale": "Discovery found no applicable topology in this domain."}
+    }
+  },
+  "contradictions": [],
+  "objects": {
+    "goals": [],
+    "users": [],
+    "requirements": [],
+    "unknowns": [],
+    "decisions": [],
+    "rules": [],
+    "flows": [],
+    "screens": [],
+    "states": [],
+    "data": [],
+    "integrations": [],
+    "acceptance_criteria": [],
+    "tasks": []
+  },
+  "coverage": [],
+  "ux_coverage": [],
+  "grill_coverage": [],
+  "discovery_baseline": {
+    "status": "NOT_ESTABLISHED"
+  },
+  "approval": {
+    "status": "UNAPPROVED"
+  },
+  "approval_history": []
+}

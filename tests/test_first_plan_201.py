@@ -37,7 +37,9 @@ class FirstPlanFromEmptyTemplateTest(unittest.TestCase):
         self.directory = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.directory, True)
         self.state = self.directory / "state.json"
-        shutil.copyfile(SKILL / "templates" / "state-v0.2.0.example.json", self.state)
+        # The 2.0.1 template (six domains N/A on EVD-900): this test is about the discovery baseline (D2).
+        # 2.0.2 starts domains OPEN; tests/test_builders_202.py walks that template to review.
+        shutil.copyfile(Path(__file__).resolve().parent / "fixtures" / "state-v0.2.0-template-2.0.1.json", self.state)
 
     def load(self):
         return json.loads(self.state.read_text(encoding="utf-8"))
