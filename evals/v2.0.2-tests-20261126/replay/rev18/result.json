@@ -1,0 +1,139 @@
+{
+  "label": "rev18",
+  "base_revision": 17,
+  "target_revision": 18,
+  "open_revision_exit": 0,
+  "written": true,
+  "commands": 11,
+  "target_definition_digest": "fe6aada9f40ad737c9911cbf6607b02477e9f55f15f48b8c0bc5d63b3a2ecaec",
+  "replay_definition_digest": "cab9cf0ecabe8bf1fd05c469a473d65ff5237c151f968ae6711231865b618aaf",
+  "intent_evidence_moved_to_reason": {
+    "UNK-060": [
+      "EVD-001"
+    ]
+  },
+  "digest_equal": false,
+  "differences": [
+    {
+      "record": "DEC-060",
+      "fields": [
+        {
+          "field": "/accepted_recommendation",
+          "replay": null,
+          "committed": {
+            "recommended_option": "OPT-EVENT",
+            "alternatives_presented": [
+              "OPT-EVENT",
+              "OPT-STATE"
+            ],
+            "tradeoffs_presented": [
+              "이력 사건으로 두면 상태가 하나 줄어 단순하지만 주문 목록에서 '실패했던 주문'을 상태만으로는 구분할 수 없고 이력으로 봐야 한다."
+            ],
+            "accepted_by": "user",
+            "accepted_at": null
+          }
+        },
+        {
+          "field": "/decision_authority",
+          "replay": "USER_DECISION_REQUIRED",
+          "committed": "USER_CONFIRMATION"
+        },
+        {
+          "field": "/evidence_refs",
+          "replay": [],
+          "committed": [
+            "EVD-001"
+          ]
+        },
+        {
+          "field": "/resolution_mode",
+          "replay": "USER_DECISION",
+          "committed": "USER_ACCEPTED_RECOMMENDATION"
+        }
+      ]
+    },
+    {
+      "record": "UNK-060",
+      "fields": [
+        {
+          "field": "/decision_authority",
+          "replay": "USER_DECISION_REQUIRED",
+          "committed": "USER_CONFIRMATION"
+        },
+        {
+          "field": "/evidence_refs",
+          "replay": [],
+          "committed": [
+            "EVD-001"
+          ]
+        },
+        {
+          "field": "/resolution_mode",
+          "replay": "USER_DECISION",
+          "committed": "USER_ACCEPTED_RECOMMENDATION"
+        }
+      ]
+    }
+  ],
+  "fields_the_builders_refused": [
+    {
+      "record": "UNK-060",
+      "field": "/decision_authority",
+      "builder": "USER_DECISION_REQUIRED",
+      "committed": "USER_CONFIRMATION"
+    },
+    {
+      "record": "UNK-060",
+      "field": "/evidence_refs",
+      "builder": [],
+      "committed": [
+        "EVD-001"
+      ]
+    },
+    {
+      "record": "UNK-060",
+      "field": "/resolution_mode",
+      "builder": "USER_DECISION",
+      "committed": "USER_ACCEPTED_RECOMMENDATION"
+    },
+    {
+      "record": "DEC-060",
+      "field": "/resolution_mode",
+      "builder": "USER_DECISION",
+      "committed": "USER_ACCEPTED_RECOMMENDATION"
+    },
+    {
+      "record": "DEC-060",
+      "field": "/decision_authority",
+      "builder": "USER_DECISION_REQUIRED",
+      "committed": "USER_CONFIRMATION"
+    },
+    {
+      "record": "DEC-060",
+      "field": "/evidence_refs",
+      "builder": [],
+      "committed": [
+        "EVD-001"
+      ]
+    },
+    {
+      "record": "DEC-060",
+      "field": "/accepted_recommendation",
+      "builder": null,
+      "committed": {
+        "recommended_option": "OPT-EVENT",
+        "alternatives_presented": [
+          "OPT-EVENT",
+          "OPT-STATE"
+        ],
+        "tradeoffs_presented": [
+          "이력 사건으로 두면 상태가 하나 줄어 단순하지만 주문 목록에서 '실패했던 주문'을 상태만으로는 구분할 수 없고 이력으로 봐야 한다."
+        ],
+        "accepted_by": "user",
+        "accepted_at": null
+      }
+    }
+  ],
+  "digest_after_restoring_listed_records": "fe6aada9f40ad737c9911cbf6607b02477e9f55f15f48b8c0bc5d63b3a2ecaec",
+  "digest_equal_after_restoring": true
+}

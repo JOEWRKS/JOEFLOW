@@ -1,0 +1,1477 @@
+{
+  "evidence": [
+    {
+      "id": "EVD-001",
+      "status": "CURRENT",
+      "source_kind": "USER_CONFIRMED_INTENT",
+      "locator": "chat (walk-through brief)",
+      "claim": "비회원 한 명이 한 품목을 바로 결제하는 단일 상품 판매 페이지.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    }
+  ],
+  "objects": {
+    "unknowns": [
+      {
+        "id": "UNK-902",
+        "status": "RESOLVED",
+        "question": "MONEY topology: Does the product take, hold, refund or display money (prices, payments, refunds)?",
+        "why_it_matters": "Money brings currency, price authority, tax, payment failure, refund and settlement decisions (GRILL-MONEY-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-MONEY-ON",
+            "statement": "Yes: the product has MONEY behaviour.",
+            "consequences": [
+              "GRILL-MONEY-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-MONEY-OFF",
+            "statement": "No: the product has no MONEY behaviour.",
+            "consequences": [
+              "MONEY is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-001"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"결제는 받는다. 계정, 파일 올리기, 역할 구분, 되돌리기 어려운 삭제, 나중에 오는 결과는 없다.\" — OPT-MONEY-ON 선택.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-901",
+        "status": "RESOLVED",
+        "question": "AUTH topology: Does the product have user accounts (sign-up, sign-in, sessions)?",
+        "why_it_matters": "Accounts bring registration, login, session expiry, recovery and revocation decisions (GRILL-AUTH-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": true,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-AUTH-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-AUTH-ON",
+            "statement": "Yes: the product has AUTH behaviour.",
+            "consequences": [
+              "GRILL-AUTH-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-AUTH-OFF",
+            "statement": "No: the product has no AUTH behaviour.",
+            "consequences": [
+              "AUTH is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-002"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"결제는 받는다. 계정, 파일 올리기, 역할 구분, 되돌리기 어려운 삭제, 나중에 오는 결과는 없다.\" — OPT-AUTH-OFF 선택.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-903",
+        "status": "RESOLVED",
+        "question": "FILE_UPLOAD topology: Can users upload files (images, documents, attachments)?",
+        "why_it_matters": "Uploads bring type, size, quota, malware, retention and ownership decisions (GRILL-FILE-UPLOAD-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-FILE-UPLOAD-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-UPLOAD-ON",
+            "statement": "Yes: the product has FILE_UPLOAD behaviour.",
+            "consequences": [
+              "GRILL-FILE-UPLOAD-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-UPLOAD-OFF",
+            "statement": "No: the product has no FILE_UPLOAD behaviour.",
+            "consequences": [
+              "FILE_UPLOAD is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-003"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"결제는 받는다. 계정, 파일 올리기, 역할 구분, 되돌리기 어려운 삭제, 나중에 오는 결과는 없다.\" — OPT-UPLOAD-OFF 선택.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-904",
+        "status": "RESOLVED",
+        "question": "ASYNC topology: Does any result arrive later than the request (callbacks, background jobs, polling, queued work)?",
+        "why_it_matters": "Deferred results bring timeout, retry, idempotency, duplicate execution and reconciliation decisions (GRILL-ASYNC-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-ASYNC-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-ASYNC-ON",
+            "statement": "Yes: the product has ASYNC behaviour.",
+            "consequences": [
+              "GRILL-ASYNC-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-ASYNC-OFF",
+            "statement": "No: the product has no ASYNC behaviour.",
+            "consequences": [
+              "ASYNC is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-004"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"결제는 받는다. 계정, 파일 올리기, 역할 구분, 되돌리기 어려운 삭제, 나중에 오는 결과는 없다.\" — OPT-ASYNC-OFF 선택.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-905",
+        "status": "RESOLVED",
+        "question": "PERMISSION topology: Do different roles or owners see or do different things?",
+        "why_it_matters": "Roles bring role, resource ownership, delegation and denial decisions (GRILL-PERMISSION-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": true,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-PERMISSION-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-PERM-ON",
+            "statement": "Yes: the product has PERMISSION behaviour.",
+            "consequences": [
+              "GRILL-PERMISSION-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-PERM-OFF",
+            "statement": "No: the product has no PERMISSION behaviour.",
+            "consequences": [
+              "PERMISSION is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-005"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"결제는 받는다. 계정, 파일 올리기, 역할 구분, 되돌리기 어려운 삭제, 나중에 오는 결과는 없다.\" — OPT-PERM-OFF 선택.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-906",
+        "status": "RESOLVED",
+        "question": "DESTRUCTIVE_ACTION topology: Can a user delete, cancel or overwrite something that is hard to undo?",
+        "why_it_matters": "Destructive actions bring confirmation, undo, cascade and audit decisions (GRILL-DESTRUCTIVE-ACTION-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": true,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-DESTRUCTIVE-ACTION-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-DESTR-ON",
+            "statement": "Yes: the product has DESTRUCTIVE_ACTION behaviour.",
+            "consequences": [
+              "GRILL-DESTRUCTIVE-ACTION-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-DESTR-OFF",
+            "statement": "No: the product has no DESTRUCTIVE_ACTION behaviour.",
+            "consequences": [
+              "DESTRUCTIVE_ACTION is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-006"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"결제는 받는다. 계정, 파일 올리기, 역할 구분, 되돌리기 어려운 삭제, 나중에 오는 결과는 없다.\" — OPT-DESTR-OFF 선택.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-001",
+        "status": "OPEN",
+        "question": "MONEY · currency: Currency selection, display, and conversion policy — 이 제품은 어떻게 하는가?",
+        "why_it_matters": "GRILL-MONEY-1 축 currency는 독립 결정이다. 답이 FREEZE에서 이 축의 권위가 된다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "currency",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-SPECIFY",
+            "statement": "이 제품은 currency 동작을 정한다: Currency selection, display, and conversion policy.",
+            "consequences": [
+              "후속 결정 문장이 동작을 정하고 축은 그 결정에 묶인다."
+            ]
+          },
+          {
+            "id": "OPT-NOT-APPLICABLE",
+            "statement": "이 제품에는 currency 동작이 없다.",
+            "consequences": [
+              "축은 이 답을 근거로 N/A가 된다."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-002",
+        "status": "OPEN",
+        "question": "MONEY · price_authority: Canonical authority for prices and price changes — 이 제품은 어떻게 하는가?",
+        "why_it_matters": "GRILL-MONEY-1 축 price_authority는 독립 결정이다. 답이 FREEZE에서 이 축의 권위가 된다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "price_authority",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-SPECIFY",
+            "statement": "이 제품은 price_authority 동작을 정한다: Canonical authority for prices and price changes.",
+            "consequences": [
+              "후속 결정 문장이 동작을 정하고 축은 그 결정에 묶인다."
+            ]
+          },
+          {
+            "id": "OPT-NOT-APPLICABLE",
+            "statement": "이 제품에는 price_authority 동작이 없다.",
+            "consequences": [
+              "축은 이 답을 근거로 N/A가 된다."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-003",
+        "status": "OPEN",
+        "question": "MONEY · tax: Tax calculation and presentation policy — 이 제품은 어떻게 하는가?",
+        "why_it_matters": "GRILL-MONEY-1 축 tax는 독립 결정이다. 답이 FREEZE에서 이 축의 권위가 된다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "tax",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-SPECIFY",
+            "statement": "이 제품은 tax 동작을 정한다: Tax calculation and presentation policy.",
+            "consequences": [
+              "후속 결정 문장이 동작을 정하고 축은 그 결정에 묶인다."
+            ]
+          },
+          {
+            "id": "OPT-NOT-APPLICABLE",
+            "statement": "이 제품에는 tax 동작이 없다.",
+            "consequences": [
+              "축은 이 답을 근거로 N/A가 된다."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-004",
+        "status": "OPEN",
+        "question": "MONEY · discount: Discount eligibility and application behavior — 이 제품은 어떻게 하는가?",
+        "why_it_matters": "GRILL-MONEY-1 축 discount는 독립 결정이다. 답이 FREEZE에서 이 축의 권위가 된다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "discount",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-SPECIFY",
+            "statement": "이 제품은 discount 동작을 정한다: Discount eligibility and application behavior.",
+            "consequences": [
+              "후속 결정 문장이 동작을 정하고 축은 그 결정에 묶인다."
+            ]
+          },
+          {
+            "id": "OPT-NOT-APPLICABLE",
+            "statement": "이 제품에는 discount 동작이 없다.",
+            "consequences": [
+              "축은 이 답을 근거로 N/A가 된다."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-005",
+        "status": "OPEN",
+        "question": "MONEY · payment_failure: Payment failure behavior and recovery — 이 제품은 어떻게 하는가?",
+        "why_it_matters": "GRILL-MONEY-1 축 payment_failure는 독립 결정이다. 답이 FREEZE에서 이 축의 권위가 된다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "payment_failure",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-SPECIFY",
+            "statement": "이 제품은 payment_failure 동작을 정한다: Payment failure behavior and recovery.",
+            "consequences": [
+              "후속 결정 문장이 동작을 정하고 축은 그 결정에 묶인다."
+            ]
+          },
+          {
+            "id": "OPT-NOT-APPLICABLE",
+            "statement": "이 제품에는 payment_failure 동작이 없다.",
+            "consequences": [
+              "축은 이 답을 근거로 N/A가 된다."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-006",
+        "status": "OPEN",
+        "question": "MONEY · duplicate_payment: Duplicate payment prevention and remediation — 이 제품은 어떻게 하는가?",
+        "why_it_matters": "GRILL-MONEY-1 축 duplicate_payment는 독립 결정이다. 답이 FREEZE에서 이 축의 권위가 된다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "duplicate_payment",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-SPECIFY",
+            "statement": "이 제품은 duplicate_payment 동작을 정한다: Duplicate payment prevention and remediation.",
+            "consequences": [
+              "후속 결정 문장이 동작을 정하고 축은 그 결정에 묶인다."
+            ]
+          },
+          {
+            "id": "OPT-NOT-APPLICABLE",
+            "statement": "이 제품에는 duplicate_payment 동작이 없다.",
+            "consequences": [
+              "축은 이 답을 근거로 N/A가 된다."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-007",
+        "status": "OPEN",
+        "question": "MONEY · refund: Full refund eligibility and execution policy — 이 제품은 어떻게 하는가?",
+        "why_it_matters": "GRILL-MONEY-1 축 refund는 독립 결정이다. 답이 FREEZE에서 이 축의 권위가 된다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "refund",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-SPECIFY",
+            "statement": "이 제품은 refund 동작을 정한다: Full refund eligibility and execution policy.",
+            "consequences": [
+              "후속 결정 문장이 동작을 정하고 축은 그 결정에 묶인다."
+            ]
+          },
+          {
+            "id": "OPT-NOT-APPLICABLE",
+            "statement": "이 제품에는 refund 동작이 없다.",
+            "consequences": [
+              "축은 이 답을 근거로 N/A가 된다."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-008",
+        "status": "OPEN",
+        "question": "MONEY · partial_refund: Partial refund eligibility and allocation policy — 이 제품은 어떻게 하는가?",
+        "why_it_matters": "GRILL-MONEY-1 축 partial_refund는 독립 결정이다. 답이 FREEZE에서 이 축의 권위가 된다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "partial_refund",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-SPECIFY",
+            "statement": "이 제품은 partial_refund 동작을 정한다: Partial refund eligibility and allocation policy.",
+            "consequences": [
+              "후속 결정 문장이 동작을 정하고 축은 그 결정에 묶인다."
+            ]
+          },
+          {
+            "id": "OPT-NOT-APPLICABLE",
+            "statement": "이 제품에는 partial_refund 동작이 없다.",
+            "consequences": [
+              "축은 이 답을 근거로 N/A가 된다."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-009",
+        "status": "OPEN",
+        "question": "MONEY · cancellation: Cancellation policy and monetary effects — 이 제품은 어떻게 하는가?",
+        "why_it_matters": "GRILL-MONEY-1 축 cancellation는 독립 결정이다. 답이 FREEZE에서 이 축의 권위가 된다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "cancellation",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-SPECIFY",
+            "statement": "이 제품은 cancellation 동작을 정한다: Cancellation policy and monetary effects.",
+            "consequences": [
+              "후속 결정 문장이 동작을 정하고 축은 그 결정에 묶인다."
+            ]
+          },
+          {
+            "id": "OPT-NOT-APPLICABLE",
+            "statement": "이 제품에는 cancellation 동작이 없다.",
+            "consequences": [
+              "축은 이 답을 근거로 N/A가 된다."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-010",
+        "status": "OPEN",
+        "question": "MONEY · chargeback: Chargeback handling and account effects — 이 제품은 어떻게 하는가?",
+        "why_it_matters": "GRILL-MONEY-1 축 chargeback는 독립 결정이다. 답이 FREEZE에서 이 축의 권위가 된다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "chargeback",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-SPECIFY",
+            "statement": "이 제품은 chargeback 동작을 정한다: Chargeback handling and account effects.",
+            "consequences": [
+              "후속 결정 문장이 동작을 정하고 축은 그 결정에 묶인다."
+            ]
+          },
+          {
+            "id": "OPT-NOT-APPLICABLE",
+            "statement": "이 제품에는 chargeback 동작이 없다.",
+            "consequences": [
+              "축은 이 답을 근거로 N/A가 된다."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-011",
+        "status": "OPEN",
+        "question": "MONEY · settlement: Settlement timing, status, and reconciliation policy — 이 제품은 어떻게 하는가?",
+        "why_it_matters": "GRILL-MONEY-1 축 settlement는 독립 결정이다. 답이 FREEZE에서 이 축의 권위가 된다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "settlement",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-SPECIFY",
+            "statement": "이 제품은 settlement 동작을 정한다: Settlement timing, status, and reconciliation policy.",
+            "consequences": [
+              "후속 결정 문장이 동작을 정하고 축은 그 결정에 묶인다."
+            ]
+          },
+          {
+            "id": "OPT-NOT-APPLICABLE",
+            "statement": "이 제품에는 settlement 동작이 없다.",
+            "consequences": [
+              "축은 이 답을 근거로 N/A가 된다."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-012",
+        "status": "OPEN",
+        "question": "MONEY · receipt: Receipt contents, delivery, and retention policy — 이 제품은 어떻게 하는가?",
+        "why_it_matters": "GRILL-MONEY-1 축 receipt는 독립 결정이다. 답이 FREEZE에서 이 축의 권위가 된다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "receipt",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-SPECIFY",
+            "statement": "이 제품은 receipt 동작을 정한다: Receipt contents, delivery, and retention policy.",
+            "consequences": [
+              "후속 결정 문장이 동작을 정하고 축은 그 결정에 묶인다."
+            ]
+          },
+          {
+            "id": "OPT-NOT-APPLICABLE",
+            "statement": "이 제품에는 receipt 동작이 없다.",
+            "consequences": [
+              "축은 이 답을 근거로 N/A가 된다."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      }
+    ],
+    "decisions": [
+      {
+        "id": "DEC-001",
+        "status": "CURRENT",
+        "statement": "Yes: the product has MONEY behaviour.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-902"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-002",
+        "status": "CURRENT",
+        "statement": "No: the product has no AUTH behaviour.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-901"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": true,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-003",
+        "status": "CURRENT",
+        "statement": "No: the product has no FILE_UPLOAD behaviour.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-903"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-004",
+        "status": "CURRENT",
+        "statement": "No: the product has no ASYNC behaviour.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-904"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-005",
+        "status": "CURRENT",
+        "statement": "No: the product has no PERMISSION behaviour.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-905"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": true,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-006",
+        "status": "CURRENT",
+        "statement": "No: the product has no DESTRUCTIVE_ACTION behaviour.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-906"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": true,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      }
+    ]
+  },
+  "surfaces": [
+    {
+      "id": "SURF-001",
+      "kind": "MONEY_FLOW",
+      "name": "결제",
+      "status": "OPEN",
+      "materiality": {
+        "outcome_divergence": "HIGH",
+        "fan_out": "MULTI_FLOW",
+        "user_visible": true,
+        "reversibility": "COSTLY_TO_REVERSE",
+        "risk_flags": {
+          "security": false,
+          "privacy": false,
+          "money": true,
+          "legal_or_policy": false,
+          "destructive": false,
+          "data_loss": false,
+          "external_commitment": false
+        },
+        "classification": "MATERIAL"
+      },
+      "evidence_refs": [],
+      "authority_refs": [],
+      "unknown_refs": [
+        "UNK-001",
+        "UNK-002",
+        "UNK-003",
+        "UNK-004",
+        "UNK-005",
+        "UNK-006",
+        "UNK-007",
+        "UNK-008",
+        "UNK-009",
+        "UNK-010",
+        "UNK-011",
+        "UNK-012"
+      ],
+      "decision_refs": [
+        "DEC-001"
+      ],
+      "contradiction_refs": [],
+      "rationale": null,
+      "intent_classification": null
+    }
+  ],
+  "rows": [
+    {
+      "grill_coverage": {
+        "target_ref": "SURF-001",
+        "pack_id": "GRILL-MONEY-1",
+        "pack_version": "1.0",
+        "pack_digest": "ecca8f8bb878d00715f1e064e82fdf1dba3056160740160f0bd7f28834ed15b0",
+        "axes": {
+          "currency": {
+            "status": "OPEN",
+            "unknown_refs": [
+              "UNK-001"
+            ]
+          },
+          "price_authority": {
+            "status": "OPEN",
+            "unknown_refs": [
+              "UNK-002"
+            ]
+          },
+          "tax": {
+            "status": "OPEN",
+            "unknown_refs": [
+              "UNK-003"
+            ]
+          },
+          "discount": {
+            "status": "OPEN",
+            "unknown_refs": [
+              "UNK-004"
+            ]
+          },
+          "payment_failure": {
+            "status": "OPEN",
+            "unknown_refs": [
+              "UNK-005"
+            ]
+          },
+          "duplicate_payment": {
+            "status": "OPEN",
+            "unknown_refs": [
+              "UNK-006"
+            ]
+          },
+          "refund": {
+            "status": "OPEN",
+            "unknown_refs": [
+              "UNK-007"
+            ]
+          },
+          "partial_refund": {
+            "status": "OPEN",
+            "unknown_refs": [
+              "UNK-008"
+            ]
+          },
+          "cancellation": {
+            "status": "OPEN",
+            "unknown_refs": [
+              "UNK-009"
+            ]
+          },
+          "chargeback": {
+            "status": "OPEN",
+            "unknown_refs": [
+              "UNK-010"
+            ]
+          },
+          "settlement": {
+            "status": "OPEN",
+            "unknown_refs": [
+              "UNK-011"
+            ]
+          },
+          "receipt": {
+            "status": "OPEN",
+            "unknown_refs": [
+              "UNK-012"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "grill_profile": {
+    "MONEY": {
+      "status": "ACTIVE",
+      "surface_refs": [
+        "SURF-001"
+      ],
+      "unknown_refs": [],
+      "basis_refs": [
+        "DEC-001"
+      ],
+      "rationale": null
+    },
+    "AUTH": {
+      "status": "N/A",
+      "surface_refs": [],
+      "unknown_refs": [],
+      "basis_refs": [
+        "DEC-002"
+      ],
+      "rationale": "사용자 답(DEC-001~006): 이 제품에는 AUTH 동작이 없다."
+    },
+    "FILE_UPLOAD": {
+      "status": "N/A",
+      "surface_refs": [],
+      "unknown_refs": [],
+      "basis_refs": [
+        "DEC-003"
+      ],
+      "rationale": "사용자 답(DEC-001~006): 이 제품에는 FILE_UPLOAD 동작이 없다."
+    },
+    "ASYNC": {
+      "status": "N/A",
+      "surface_refs": [],
+      "unknown_refs": [],
+      "basis_refs": [
+        "DEC-004"
+      ],
+      "rationale": "사용자 답(DEC-001~006): 이 제품에는 ASYNC 동작이 없다."
+    },
+    "PERMISSION": {
+      "status": "N/A",
+      "surface_refs": [],
+      "unknown_refs": [],
+      "basis_refs": [
+        "DEC-005"
+      ],
+      "rationale": "사용자 답(DEC-001~006): 이 제품에는 PERMISSION 동작이 없다."
+    },
+    "DESTRUCTIVE_ACTION": {
+      "status": "N/A",
+      "surface_refs": [],
+      "unknown_refs": [],
+      "basis_refs": [
+        "DEC-006"
+      ],
+      "rationale": "사용자 답(DEC-001~006): 이 제품에는 DESTRUCTIVE_ACTION 동작이 없다."
+    }
+  }
+}

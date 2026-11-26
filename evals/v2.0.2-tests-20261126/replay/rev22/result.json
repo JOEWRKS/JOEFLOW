@@ -1,0 +1,302 @@
+{
+  "label": "rev22",
+  "base_revision": 21,
+  "target_revision": 22,
+  "open_revision_exit": 0,
+  "written": true,
+  "commands": 19,
+  "target_definition_digest": "1f514c6e00b31ccaaec2593fe93ee49c48afd044b45306b5bf1c3a91203fc116",
+  "replay_definition_digest": "40130b2b2a6dc5dd08dca640e27135afd214a6a84cd2cf1dd1940e8f38f25fb4",
+  "intent_evidence_moved_to_reason": {
+    "UNK-069": [
+      "EVD-001"
+    ],
+    "UNK-070": [
+      "EVD-001"
+    ],
+    "UNK-071": [
+      "EVD-001"
+    ]
+  },
+  "digest_equal": false,
+  "differences": [
+    {
+      "record": "DEC-069",
+      "fields": [
+        {
+          "field": "/accepted_recommendation",
+          "replay": null,
+          "committed": {
+            "recommended_option": "OPT-WINDOW",
+            "alternatives_presented": [
+              "OPT-WINDOW",
+              "OPT-SERVER"
+            ],
+            "tradeoffs_presented": [
+              "모의 결제창은 데모에서 구매자가 한 번 더 누르는 단계가 된다."
+            ],
+            "accepted_by": "user",
+            "accepted_at": null
+          }
+        },
+        {
+          "field": "/decision_authority",
+          "replay": "USER_DECISION_REQUIRED",
+          "committed": "USER_CONFIRMATION"
+        },
+        {
+          "field": "/evidence_refs",
+          "replay": [],
+          "committed": [
+            "EVD-001"
+          ]
+        },
+        {
+          "field": "/resolution_mode",
+          "replay": "USER_DECISION",
+          "committed": "USER_ACCEPTED_RECOMMENDATION"
+        }
+      ]
+    },
+    {
+      "record": "DEC-070",
+      "fields": [
+        {
+          "field": "/accepted_recommendation",
+          "replay": null,
+          "committed": {
+            "recommended_option": "OPT-COMPLETE",
+            "alternatives_presented": [
+              "OPT-COMPLETE",
+              "OPT-DEFER"
+            ],
+            "tradeoffs_presented": [
+              "모의 어댑터 코드가 늘고 콜백 서명 형식은 모의 기준으로 정해진다."
+            ],
+            "accepted_by": "user",
+            "accepted_at": null
+          }
+        },
+        {
+          "field": "/decision_authority",
+          "replay": "USER_DECISION_REQUIRED",
+          "committed": "USER_CONFIRMATION"
+        },
+        {
+          "field": "/evidence_refs",
+          "replay": [],
+          "committed": [
+            "EVD-001"
+          ]
+        },
+        {
+          "field": "/resolution_mode",
+          "replay": "USER_DECISION",
+          "committed": "USER_ACCEPTED_RECOMMENDATION"
+        }
+      ]
+    },
+    {
+      "record": "DEC-071",
+      "fields": [
+        {
+          "field": "/evidence_refs",
+          "replay": [],
+          "committed": [
+            "EVD-001"
+          ]
+        }
+      ]
+    },
+    {
+      "record": "UNK-069",
+      "fields": [
+        {
+          "field": "/decision_authority",
+          "replay": "USER_DECISION_REQUIRED",
+          "committed": "USER_CONFIRMATION"
+        },
+        {
+          "field": "/evidence_refs",
+          "replay": [],
+          "committed": [
+            "EVD-001"
+          ]
+        },
+        {
+          "field": "/resolution_mode",
+          "replay": "USER_DECISION",
+          "committed": "USER_ACCEPTED_RECOMMENDATION"
+        }
+      ]
+    },
+    {
+      "record": "UNK-070",
+      "fields": [
+        {
+          "field": "/decision_authority",
+          "replay": "USER_DECISION_REQUIRED",
+          "committed": "USER_CONFIRMATION"
+        },
+        {
+          "field": "/evidence_refs",
+          "replay": [],
+          "committed": [
+            "EVD-001"
+          ]
+        },
+        {
+          "field": "/resolution_mode",
+          "replay": "USER_DECISION",
+          "committed": "USER_ACCEPTED_RECOMMENDATION"
+        }
+      ]
+    },
+    {
+      "record": "UNK-071",
+      "fields": [
+        {
+          "field": "/evidence_refs",
+          "replay": [],
+          "committed": [
+            "EVD-001"
+          ]
+        }
+      ]
+    }
+  ],
+  "fields_the_builders_refused": [
+    {
+      "record": "UNK-069",
+      "field": "/decision_authority",
+      "builder": "USER_DECISION_REQUIRED",
+      "committed": "USER_CONFIRMATION"
+    },
+    {
+      "record": "UNK-069",
+      "field": "/evidence_refs",
+      "builder": [],
+      "committed": [
+        "EVD-001"
+      ]
+    },
+    {
+      "record": "UNK-069",
+      "field": "/resolution_mode",
+      "builder": "USER_DECISION",
+      "committed": "USER_ACCEPTED_RECOMMENDATION"
+    },
+    {
+      "record": "UNK-070",
+      "field": "/decision_authority",
+      "builder": "USER_DECISION_REQUIRED",
+      "committed": "USER_CONFIRMATION"
+    },
+    {
+      "record": "UNK-070",
+      "field": "/evidence_refs",
+      "builder": [],
+      "committed": [
+        "EVD-001"
+      ]
+    },
+    {
+      "record": "UNK-070",
+      "field": "/resolution_mode",
+      "builder": "USER_DECISION",
+      "committed": "USER_ACCEPTED_RECOMMENDATION"
+    },
+    {
+      "record": "UNK-071",
+      "field": "/evidence_refs",
+      "builder": [],
+      "committed": [
+        "EVD-001"
+      ]
+    },
+    {
+      "record": "DEC-069",
+      "field": "/resolution_mode",
+      "builder": "USER_DECISION",
+      "committed": "USER_ACCEPTED_RECOMMENDATION"
+    },
+    {
+      "record": "DEC-069",
+      "field": "/decision_authority",
+      "builder": "USER_DECISION_REQUIRED",
+      "committed": "USER_CONFIRMATION"
+    },
+    {
+      "record": "DEC-069",
+      "field": "/evidence_refs",
+      "builder": [],
+      "committed": [
+        "EVD-001"
+      ]
+    },
+    {
+      "record": "DEC-069",
+      "field": "/accepted_recommendation",
+      "builder": null,
+      "committed": {
+        "recommended_option": "OPT-WINDOW",
+        "alternatives_presented": [
+          "OPT-WINDOW",
+          "OPT-SERVER"
+        ],
+        "tradeoffs_presented": [
+          "모의 결제창은 데모에서 구매자가 한 번 더 누르는 단계가 된다."
+        ],
+        "accepted_by": "user",
+        "accepted_at": null
+      }
+    },
+    {
+      "record": "DEC-070",
+      "field": "/resolution_mode",
+      "builder": "USER_DECISION",
+      "committed": "USER_ACCEPTED_RECOMMENDATION"
+    },
+    {
+      "record": "DEC-070",
+      "field": "/decision_authority",
+      "builder": "USER_DECISION_REQUIRED",
+      "committed": "USER_CONFIRMATION"
+    },
+    {
+      "record": "DEC-070",
+      "field": "/evidence_refs",
+      "builder": [],
+      "committed": [
+        "EVD-001"
+      ]
+    },
+    {
+      "record": "DEC-070",
+      "field": "/accepted_recommendation",
+      "builder": null,
+      "committed": {
+        "recommended_option": "OPT-COMPLETE",
+        "alternatives_presented": [
+          "OPT-COMPLETE",
+          "OPT-DEFER"
+        ],
+        "tradeoffs_presented": [
+          "모의 어댑터 코드가 늘고 콜백 서명 형식은 모의 기준으로 정해진다."
+        ],
+        "accepted_by": "user",
+        "accepted_at": null
+      }
+    },
+    {
+      "record": "DEC-071",
+      "field": "/evidence_refs",
+      "builder": [],
+      "committed": [
+        "EVD-001"
+      ]
+    }
+  ],
+  "digest_after_restoring_listed_records": "1f514c6e00b31ccaaec2593fe93ee49c48afd044b45306b5bf1c3a91203fc116",
+  "digest_equal_after_restoring": true
+}

@@ -1,0 +1,2340 @@
+{
+  "schema_version": "0.2.0",
+  "project": {
+    "slug": "v2-foundation",
+    "definition_status": "READY_FOR_REVIEW",
+    "definition_revision": 4,
+    "bootstrap_mode": "NEW_PRODUCT",
+    "closure_contract": {
+      "level": "SEMANTIC_CLOSURE",
+      "product_binding_contract": {
+        "contract_id": "joewrks.product-coverage-binding",
+        "version": "1.0",
+        "digest": "b57459533247de52038aacb158e785c2184edcdd2fa6831f0edc3db713775f3c"
+      },
+      "ux_binding_contract": {
+        "contract_id": "joewrks.ux-coverage-binding",
+        "version": "1.0",
+        "digest": "8fc84057a4a6f0f0ce329a58d11b8e208989800147d703665cea52088de0be0d"
+      }
+    }
+  },
+  "migration": {
+    "mode": "NATIVE"
+  },
+  "evidence": [
+    {
+      "id": "EVD-001",
+      "status": "CURRENT",
+      "source_kind": "USER_CONFIRMED_INTENT",
+      "locator": "chat (walk-through brief)",
+      "claim": "비회원 한 명이 한 품목을 바로 결제하는 단일 상품 판매 페이지.",
+      "confidence": "DIRECT",
+      "authority_classes": [
+        "INTENT"
+      ],
+      "observed_version": null,
+      "content_hash": null
+    }
+  ],
+  "surface_manifest": {
+    "records": [
+      {
+        "id": "SURF-001",
+        "kind": "MONEY_FLOW",
+        "name": "결제",
+        "status": "IN_SCOPE",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "evidence_refs": [],
+        "authority_refs": [
+          "REQ-001"
+        ],
+        "unknown_refs": [
+          "UNK-001",
+          "UNK-002",
+          "UNK-003",
+          "UNK-004",
+          "UNK-005",
+          "UNK-006",
+          "UNK-007",
+          "UNK-008",
+          "UNK-009",
+          "UNK-010",
+          "UNK-011",
+          "UNK-012"
+        ],
+        "decision_refs": [
+          "DEC-001",
+          "DEC-007",
+          "DEC-008",
+          "DEC-009",
+          "DEC-010",
+          "DEC-011",
+          "DEC-012",
+          "DEC-013",
+          "DEC-014",
+          "DEC-015",
+          "DEC-016",
+          "DEC-017",
+          "DEC-018"
+        ],
+        "contradiction_refs": [],
+        "rationale": null,
+        "intent_classification": null
+      }
+    ],
+    "grill_profile": {
+      "AUTH": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "DEC-002"
+        ],
+        "rationale": "사용자 답(DEC-001~006): 이 제품에는 AUTH 동작이 없다."
+      },
+      "MONEY": {
+        "status": "ACTIVE",
+        "surface_refs": [
+          "SURF-001"
+        ],
+        "unknown_refs": [],
+        "basis_refs": [
+          "DEC-001"
+        ],
+        "rationale": null
+      },
+      "FILE_UPLOAD": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "DEC-003"
+        ],
+        "rationale": "사용자 답(DEC-001~006): 이 제품에는 FILE_UPLOAD 동작이 없다."
+      },
+      "ASYNC": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "DEC-004"
+        ],
+        "rationale": "사용자 답(DEC-001~006): 이 제품에는 ASYNC 동작이 없다."
+      },
+      "PERMISSION": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "DEC-005"
+        ],
+        "rationale": "사용자 답(DEC-001~006): 이 제품에는 PERMISSION 동작이 없다."
+      },
+      "DESTRUCTIVE_ACTION": {
+        "status": "N/A",
+        "surface_refs": [],
+        "unknown_refs": [],
+        "basis_refs": [
+          "DEC-006"
+        ],
+        "rationale": "사용자 답(DEC-001~006): 이 제품에는 DESTRUCTIVE_ACTION 동작이 없다."
+      }
+    }
+  },
+  "contradictions": [],
+  "objects": {
+    "goals": [
+      {
+        "id": "GOAL-001",
+        "status": "CURRENT",
+        "statement": "구매자가 한 품목을 한 번에 결제한다."
+      }
+    ],
+    "users": [
+      {
+        "id": "USR-001",
+        "status": "CURRENT",
+        "description": "비회원 구매자.",
+        "actor_kind": "BUYER"
+      }
+    ],
+    "requirements": [
+      {
+        "status": "CURRENT",
+        "id": "REQ-001",
+        "statement": "구매자는 KRW 포함가로 한 품목을 결제하고, 서버 재계산 가격과 주문별 결제 키로 한 번만 승인되며, 실패하면 다시 결제한다(DEC-007~DEC-018).",
+        "scope": "결제",
+        "ui_required": false,
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "MULTI_FLOW",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        }
+      }
+    ],
+    "unknowns": [
+      {
+        "id": "UNK-901",
+        "status": "RESOLVED",
+        "question": "AUTH topology: Does the product have user accounts (sign-up, sign-in, sessions)?",
+        "why_it_matters": "Accounts bring registration, login, session expiry, recovery and revocation decisions (GRILL-AUTH-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": true,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-AUTH-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-AUTH-ON",
+            "statement": "Yes: the product has AUTH behaviour.",
+            "consequences": [
+              "GRILL-AUTH-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-AUTH-OFF",
+            "statement": "No: the product has no AUTH behaviour.",
+            "consequences": [
+              "AUTH is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-002"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"결제는 받는다. 계정, 파일 올리기, 역할 구분, 되돌리기 어려운 삭제, 나중에 오는 결과는 없다.\" — OPT-AUTH-OFF 선택.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-902",
+        "status": "RESOLVED",
+        "question": "MONEY topology: Does the product take, hold, refund or display money (prices, payments, refunds)?",
+        "why_it_matters": "Money brings currency, price authority, tax, payment failure, refund and settlement decisions (GRILL-MONEY-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-MONEY-ON",
+            "statement": "Yes: the product has MONEY behaviour.",
+            "consequences": [
+              "GRILL-MONEY-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-MONEY-OFF",
+            "statement": "No: the product has no MONEY behaviour.",
+            "consequences": [
+              "MONEY is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-001"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"결제는 받는다. 계정, 파일 올리기, 역할 구분, 되돌리기 어려운 삭제, 나중에 오는 결과는 없다.\" — OPT-MONEY-ON 선택.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-903",
+        "status": "RESOLVED",
+        "question": "FILE_UPLOAD topology: Can users upload files (images, documents, attachments)?",
+        "why_it_matters": "Uploads bring type, size, quota, malware, retention and ownership decisions (GRILL-FILE-UPLOAD-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-FILE-UPLOAD-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-UPLOAD-ON",
+            "statement": "Yes: the product has FILE_UPLOAD behaviour.",
+            "consequences": [
+              "GRILL-FILE-UPLOAD-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-UPLOAD-OFF",
+            "statement": "No: the product has no FILE_UPLOAD behaviour.",
+            "consequences": [
+              "FILE_UPLOAD is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-003"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"결제는 받는다. 계정, 파일 올리기, 역할 구분, 되돌리기 어려운 삭제, 나중에 오는 결과는 없다.\" — OPT-UPLOAD-OFF 선택.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-904",
+        "status": "RESOLVED",
+        "question": "ASYNC topology: Does any result arrive later than the request (callbacks, background jobs, polling, queued work)?",
+        "why_it_matters": "Deferred results bring timeout, retry, idempotency, duplicate execution and reconciliation decisions (GRILL-ASYNC-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-ASYNC-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-ASYNC-ON",
+            "statement": "Yes: the product has ASYNC behaviour.",
+            "consequences": [
+              "GRILL-ASYNC-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-ASYNC-OFF",
+            "statement": "No: the product has no ASYNC behaviour.",
+            "consequences": [
+              "ASYNC is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-004"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"결제는 받는다. 계정, 파일 올리기, 역할 구분, 되돌리기 어려운 삭제, 나중에 오는 결과는 없다.\" — OPT-ASYNC-OFF 선택.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-905",
+        "status": "RESOLVED",
+        "question": "PERMISSION topology: Do different roles or owners see or do different things?",
+        "why_it_matters": "Roles bring role, resource ownership, delegation and denial decisions (GRILL-PERMISSION-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": true,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-PERMISSION-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-PERM-ON",
+            "statement": "Yes: the product has PERMISSION behaviour.",
+            "consequences": [
+              "GRILL-PERMISSION-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-PERM-OFF",
+            "statement": "No: the product has no PERMISSION behaviour.",
+            "consequences": [
+              "PERMISSION is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-005"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"결제는 받는다. 계정, 파일 올리기, 역할 구분, 되돌리기 어려운 삭제, 나중에 오는 결과는 없다.\" — OPT-PERM-OFF 선택.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-906",
+        "status": "RESOLVED",
+        "question": "DESTRUCTIVE_ACTION topology: Can a user delete, cancel or overwrite something that is hard to undo?",
+        "why_it_matters": "Destructive actions bring confirmation, undo, cascade and audit decisions (GRILL-DESTRUCTIVE-ACTION-1). Replace this placeholder question with the product's own wording, or answer it from the brief.",
+        "required_authority_class": "INTENT",
+        "question_category": "SCOPE_BOUNDARY",
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": true,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_TOPOLOGY",
+          "surface_ref": null,
+          "pack_id": "GRILL-DESTRUCTIVE-ACTION-1",
+          "axis_id": null,
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-DESTR-ON",
+            "statement": "Yes: the product has DESTRUCTIVE_ACTION behaviour.",
+            "consequences": [
+              "GRILL-DESTRUCTIVE-ACTION-1 becomes ACTIVE (new_records.py topology-on) and each of its axes becomes a question."
+            ]
+          },
+          {
+            "id": "OPT-DESTR-OFF",
+            "statement": "No: the product has no DESTRUCTIVE_ACTION behaviour.",
+            "consequences": [
+              "DESTRUCTIVE_ACTION is recorded N/A with this answer as basis (new_records.py topology-off)."
+            ]
+          }
+        ],
+        "recommendation": null,
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-006"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"결제는 받는다. 계정, 파일 올리기, 역할 구분, 되돌리기 어려운 삭제, 나중에 오는 결과는 없다.\" — OPT-DESTR-OFF 선택.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-001",
+        "status": "RESOLVED",
+        "question": "currency: KRW 단일 통화인가, 다른 통화 표시 전환인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 currency 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "currency",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "KRW 단일 통화",
+            "consequences": [
+              "KRW 단일 통화로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "다른 통화 표시 전환",
+            "consequences": [
+              "다른 통화 표시 전환로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "다른 통화 표시 전환는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-007"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"전부 추천대로\" — OPT-A 추천안 수락.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-002",
+        "status": "RESOLVED",
+        "question": "price_authority: 서버가 주문 시 가격을 다시 계산인가, 화면 가격을 그대로 사용인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 price_authority 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "price_authority",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "서버가 주문 시 가격을 다시 계산",
+            "consequences": [
+              "서버가 주문 시 가격을 다시 계산로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "화면 가격을 그대로 사용",
+            "consequences": [
+              "화면 가격을 그대로 사용로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "화면 가격을 그대로 사용는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-008"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"전부 추천대로\" — OPT-A 추천안 수락.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-003",
+        "status": "RESOLVED",
+        "question": "tax: 부가세 포함가 표시인가, 부가세 별도 표시인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 tax 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "tax",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "부가세 포함가 표시",
+            "consequences": [
+              "부가세 포함가 표시로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "부가세 별도 표시",
+            "consequences": [
+              "부가세 별도 표시로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "부가세 별도 표시는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-009"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"전부 추천대로\" — OPT-A 추천안 수락.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-004",
+        "status": "RESOLVED",
+        "question": "discount: 할인 없음인가, 쿠폰 입력란인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 discount 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "discount",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "할인 없음",
+            "consequences": [
+              "할인 없음로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "쿠폰 입력란",
+            "consequences": [
+              "쿠폰 입력란로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "쿠폰 입력란는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-010"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"전부 추천대로\" — OPT-A 추천안 수락.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-005",
+        "status": "RESOLVED",
+        "question": "payment_failure: 실패 안내와 다시 결제인가, 주문 자동 취소인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 payment_failure 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "payment_failure",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "실패 안내와 다시 결제",
+            "consequences": [
+              "실패 안내와 다시 결제로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "주문 자동 취소",
+            "consequences": [
+              "주문 자동 취소로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "주문 자동 취소는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-011"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"전부 추천대로\" — OPT-A 추천안 수락.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-006",
+        "status": "RESOLVED",
+        "question": "duplicate_payment: 주문별 결제 키로 한 번만 승인인가, 검사 없음인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 duplicate_payment 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "duplicate_payment",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "주문별 결제 키로 한 번만 승인",
+            "consequences": [
+              "주문별 결제 키로 한 번만 승인로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "검사 없음",
+            "consequences": [
+              "검사 없음로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "검사 없음는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-012"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"전부 추천대로\" — OPT-A 추천안 수락.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-007",
+        "status": "RESOLVED",
+        "question": "refund: 운영자가 전액 환불인가, 환불 없음인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 refund 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "refund",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "운영자가 전액 환불",
+            "consequences": [
+              "운영자가 전액 환불로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "환불 없음",
+            "consequences": [
+              "환불 없음로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "환불 없음는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-013"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"전부 추천대로\" — OPT-A 추천안 수락.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-008",
+        "status": "RESOLVED",
+        "question": "partial_refund: 부분 환불 없음인가, 품목 단위 부분 환불인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 partial_refund 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "partial_refund",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "부분 환불 없음",
+            "consequences": [
+              "부분 환불 없음로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "품목 단위 부분 환불",
+            "consequences": [
+              "품목 단위 부분 환불로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "품목 단위 부분 환불는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-014"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"전부 추천대로\" — OPT-A 추천안 수락.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-009",
+        "status": "RESOLVED",
+        "question": "cancellation: 결제 전에만 취소인가, 언제든 취소인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 cancellation 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "cancellation",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "결제 전에만 취소",
+            "consequences": [
+              "결제 전에만 취소로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "언제든 취소",
+            "consequences": [
+              "언제든 취소로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "언제든 취소는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-015"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"전부 추천대로\" — OPT-A 추천안 수락.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-010",
+        "status": "RESOLVED",
+        "question": "chargeback: 지급 거절은 이력에 기록인가, 무시인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 chargeback 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "chargeback",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "지급 거절은 이력에 기록",
+            "consequences": [
+              "지급 거절은 이력에 기록로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "무시",
+            "consequences": [
+              "무시로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "무시는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-016"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"전부 추천대로\" — OPT-A 추천안 수락.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-011",
+        "status": "RESOLVED",
+        "question": "settlement: 정산은 PG 화면에서 확인인가, 사이트 안 정산 화면인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 settlement 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "settlement",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "정산은 PG 화면에서 확인",
+            "consequences": [
+              "정산은 PG 화면에서 확인로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "사이트 안 정산 화면",
+            "consequences": [
+              "사이트 안 정산 화면로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "사이트 안 정산 화면는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-017"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"전부 추천대로\" — OPT-A 추천안 수락.",
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-012",
+        "status": "RESOLVED",
+        "question": "receipt: 영수증 메일인가, 영수증 없음인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 receipt 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "receipt",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "영수증 메일",
+            "consequences": [
+              "영수증 메일로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "영수증 없음",
+            "consequences": [
+              "영수증 없음로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "영수증 없음는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [
+          "DEC-018"
+        ],
+        "resolution_mode": "USER_DECISION",
+        "resolution_summary": "사용자 답: \"전부 추천대로\" — OPT-A 추천안 수락.",
+        "deferral": null,
+        "blocked_reason": null
+      }
+    ],
+    "decisions": [
+      {
+        "id": "DEC-001",
+        "status": "CURRENT",
+        "statement": "Yes: the product has MONEY behaviour.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-902"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-002",
+        "status": "CURRENT",
+        "statement": "No: the product has no AUTH behaviour.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-901"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": true,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-003",
+        "status": "CURRENT",
+        "statement": "No: the product has no FILE_UPLOAD behaviour.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-903"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-004",
+        "status": "CURRENT",
+        "statement": "No: the product has no ASYNC behaviour.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-904"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-005",
+        "status": "CURRENT",
+        "statement": "No: the product has no PERMISSION behaviour.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-905"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": true,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-006",
+        "status": "CURRENT",
+        "statement": "No: the product has no DESTRUCTIVE_ACTION behaviour.",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-906"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "HIGH",
+          "fan_out": "SYSTEMIC",
+          "user_visible": true,
+          "reversibility": "COSTLY_TO_REVERSE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": false,
+            "legal_or_policy": false,
+            "destructive": true,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-007",
+        "status": "CURRENT",
+        "statement": "KRW 단일 통화",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-001"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "SURF-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-008",
+        "status": "CURRENT",
+        "statement": "서버가 주문 시 가격을 다시 계산",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-002"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "SURF-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-009",
+        "status": "CURRENT",
+        "statement": "부가세 포함가 표시",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-003"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "SURF-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-010",
+        "status": "CURRENT",
+        "statement": "할인 없음",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-004"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "SURF-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-011",
+        "status": "CURRENT",
+        "statement": "실패 안내와 다시 결제",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-005"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "SURF-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-012",
+        "status": "CURRENT",
+        "statement": "주문별 결제 키로 한 번만 승인",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-006"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "SURF-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-013",
+        "status": "CURRENT",
+        "statement": "운영자가 전액 환불",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-007"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "SURF-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-014",
+        "status": "CURRENT",
+        "statement": "부분 환불 없음",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-008"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "SURF-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-015",
+        "status": "CURRENT",
+        "statement": "결제 전에만 취소",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-009"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "SURF-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-016",
+        "status": "CURRENT",
+        "statement": "지급 거절은 이력에 기록",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-010"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "SURF-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-017",
+        "status": "CURRENT",
+        "statement": "정산은 PG 화면에서 확인",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-011"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "SURF-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      },
+      {
+        "id": "DEC-018",
+        "status": "CURRENT",
+        "statement": "영수증 메일",
+        "decision_type": "PRODUCT_BEHAVIOR",
+        "resolution_mode": "USER_DECISION",
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "source_unknown_refs": [
+          "UNK-012"
+        ],
+        "evidence_refs": [],
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "affects": [
+          "SURF-001"
+        ],
+        "decided_by": "USER",
+        "accepted_recommendation": null
+      }
+    ],
+    "rules": [
+      {
+        "id": "RULE-001",
+        "status": "CURRENT",
+        "applies_to": [
+          "REQ-001"
+        ],
+        "statement": "결제 규칙: KRW 포함가, 서버 재계산, 주문별 결제 키 한 번 승인, 실패 시 다시 결제, 결제 전 취소, 운영자 전액 환불, 영수증 메일."
+      }
+    ],
+    "flows": [],
+    "screens": [],
+    "states": [],
+    "data": [],
+    "integrations": [],
+    "acceptance_criteria": [
+      {
+        "id": "AC-001",
+        "status": "CURRENT",
+        "requirement_refs": [
+          "REQ-001"
+        ],
+        "assertion": "같은 결제 키의 두 번째 승인은 무시되고 주문은 한 번만 결제 완료가 된다."
+      }
+    ],
+    "tasks": [
+      {
+        "id": "TASK-001",
+        "status": "CURRENT",
+        "implements": [
+          "REQ-001"
+        ],
+        "acceptance_refs": [
+          "AC-001"
+        ]
+      }
+    ]
+  },
+  "coverage": [
+    {
+      "feature_id": "REQ-001",
+      "default_authority": [
+        {
+          "record_id": "RULE-001",
+          "pointer": "/statement",
+          "value_sha256": "9b28ffc89231d7e61b600200e06604aae51881bee7ff1998c5685db31ea11a29"
+        }
+      ],
+      "cells": {
+        "goal": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "GOAL-001",
+              "pointer": "/statement",
+              "value_sha256": "257e90c004751f8f24928d125de59791cf81daa5eb6a57b1590e2930f17d65f0"
+            },
+            {
+              "record_id": "REQ-001",
+              "pointer": "/statement",
+              "value_sha256": "ef73354c25621b504fe19d27f54e675ee01a52b0984655300bb0b42fc988e2e0"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "happy_path": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "REQ-001",
+              "pointer": "/statement",
+              "value_sha256": "ef73354c25621b504fe19d27f54e675ee01a52b0984655300bb0b42fc988e2e0"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "boundary": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "RULE-001",
+              "pointer": "/statement",
+              "value_sha256": "9b28ffc89231d7e61b600200e06604aae51881bee7ff1998c5685db31ea11a29"
+            },
+            {
+              "record_id": "DEC-001",
+              "pointer": "/statement",
+              "value_sha256": "e95d9a414a9b1801e356cd5a59cd6e505ae8adb2fcdaffc0433e59801ea7c883"
+            },
+            {
+              "record_id": "DEC-002",
+              "pointer": "/statement",
+              "value_sha256": "18cc7a37ddc4b5e7fe5520c0e83747c248b95de2ba6a6c559256aef1c4081f46"
+            },
+            {
+              "record_id": "DEC-003",
+              "pointer": "/statement",
+              "value_sha256": "3ad3fd58b6adc0c52a699c0c7b2de83796e7b2e243a63d7fd76396ef4c134e0c"
+            },
+            {
+              "record_id": "DEC-004",
+              "pointer": "/statement",
+              "value_sha256": "f9a613871c10063554da39cebaa04058381ec03727595577c1ead63157cd4171"
+            },
+            {
+              "record_id": "DEC-005",
+              "pointer": "/statement",
+              "value_sha256": "12f01ebaac88bb5e3a7fcaeac9e69b79f4d0ecfebae9e03c004dbbb72636d25d"
+            },
+            {
+              "record_id": "DEC-006",
+              "pointer": "/statement",
+              "value_sha256": "2e523d38adb381e6a2bce6e3dfd7665be81de7bc6f82d5404b13f051166918b1"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "acceptance": {
+          "status": "COVERED",
+          "authority_bindings": [
+            {
+              "record_id": "AC-001",
+              "pointer": "/assertion",
+              "value_sha256": "ec2e3073f6814e3d2537919316a9e0abcb543e11032b7f21e51c5ed9db79cde2"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        }
+      }
+    }
+  ],
+  "ux_coverage": [],
+  "grill_coverage": [
+    {
+      "target_ref": "SURF-001",
+      "pack_id": "GRILL-MONEY-1",
+      "pack_version": "1.0",
+      "pack_digest": "ecca8f8bb878d00715f1e064e82fdf1dba3056160740160f0bd7f28834ed15b0",
+      "axes": {
+        "currency": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-007",
+              "pointer": "/statement",
+              "value_sha256": "eaaa7bc63bffbfede268f9253330c3c0f1c9314a255e5d979bb9406221c4a227"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "price_authority": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-008",
+              "pointer": "/statement",
+              "value_sha256": "54a3ee70a881f9f2459e0c089811ee60ea22738cb8c5ec57d95455b30a9c8d08"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "tax": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-009",
+              "pointer": "/statement",
+              "value_sha256": "ed5f47eb8c2c8ef020909e9aaca973b51db1d84703dddfba7a470a59ac037a41"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "discount": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-010",
+              "pointer": "/statement",
+              "value_sha256": "2b658b8a582306f3ada8e7607d960798d8f11a2ee85e5a239ac6609903ea28d6"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "payment_failure": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-011",
+              "pointer": "/statement",
+              "value_sha256": "0f9ef8a648c9d06e6024d3afedb53451f3dcfb2073e7c8cc5cad3977141f1e3a"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "duplicate_payment": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-012",
+              "pointer": "/statement",
+              "value_sha256": "d2e017660a3a0e9edd9c5b7c44f466b80e1c690bb9ca81c6fd4220f8ea660555"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "refund": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-013",
+              "pointer": "/statement",
+              "value_sha256": "a258bea0f454365c2c2eadb895dc875247a907a34a367194a0a2de238cc54652"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "partial_refund": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-014",
+              "pointer": "/statement",
+              "value_sha256": "57834d455503bc1d959a00579b564c202b830a0e007747a23329773f2c653d4f"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "cancellation": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-015",
+              "pointer": "/statement",
+              "value_sha256": "f37d9fc590b961842a2d82197c00a2d0a726e9fc79e470f2fd577a905e196adb"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "chargeback": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-016",
+              "pointer": "/statement",
+              "value_sha256": "d31e5c6e8e54a6ee706b8a8c2ca33f5a56ce8d202883986ee07a47ac0faf9d80"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "settlement": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-017",
+              "pointer": "/statement",
+              "value_sha256": "374dac356f4c968d3981f4f4693e3e7140e0a0d1a163e29d947d2af8bcd0c176"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        },
+        "receipt": {
+          "status": "ADDRESSED",
+          "authority_bindings": [
+            {
+              "record_id": "DEC-018",
+              "pointer": "/statement",
+              "value_sha256": "ec88714d3da4cd0e8db9ef5c638e4111412621681c5d25ab769c000bdf76e37b"
+            }
+          ],
+          "unknown_refs": [],
+          "basis_bindings": [],
+          "rationale": null
+        }
+      }
+    }
+  ],
+  "discovery_baseline": {
+    "status": "CURRENT",
+    "definition_revision": 4,
+    "surface_manifest_digest": "d2e3f2f5279b7a24744a89e3c3e5aba4bcff6badb3da45f183f8c9a1d26d3dbd",
+    "evidence_commitment_digest": "90ee7a26974ff744c08e96d90ca5e8b1bf81e176d12121920876caf0bde73b75",
+    "open_material_surface_count": 0,
+    "unresolved_material_contradiction_count": 0,
+    "procedure_complete": true,
+    "applicable_surface_classes_complete": true,
+    "active_grill_packs": [
+      {
+        "pack_id": "GRILL-CORE-1",
+        "version": "1.0",
+        "digest": "45b87b1d77916ae5a6e0d624b3a8452f787a7754daf18635157157c4497b951e",
+        "target_refs": [
+          "REQ-001"
+        ]
+      },
+      {
+        "pack_id": "GRILL-MONEY-1",
+        "version": "1.0",
+        "digest": "ecca8f8bb878d00715f1e064e82fdf1dba3056160740160f0bd7f28834ed15b0",
+        "target_refs": [
+          "SURF-001"
+        ]
+      }
+    ],
+    "active_grill_packs_complete": true,
+    "unknown_unknown_exhaustiveness_claimed": false
+  },
+  "approval": {
+    "status": "UNAPPROVED"
+  },
+  "approval_history": []
+}

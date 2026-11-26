@@ -1,0 +1,834 @@
+{
+  "objects": {
+    "unknowns": [
+      {
+        "id": "UNK-001",
+        "status": "OPEN",
+        "question": "currency: KRW 단일 통화인가, 다른 통화 표시 전환인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 currency 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "currency",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "KRW 단일 통화",
+            "consequences": [
+              "KRW 단일 통화로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "다른 통화 표시 전환",
+            "consequences": [
+              "다른 통화 표시 전환로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "다른 통화 표시 전환는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-002",
+        "status": "OPEN",
+        "question": "price_authority: 서버가 주문 시 가격을 다시 계산인가, 화면 가격을 그대로 사용인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 price_authority 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "price_authority",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "서버가 주문 시 가격을 다시 계산",
+            "consequences": [
+              "서버가 주문 시 가격을 다시 계산로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "화면 가격을 그대로 사용",
+            "consequences": [
+              "화면 가격을 그대로 사용로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "화면 가격을 그대로 사용는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-003",
+        "status": "OPEN",
+        "question": "tax: 부가세 포함가 표시인가, 부가세 별도 표시인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 tax 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "tax",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "부가세 포함가 표시",
+            "consequences": [
+              "부가세 포함가 표시로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "부가세 별도 표시",
+            "consequences": [
+              "부가세 별도 표시로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "부가세 별도 표시는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-004",
+        "status": "OPEN",
+        "question": "discount: 할인 없음인가, 쿠폰 입력란인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 discount 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "discount",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "할인 없음",
+            "consequences": [
+              "할인 없음로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "쿠폰 입력란",
+            "consequences": [
+              "쿠폰 입력란로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "쿠폰 입력란는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-005",
+        "status": "OPEN",
+        "question": "payment_failure: 실패 안내와 다시 결제인가, 주문 자동 취소인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 payment_failure 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "payment_failure",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "실패 안내와 다시 결제",
+            "consequences": [
+              "실패 안내와 다시 결제로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "주문 자동 취소",
+            "consequences": [
+              "주문 자동 취소로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "주문 자동 취소는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-006",
+        "status": "OPEN",
+        "question": "duplicate_payment: 주문별 결제 키로 한 번만 승인인가, 검사 없음인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 duplicate_payment 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "duplicate_payment",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "주문별 결제 키로 한 번만 승인",
+            "consequences": [
+              "주문별 결제 키로 한 번만 승인로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "검사 없음",
+            "consequences": [
+              "검사 없음로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "검사 없음는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-007",
+        "status": "OPEN",
+        "question": "refund: 운영자가 전액 환불인가, 환불 없음인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 refund 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "refund",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "운영자가 전액 환불",
+            "consequences": [
+              "운영자가 전액 환불로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "환불 없음",
+            "consequences": [
+              "환불 없음로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "환불 없음는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-008",
+        "status": "OPEN",
+        "question": "partial_refund: 부분 환불 없음인가, 품목 단위 부분 환불인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 partial_refund 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "partial_refund",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "부분 환불 없음",
+            "consequences": [
+              "부분 환불 없음로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "품목 단위 부분 환불",
+            "consequences": [
+              "품목 단위 부분 환불로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "품목 단위 부분 환불는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-009",
+        "status": "OPEN",
+        "question": "cancellation: 결제 전에만 취소인가, 언제든 취소인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 cancellation 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "cancellation",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "결제 전에만 취소",
+            "consequences": [
+              "결제 전에만 취소로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "언제든 취소",
+            "consequences": [
+              "언제든 취소로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "언제든 취소는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-010",
+        "status": "OPEN",
+        "question": "chargeback: 지급 거절은 이력에 기록인가, 무시인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 chargeback 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "chargeback",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "지급 거절은 이력에 기록",
+            "consequences": [
+              "지급 거절은 이력에 기록로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "무시",
+            "consequences": [
+              "무시로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "무시는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-011",
+        "status": "OPEN",
+        "question": "settlement: 정산은 PG 화면에서 확인인가, 사이트 안 정산 화면인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 settlement 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "settlement",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "정산은 PG 화면에서 확인",
+            "consequences": [
+              "정산은 PG 화면에서 확인로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "사이트 안 정산 화면",
+            "consequences": [
+              "사이트 안 정산 화면로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "사이트 안 정산 화면는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      },
+      {
+        "id": "UNK-012",
+        "status": "OPEN",
+        "question": "receipt: 영수증 메일인가, 영수증 없음인가?",
+        "why_it_matters": "결제 화면과 주문 기록의 receipt 동작이 정해진다.",
+        "required_authority_class": "INTENT",
+        "question_category": "SECONDARY_BEHAVIOR",
+        "materiality": {
+          "outcome_divergence": "MEDIUM",
+          "fan_out": "MULTI_OBJECT",
+          "user_visible": true,
+          "reversibility": "REVERSIBLE",
+          "risk_flags": {
+            "security": false,
+            "privacy": false,
+            "money": true,
+            "legal_or_policy": false,
+            "destructive": false,
+            "data_loss": false,
+            "external_commitment": false
+          },
+          "classification": "MATERIAL"
+        },
+        "decision_authority": "USER_DECISION_REQUIRED",
+        "affects": [
+          "SURF-001"
+        ],
+        "blocks_unknown_refs": [],
+        "origin": {
+          "kind": "GRILL_PACK_AXIS",
+          "surface_ref": "SURF-001",
+          "pack_id": "GRILL-MONEY-1",
+          "axis_id": "receipt",
+          "source_path": null
+        },
+        "response_mode": "MUTUALLY_EXCLUSIVE",
+        "options": [
+          {
+            "id": "OPT-A",
+            "statement": "영수증 메일",
+            "consequences": [
+              "영수증 메일로 구현한다."
+            ]
+          },
+          {
+            "id": "OPT-B",
+            "statement": "영수증 없음",
+            "consequences": [
+              "영수증 없음로 구현한다."
+            ]
+          }
+        ],
+        "recommendation": {
+          "recommended_option": "OPT-A",
+          "reasoning_refs": [
+            "EVD-001"
+          ],
+          "tradeoffs": [
+            "영수증 없음는 이번 범위에서 빠진다."
+          ],
+          "confidence": "HIGH"
+        },
+        "evidence_refs": [],
+        "resolved_by": [],
+        "resolution_mode": null,
+        "resolution_summary": null,
+        "deferral": null,
+        "blocked_reason": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "label": "rev23",
+  "base_revision": 22,
+  "target_revision": 23,
+  "open_revision_exit": 0,
+  "written": true,
+  "commands": 9,
+  "target_definition_digest": "0bac274e9a033f1aecb75e769a66d44e8ae0cbe2ec7c12151fa01c4541694ed7",
+  "replay_definition_digest": "9edb5337959166fb91ca02feaddd14847abbc6d1a9fcfa9a2d2280fc5ceba0be",
+  "intent_evidence_moved_to_reason": {
+    "UNK-072": [
+      "EVD-001"
+    ],
+    "UNK-073": [
+      "EVD-001"
+    ]
+  },
+  "digest_equal": false,
+  "differences": [
+    {
+      "record": "DEC-072",
+      "fields": [
+        {
+          "field": "/accepted_recommendation",
+          "replay": null,
+          "committed": {
+            "recommended_option": "OPT-REFUND",
+            "alternatives_presented": [
+              "OPT-REFUND",
+              "OPT-HOLD"
+            ],
+            "tradeoffs_presented": [
+              "모의 어댑터에서는 환불이 즉시 성공하므로 실제 PG의 환불 지연은 관측되지 않는다."
+            ],
+            "accepted_by": "user",
+            "accepted_at": null
+          }
+        },
+        {
+          "field": "/decision_authority",
+          "replay": "USER_DECISION_REQUIRED",
+          "committed": "USER_CONFIRMATION"
+        },
+        {
+          "field": "/evidence_refs",
+          "replay": [],
+          "committed": [
+            "EVD-001"
+          ]
+        },
+        {
+          "field": "/resolution_mode",
+          "replay": "USER_DECISION",
+          "committed": "USER_ACCEPTED_RECOMMENDATION"
+        }
+      ]
+    },
+    {
+      "record": "DEC-073",
+      "fields": [
+        {
+          "field": "/evidence_refs",
+          "replay": [],
+          "committed": [
+            "EVD-001"
+          ]
+        }
+      ]
+    },
+    {
+      "record": "UNK-072",
+      "fields": [
+        {
+          "field": "/decision_authority",
+          "replay": "USER_DECISION_REQUIRED",
+          "committed": "USER_CONFIRMATION"
+        },
+        {
+          "field": "/evidence_refs",
+          "replay": [],
+          "committed": [
+            "EVD-001"
+          ]
+        },
+        {
+          "field": "/resolution_mode",
+          "replay": "USER_DECISION",
+          "committed": "USER_ACCEPTED_RECOMMENDATION"
+        }
+      ]
+    },
+    {
+      "record": "UNK-073",
+      "fields": [
+        {
+          "field": "/evidence_refs",
+          "replay": [],
+          "committed": [
+            "EVD-001"
+          ]
+        }
+      ]
+    }
+  ],
+  "fields_the_builders_refused": [
+    {
+      "record": "UNK-072",
+      "field": "/decision_authority",
+      "builder": "USER_DECISION_REQUIRED",
+      "committed": "USER_CONFIRMATION"
+    },
+    {
+      "record": "UNK-072",
+      "field": "/evidence_refs",
+      "builder": [],
+      "committed": [
+        "EVD-001"
+      ]
+    },
+    {
+      "record": "UNK-072",
+      "field": "/resolution_mode",
+      "builder": "USER_DECISION",
+      "committed": "USER_ACCEPTED_RECOMMENDATION"
+    },
+    {
+      "record": "UNK-073",
+      "field": "/evidence_refs",
+      "builder": [],
+      "committed": [
+        "EVD-001"
+      ]
+    },
+    {
+      "record": "DEC-072",
+      "field": "/resolution_mode",
+      "builder": "USER_DECISION",
+      "committed": "USER_ACCEPTED_RECOMMENDATION"
+    },
+    {
+      "record": "DEC-072",
+      "field": "/decision_authority",
+      "builder": "USER_DECISION_REQUIRED",
+      "committed": "USER_CONFIRMATION"
+    },
+    {
+      "record": "DEC-072",
+      "field": "/evidence_refs",
+      "builder": [],
+      "committed": [
+        "EVD-001"
+      ]
+    },
+    {
+      "record": "DEC-072",
+      "field": "/accepted_recommendation",
+      "builder": null,
+      "committed": {
+        "recommended_option": "OPT-REFUND",
+        "alternatives_presented": [
+          "OPT-REFUND",
+          "OPT-HOLD"
+        ],
+        "tradeoffs_presented": [
+          "모의 어댑터에서는 환불이 즉시 성공하므로 실제 PG의 환불 지연은 관측되지 않는다."
+        ],
+        "accepted_by": "user",
+        "accepted_at": null
+      }
+    },
+    {
+      "record": "DEC-073",
+      "field": "/evidence_refs",
+      "builder": [],
+      "committed": [
+        "EVD-001"
+      ]
+    }
+  ],
+  "digest_after_restoring_listed_records": "0bac274e9a033f1aecb75e769a66d44e8ae0cbe2ec7c12151fa01c4541694ed7",
+  "digest_equal_after_restoring": true
+}

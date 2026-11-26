@@ -1,0 +1,75 @@
+{
+  "version": "202",
+  "open_surface_without_unknown": [
+    {
+      "code": "OPEN_PRODUCT_SURFACE_WITHOUT_UNKNOWN",
+      "path": "surface_manifest.records[0]",
+      "message": "material OPEN surface requires an OPEN UNK-* reference — SURF-001 is OPEN and material but holds no OPEN question (unknown_refs ['UNK-001']). When every question of the surface is answered, the way out is a requirement as its authority and status IN_SCOPE: new_records.py --state STATE --patch PATCH requirement --from-decisions DEC-001 --surface SURF-001 --requirement REQ-NNN (workflow CLOSE). If something is still undecided, open that question on the surface instead"
+    }
+  ],
+  "core_cell_wrong_type": [
+    {
+      "code": "invalid_authority_binding_type",
+      "path": "coverage[0].cells.state",
+      "message": "COVERED requires only verified exact authority bindings — axis state: allowed [RULE, STATE], actual FLOW (FLOW-001 /paths)"
+    }
+  ],
+  "ux_action_back_bound_to_state": [
+    {
+      "code": "invalid_authority_binding_type",
+      "path": "ux_coverage[0].actions[0].cells.back",
+      "message": "COVERED requires only verified exact authority bindings — axis back: allowed [FLOW, RULE, SCR], actual STATE (STATE-001 /state_name)"
+    }
+  ],
+  "open_topology_cell": [
+    {
+      "code": "invalid_grill_profile",
+      "path": "surface_manifest.grill_profile.MONEY",
+      "message": "topology profile cell does not satisfy its declared status 'OPEN': OPEN needs rationale null, has 'not decided yet'; unknown_refs 'UNK-001' is RESOLVED, not OPEN (an answered domain is ACTIVE or N/A: new_records.py topology-on / topology-off) (shapes: ACTIVE needs current surface_refs, unknown_refs [] and rationale null; N/A needs surface_refs [], unknown_refs [], current basis_refs and a meaningful rationale; OPEN needs current OPEN unknown_refs for the domain pack; every status needs current basis_refs)"
+    }
+  ],
+  "blocks_answered_question": [
+    {
+      "code": "invalid_unknown_contract",
+      "path": "objects.unknowns[1].blocks_unknown_refs",
+      "message": "blocks_unknown_refs may name only other OPEN unknowns; 'UNK-001' is RESOLVED (drop it: new_records.py resolve removes an answered question from every list)"
+    }
+  ],
+  "authority_derivation": [
+    {
+      "code": "invalid_decision_authority_derivation",
+      "path": "objects.unknowns[0].decision_authority",
+      "message": "decision_authority must equal deterministic derivation USER_DECISION_REQUIRED (high risk: reversibility COSTLY_TO_REVERSE; it is 'USER_CONFIRMATION': new_records.py writes the derived value)"
+    }
+  ],
+  "identity_block_first_approval": [
+    "- Approval Manifest digest: `dd1e837be6e1b79048905773b1563a2f8c07aa9f47bb7e1c0e5fc99b3e32b222` (첫 승인, rev 1: 추가 15 · 변경 0 · 대체 0 · 폐기 0)",
+    "- Approval Manifest digest: `dd1e837be6e1b79048905773b1563a2f8c07aa9f47bb7e1c0e5fc99b3e32b222` (first approval, rev 1: added 15 · changed 0 · superseded 0 · retired 0)"
+  ],
+  "draft_heading_first_approval": [
+    "## Records of the first approval (condense into the spec; do not paste blindly)"
+  ],
+  "draft_flow_line": [
+    "- added `FLOW-001`: Open the request form."
+  ],
+  "draft_full_flow": [
+    "- added `FLOW-001`: Open the request form.",
+    "  - status: CURRENT",
+    "  - goal_refs:",
+    "    - GOAL-001",
+    "  - entry: Open the request form.",
+    "  - preconditions:",
+    "    - The requester is signed in.",
+    "  - paths:",
+    "    - Validate and submit.",
+    "  - outcomes:",
+    "    - The request is accepted.",
+    "- added `GOAL-001`: A requester completes a valid submission.",
+    "  - status: CURRENT",
+    "  - statement: A requester completes a valid submission."
+  ],
+  "pipe_closed_early": {
+    "exit": 0,
+    "stderr_last_line": ""
+  }
+}
