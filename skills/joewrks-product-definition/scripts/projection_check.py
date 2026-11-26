@@ -21,6 +21,7 @@ from pathlib import Path
 
 from approval_status import approval_status
 from approval_v2 import compute_approval_manifest, definition_digest
+from authority_binding_v2 import canonical_record_index
 from cli_output import use_utf8_stdio
 
 
@@ -233,8 +234,27 @@ def check(state: dict[str, object], spec_text: str, review_text: str | None,
     return report
 
 
-def draft(state: dict[str, object]) -> str:
-    """Identity lines plus the current text of every added/changed record, as Markdown."""
+def _full_record(record: dict[str, object]) -> list[str]:
+    """Every field of a record, one Markdown sub-bullet each (string lists one line per item)."""
+    lines = []
+    for key, value in record.items():
+        if key == "id":
+            continue
+        if isinstance(value, list) and value and all(isinstance(item, str) for item in value):
+            lines.append(f"  - {key}:")
+            lines.extend(f"    - {item}" for item in value)
+        elif isinstance(value, (dict, list)):
+            lines.append(f"  - {key}: `{json.dumps(value, ensure_ascii=False)}`")
+        else:
+            lines.append(f"  - {key}: {value}")
+    return lines
+
+
+def draft(state: dict[str, object], full: bool = False) -> str:
+    """Identity lines plus the current text of every added/changed record, as Markdown.
+
+    full=True adds every field of each added/changed record (FLOW paths and outcomes, STATE
+    conditions, DATA purpose, SCR major_actions, ...) under its one-line summary."""
     identity = _identity(state)
     manifest = compute_approval_manifest(state)
     lines = [
@@ -246,13 +266,18 @@ def draft(state: dict[str, object]) -> str:
         f"- Approval Manifest digest: `{identity['manifest_digest']}`",
         f"- Status: `{identity['definition_status']}` / `{identity['approval_status']}` (approved_at {identity['approved_at']})",
         "",
-        f"## Records changed since revision {manifest['from_revision']} (condense into the spec; do not paste blindly)",
+        (f"## Records changed since revision {manifest['from_revision']} (condense into the spec; do not paste blindly)"
+         if manifest["from_revision"] is not None
+         else "## Records of the first approval (condense into the spec; do not paste blindly)"),
         "",
     ]
+    index = canonical_record_index(state) if full else {}
     for category in ("added", "changed", "superseded", "retired"):
         for row in manifest[category]:
             text = str(row["summary"]).replace("\n", " ")
             lines.append(f"- {category} `{row['id']}`: {text}")
+            if full and row["id"] in index:
+                lines.extend(_full_record(index[row["id"]][1]))
     return "\n".join(lines) + "\n"
 
 
@@ -264,6 +289,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--require-types", default=DEFAULT_REQUIRED_TYPES,
                         help=f"record types the spec must name when added (default {DEFAULT_REQUIRED_TYPES})")
     parser.add_argument("--draft", action="store_true", help="print a Markdown draft instead of the JSON check")
+    parser.add_argument("--full", action="store_true", help="with --draft: every field of each added/changed record")
     args = parser.parse_args(argv)
     try:
         state = json.loads(Path(args.state).read_text(encoding="utf-8"))
@@ -273,7 +299,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False))
         return 2
     if args.draft:
-        print(draft(state), end="")
+        print(draft(state, full=args.full), end="")
         return 0
     report = check(state, spec_text, review_text, {t.strip() for t in args.require_types.split(",") if t.strip()})
     print(json.dumps(report, ensure_ascii=False, indent=2))

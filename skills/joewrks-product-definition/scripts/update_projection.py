@@ -76,7 +76,8 @@ def identity_block(f: dict[str, object], korean: bool, html: bool, manifest_file
             + (f" ({f['approved_at']})" if f["approved_at"] else ""),
             f"Definition digest: `{f['definition_digest']}`",
             f"Approval Manifest digest: `{f['manifest_digest']}`"
-            + f" (rev {m['from_revision']}→{f['revision']}: 추가 {counts['added']} · 변경 {counts['changed']} · 대체 {counts['superseded']} · 폐기 {counts['retired']})",
+            + (f" (rev {m['from_revision']}→{f['revision']}: " if m['from_revision'] is not None else f" (첫 승인, rev {f['revision']}: ")
+            + f"추가 {counts['added']} · 변경 {counts['changed']} · 대체 {counts['superseded']} · 폐기 {counts['retired']})",
             f"이전 승인: {previous}" + (f" (rev {bundled}은 다음 승인에 포함)" if bundled else ""),
         ]
     else:
@@ -86,7 +87,8 @@ def identity_block(f: dict[str, object], korean: bool, html: bool, manifest_file
             + (f" ({f['approved_at']})" if f["approved_at"] else ""),
             f"Definition digest: `{f['definition_digest']}`",
             f"Approval Manifest digest: `{f['manifest_digest']}`"
-            + f" (rev {m['from_revision']}→{f['revision']}: added {counts['added']} · changed {counts['changed']} · superseded {counts['superseded']} · retired {counts['retired']})",
+            + (f" (rev {m['from_revision']}→{f['revision']}: " if m['from_revision'] is not None else f" (first approval, rev {f['revision']}: ")
+            + f"added {counts['added']} · changed {counts['changed']} · superseded {counts['superseded']} · retired {counts['retired']})",
             f"Previous approvals: {previous}" + (f" (rev {bundled} were approved inside a later Manifest)" if bundled else ""),
         ]
     if manifest_file:
