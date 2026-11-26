@@ -1,8 +1,8 @@
 {
   "schema_version": "joeflow.personal-install-overlay-receipt/1.0",
-  "recorded_at": "2026-11-20T18:29:21+09:00",
+  "recorded_at": "2026-11-26T19:31:48+09:00",
   "program": "JOEFLOW",
-  "program_version_file": "2.0.1",
+  "program_version_file": "2.0.2",
   "runtime_skill_id": "joewrks-product-definition",
   "installation_path": "~\\.codex\\skills\\joewrks-product-definition",
   "composition": {
@@ -345,6 +345,37 @@
           "added": [],
           "changed": []
         }
+      },
+      {
+        "item": "2.0.2 (resolve, grouped questions, topology lifecycle, decision_policy, requirement --from-decisions, condition-stating error messages)",
+        "commit": "37b787c05e6b5463817dae6d89e328c84c193855",
+        "base_commit": "7ac9f834a6ecabaa7004415f197114639bbc0757",
+        "files": [
+          "VERSION",
+          "references/coverage-inheritance.md",
+          "references/first-plan-guide.md",
+          "references/state-contract-v0.2.0.md",
+          "scripts/cli_output.py",
+          "scripts/decision_policy.py",
+          "scripts/explain_state_errors.py",
+          "scripts/grill_v2.py",
+          "scripts/new_records.py",
+          "scripts/next_product_question.py",
+          "scripts/open_revision.py",
+          "scripts/projection_check.py",
+          "scripts/record_builders.py",
+          "scripts/revision_v2.py",
+          "scripts/state_builders.py",
+          "scripts/update_projection.py",
+          "templates/state-v0.2.0.example.json"
+        ],
+        "composed": {
+          "SKILL.md": "patch: all hunks; hunk @@ -62,7 +62,7 @@ applied as a phrase substitution (installed CLOSE line has no experience pass)",
+          "references/workflow-v0.2.0.md": "patch: all hunks"
+        },
+        "not_installed_at_tip": [],
+        "installed_on": "2026-11-26",
+        "pycache_drift_before": {}
       }
     ],
     "not_applied": [
@@ -356,13 +387,13 @@
     ],
     "matches_single_commit": false
   },
-  "tip_compared": "7ac9f834a6ecabaa7004415f197114639bbc0757",
+  "tip_compared": "37b787c05e6b5463817dae6d89e328c84c193855",
   "origin_counts": {
-    "branch_tip": 46,
+    "branch_tip": 50,
     "composed_v1.1.0_plus_u1_u2": 3,
     "preserved_local_overlay": 2,
     "untracked_extra": 73,
-    "v1.1.0_and_branch_tip": 149,
+    "v1.1.0_and_branch_tip": 147,
     "v1.1.0_only": 1
   },
   "tip_tracked_files_missing_from_install": [],
@@ -446,20 +477,25 @@
       "path": "~/.codex/skills-backups/joewrks-product-definition-before-2-0-1-7ac9f83-20261120",
       "file_count": 274,
       "manifest_sha256": "3d3f6d900eabdf937f6afabe6d79dc05cd65932dc95f038db05ca5d234f27923"
+    },
+    {
+      "path": "~/.codex/skills-backups/joewrks-product-definition-before-2-0-2-37b787c-20261126",
+      "file_count": 274,
+      "manifest_sha256": "7b89e9eced50732334c16969ad6982fa5fba4301b45dc394dc3ee683d2b191d7"
     }
   ],
   "manifest_sha256_definition": "sha256 of UTF-8 lines '<sha256>  <posix path>\n' sorted by path",
-  "installed_file_count": 274,
-  "installed_manifest_sha256": "7b89e9eced50732334c16969ad6982fa5fba4301b45dc394dc3ee683d2b191d7",
+  "installed_file_count": 276,
+  "installed_manifest_sha256": "f912f72457566db5136ff5a006beb4eb080070eaadd34d7dcf5811ff79ae7123",
   "installed_manifest": [
     {
       "path": "SKILL.md",
-      "sha256": "14dd8b0d33c3c8a49d276ff8083339d60430bcf1568b247554b669f76ee81d98",
+      "sha256": "26eeafddcb8a8c244dbec815782439d63b183945e4e61e6b7c583d75a67fa6c6",
       "origin": "composed_v1.1.0_plus_u1_u2"
     },
     {
       "path": "VERSION",
-      "sha256": "fe840f52fb5578d3f77eb497115eb02c6036601c3a53e60df7995c7276baa77a",
+      "sha256": "b4b16faea52dc04ccfe32f7b342094855923ebf599a3cac1940470a2d6d7c261",
       "origin": "branch_tip"
     },
     {
@@ -1039,7 +1075,7 @@
     },
     {
       "path": "references/coverage-inheritance.md",
-      "sha256": "71087e51e1231897d8d161ffa94f5e1536db1e116d4e16b31c45801086406161",
+      "sha256": "fcf0bb031482e9711273f04b6a214c235bf311973cf114115bf237d7a1679ee9",
       "origin": "branch_tip"
     },
     {
@@ -1074,7 +1110,7 @@
     },
     {
       "path": "references/first-plan-guide.md",
-      "sha256": "9ab3c44acd71051521c6cedf96c5cc92a8e79c070c4c6641a03cf27a53ca4608",
+      "sha256": "a96945056974090be3cf72714cd5cecdf9326c13d44a02d7fc5f04acd000f778",
       "origin": "branch_tip"
     },
     {
@@ -1179,8 +1215,8 @@
     },
     {
       "path": "references/state-contract-v0.2.0.md",
-      "sha256": "d35ed8e657bae42005ef8b588436d6852744d6235d760df57c6b76f58ed62e51",
-      "origin": "v1.1.0_and_branch_tip"
+      "sha256": "8f8c1b5c8c1380852711aa98096bbd25d552f2b9c3e9ec89cdb655ec52d213af",
+      "origin": "branch_tip"
     },
     {
       "path": "references/state-contract.md",
@@ -1209,7 +1245,7 @@
     },
     {
       "path": "references/workflow-v0.2.0.md",
-      "sha256": "df8e054f5b0ad8333baa7e04ab98874e42f9d1588302120bc7b11bb49fa6fd0d",
+      "sha256": "8e051361ac595ab97f8df3be75809640ddbebb621a582e6e61b96a9313481bff",
       "origin": "composed_v1.1.0_plus_u1_u2"
     },
     {
@@ -1594,7 +1630,7 @@
     },
     {
       "path": "scripts/cli_output.py",
-      "sha256": "4c838b616123210dfb089ca9754570736c017b401f508400ff9a40efcb495ae7",
+      "sha256": "e24a8d9a86b991aad576ac0beb79188f556b1d264b5d6c3b9919d389a4a8ffc3",
       "origin": "branch_tip"
     },
     {
@@ -1613,6 +1649,11 @@
       "origin": "branch_tip"
     },
     {
+      "path": "scripts/decision_policy.py",
+      "sha256": "4c5e7dfbe410fa9474f634b4e262f4da18319227cb771964b548cf3bcf4b22b2",
+      "origin": "branch_tip"
+    },
+    {
       "path": "scripts/discovery_v2.py",
       "sha256": "eb869048b9304223a34876d3904dddb18b17e65a62b809ed8ac37c67faba4c99",
       "origin": "v1.1.0_and_branch_tip"
@@ -1624,12 +1665,12 @@
     },
     {
       "path": "scripts/explain_state_errors.py",
-      "sha256": "257990fb8bf67ee5d72e4395a2a68b28362c7d5723f71f32c39ca17671ce4980",
+      "sha256": "1fde8f8c9b4cfe1e521db5422c3b2b73d879f2ee6773329271ad096d5a652b3e",
       "origin": "branch_tip"
     },
     {
       "path": "scripts/grill_v2.py",
-      "sha256": "1841d5469fd5228de650f13698ce1153de549c2bf7e440675d0d75376ed0fa1f",
+      "sha256": "5e2031c8c4db34e55493384ac0587430e4457493b67a27eefdc9ab72b472e0ea",
       "origin": "branch_tip"
     },
     {
@@ -1654,17 +1695,17 @@
     },
     {
       "path": "scripts/new_records.py",
-      "sha256": "4e3dcdd8a341c8fac5236c33a1abca7f559368b479b0bf8d61a176bca17408d9",
+      "sha256": "3a2a84b6c76569b7c1fcf8978ac9afa275f4474c0bb2766fb8372347034a29bf",
       "origin": "branch_tip"
     },
     {
       "path": "scripts/next_product_question.py",
-      "sha256": "403f9664ba191c608fbe56508023661f3ad93181ac0d96209c7ebaa04c6121bf",
+      "sha256": "54a1328a3f0bb5d6ee7cdac290dbf8742db59c5bc3f6d7a3cf391dfc6b5a1d4c",
       "origin": "branch_tip"
     },
     {
       "path": "scripts/open_revision.py",
-      "sha256": "a9afe199bb355caa041889f6d725c1f82e8499c2611914f5f5cf48d76275e1fc",
+      "sha256": "8e30a48837f60b63c4871e6fe200dd45ced24cc0d07d9e7d5674af74eb2adde1",
       "origin": "branch_tip"
     },
     {
@@ -1684,7 +1725,7 @@
     },
     {
       "path": "scripts/projection_check.py",
-      "sha256": "a0ba20eb9674b980ef5681902c7178f7154ad6ccff8a01ff83bc491e00659c5e",
+      "sha256": "d1545003057f4936e3075c316d5c5b2b1a3ce1b225732ed2901a3ff879f55ad2",
       "origin": "branch_tip"
     },
     {
@@ -1694,7 +1735,7 @@
     },
     {
       "path": "scripts/record_builders.py",
-      "sha256": "e0ac690fd6cdd6838b8db87f8da2712823f38c76f5b02942061bb89bc3e6bc77",
+      "sha256": "682dec1838887d33d1428cc06afa5e9f85aaf4b98377caa7ee3eaed86e149c60",
       "origin": "branch_tip"
     },
     {
@@ -1704,7 +1745,12 @@
     },
     {
       "path": "scripts/revision_v2.py",
-      "sha256": "327ef01fff271f37626b20bd1d85508a046395189299ec20e1723248ef5d247a",
+      "sha256": "c0d0f96239c4e986c2a8232d6122ff3e76f02290a3e5fd260145f5585fd0ebc6",
+      "origin": "branch_tip"
+    },
+    {
+      "path": "scripts/state_builders.py",
+      "sha256": "e67cddbb2b870908f12285ac84362dd83f4cf20d9b6ed968ef38272818d9f884",
       "origin": "branch_tip"
     },
     {
@@ -1729,7 +1775,7 @@
     },
     {
       "path": "scripts/update_projection.py",
-      "sha256": "6e6425224a44e2d804cf7bfbdd2f8460cc02f96fd543c7db1040b9a81e1dda29",
+      "sha256": "911e8030a09741478056dc033659a036267b272a0eaded38158cd98553f88fc2",
       "origin": "branch_tip"
     },
     {
@@ -1804,8 +1850,8 @@
     },
     {
       "path": "templates/state-v0.2.0.example.json",
-      "sha256": "8016fb5fcc6717a0936676a7d515b7f6d04ad4c7b70430d51aa83b6b00a0b559",
-      "origin": "v1.1.0_and_branch_tip"
+      "sha256": "9953bd26376f519fc06770839a4de0cb9926ee80d48142da095cc9d7a286c729",
+      "origin": "branch_tip"
     },
     {
       "path": "templates/state.example.json",
@@ -1894,5 +1940,6 @@
   "pycache_drift_before_2_0_1": {
     "added": [],
     "changed": []
-  }
+  },
+  "pycache_drift_before_2_0_2": {}
 }

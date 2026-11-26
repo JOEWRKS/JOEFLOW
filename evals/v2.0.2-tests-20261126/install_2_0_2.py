@@ -93,12 +93,28 @@ for line in filter(None, changed):
     copied.append(rel)
 
 # 2. Composed documents: the hunks since the base on top of the installed text (patch(1)); every hunk must apply.
+# The installed SKILL.md has no experience pass, so the CLOSE line (hunk @@ -62) differs from the base by a whole
+# sentence and patch -F3 cannot place a one-line hunk on it (first run, 2026-11-26). That hunk is applied as an exact
+# phrase substitution on the installed line instead, and dropped from the diff; the phrase must occur exactly once.
+PREPASS = {'SKILL.md': [('@@ -62,7 +62,7 @@',
+                         'then ask one highest-leverage material question at a time. Record truthful Materiality and decision authority.',
+                         'then ask one highest-leverage material question at a time (independent pack axes may go together as one recommendation table). Record truthful Materiality and decision authority.')]}
 composed_report = {}
 for rel in COMPOSED:
     diff = git('diff', BASE, TIP, '--', SKILL + rel)
     if not diff.strip():
         composed_report[rel] = 'unchanged since base'
         continue
+    prepass_note = ''
+    for header, old_phrase, new_phrase in PREPASS.get(rel, []):
+        installed = (INSTALL / rel).read_bytes().decode('utf-8')
+        assert installed.count(old_phrase) == 1 and new_phrase not in installed, (rel, 'prepass phrase', installed.count(old_phrase))
+        (INSTALL / rel).write_bytes(installed.replace(old_phrase, new_phrase).encode('utf-8'))
+        parts = diff.decode('utf-8').split('\n@@')
+        kept = [parts[0]] + [h for h in parts[1:] if not ('@@' + h).startswith(header)]
+        assert len(kept) == len(parts) - 1, (rel, 'prepass hunk not found', header)
+        diff = '\n@@'.join(kept).encode('utf-8')
+        prepass_note = f'; hunk {header} applied as a phrase substitution (installed CLOSE line has no experience pass)'
     with tempfile.TemporaryDirectory() as tmp:
         tmp = pathlib.Path(tmp)
         (tmp / 'p.diff').write_bytes(diff)
@@ -108,7 +124,7 @@ for rel in COMPOSED:
         text = (tmp / 'target').read_bytes().decode('utf-8')
         rejected = (tmp / 'rej').read_text(encoding='utf-8') if (tmp / 'rej').exists() else ''
     assert run.returncode == 0 and not rejected, (rel, run.stdout, rejected)
-    composed_report[rel] = 'patch: all hunks'
+    composed_report[rel] = 'patch: all hunks' + prepass_note
     lines = text.split('\n')
     for raw in diff.decode('utf-8').split('\n'):
         if raw.startswith('+') and not raw.startswith('+++'):
