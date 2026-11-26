@@ -10,7 +10,7 @@
 | 항목 | 값 |
 | --- | --- |
 | 프로그램 이름 | `JOEFLOW` |
-| 프로그램 릴리스 | `v2.0.1` |
+| 프로그램 릴리스 | `v2.0.2` |
 | 저장소 | `JOEWRKS/JOEFLOW` |
 | 런타임 skill/package ID | `joewrks-product-definition` |
 | canonical Product Definition authority | `product-definition/<project-slug>/state.json` |
@@ -34,7 +34,7 @@ SEMANTIC_REVIEW_V2_RELIABILITY_NOT_MEASURED
 - 현재 V2 semantic-review 경계: `joewrks.semantic-review/2.1` / reliability `NOT_MEASURED`
 - 과거 호환성: 상태 `0.1.2.1`, `joewrks.action-conformance/1.0`, `joewrks.semantic-review/1.0`, v0.4.3 evidence
 - 계약 버전: 상호 독립 관리
-- 이 기준선의 전체 프로그램 릴리스: `v2.0.1`
+- 이 기준선의 전체 프로그램 릴리스: `v2.0.2`
 
 ## 2. 설계 목적
 
@@ -235,7 +235,8 @@ evals/                              # run records; dated folders per release, ar
 ├─ core-semantic-closure-v2-m6/     # frozen (audit FROZEN_PATHS)
 ├─ joeflow-u1-personal-install/     # personal Codex overlay receipt
 ├─ v2-release-20261119/             # 2.0.0 record and personal overlay installer
-└─ v2-tests-20261119/               # 2.0.0 test reports, 2.0.1 record and personal overlay installer
+├─ v2-tests-20261119/               # 2.0.0 test reports, 2.0.1 record and personal overlay installer
+└─ v2.0.2-tests-20261126/           # 2.0.2 replay, walk-through and before/after message records
 tests/                              # unittest suite and fixtures
 ```
 
@@ -268,6 +269,7 @@ tests/                              # unittest suite and fixtures
 - **v1.7.3** — `projection_check.py` 제목 검사의 오탐 수정 2: 머리 영역의 꾸밈말 없는 승인 표기(`승인: revision N (digest)`)가 마지막 승인 revision과 그 승인의 `manifest_digest` 앞 8자 이상을 같은 줄(HTML은 같은 블록 요소)에 적고 현재 revision을 함께 적지 않으면 사실로 보아 건너뜀. `<title>`·`<h1>`·Markdown `# ` 이름 줄은 digest가 있어도 이름으로 읽어 지적 유지; `next_action`·출력 모양 변경 없음
 - **v2.0.0** — 저장소 정리(무참조 기록 16개 보관 이동, 1개 삭제, 홈 경로 가림), `SECURITY.md`, `docs/QUICKSTART.md`, README 축약; 스킬 폴더는 `VERSION` 한 파일 외에 1.7.3과 바이트 동일, State 0.2.0·고정 모듈·바인딩 계약 변경 없음
 - **v2.0.1** (후보) — 2.0.0 시험 결함 수정: 빈 템플릿에서 시작한 첫 기획이 `open_revision.py --status READY_FOR_REVIEW`에서 discovery baseline을 세워 state.json 손수정 없이 검토에 도달, `new_records.py question`의 `--evidence` 선택화, first-plan-guide·QUICKSTART·README 설치 블록 보완; State 0.2.0·고정 모듈·바인딩 계약 변경 없음
+- **v2.0.2** (미게시) — ATELIER 실사용 마찰 A·B·C·D·G: 기존 질문 닫기(`resolve`, 묶음 수락, `--grouped`), 토폴로지 생애주기(OPEN 템플릿, `topology-on/-off`, `grill_profile` 패치 키), 빌더·검증기 파생 통일(`decision_policy.py`), 표면 닫기(`requirement --from-decisions`), 실제 조건을 말하는 오류 문구; State 0.2.0·보호 모듈·바인딩 계약 변경 없음
 - **v1.6.0** — 전달된 사용자 의도 근거 종류 `RELAYED_USER_INTENT`: 사용자 원문 그대로(`DIRECT`)만 직접 확인과 같고, 전달자의 요약은 material 질문을 닫거나 담당자 기본값의 근거가 될 수 없음(`relayed_intent_cannot_close`·`relayed_intent_needs_user`), `new_records.py relayed`; State 0.2.0·바인딩 계약 identity 변경 없음, 보호된 `state_validation_v2.py`·스키마 enum 고정 해시 갱신
 
 ## 6. 한계

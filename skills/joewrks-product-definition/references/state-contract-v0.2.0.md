@@ -86,3 +86,26 @@ the owned temporary artifact and never alter an existing destination.
 and migration-integrity verified. It does not mean Semantic Closure, approval,
 discovery completion, specialist topology classification, downstream adoption,
 design, implementation, or deployment.
+
+## Authoring builders (JOEFLOW 2.0.2)
+
+The builders write records of this contract; they do not change it. State 0.2.0, the
+schema and the binding contracts are unchanged.
+
+- New projects start from a template whose six topology domains are `OPEN`, each holding
+  one `GRILL_TOPOLOGY` question (`UNK-901`…`UNK-906`, `basis_refs []`). No evidence is
+  pre-filled. A domain becomes `ACTIVE` or `N/A` only from its answer
+  (`new_records.py topology-on|topology-off DEC`).
+- `open_revision.py` accepts `grill_profile` in a patch: a map from domain to its complete
+  profile cell, replacing that domain's cell.
+- An `ACTIVE` specialist pack still needs its coverage row in the same revision
+  (`missing_grill_coverage` is unchanged). `topology-on` writes it, with the checked-in
+  pack version and digest and one `OPEN` axis cell per axis, each held by its own
+  `GRILL_PACK_AXIS` question. While a domain is `OPEN` no row exists or is needed.
+- Decision authority of an `OPEN` or `BLOCKED` unknown is the validator's
+  `derive_decision_authority`; the builders call it (`scripts/decision_policy.py`). A
+  `RESOLVED` unknown's authority follows its resolution mode. The builders record
+  `USER_ACCEPTED_RECOMMENDATION` only when the `OPEN` question derives
+  `USER_CONFIRMATION`; the validator does not re-derive resolved records, so states written
+  by earlier versions stay valid.
+- Coverage cell addresses in patches may name the target: `grill_coverage[PACK/TARGET]`.

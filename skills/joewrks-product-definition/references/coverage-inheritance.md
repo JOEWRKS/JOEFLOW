@@ -26,6 +26,92 @@ fails on that axis with a message naming the default; write that cell yourself o
 can tell a declared answer from a hand-written one; the digest projection strips the tag and
 the declarations.
 
+## Record types each axis accepts
+
+A `COVERED`/`ADDRESSED` cell (and a `default_authority`) may bind only records of the types
+its axis allows; the lists below come from `references/binding-contracts/*.json`.
+`open_revision.py` and `explain_state_errors.py` name the axis, the allowed types and the
+bound record's actual type when a binding does not fit, for example
+`axis back: allowed [FLOW, RULE, SCR], actual STATE (STATE-007 /conditions)`.
+
+| Core axis (`coverage[REQ].cells`) | allowed record types |
+|---|---|
+| `actor` | USR, DEC, RULE |
+| `goal` | GOAL, REQ |
+| `entry_point` | FLOW, SCR, RULE |
+| `precondition` | RULE, STATE, FLOW |
+| `happy_path` | FLOW, REQ |
+| `alternative_path` | FLOW, RULE |
+| `error` | FLOW, STATE, RULE |
+| `recovery` | FLOW, STATE, RULE |
+| `permission` | RULE, DEC, USR |
+| `state` | STATE, RULE |
+| `data` | DATA, RULE |
+| `side_effect` | RULE, DATA, INT |
+| `notification` | RULE, FLOW, INT |
+| `validation` | RULE, DATA, AC |
+| `boundary` | RULE, DEC |
+| `persistence` | DATA, RULE |
+| `security` | RULE, DEC |
+| `privacy` | RULE, DEC, DATA |
+| `analytics` | RULE, DATA, INT |
+| `acceptance` | AC |
+
+| Specialist pack (`grill_coverage[PACK].axes`, every axis) | allowed record types |
+|---|---|
+| `GRILL-AUTH-1` | USR, DEC, RULE, FLOW, STATE, DATA, AC |
+| `GRILL-MONEY-1` | DEC, RULE, FLOW, STATE, DATA, INT, AC |
+| `GRILL-FILE-UPLOAD-1` | DEC, RULE, FLOW, STATE, DATA, INT, AC |
+| `GRILL-ASYNC-1` | DEC, RULE, FLOW, STATE, DATA, INT, AC |
+| `GRILL-PERMISSION-1` | USR, DEC, RULE, FLOW, STATE, DATA, AC |
+| `GRILL-DESTRUCTIVE-ACTION-1` | DEC, RULE, FLOW, STATE, DATA, INT, AC |
+
+| UX state axis (`ux_coverage[SCR].states`) | allowed record types |
+|---|---|
+| `default` | SCR, STATE, FLOW, RULE |
+| `loading` | STATE, FLOW |
+| `empty` | STATE, FLOW, RULE |
+| `partial` | STATE, FLOW, RULE |
+| `success` | STATE, FLOW, AC |
+| `error` | STATE, FLOW, RULE, AC |
+| `disabled` | STATE, RULE |
+| `permission_denied` | STATE, RULE, DEC, USR |
+| `unauthenticated` | STATE, RULE, FLOW |
+| `offline` | STATE, FLOW, RULE |
+| `timeout` | STATE, FLOW, RULE |
+| `retrying` | STATE, FLOW, RULE |
+| `submitting` | STATE, FLOW |
+| `completed` | STATE, FLOW, AC |
+| `cancelled` | STATE, FLOW, RULE |
+| `expired` | STATE, RULE, FLOW |
+
+| UX action axis (`ux_coverage[SCR].actions[KEY].cells`) | allowed record types |
+|---|---|
+| `entry` | FLOW, SCR, RULE |
+| `precondition` | RULE, STATE, FLOW |
+| `input` | DATA, SCR, RULE |
+| `validation` | RULE, DATA, AC |
+| `submit` | FLOW, SCR, RULE |
+| `success` | FLOW, STATE, AC |
+| `failure` | FLOW, STATE, RULE, AC |
+| `retry` | FLOW, STATE, RULE |
+| `cancel` | FLOW, STATE, RULE |
+| `back` | FLOW, SCR, RULE |
+| `refresh` | FLOW, STATE, RULE |
+| `duplicate_concurrent_action` | RULE, STATE, FLOW |
+| `timeout` | FLOW, STATE, RULE |
+| `offline` | STATE, FLOW, RULE |
+| `permission` | RULE, DEC, USR |
+| `session_expiration` | STATE, RULE, FLOW |
+| `data_mutation` | DATA, RULE, FLOW |
+| `side_effect` | RULE, DATA, INT |
+| `notification` | RULE, FLOW, INT |
+| `persistence` | DATA, RULE |
+| `undo` | FLOW, STATE, RULE |
+| `destructive_confirmation` | RULE, DEC, FLOW |
+
+`N/A` cells take basis bindings of these types: Core and specialist GOAL, USR, REQ, DEC, RULE, FLOW, SCR, STATE, DATA, INT, AC, SURF, EVD; UX GOAL, USR, REQ, DEC, RULE, FLOW, SCR, STATE, DATA, INT, AC, SURF, EVD.
+
 ## Writing and converting
 
 - New rows: declare first, then write only the cells that differ. In a `rows` patch an

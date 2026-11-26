@@ -8,7 +8,7 @@ and where evidence goes, so a first plan does not need the validator source.
 
 | File | Stage | Use it to see |
 |---|---|---|
-| `templates/state-v0.2.0.example.json` | empty | the skeleton to copy for a new project |
+| `templates/state-v0.2.0.example.json` | empty | the skeleton to copy for a new project: no evidence, six topology domains `OPEN`, one classification question each (`UNK-901`…`UNK-906`); answer them (or rewrite them in the product's words with `new_records.py --replace question`) before anything else |
 | `templates/examples/discover-one-question.state.json` | DISCOVER | one brief (evidence), one OPEN surface, one question with a recommendation; `next_product_question.py` asks it |
 | `templates/examples/closed-minimal.state.json` | CLOSED | the smallest definition that passes closure: one requirement with Core, UX and Grill coverage, approval and history |
 
@@ -20,10 +20,18 @@ When an error names a field, `explain_state_errors.py state.json` adds the allow
 1. Record what you found as evidence, and each open product choice as a question
    (`new_records.py --patch PATCH evidence|question ...`).
 2. `next_product_question.py state.json` picks the one question to ask now.
-3. Record the user's answer: `new_records.py --patch PATCH user-decision ...`. If the
-   question was holding a coverage cell OPEN (a Grill axis, a Core or UX cell), add
-   `--address CELL` so the same patch closes that cell with the new decision.
-   Without it the cell stays OPEN with no OPEN question and validation fails.
+3. Record the user's answer to an existing question:
+   `new_records.py --state state.json --patch PATCH resolve UNK --option OPT --words "..."`.
+   The builder copies the question, derives the resolution mode, removes it from every
+   `blocks_unknown_refs`, adds the decision to its surfaces and answers the OPEN coverage
+   cells it held. `--also UNK=OPT` records other questions the same answer decides;
+   `resolve --accept-recommended --pack PACK` records "all as recommended" for a grouped
+   table (`next_product_question.py state.json --grouped --markdown`). A topology answer is
+   followed by `topology-on DEC` (or `topology-off DEC --rationale ...`) in the same patch.
+   When a surface has no open question left, `requirement --from-decisions DEC-a,DEC-b
+   --surface SURF --requirement REQ` makes it `IN_SCOPE`. A question asked and answered in
+   the same revision still uses `user-decision` (add `--address CELL` for a cell it held).
+   Record text changes with `edit ID --replace-text OLD NEW` or `--set POINTER TEXT`.
 4. Apply the patch: `open_revision.py state.json --patch PATCH --status OPEN --write`
    while discovering, `--status READY_FOR_REVIEW` when the definition is complete.
    Each applied patch is one revision. While the status is `OPEN`, requirements and

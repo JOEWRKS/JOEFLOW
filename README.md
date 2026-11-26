@@ -7,7 +7,7 @@
 
 ## 1. Summary
 
-- Program version: **`v2.0.1`**
+- Program version: **`v2.0.2`** (unreleased; the install blocks below fetch the published `v2.0.1`)
 - Runtime skill/package ID: **`joewrks-product-definition`**
 - Authoritative source: **`product-definition/<project-slug>/state.json`**
 - Mission: product planning tool that defines what to build before implementation (websites, apps, games, workflows, redesigns)
@@ -97,7 +97,7 @@ Sequence: JOENESS organizes work → JOEFLOW defines the product → JOEDESIGN c
 - Never replaces user approval; AI-generated approvals or approval timestamps are prohibited
 - Material ambiguity found during implementation re-enters the affected Product Definition scope; clear code defects stay code defects
 - Unobserved results stay `NOT VERIFIED`; semantic review repeatability stays `NOT_MEASURED` and cannot approve new decisions
-- Program version `2.0.1` is independent of state and contract versions; frozen historical contracts keep their meaning
+- Program version `2.0.2` is independent of state and contract versions; frozen historical contracts keep their meaning
 
 References: [Program architecture (Korean)](PROGRAM_ARCHITECTURE.md) · [Current V2 workflow](skills/joewrks-product-definition/references/workflow-v0.2.0.md) · [Implementation mismatch re-entry procedure](skills/joewrks-product-definition/references/reentry-workflow-v0.2.0.md) · [Regression environment (Korean)](docs/regression-environment.md) · [Quickstart (Korean)](docs/QUICKSTART.md) · [Security (Korean)](SECURITY.md) · [Changelog](CHANGELOG.md)
 
@@ -106,7 +106,7 @@ References: [Program architecture (Korean)](PROGRAM_ARCHITECTURE.md) · [Current
 <a name="korean"></a>
 **한국어**
 
-- 프로그램 버전: **`v2.0.1`**
+- 프로그램 버전: **`v2.0.2`** (미게시; 아래 설치 블록은 게시된 `v2.0.1`을 받음)
 - 런타임 skill/package ID: **`joewrks-product-definition`**
 - 제품 기준 원본: **`product-definition/<project-slug>/state.json`**
 
@@ -144,6 +144,6 @@ References: [Program architecture (Korean)](PROGRAM_ARCHITECTURE.md) · [Current
 - 사용자 승인 대체 불가, AI의 승인·승인 시각 생성 금지
 - 구현 중 중요 미결정은 해당 범위 재진입, 명확한 코드 결함은 제품 결정으로 바꾸지 않음
 - 미확인 결과는 `NOT VERIFIED`, 의미 검토 반복 신뢰도는 `NOT_MEASURED`
-- 프로그램 버전 `2.0.1`은 내부 상태·계약 버전과 독립
+- 프로그램 버전 `2.0.2`는 내부 상태·계약 버전과 독립
 
 상세: [프로그램 구조](PROGRAM_ARCHITECTURE.md) · [빠른 시작](docs/QUICKSTART.md) · [보안](SECURITY.md) · [회귀 환경](docs/regression-environment.md) · [변경 기록](CHANGELOG.md)

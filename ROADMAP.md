@@ -9,6 +9,20 @@
 
 상태어: not started · in progress · verification pending · complete · deferred
 
+## 2.0.2 ATELIER 실사용 마찰 (2026-11-26 범위 확정)
+
+근거(읽기 전용): ATELIER `TOOL-FRICTION.md` JOEFLOW 1~15, `Library/tool-friction-review.md`. 사용자 결정(2026-11-26): A·B·C·D·G를 2.0.2로, E·F는 2.0.3. 작업 브랜치 `v2.0.2`(워크트리 `JOEFLOW-2.0.2`), 미게시. 기록 [evals/v2.0.2-tests-20261126/report.md](evals/v2.0.2-tests-20261126/report.md).
+
+| ID | 항목 | 상태 | Check |
+|---|---|---|---|
+| A | 기존 질문 닫기: `resolve`(`--also`, `--accept-recommended --pack`), `next_product_question --grouped`, CLOSE 절 | verification pending | ATELIER rev15 재현 digest 같음, 걷기 시험, `test_builders_202` |
+| B | 토폴로지 생애주기: OPEN 템플릿, `grill_profile` 패치 키, `question --pack/--axis`, `topology-on/-off` | verification pending | 걷기 시험(MONEY ON → READY_FOR_REVIEW → Manifest), `test_builders_202`. rev14 재현은 안 함 |
+| C | 빌더–검증기 파생 통일 `decision_policy.py` | verification pending | rev18·22·23 차이가 정확히 파생 정책 필드(되돌리면 digest 같음). 위험 질문 수락 = `USER_DECISION`은 사용자 확인 필요 |
+| D | 표면 닫기: `requirement --from-decisions`, 오류 문구·CLOSE 절 | verification pending | rev15 REQ-007·008 재현, 메시지 비교 |
+| G | 실제 조건을 말하는 오류 문구, 축별 허용 타입 표, `--draft --full`, 첫 승인, 닫힌 파이프 | verification pending | 2.0.1/2.0.2 비교 11건 |
+| E | FREEZE 에이전트 기본값 묶음 | deferred(2.0.3) | — |
+| F | 상태–흐름 일관성 린트 | deferred(2.0.3) | — |
+
 ## U2. 기획툴로서 부족한 부분 (2026-10-31 계획)
 
 계획과 진단: [U2 계획](docs/u2-planning-gaps.md). 사용자 결정(2026-10-31): 추천 순서로 진행.
