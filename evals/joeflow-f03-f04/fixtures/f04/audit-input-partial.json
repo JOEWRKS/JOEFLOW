@@ -1,7 +1,7 @@
 {
   "schema_version": "joewrks.projection-audit-input/1.0",
   "canonical_state": {
-    "path": "../../../../skills/joewrks-product-definition/templates/state-v0.2.0.example.json",
+    "path": "../../../../tests/fixtures/state-v0.2.0-template-2.0.1.json",
     "sha256": "e824dfc8498a3dfe308277f680fdf83bc1ed38690bc9247f473324054628e00f"
   },
   "scope_authority": {
